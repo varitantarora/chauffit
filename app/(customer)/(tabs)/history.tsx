@@ -12,7 +12,7 @@ export default function HistoryScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'completed' | 'cancelled'>('all');
 
-  const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
+  const iconColor = isDarkMode ? '#BD8C5E' : '#720C17';
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
@@ -111,15 +111,15 @@ export default function HistoryScreen() {
       <ThemedView className="flex-1">
         {/* Header */}
         <View className="px-6 py-4 border-b border-border dark:border-darkBorder">
-          <ThemedText variant="title">Ride History</ThemedText>
-          <ThemedText variant="secondary" className="mt-1">
+          <ThemedText variant="h1">Ride History</ThemedText>
+          <ThemedText variant="small" className="mt-1">
             View your past and upcoming rides
           </ThemedText>
         </View>
 
         {/* Filter Tabs */}
         <View className="px-6 py-4">
-          <View className="flex-row bg-surface dark:bg-darkSurface rounded-xl p-1">
+          <View className="flex-row bg-background dark:bg-darkSurface rounded-xl p-1 border border-border dark:border-darkBorder">
             {[
               { key: 'all', label: 'All' },
               { key: 'completed', label: 'Completed' },
@@ -129,7 +129,7 @@ export default function HistoryScreen() {
                 key={tab.key}
                 onPress={() => setActiveTab(tab.key as any)}
                 className={`flex-1 py-3 rounded-lg ${
-                  activeTab === tab.key ? 'bg-primary' : ''
+                  activeTab === tab.key ? 'bg-burgundy' : ''
                 }`}
               >
                 <ThemedText 

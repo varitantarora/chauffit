@@ -85,29 +85,30 @@ export default function CustomerHomeScreen() {
           </View>
           
           {/* Quick Actions */}
-          <View className="px-6 mb-6">
+          <View className="px-3 mb-6">
             <View className="flex-row justify-between">
               {quickActions.map((action, index) => (
-                <TouchableOpacity 
-                  key={index}
-                  onPress={action.action}
-                  className="flex-1 mx-1"
-                >
-                  <ThemedCard variant="premium" className="items-center py-4">
-                    <View className="bg-secondary/10 p-3 rounded-full mb-2">
+                <View key={index} className="flex-1 mx-1">
+                  <ThemedCard 
+                    variant="premium" 
+                    className="items-center py-6 min-h-[100px] justify-center"
+                    pressable
+                    onPress={action.action}
+                  >
+                    <View className="bg-secondary/10 p-3 rounded-full mb-3">
                       <Ionicons name={action.icon as any} size={24} color="#BD8C5E" />
                     </View>
                     <ThemedText variant="tiny" className="text-center font-medium">
                       {action.title}
                     </ThemedText>
                   </ThemedCard>
-                </TouchableOpacity>
+                </View>
               ))}
             </View>
           </View>
           
           {/* Popular Services */}
-          <View className="px-6 mb-6">
+          <View className="px-3 mb-6">
             <View className="flex-row justify-between items-center mb-4">
               <ThemedText variant="title" className="text-lg">
                 Popular Services
@@ -145,7 +146,7 @@ export default function CustomerHomeScreen() {
           </View>
           
           {/* Recent Activity */}
-          <View className="px-6">
+          <View className="px-3 mb-6">
             <ThemedText variant="title" className="text-lg mb-4">
               Recent Activity
             </ThemedText>
@@ -171,7 +172,7 @@ export default function CustomerHomeScreen() {
               </View>
             </ThemedCard>
             
-            <ThemedCard className="mb-3">
+            <ThemedCard className="mb-3 px-3">
               <View className="flex-row items-center">
                 <View className="bg-blue-500/10 p-2 rounded-full">
                   <Ionicons name="time" size={20} color="#3b82f6" />

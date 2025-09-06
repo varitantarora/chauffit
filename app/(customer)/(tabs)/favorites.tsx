@@ -23,7 +23,7 @@ export default function FavoritesScreen() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newLocation, setNewLocation] = useState({ name: '', address: '', type: 'other' as const });
 
-  const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
+  const iconColor = isDarkMode ? '#BD8C5E' : '#720C17';
 
   const [favorites, setFavorites] = useState<FavoriteLocation[]>([
     {
@@ -108,16 +108,16 @@ export default function FavoritesScreen() {
         <View className="px-6 py-4 border-b border-border dark:border-darkBorder">
           <View className="flex-row justify-between items-center">
             <View>
-              <ThemedText variant="title">Favorite Places</ThemedText>
-              <ThemedText variant="secondary" className="mt-1">
+              <ThemedText variant="h1">Favorite Places</ThemedText>
+              <ThemedText variant="small" className="mt-1">
                 Quick access to your saved locations
               </ThemedText>
             </View>
             <TouchableOpacity 
               onPress={() => setShowAddForm(true)}
-              className="bg-primary/10 p-2 rounded-full"
+              className="bg-secondary/10 p-2 rounded-full"
             >
-              <Ionicons name="add" size={24} color="#bd8c5e" />
+              <Ionicons name="add" size={24} color="#BD8C5E" />
             </TouchableOpacity>
           </View>
         </View>
@@ -127,11 +127,11 @@ export default function FavoritesScreen() {
           {showAddForm && (
             <View className="px-6 py-4 border-b border-border dark:border-darkBorder">
               <ThemedCard className="p-4">
-                <ThemedText className="font-bold text-lg mb-4">Add New Favorite</ThemedText>
+                <ThemedText variant="h3" className="mb-4">Add New Favorite</ThemedText>
                 
                 {/* Name Input */}
                 <View className="mb-4">
-                  <ThemedText variant="secondary" className="mb-2">Location Name</ThemedText>
+                  <ThemedText variant="small" className="mb-2">Location Name</ThemedText>
                   <View className={`flex-row items-center px-4 py-3 rounded-xl border ${
                     isDarkMode ? 'bg-darkSurface border-darkBorder' : 'bg-white border-border'
                   }`}>
@@ -147,7 +147,7 @@ export default function FavoritesScreen() {
 
                 {/* Address Input */}
                 <View className="mb-4">
-                  <ThemedText variant="secondary" className="mb-2">Address</ThemedText>
+                  <ThemedText variant="small" className="mb-2">Address</ThemedText>
                   <View className={`flex-row items-center px-4 py-3 rounded-xl border ${
                     isDarkMode ? 'bg-darkSurface border-darkBorder' : 'bg-white border-border'
                   }`}>
@@ -163,7 +163,7 @@ export default function FavoritesScreen() {
 
                 {/* Type Selection */}
                 <View className="mb-4">
-                  <ThemedText variant="secondary" className="mb-2">Category</ThemedText>
+                  <ThemedText variant="small" className="mb-2">Category</ThemedText>
                   <View className="flex-row">
                     {locationTypes.map((type) => (
                       <TouchableOpacity
@@ -179,7 +179,7 @@ export default function FavoritesScreen() {
                           <Ionicons 
                             name={type.icon as any} 
                             size={20} 
-                            color={newLocation.type === type.key ? '#ffffff' : '#bd8c5e'} 
+                            color={newLocation.type === type.key ? '#ffffff' : '#BD8C5E'} 
                           />
                           <ThemedText 
                             className={`mt-1 text-sm ${
@@ -220,7 +220,7 @@ export default function FavoritesScreen() {
                 <ThemedCard key={favorite.id} className="mb-4 p-4">
                   <View className="flex-row items-center">
                     <View className="bg-primary/10 p-3 rounded-full">
-                      <Ionicons name={favorite.icon as any} size={24} color="#bd8c5e" />
+                      <Ionicons name={favorite.icon as any} size={24} color="#BD8C5E" />
                     </View>
                     
                     <View className="ml-4 flex-1">
@@ -249,7 +249,7 @@ export default function FavoritesScreen() {
                         onPress={() => removeFavorite(favorite.id)}
                         className="p-2"
                       >
-                        <Ionicons name="trash-outline" size={20} color="#720c17" />
+                        <Ionicons name="trash-outline" size={20} color="#720C17" />
                       </TouchableOpacity>
                     </View>
                   </View>

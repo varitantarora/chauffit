@@ -26,7 +26,7 @@ export default function BookingScreen() {
   const [selectedVehicle, setSelectedVehicle] = useState<string>('');
   const [specialInstructions, setSpecialInstructions] = useState('');
 
-  const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
+  const iconColor = isDarkMode ? '#BD8C5E' : '#720C17';
 
   const vehicles = [
     {
@@ -116,7 +116,7 @@ export default function BookingScreen() {
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
         {/* Header */}
-        <View className="flex-row items-center px-6 py-4 border-b border-border dark:border-darkBorder bg-white dark:bg-darkSurface">
+        <View className="flex-row items-center px-6 py-4 border-b border-border dark:border-darkBorder bg-background dark:bg-darkBackground">
           <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
             <Ionicons name="arrow-back" size={24} color="#720C17" />
           </TouchableOpacity>
