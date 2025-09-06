@@ -25,21 +25,43 @@ export const ThemedCard: React.FC<ThemedCardProps> = ({
       ? 'bg-darkSurface border-darkBorder' 
       : 'bg-white border-border';
     
-    const shadowClass = {
-      default: 'shadow-card',
-      elevated: 'shadow-elevated',
-      premium: 'shadow-premium'
-    }[variant];
-    
-    return `p-6 rounded-2xl border ${baseClass} ${shadowClass}`;
+    return `p-6 rounded-2xl border ${baseClass}`;
   };
   
-  const pressedStyle = pressable && onPress ? 'active:scale-98 transition-transform duration-150' : '';
+  const getShadowStyle = () => {
+    const shadows = {
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
+      },
+      elevated: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+        elevation: 4,
+      },
+      premium: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 6,
+      }
+    };
+    
+    return shadows[variant];
+  };
+  
+  const pressedStyle = '';
   
   const content = (
     <View 
       className={`${getCardClasses()} ${pressedStyle} ${className}`} 
-      style={style}
+      style={[getShadowStyle(), style]}
       {...props}
     >
       {children}

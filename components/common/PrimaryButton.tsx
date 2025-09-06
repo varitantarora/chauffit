@@ -28,14 +28,14 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
     }[size];
     
     const variantClasses = {
-      primary: 'bg-burgundy shadow-lg active:scale-98',
-      secondary: 'bg-secondary shadow-lg active:scale-98',
-      outline: 'border-2 border-burgundy bg-transparent active:scale-98'
+      primary: 'bg-burgundy',
+      secondary: 'bg-secondary',
+      outline: 'border-2 border-burgundy bg-transparent'
     }[variant];
     
     const disabledClass = disabled || loading ? 'opacity-60' : '';
     
-    return `${sizeClasses} ${variantClasses} ${disabledClass} rounded-xl items-center justify-center transition-transform duration-150`;
+    return `${sizeClasses} ${variantClasses} ${disabledClass} rounded-xl items-center justify-center`;
   };
   
   const getTextColor = () => {
@@ -50,11 +50,24 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
     }[size];
   };
 
+  const getShadowStyle = () => {
+    if (variant === 'outline') return {};
+    
+    return {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    };
+  };
+
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
       className={`${getButtonClasses()} ${className}`}
+      style={getShadowStyle()}
     >
       {loading ? (
         <ActivityIndicator color={variant === 'outline' ? '#720C17' : 'white'} />
