@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(D:\\client_work\\chauffit_dev\\mobile\\src\\screens/**)",
+      "Read(D:\\client_work\\chauffit_dev\\mobile\\src\\screens\\user/**)",
+      "Read(D:\\client_work\\chauffit_dev\\mobile\\src\\screens\\user/**)",
+      "Read(D:\\client_work\\chauffit_dev\\mobile\\src\\screens\\user/**)",
+      "Read(D:\\client_work\\chauffit_dev\\mobile\\src\\screens\\user/**)",
+      "Read(D:\\client_work\\chauffit_dev\\mobile\\src\\screens\\driver/**)",
+      "Read(D:\\client_work\\chauffit_dev\\mobile\\src\\screens\\driver/**)",
+      "Read(D:\\client_work\\chauffit_dev\\mobile\\src\\screens\\driver/**)",
+      "Read(D:\\client_work\\chauffit_dev\\mobile\\src\\screens\\auth/**)",
+      "Read(D:\\client_work\\chauffit_dev\\mobile\\src/**)",
+      "Read(D:\\client_work\\chauffit_dev\\mobile\\src\\components\\common/**)",
+      "Read(D:\\client_work\\chauffit_dev\\mobile\\src\\components\\common/**)",
+      "Bash(npx tsc:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
