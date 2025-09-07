@@ -38,7 +38,7 @@ export default function CustomerHomeScreen() {
   ];
 
   const quickActions = [
-    { title: 'Book Now', icon: 'car', action: () => router.push('/(customer)/booking') },
+    { title: 'Book Now', icon: 'car', action: () => router.push('/(customer)/booking/select-duration') },
     { title: 'Schedule', icon: 'time', action: () => router.push('/(customer)/schedule') },
     { title: 'History', icon: 'list', action: () => router.push('/(customer)/(tabs)/history') },
     { title: 'Favorites', icon: 'heart', action: () => router.push('/(customer)/(tabs)/favorites') }
@@ -134,7 +134,10 @@ export default function CustomerHomeScreen() {
                     <ThemedText className="font-bold text-primary mb-2">
                       {service.price}
                     </ThemedText>
-                    <TouchableOpacity className="bg-secondary py-2 rounded-lg">
+                    <TouchableOpacity 
+                      className="bg-secondary py-2 rounded-lg"
+                      onPress={() => router.push('/(customer)/booking/select-duration')}
+                    >
                       <ThemedText className="text-white text-center font-semibold">
                         Book Now
                       </ThemedText>

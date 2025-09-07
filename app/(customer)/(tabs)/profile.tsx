@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { TouchableOpacity, ScrollView, View, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../../components/common/ThemedView';
@@ -7,6 +7,7 @@ import { ThemedText } from '../../../components/common/ThemedText';
 import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../store/authStore';
+import { useCarStore } from '../../../store/carStore';
 import { useRouter } from 'expo-router';
 
 export default function Profile() {
@@ -14,7 +15,15 @@ export default function Profile() {
   const logout = useAuthStore((state) => state.logout);
   const toggleTheme = useAuthStore((state) => state.toggleTheme);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const { cars, defaultCar, loadUserCars, deleteCar, setDefaultCar } = useCarStore();
   const router = useRouter();
+  const [showAddCarForm, setShowAddCarForm] = useState(false);
+
+  useEffect(() => {
+    if (user?.id) {
+      loadUserCars(user.id);
+    }
+  }, [user?.id]);
 
   const handleLogout = () => {
     Alert.alert(
@@ -52,6 +61,36 @@ export default function Profile() {
     );
   };
 
+  const handleAddCar = () => {
+    router.push('/(auth)/car-details');
+  };
+
+  const handleDeleteCar = (carId: string) => {
+    Alert.alert(
+      'Delete Car',
+      'Are you sure you want to remove this car from your account?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteCar(carId);
+              Alert.alert('Success', 'Car has been removed');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to remove car. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleSetDefaultCar = (carId: string) => {
+    setDefaultCar(carId);
+  };
+
   return (
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
@@ -82,6 +121,88 @@ export default function Profile() {
                 <ThemedText variant="tiny" className="text-secondary font-semibold">CUSTOMER</ThemedText>
               </View>
             </ThemedCard>
+          </View>
+
+          {/* Car Management Section */}
+          <View className="px-6 mb-6">
+            <View className="flex-row items-center justify-between mb-4">
+              <ThemedText variant="h3">Your Vehicles</ThemedText>
+              <TouchableOpacity
+                onPress={handleAddCar}
+                className="flex-row items-center"
+              >
+                <Ionicons name="add-circle" size={20} color="#BD8C5E" />
+                <ThemedText className="ml-1 text-secondary font-semibold">Add Car</ThemedText>
+              </TouchableOpacity>
+            </View>
+
+            {cars.length > 0 ? (
+              cars.map((car) => (
+                <ThemedCard key={car.id} className="mb-3">
+                  <View className="flex-row items-center">
+                    <View className="w-12 h-12 bg-secondary/20 rounded-full items-center justify-center mr-3">
+                      <Ionicons name="car-sport" size={24} color="#BD8C5E" />
+                    </View>
+                    
+                    <View className="flex-1">
+                      <View className="flex-row items-center">
+                        <ThemedText variant="body" className="font-semibold">
+                          {car.make} {car.model}
+                        </ThemedText>
+                        {car.isDefault && (
+                          <View className="bg-burgundy px-2 py-1 rounded-full ml-2">
+                            <ThemedText variant="tiny" className="text-white font-semibold">
+                              DEFAULT
+                            </ThemedText>
+                          </View>
+                        )}
+                      </View>
+                      <ThemedText variant="small" className="text-textSecondary">
+                        {car.color} • {car.year} • {car.registrationNumber}
+                      </ThemedText>
+                    </View>
+
+                    <View className="flex-row items-center">
+                      {!car.isDefault && (
+                        <TouchableOpacity
+                          onPress={() => handleSetDefaultCar(car.id)}
+                          className="p-2 mr-1"
+                        >
+                          <Ionicons name="checkmark-circle-outline" size={20} color="#BD8C5E" />
+                        </TouchableOpacity>
+                      )}
+                      
+                      <TouchableOpacity
+                        onPress={() => handleDeleteCar(car.id)}
+                        className="p-2"
+                      >
+                        <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </ThemedCard>
+              ))
+            ) : (
+              <ThemedCard className="items-center py-8">
+                <View className="w-16 h-16 bg-textSecondary/20 rounded-full items-center justify-center mb-3">
+                  <Ionicons name="car-sport" size={32} color="#6B7280" />
+                </View>
+                <ThemedText variant="body" className="font-semibold mb-1">
+                  No Cars Added
+                </ThemedText>
+                <ThemedText variant="small" className="text-textSecondary text-center mb-4">
+                  Add your car details to start booking rides
+                </ThemedText>
+                <TouchableOpacity
+                  onPress={handleAddCar}
+                  className="bg-secondary px-4 py-2 rounded-lg"
+                >
+                  <ThemedText className="text-white font-semibold">
+                    Add Your First Car
+                  </ThemedText>
+                </TouchableOpacity>
+              </ThemedCard>
+            )}
           </View>
           
           {/* Role Switching CTA */}

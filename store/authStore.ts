@@ -15,6 +15,7 @@ interface AuthState {
   removeRole: (role: UserRole) => void;
   toggleTheme: () => void;
   login: (user: User) => void;
+  updateProfile: (updates: Partial<User>) => void;
   logout: () => void;
 }
 
@@ -47,6 +48,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     isAuthenticated: true,
     roles: state.roles.length > 0 ? state.roles : ['customer'],
     activeRole: state.activeRole || 'customer'
+  })),
+
+  updateProfile: (updates: Partial<User>) => set((state) => ({
+    user: state.user ? { ...state.user, ...updates } : null
   })),
   
   logout: () => set({

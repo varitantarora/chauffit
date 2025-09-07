@@ -1,108 +1,83 @@
-import React, { useState } from 'react';
-import { ScrollView, TouchableOpacity, View, RefreshControl } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { ScrollView, TouchableOpacity, View, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../../components/common/ThemedView';
-import { ThemedCard } from '../../../components/common/ThemedCard';
 import { ThemedText } from '../../../components/common/ThemedText';
+import { BookingCard } from '../../../components/customer/BookingCard';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../store/authStore';
+import { useBookingStore } from '../../../store/bookingStore';
+import { useRouter } from 'expo-router';
 
 export default function HistoryScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all' | 'completed' | 'cancelled'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'completed' | 'cancelled'>('all');
+  
+  const { activeBookings, bookingHistory, cancelBooking } = useBookingStore();
+  const router = useRouter();
 
   const iconColor = isDarkMode ? '#BD8C5E' : '#720C17';
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
+    // In a real app, this would refresh data from the server
     setTimeout(() => setRefreshing(false), 2000);
   }, []);
 
-  const rides = [
-    {
-      id: '1',
-      type: 'Airport Transfer',
-      date: '2024-01-15',
-      time: '09:00 AM',
-      from: 'Cyber Hub, DLF Phase 3',
-      to: 'IGI Airport Terminal 3',
-      status: 'completed',
-      fare: '₹2,850',
-      rating: 5,
-      chauffeur: 'Rajesh Kumar'
-    },
-    {
-      id: '2',
-      type: 'Business Meeting',
-      date: '2024-01-10',
-      time: '02:30 PM',
-      from: 'Hotel Oberoi, MG Road',
-      to: 'Unitech Cyber Park',
-      status: 'completed',
-      fare: '₹1,500',
-      rating: 4,
-      chauffeur: 'Priya Sharma'
-    },
-    {
-      id: '3',
-      type: 'City Tour',
-      date: '2024-01-08',
-      time: '10:00 AM',
-      from: 'DLF Mall, Phase 3',
-      to: 'Multiple Stops',
-      status: 'completed',
-      fare: '₹8,000',
-      rating: 5,
-      chauffeur: 'Amit Singh'
-    },
-    {
-      id: '4',
-      type: 'Wedding Service',
-      date: '2024-01-05',
-      time: '03:00 PM',
-      from: 'The Leela Ambience',
-      to: 'Kingdom of Dreams',
-      status: 'cancelled',
-      fare: '₹6,500',
-      rating: 0,
-      chauffeur: 'Vikram Gupta'
+  const allBookings = [...activeBookings, ...bookingHistory];
+  
+  const filteredBookings = allBookings.filter(booking => {
+    switch (activeTab) {
+      case 'active':
+        return booking.status === 'pending' || booking.status === 'confirmed' || booking.status === 'in_progress';
+      case 'completed':
+        return booking.status === 'completed';
+      case 'cancelled':
+        return booking.status === 'cancelled';
+      default:
+        return true;
     }
-  ];
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return '#10b981';
-      case 'cancelled': return '#ef4444';
-      default: return '#6b7280';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed': return 'checkmark-circle';
-      case 'cancelled': return 'close-circle';
-      default: return 'time';
-    }
-  };
-
-  const filteredRides = rides.filter(ride => {
-    if (activeTab === 'all') return true;
-    return ride.status === activeTab;
   });
 
-  const renderStars = (rating: number) => {
-    return (
-      <View className="flex-row">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Ionicons 
-            key={star} 
-            name={star <= rating ? "star" : "star-outline"} 
-            size={12} 
-            color="#fbbf24" 
-          />
-        ))}
-      </View>
+  const handleBookingPress = (booking: any) => {
+    if (booking.status === 'in_progress' || booking.status === 'confirmed') {
+      router.push({
+        pathname: '/(customer)/ride/tracking',
+        params: { bookingId: booking.id }
+      });
+    }
+  };
+
+  const handleTrackRide = (booking: any) => {
+    router.push({
+      pathname: '/(customer)/ride/tracking',
+      params: { bookingId: booking.id }
+    });
+  };
+
+  const handleCancelBooking = (booking: any) => {
+    Alert.alert(
+      'Cancel Booking',
+      'Are you sure you want to cancel this booking? Cancellation charges may apply.',
+      [
+        {
+          text: 'No',
+          style: 'cancel',
+        },
+        {
+          text: 'Yes, Cancel',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await cancelBooking(booking.id);
+              Alert.alert('Success', 'Booking has been cancelled');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to cancel booking. Please try again.');
+            }
+          },
+        },
+      ]
     );
   };
 
@@ -110,18 +85,21 @@ export default function HistoryScreen() {
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
         {/* Header */}
-        <View className="px-6 py-4 border-b border-border dark:border-darkBorder">
-          <ThemedText variant="h1">Ride History</ThemedText>
-          <ThemedText variant="small" className="mt-1">
-            View your past and upcoming rides
+        <View className="px-6 py-4 border-b border-border">
+          <ThemedText variant="h1">Bookings</ThemedText>
+          <ThemedText variant="small" className="mt-1 text-textSecondary">
+            Manage your rides and view history
           </ThemedText>
         </View>
 
         {/* Filter Tabs */}
         <View className="px-6 py-4">
-          <View className="flex-row bg-background dark:bg-darkSurface rounded-xl p-1 border border-border dark:border-darkBorder">
+          <View className={`flex-row rounded-xl p-1 border ${
+            isDarkMode ? 'bg-darkSurface border-darkBorder' : 'bg-surface border-border'
+          }`}>
             {[
               { key: 'all', label: 'All' },
+              { key: 'active', label: 'Active' },
               { key: 'completed', label: 'Completed' },
               { key: 'cancelled', label: 'Cancelled' }
             ].map((tab) => (
@@ -133,8 +111,9 @@ export default function HistoryScreen() {
                 }`}
               >
                 <ThemedText 
-                  className={`text-center ${
-                    activeTab === tab.key ? 'text-white font-semibold' : ''
+                  variant="small"
+                  className={`text-center font-semibold ${
+                    activeTab === tab.key ? 'text-white' : 'text-textSecondary'
                   }`}
                 >
                   {tab.label}
@@ -144,96 +123,60 @@ export default function HistoryScreen() {
           </View>
         </View>
 
-        {/* Rides List */}
+        {/* Bookings List */}
         <ScrollView 
           className="flex-1"
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            <RefreshControl 
+              refreshing={refreshing} 
+              onRefresh={onRefresh}
+              colors={['#BD8C5E']}
+              tintColor="#BD8C5E"
+            />
           }
         >
           <View className="px-6">
-            {filteredRides.length > 0 ? (
-              filteredRides.map((ride) => (
-                <ThemedCard key={ride.id} className="mb-4 p-4">
-                  {/* Header */}
-                  <View className="flex-row justify-between items-start mb-3">
-                    <View className="flex-1">
-                      <ThemedText className="font-bold text-lg">{ride.type}</ThemedText>
-                      <ThemedText variant="caption">
-                        {new Date(ride.date).toLocaleDateString('en-US', { 
-                          weekday: 'short', 
-                          month: 'short', 
-                          day: 'numeric',
-                          year: 'numeric'
-                        })} • {ride.time}
-                      </ThemedText>
-                    </View>
-                    <View className="items-end">
-                      <View className="flex-row items-center mb-1">
-                        <Ionicons 
-                          name={getStatusIcon(ride.status) as any} 
-                          size={16} 
-                          color={getStatusColor(ride.status)} 
-                        />
-                        <ThemedText 
-                          className="ml-1 text-xs font-semibold capitalize"
-                          style={{ color: getStatusColor(ride.status) }}
-                        >
-                          {ride.status}
-                        </ThemedText>
-                      </View>
-                      <ThemedText className="font-bold text-primary">{ride.fare}</ThemedText>
-                    </View>
-                  </View>
-
-                  {/* Route */}
-                  <View className="space-y-2 mb-3">
-                    <View className="flex-row items-center">
-                      <Ionicons name="location" size={16} color="#10b981" />
-                      <ThemedText variant="secondary" className="ml-2 flex-1">
-                        From: {ride.from}
-                      </ThemedText>
-                    </View>
-                    <View className="flex-row items-center">
-                      <Ionicons name="navigate" size={16} color="#ef4444" />
-                      <ThemedText variant="secondary" className="ml-2 flex-1">
-                        To: {ride.to}
-                      </ThemedText>
-                    </View>
-                  </View>
-
-                  {/* Bottom Section */}
-                  <View className="flex-row justify-between items-center pt-3 border-t border-border dark:border-darkBorder">
-                    <View>
-                      <ThemedText variant="caption">Chauffeur</ThemedText>
-                      <ThemedText className="font-semibold">{ride.chauffeur}</ThemedText>
-                    </View>
-                    
-                    {ride.status === 'completed' && (
-                      <View className="items-end">
-                        <ThemedText variant="caption">Your Rating</ThemedText>
-                        {renderStars(ride.rating)}
-                      </View>
-                    )}
-                    
-                    {ride.status === 'cancelled' && (
-                      <TouchableOpacity className="bg-primary/10 px-3 py-1 rounded">
-                        <ThemedText className="text-primary text-sm">Rebook</ThemedText>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </ThemedCard>
-              ))
+            {filteredBookings.length > 0 ? (
+              filteredBookings
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                .map((booking) => (
+                  <BookingCard
+                    key={booking.id}
+                    booking={booking}
+                    onPress={() => handleBookingPress(booking)}
+                    onTrack={() => handleTrackRide(booking)}
+                    onCancel={() => handleCancelBooking(booking)}
+                  />
+                ))
             ) : (
-              <View className="items-center py-12">
-                <Ionicons name="car" size={64} color={iconColor} />
-                <ThemedText variant="title" className="mt-4 mb-2">
-                  No rides found
+              <View className="items-center py-16">
+                <View className="w-20 h-20 bg-textSecondary/20 rounded-full items-center justify-center mb-4">
+                  <Ionicons name="car" size={40} color={iconColor} />
+                </View>
+                <ThemedText variant="h3" className="text-center mb-2">
+                  {activeTab === 'active' && 'No Active Bookings'}
+                  {activeTab === 'completed' && 'No Completed Rides'}
+                  {activeTab === 'cancelled' && 'No Cancelled Bookings'}
+                  {activeTab === 'all' && 'No Bookings Yet'}
                 </ThemedText>
-                <ThemedText variant="secondary" className="text-center">
-                  No rides match your current filter.{'\n'}Try selecting a different filter.
+                <ThemedText variant="small" className="text-center text-textSecondary px-8 mb-6">
+                  {activeTab === 'all' 
+                    ? 'Start your first journey with Chauffit premium service'
+                    : `No bookings found in ${activeTab} category`
+                  }
                 </ThemedText>
+                
+                {activeTab === 'all' && (
+                  <TouchableOpacity
+                    onPress={() => router.push('/(customer)/booking/select-duration')}
+                    className="bg-burgundy px-6 py-3 rounded-xl"
+                  >
+                    <ThemedText className="text-white font-semibold">
+                      Book Your First Ride
+                    </ThemedText>
+                  </TouchableOpacity>
+                )}
               </View>
             )}
           </View>
@@ -241,6 +184,23 @@ export default function HistoryScreen() {
           {/* Bottom Spacing */}
           <View className="h-6" />
         </ScrollView>
+
+        {/* Floating Action Button */}
+        <View className="absolute bottom-6 right-6">
+          <TouchableOpacity
+            onPress={() => router.push('/(customer)/booking/select-duration')}
+            className="w-14 h-14 bg-burgundy rounded-full items-center justify-center shadow-lg"
+            style={{
+              shadowColor: '#720C17',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 8,
+            }}
+          >
+            <Ionicons name="add" size={28} color="white" />
+          </TouchableOpacity>
+        </View>
       </ThemedView>
     </SafeAreaView>
   );

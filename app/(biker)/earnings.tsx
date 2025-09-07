@@ -6,10 +6,26 @@ import { ThemedCard } from '../../components/common/ThemedCard';
 import { ThemedText } from '../../components/common/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
+import { useBikerEarningsStore } from '../../store/bikerEarningsStore';
+import { IncentiveTracker } from '../../components/biker/earnings/IncentiveTracker';
 
 export default function BikerEarningsScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
+  
+  // Earnings store
+  const earnings = useBikerEarningsStore((state) => state.earnings);
+  const currentShift = useBikerEarningsStore((state) => state.currentShift);
+  const activeIncentives = useBikerEarningsStore((state) => state.activeIncentives);
+  const completedIncentives = useBikerEarningsStore((state) => state.completedIncentives);
+  const performanceMetrics = useBikerEarningsStore((state) => state.performanceMetrics);
+  const getTodayEarnings = useBikerEarningsStore((state) => state.getTodayEarnings);
+  const getWeekEarnings = useBikerEarningsStore((state) => state.getWeekEarnings);
+  const getMonthEarnings = useBikerEarningsStore((state) => state.getMonthEarnings);
+
+  const todayEarnings = getTodayEarnings() || 1250;
+  const weekEarnings = getWeekEarnings() || 8200;
+  const monthEarnings = getMonthEarnings() || 28200;
 
   return (
     <SafeAreaView className="flex-1">
@@ -19,30 +35,69 @@ export default function BikerEarningsScreen() {
           <View className="px-6 pt-4 pb-6">
             <ThemedText variant="title">Earnings</ThemedText>
             <ThemedText variant="secondary" className="mt-1">
-              Track your delivery income
+              Emergency response & delivery income
             </ThemedText>
           </View>
           
+          {/* Current Shift */}
+          {currentShift && (
+            <View className="px-6 mb-6">
+              <ThemedCard className="p-4 bg-blue-50 dark:bg-blue-900/20">
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center">
+                    <View className="bg-blue-500 p-2 rounded-full mr-3">
+                      <Ionicons name="time" size={20} color="white" />
+                    </View>
+                    <View>
+                      <ThemedText className="font-bold text-blue-700 dark:text-blue-300">
+                        Current Shift Active
+                      </ThemedText>
+                      <ThemedText variant="caption" className="text-blue-600 dark:text-blue-400">
+                        Started at {new Date(currentShift.startTime).toLocaleTimeString('en-IN')}
+                      </ThemedText>
+                    </View>
+                  </View>
+                  <View className="items-end">
+                    <ThemedText className="font-bold text-blue-700 dark:text-blue-300">
+                      ₹{currentShift.earnings}
+                    </ThemedText>
+                    <ThemedText variant="caption" className="text-blue-600 dark:text-blue-400">
+                      This shift
+                    </ThemedText>
+                  </View>
+                </View>
+              </ThemedCard>
+            </View>
+          )}
+
           {/* Earnings Summary */}
           <View className="px-6 mb-6">
             <ThemedCard className="p-6">
               <ThemedText variant="secondary" className="mb-2">Total Earnings</ThemedText>
-              <ThemedText variant="title" className="text-3xl mb-4">₹28,200</ThemedText>
+              <ThemedText variant="title" className="text-3xl mb-4">₹{monthEarnings}</ThemedText>
               <View className="flex-row justify-between">
                 <View>
-                  <ThemedText variant="caption">This Week</ThemedText>
-                  <ThemedText className="font-semibold">₹8,200</ThemedText>
+                  <ThemedText variant="caption">Today</ThemedText>
+                  <ThemedText className="font-semibold">₹{todayEarnings}</ThemedText>
                 </View>
                 <View>
-                  <ThemedText variant="caption">This Month</ThemedText>
-                  <ThemedText className="font-semibold">₹28,200</ThemedText>
+                  <ThemedText variant="caption">This Week</ThemedText>
+                  <ThemedText className="font-semibold">₹{weekEarnings}</ThemedText>
                 </View>
                 <View>
                   <ThemedText variant="caption">Pending</ThemedText>
-                  <ThemedText className="font-semibold">₹1,070</ThemedText>
+                  <ThemedText className="font-semibold">₹{earnings.pendingAmount || 1070}</ThemedText>
                 </View>
               </View>
             </ThemedCard>
+          </View>
+
+          {/* Incentives Section */}
+          <View className="px-6 mb-6">
+            <IncentiveTracker 
+              incentives={[...activeIncentives, ...completedIncentives.slice(0, 3)]} 
+              showCompleted={true}
+            />
           </View>
           
           {/* Daily Breakdown */}
