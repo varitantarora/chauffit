@@ -40,14 +40,14 @@ export default function CustomerHomeScreen() {
   const handleSearch = () => {
     if (searchText.trim()) {
       router.push({
-        pathname: '/(customer)/book-ride',
+        pathname: '/(customer)/book-ride-new',
         params: { destination: searchText.trim() }
       });
     }
   };
 
   const quickActions = [
-    { title: 'Book Now', icon: 'car', action: () => router.push('/(customer)/book-ride') },
+    { title: 'Book Now', icon: 'car', action: () => router.push('/(customer)/book-ride-new') },
     { title: 'Schedule', icon: 'time', action: () => router.push('/(customer)/schedule') },
     { title: 'History', icon: 'list', action: () => router.push('/(customer)/(tabs)/history') },
     { title: 'Favorites', icon: 'heart', action: () => router.push('/(customer)/(tabs)/favorites') }
@@ -152,7 +152,7 @@ export default function CustomerHomeScreen() {
                     </ThemedText>
                     <TouchableOpacity 
                       className="bg-secondary py-2 rounded-lg"
-                      onPress={() => router.push('/(customer)/book-ride')}
+                      onPress={() => router.push('/(customer)/book-ride-new')}
                     >
                       <ThemedText className="text-white text-center font-semibold">
                         Book Now

@@ -4,7 +4,13 @@ export default function CustomerLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="book-ride" />
+      <Stack.Screen name="book-ride-new" />
+      <Stack.Screen name="ride-confirmation" />
+      <Stack.Screen name="ride-tracking" />
+      <Stack.Screen name="trip-completion" />
+      <Stack.Screen name="rating-feedback" />
+      <Stack.Screen name="scheduled-rides" />
+      <Stack.Screen name="wallet" />
       <Stack.Screen name="booking" />
       <Stack.Screen name="schedule" />
       <Stack.Screen name="ride" />

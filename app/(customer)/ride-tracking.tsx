@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, Alert, Linking } from 'react-native';
+import { View, TouchableOpacity, Alert, Linking, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../components/common/ThemedView';
 import { ThemedCard } from '../../components/common/ThemedCard';
@@ -119,8 +119,9 @@ export default function RideTrackingScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Status Header */}
-        <View className="items-center py-6">
+        <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
+          {/* Status Header */}
+          <View className="items-center py-6">
           {rideStatus === 'driver_coming' && (
             <>
               <ThemedText className="text-gray-600 mb-2">Driver arriving in</ThemedText>
@@ -130,7 +131,7 @@ export default function RideTrackingScreen() {
           {rideStatus === 'driver_arrived' && (
             <>
               <ThemedText className="text-gray-600 mb-2">Your driver has</ThemedText>
-              <ThemedText variant="h1" className="text-green-600">✅ Arrived</ThemedText>
+              <ThemedText variant="h1" className="text-blue-600">✅ Arrived</ThemedText>
             </>
           )}
           {rideStatus === 'in_progress' && (
@@ -194,15 +195,15 @@ export default function RideTrackingScreen() {
             <View className="flex-row">
               <TouchableOpacity 
                 onPress={handleCallDriver}
-                className="bg-green-100 p-3 rounded-full mr-2"
+                className="bg-burgundy/10 p-3 rounded-full mr-2"
               >
-                <Ionicons name="call" size={20} color="#059669" />
+                <Ionicons name="call" size={20} color="#722F37" />
               </TouchableOpacity>
               <TouchableOpacity 
                 onPress={handleMessageDriver}
                 className="bg-blue-100 p-3 rounded-full"
               >
-                <Ionicons name="chatbubble" size={20} color="#2563EB" />
+                <Ionicons name="chatbubble" size={20} color="#3B82F6" />
               </TouchableOpacity>
             </View>
           </View>
@@ -253,32 +254,35 @@ export default function RideTrackingScreen() {
         <View className="px-6 py-4">
           <TouchableOpacity 
             onPress={handleShareTrip}
-            className="flex-row items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 rounded-xl mb-3"
+            className="flex-row items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl mb-3"
           >
             <View className="flex-row items-center">
-              <Ionicons name="shield-checkmark" size={24} color="#059669" />
+              <Ionicons name="shield-checkmark" size={24} color="#3B82F6" />
               <ThemedText className="ml-3">Share Trip with Contact</ThemedText>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#059669" />
+            <Ionicons name="chevron-forward" size={20} color="#3B82F6" />
           </TouchableOpacity>
 
           <TouchableOpacity 
             onPress={handleSOS}
-            className="flex-row items-center justify-between p-4 bg-red-50 dark:bg-red-900/20 rounded-xl mb-3"
+            className="flex-row items-center justify-between p-4 bg-burgundy/10 dark:bg-burgundy/20 rounded-xl mb-3"
           >
             <View className="flex-row items-center">
-              <Ionicons name="warning" size={24} color="#DC2626" />
+              <Ionicons name="warning" size={24} color="#722F37" />
               <ThemedText className="ml-3">SOS Emergency</ThemedText>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#DC2626" />
+            <Ionicons name="chevron-forward" size={20} color="#722F37" />
           </TouchableOpacity>
 
-          <TouchableOpacity className="flex-row items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl mb-4">
+          <TouchableOpacity 
+            onPress={() => Linking.openURL('tel:1091')}
+            className="flex-row items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl mb-4"
+          >
             <View className="flex-row items-center">
-              <Ionicons name="call" size={24} color="#2563EB" />
+              <Ionicons name="call" size={24} color="#3B82F6" />
               <ThemedText className="ml-3">Emergency Assistance</ThemedText>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#2563EB" />
+            <Ionicons name="chevron-forward" size={20} color="#3B82F6" />
           </TouchableOpacity>
 
           {/* Action Buttons */}
@@ -293,7 +297,7 @@ export default function RideTrackingScreen() {
             {rideStatus === 'driver_coming' || rideStatus === 'driver_arrived' ? (
               <TouchableOpacity 
                 onPress={handleCancelRide}
-                className="flex-1 py-3 ml-2 bg-red-600 rounded-xl"
+                className="flex-1 py-3 ml-2 bg-burgundy rounded-xl"
               >
                 <ThemedText className="text-center text-white">Cancel Ride</ThemedText>
               </TouchableOpacity>
@@ -313,6 +317,12 @@ export default function RideTrackingScreen() {
             </ThemedText>
           )}
         </View>
+
+        {/* Bottom Spacing */}
+        <View className="px-6">
+          <View className="h-6" />
+        </View>
+      </ScrollView>
       </ThemedView>
     </SafeAreaView>
   );
@@ -323,9 +333,9 @@ const SOSScreen = ({ onClose }: { onClose: () => void }) => {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   
   const emergencyContacts = [
-    { icon: 'call', title: 'CALL EMERGENCY', subtitle: '(Police: 100)', color: '#DC2626' },
-    { icon: 'medical', title: 'MEDICAL EMERGENCY', subtitle: '(Ambulance: 108)', color: '#DC2626' },
-    { icon: 'flame', title: 'FIRE EMERGENCY', subtitle: '(Fire: 101)', color: '#DC2626' },
+    { icon: 'call', title: 'CALL EMERGENCY', subtitle: '(Police: 100)', color: '#722F37' },
+    { icon: 'medical', title: 'MEDICAL EMERGENCY', subtitle: '(Ambulance: 108)', color: '#722F37' },
+    { icon: 'flame', title: 'FIRE EMERGENCY', subtitle: '(Fire: 101)', color: '#722F37' },
     { icon: 'headset', title: 'CHAUFFIT SUPPORT', subtitle: '(24/7 Hotline)', color: '#722F37' },
   ];
 
@@ -337,7 +347,7 @@ const SOSScreen = ({ onClose }: { onClose: () => void }) => {
     <View className="flex-1 bg-black/50 justify-center px-6">
       <ThemedCard variant="elevated" className="p-6">
         <View className="flex-row justify-between items-center mb-6">
-          <ThemedText variant="h2" className="text-red-600">🚨 EMERGENCY SOS</ThemedText>
+          <ThemedText variant="h2" className="text-burgundy">🚨 EMERGENCY SOS</ThemedText>
           <TouchableOpacity onPress={onClose}>
             <Ionicons name="close" size={24} color={isDarkMode ? '#fff' : '#000'} />
           </TouchableOpacity>
@@ -361,12 +371,12 @@ const SOSScreen = ({ onClose }: { onClose: () => void }) => {
           </TouchableOpacity>
         ))}
 
-        <View className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl">
+        <View className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
           <ThemedText variant="small" className="text-center mb-2">
             📍 Your location is being shared with emergency contacts:
           </ThemedText>
           <ThemedText variant="small" className="text-center">
-            • Emma Chen (Wife){'\n'}• John Chen (Brother)
+            • Priya Sharma (Wife){'\n'}• Arjun Sharma (Brother)
           </ThemedText>
           <ThemedText variant="tiny" className="text-center text-gray-600 mt-2">
             Trip details automatically sent to emergency services and Chauffit.
@@ -375,7 +385,7 @@ const SOSScreen = ({ onClose }: { onClose: () => void }) => {
 
         <TouchableOpacity 
           onPress={onClose}
-          className="mt-4 p-3 bg-green-600 rounded-xl"
+          className="mt-4 p-3 bg-blue-600 rounded-xl"
         >
           <ThemedText className="text-center text-white font-bold">I'm Safe Now</ThemedText>
         </TouchableOpacity>
@@ -387,19 +397,19 @@ const SOSScreen = ({ onClose }: { onClose: () => void }) => {
 // Share Trip Screen Component  
 const ShareTripScreen = ({ onClose }: { onClose: () => void }) => {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
-  const [selectedContacts, setSelectedContacts] = useState<string[]>(['emma']);
+  const [selectedContacts, setSelectedContacts] = useState<string[]>(['priya']);
 
   const emergencyContacts = [
-    { id: 'emma', name: 'Emma Chen (Wife)', phone: '+91 9876543210' },
-    { id: 'john', name: 'John Chen (Brother)', phone: '+91 9876543211' },
-    { id: 'sarah', name: 'Sarah Wilson (Friend)', phone: '+91 9876543212' },
+    { id: 'priya', name: 'Priya Sharma (Wife)', phone: '+91 9876543210' },
+    { id: 'arjun', name: 'Arjun Sharma (Brother)', phone: '+91 9876543211' },
+    { id: 'kavya', name: 'Kavya Gupta (Friend)', phone: '+91 9876543212' },
   ];
 
   const shareOptions = [
-    { icon: 'chatbubble', title: 'Send SMS', color: '#059669' },
-    { icon: 'mail', title: 'Send Email', color: '#DC2626' },
-    { icon: 'logo-whatsapp', title: 'WhatsApp', color: '#25D366' },
-    { icon: 'link', title: 'Share via Link', color: '#2563EB' },
+    { icon: 'chatbubble', title: 'Send SMS', color: '#3B82F6' },
+    { icon: 'mail', title: 'Send Email', color: '#722F37' },
+    { icon: 'logo-whatsapp', title: 'WhatsApp', color: '#3B82F6' },
+    { icon: 'link', title: 'Share via Link', color: '#722F37' },
   ];
 
   const toggleContact = (contactId: string) => {

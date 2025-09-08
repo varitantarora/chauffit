@@ -98,7 +98,7 @@ export default function FavoritesScreen() {
 
   const bookToLocation = (location: FavoriteLocation) => {
     // You could pass the location data to booking screen
-    router.push('/(customer)/book-ride');
+    router.push('/(customer)/book-ride-new');
   };
 
   return (
