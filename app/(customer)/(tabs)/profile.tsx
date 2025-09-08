@@ -213,8 +213,8 @@ export default function Profile() {
           <View className="px-6 mb-6">
             <ThemedCard variant="elevated" className="p-4">
               <View className="flex-row items-center mb-3">
-                <View className="w-10 h-10 bg-burgundy/10 rounded-full items-center justify-center mr-3">
-                  <Ionicons name="car" size={20} color="#720C17" />
+                <View className="w-10 h-10 bg-secondary/10 rounded-full items-center justify-center mr-3">
+                  <Ionicons name="car" size={20} color="#BD8C5E" />
                 </View>
                 <View className="flex-1">
                   <ThemedText variant="h3">Start Earning</ThemedText>
@@ -248,6 +248,7 @@ export default function Profile() {
             <TouchableOpacity
               onPress={toggleTheme}
               className="mb-3"
+              activeOpacity={1}
             >
               <ThemedCard className="flex-row justify-between items-center py-4">
                 <View className="flex-row items-center flex-1">
@@ -262,7 +263,7 @@ export default function Profile() {
               </ThemedCard>
             </TouchableOpacity>
             
-            <TouchableOpacity className="mb-3">
+            <TouchableOpacity className="mb-3" activeOpacity={1} onPress={() => router.push('/(customer)/notifications')}>
               <ThemedCard className="flex-row justify-between items-center py-4">
                 <View className="flex-row items-center flex-1">
                   <View className="w-10 h-10 bg-secondary/10 rounded-full items-center justify-center mr-3">
@@ -274,7 +275,7 @@ export default function Profile() {
               </ThemedCard>
             </TouchableOpacity>
             
-            <TouchableOpacity className="mb-3">
+            <TouchableOpacity className="mb-3" activeOpacity={1} onPress={() => router.push('/(customer)/payment-methods')}>
               <ThemedCard className="flex-row justify-between items-center py-4">
                 <View className="flex-row items-center flex-1">
                   <View className="w-10 h-10 bg-secondary/10 rounded-full items-center justify-center mr-3">
@@ -286,13 +287,25 @@ export default function Profile() {
               </ThemedCard>
             </TouchableOpacity>
             
-            <TouchableOpacity className="mb-3" onPress={() => router.push('/(customer)/(tabs)/history')}>
+            <TouchableOpacity className="mb-3" onPress={() => router.push('/(customer)/(tabs)/history')} activeOpacity={1}>
               <ThemedCard className="flex-row justify-between items-center py-4">
                 <View className="flex-row items-center flex-1">
                   <View className="w-10 h-10 bg-secondary/10 rounded-full items-center justify-center mr-3">
                     <Ionicons name="time" size={20} color="#BD8C5E" />
                   </View>
                   <ThemedText>Ride History</ThemedText>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#720C17" />
+              </ThemedCard>
+            </TouchableOpacity>
+            
+            <TouchableOpacity className="mb-3" onPress={() => router.push('/(customer)/support')} activeOpacity={1}>
+              <ThemedCard className="flex-row justify-between items-center py-4">
+                <View className="flex-row items-center flex-1">
+                  <View className="w-10 h-10 bg-secondary/10 rounded-full items-center justify-center mr-3">
+                    <Ionicons name="help-circle" size={20} color="#BD8C5E" />
+                  </View>
+                  <ThemedText>Support</ThemedText>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#720C17" />
               </ThemedCard>

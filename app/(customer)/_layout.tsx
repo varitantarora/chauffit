@@ -15,6 +15,15 @@ export default function CustomerLayout() {
       <Stack.Screen name="booking" />
       <Stack.Screen name="schedule" />
       <Stack.Screen name="ride" />
+      <Stack.Screen name="support" />
+      <Stack.Screen name="searching-drivers" />
+      <Stack.Screen name="notifications" />
+      <Stack.Screen name="payment-methods" />
+      <Stack.Screen name="transactions" />
+      <Stack.Screen name="faq" />
+      <Stack.Screen name="user-guides" />
+      <Stack.Screen name="submit-request" />
+      <Stack.Screen name="request-status" />
     </Stack>
   );
 }

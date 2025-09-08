@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ScrollView, TouchableOpacity, View, TextInput, RefreshControl } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { ScrollView, TouchableOpacity, View, TextInput, RefreshControl, Animated, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../../components/common/ThemedView';
 import { ThemedCard } from '../../../components/common/ThemedCard';
@@ -15,8 +15,26 @@ export default function CustomerHomeScreen() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const [showAnimation, setShowAnimation] = useState(true);
+  const clipAnimation = useRef(new Animated.Value(0)).current;
   
   const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
+
+  useEffect(() => {
+    // Start the reveal animation when component mounts
+    const timer = setTimeout(() => {
+      Animated.timing(clipAnimation, {
+        toValue: 1,
+        duration: 1200,
+        useNativeDriver: false,
+      }).start(() => {
+        // Hide the animation overlay after completion
+        setTimeout(() => setShowAnimation(false), 200);
+      });
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -296,6 +314,42 @@ export default function CustomerHomeScreen() {
           {/* Bottom Spacing */}
           <View className="h-6" />
         </ScrollView>
+        
+        {/* Masking Animation Overlay */}
+        {showAnimation && (
+          <Animated.View
+            className="absolute inset-0 items-center justify-center"
+            style={{
+              backgroundColor: isDarkMode ? '#720C17' : '#BD8C5E',
+              opacity: clipAnimation.interpolate({
+                inputRange: [0, 1],
+                outputRange: [1, 0],
+              }),
+              transform: [{
+                scale: clipAnimation.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [1, 15],
+                })
+              }],
+            }}
+          >
+            <View
+              className="w-20 h-20 rounded-full items-center justify-center"
+              style={{
+                backgroundColor: isDarkMode ? '#BD8C5E' : '#720C17',
+              }}
+            >
+              <Image 
+                source={require('../../../assets/chauffit-logo.png')}
+                style={{ 
+                  width: 50, 
+                  height: 50,
+                }}
+                resizeMode="contain"
+              />
+            </View>
+          </Animated.View>
+        )}
       </ThemedView>
     </SafeAreaView>
   );

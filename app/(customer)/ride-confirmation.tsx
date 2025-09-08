@@ -17,7 +17,6 @@ export default function RideConfirmationScreen() {
   
   const [selectedPayment, setSelectedPayment] = useState('visa-1234');
   const [driverPreference, setDriverPreference] = useState<'luxury' | 'standard'>('standard');
-  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [slideValue] = useState(new Animated.Value(0));
   
   const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
@@ -63,7 +62,16 @@ export default function RideConfirmationScreen() {
   };
 
   const handleConfirmBooking = () => {
-    setShowConfirmationModal(true);
+    // Navigate to searching drivers screen with trip details
+    router.push({
+      pathname: '/(customer)/searching-drivers',
+      params: {
+        pickup: tripDetails.pickup,
+        destination: tripDetails.destination,
+        vehicle: driverDetails.vehicle,
+        fare: totals.total.toFixed(2)
+      }
+    });
   };
 
   const handleSlideComplete = () => {
@@ -286,19 +294,6 @@ export default function RideConfirmationScreen() {
             </TouchableOpacity>
           </View>
         </ScrollView>
-        
-        {/* Confirmation Modal */}
-        {showConfirmationModal && (
-          <BookingConfirmationModal
-            isVisible={showConfirmationModal}
-            onClose={() => setShowConfirmationModal(false)}
-            onTrackRide={() => {
-              setShowConfirmationModal(false);
-              router.push('/(customer)/ride-tracking');
-            }}
-            isDarkMode={isDarkMode}
-          />
-        )}
       </ThemedView>
     </SafeAreaView>
   );
