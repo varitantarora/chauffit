@@ -209,6 +209,90 @@ export default function CustomerHomeScreen() {
             </ThemedCard>
           </View>
           
+          {/* More Ways to Use Chauffit */}
+          <View className="px-3 mb-6">
+            <View className="flex-row justify-between items-center mb-4">
+              <ThemedText variant="title" className="text-lg">
+                More Ways to Use Chauffit
+              </ThemedText>
+              <TouchableOpacity>
+                <ThemedText className="text-secondary">Explore All</ThemedText>
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {[
+                {
+                  id: 1,
+                  title: 'Business Meetings',
+                  description: 'Professional rides for work',
+                  image: '🏢',
+                  backgroundColor: 'bg-blue-50',
+                  action: () => router.push('/(customer)/book-ride-new')
+                },
+                {
+                  id: 2,
+                  title: 'Wedding Events',
+                  description: 'Special occasions made memorable',
+                  image: '💒',
+                  backgroundColor: 'bg-pink-50',
+                  action: () => router.push('/(customer)/book-ride-new')
+                },
+                {
+                  id: 3,
+                  title: 'Shopping Tours',
+                  description: 'Comfortable shopping trips',
+                  image: '🛍️',
+                  backgroundColor: 'bg-purple-50',
+                  action: () => router.push('/(customer)/book-ride-new')
+                },
+                {
+                  id: 4,
+                  title: 'Date Nights',
+                  description: 'Romantic evenings out',
+                  image: '💝',
+                  backgroundColor: 'bg-red-50',
+                  action: () => router.push('/(customer)/book-ride-new')
+                },
+                {
+                  id: 5,
+                  title: 'Medical Visits',
+                  description: 'Reliable healthcare transport',
+                  image: '🏥',
+                  backgroundColor: 'bg-green-50',
+                  action: () => router.push('/(customer)/book-ride-new')
+                },
+                {
+                  id: 6,
+                  title: 'Party Nights',
+                  description: 'Safe rides for celebrations',
+                  image: '🎉',
+                  backgroundColor: 'bg-yellow-50',
+                  action: () => router.push('/(customer)/book-ride-new')
+                }
+              ].map((useCase) => (
+                <TouchableOpacity 
+                  key={useCase.id} 
+                  className="mr-4" 
+                  activeOpacity={1}
+                  onPress={useCase.action}
+                >
+                  <ThemedCard className="w-48 p-4 my-2 h-46">
+                    <View className={`w-full h-20 ${useCase.backgroundColor} rounded-lg mb-3 items-center justify-center`}>
+                      <ThemedText className="text-3xl">{useCase.image}</ThemedText>
+                    </View>
+                    <ThemedText className="font-semibold text-center mb-2 h-5" numberOfLines={1}>
+                      {useCase.title}
+                    </ThemedText>
+                    <ThemedText variant="caption" className="text-center text-gray-600 h-8" numberOfLines={2}>
+                      {useCase.description}
+                    </ThemedText>
+                  </ThemedCard>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+          
           {/* Bottom Spacing */}
           <View className="h-6" />
         </ScrollView>
