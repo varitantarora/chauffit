@@ -7,6 +7,7 @@ interface AuthState {
   activeRole: UserRole;
   isAuthenticated: boolean;
   isDarkMode: boolean;
+  hasSeenOnboarding: boolean;
   
   // Actions
   setUser: (user: User | null) => void;
@@ -17,6 +18,7 @@ interface AuthState {
   login: (user: User) => void;
   updateProfile: (updates: Partial<User>) => void;
   logout: () => void;
+  setHasSeenOnboarding: (seen: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -25,6 +27,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   activeRole: 'customer',
   isAuthenticated: false,
   isDarkMode: false,
+  hasSeenOnboarding: false,
   
   setUser: (user) => set({ user, isAuthenticated: !!user }),
   
@@ -60,4 +63,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     roles: [],
     activeRole: 'customer'
   }),
+  
+  setHasSeenOnboarding: (seen) => set({ hasSeenOnboarding: seen }),
 }));
