@@ -207,9 +207,9 @@ export const BookingCard: React.FC<BookingCardProps> = ({
           {(booking.status === 'pending' || booking.status === 'confirmed') && onCancel && (
             <TouchableOpacity
               onPress={onCancel}
-              className="flex-1 border-2 border-danger rounded-xl py-3"
+              className="flex-1 border-2 border-burgundy rounded-xl py-3"
             >
-              <ThemedText className="text-danger font-semibold text-center">
+              <ThemedText className="text-burgundy font-semibold text-center">
                 Cancel
               </ThemedText>
             </TouchableOpacity>
