@@ -37,8 +37,17 @@ export default function CustomerHomeScreen() {
     { id: 4, name: 'Wedding Service', price: 'From ₹8,000', duration: '6 hrs', icon: 'heart' },
   ];
 
+  const handleSearch = () => {
+    if (searchText.trim()) {
+      router.push({
+        pathname: '/(customer)/book-ride',
+        params: { destination: searchText.trim() }
+      });
+    }
+  };
+
   const quickActions = [
-    { title: 'Book Now', icon: 'car', action: () => router.push('/(customer)/booking/select-duration') },
+    { title: 'Book Now', icon: 'car', action: () => router.push('/(customer)/book-ride') },
     { title: 'Schedule', icon: 'time', action: () => router.push('/(customer)/schedule') },
     { title: 'History', icon: 'list', action: () => router.push('/(customer)/(tabs)/history') },
     { title: 'Favorites', icon: 'heart', action: () => router.push('/(customer)/(tabs)/favorites') }
@@ -75,11 +84,18 @@ export default function CustomerHomeScreen() {
                 placeholderTextColor={iconColor}
                 value={searchText}
                 onChangeText={setSearchText}
+                onSubmitEditing={handleSearch}
+                returnKeyType="search"
               />
               {searchText.length > 0 && (
-                <TouchableOpacity onPress={() => setSearchText('')}>
-                  <Ionicons name="close-circle" size={20} color={iconColor} />
-                </TouchableOpacity>
+                <View className="flex-row items-center">
+                  <TouchableOpacity onPress={() => setSearchText('')} className="mr-2">
+                    <Ionicons name="close-circle" size={20} color={iconColor} />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={handleSearch} className="bg-burgundy px-3 py-1 rounded-lg">
+                    <ThemedText className="text-white text-sm font-medium">Search</ThemedText>
+                  </TouchableOpacity>
+                </View>
               )}
             </View>
           </View>
@@ -108,7 +124,7 @@ export default function CustomerHomeScreen() {
           </View>
           
           {/* Popular Services */}
-          <View className="px-3 mb-6">
+          <View className="px-3 mb-6 ">
             <View className="flex-row justify-between items-center mb-4">
               <ThemedText variant="title" className="text-lg">
                 Popular Services
@@ -121,7 +137,7 @@ export default function CustomerHomeScreen() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {services.map((service) => (
                 <TouchableOpacity key={service.id} className="mr-4">
-                  <ThemedCard className="w-56 p-4">
+                  <ThemedCard className="w-56 p-4 my-2">
                     <View className="flex-row items-center mb-3">
                       <View className="bg-primary/10 p-2 rounded-lg">
                         <Ionicons name={service.icon as any} size={20} color="#bd8c5e" />
@@ -136,7 +152,7 @@ export default function CustomerHomeScreen() {
                     </ThemedText>
                     <TouchableOpacity 
                       className="bg-secondary py-2 rounded-lg"
-                      onPress={() => router.push('/(customer)/booking/select-duration')}
+                      onPress={() => router.push('/(customer)/book-ride')}
                     >
                       <ThemedText className="text-white text-center font-semibold">
                         Book Now

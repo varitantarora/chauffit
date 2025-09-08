@@ -66,7 +66,7 @@ export default function CarDetails() {
       });
       
       setLoading(false);
-      router.replace('/');
+      router.replace('/(customer)/(tabs)');
     } catch (error) {
       setLoading(false);
       Alert.alert('Error', 'Failed to save car details. Please try again.');
@@ -85,7 +85,7 @@ export default function CarDetails() {
         {
           text: 'Skip',
           style: 'default',
-          onPress: () => router.replace('/'),
+          onPress: () => router.replace('/(customer)/(tabs)'),
         },
       ]
     );

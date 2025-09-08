@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { ScrollView, View, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ThemedView } from '../../components/common/ThemedView';
-import { ThemedCard } from '../../components/common/ThemedCard';
-import { ThemedText } from '../../components/common/ThemedText';
-import { JobCard } from '../../components/driver/job/JobCard';
+import { ThemedView } from '../../../components/common/ThemedView';
+import { ThemedCard } from '../../../components/common/ThemedCard';
+import { ThemedText } from '../../../components/common/ThemedText';
+import { JobCard } from '../../../components/driver/job/JobCard';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '../../store/authStore';
-import { useJobStore } from '../../store/jobStore';
+import { useAuthStore } from '../../../store/authStore';
+import { useJobStore } from '../../../store/jobStore';
 
 export default function RideRequestsScreen() {
   const router = useRouter();

@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { TouchableOpacity, ScrollView, View, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { ThemedView } from '../../components/common/ThemedView';
-import { ThemedCard } from '../../components/common/ThemedCard';
-import { ThemedText } from '../../components/common/ThemedText';
-import { PrimaryButton } from '../../components/common/PrimaryButton';
-import { DocumentsList } from '../../components/driver/profile/DocumentUpload';
-import { useAuthStore } from '../../store/authStore';
-import { useJobStore } from '../../store/jobStore';
-import { useEarningsStore } from '../../store/earningsStore';
+import { ThemedView } from '../../../components/common/ThemedView';
+import { ThemedCard } from '../../../components/common/ThemedCard';
+import { ThemedText } from '../../../components/common/ThemedText';
+import { PrimaryButton } from '../../../components/common/PrimaryButton';
+import { DocumentsList } from '../../../components/driver/profile/DocumentUpload';
+import { useAuthStore } from '../../../store/authStore';
+import { useJobStore } from '../../../store/jobStore';
+import { useEarningsStore } from '../../../store/earningsStore';
 import { useRouter } from 'expo-router';
 
 export default function DriverProfile() {

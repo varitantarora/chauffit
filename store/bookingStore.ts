@@ -93,14 +93,151 @@ const mockChauffeurs: Chauffeur[] = [
   },
 ];
 
+// Demo booking data
+const demoBookings: BookingDetails[] = [
+  {
+    id: 'demo_1',
+    userId: '1',
+    chauffeurId: '1',
+    chauffeurName: 'Rajesh Kumar',
+    duration: '4hr',
+    pickupLocation: {
+      address: 'Connaught Place, New Delhi',
+      latitude: 28.6289,
+      longitude: 77.2065,
+    },
+    dropLocation: {
+      address: 'India Gate, New Delhi',
+      latitude: 28.6129,
+      longitude: 77.2295,
+    },
+    startTime: new Date('2024-01-15T10:00:00'),
+    endTime: new Date('2024-01-15T14:00:00'),
+    price: 2400,
+    status: 'completed',
+    paymentMethod: 'card',
+    paymentStatus: 'paid',
+    vehicleType: 'sedan',
+    createdAt: new Date('2024-01-15T09:30:00'),
+    updatedAt: new Date('2024-01-15T14:00:00'),
+  },
+  {
+    id: 'demo_2',
+    userId: '1',
+    chauffeurId: '2',
+    chauffeurName: 'Suresh Sharma',
+    duration: '2hr',
+    pickupLocation: {
+      address: 'Select City Walk, Saket',
+      latitude: 28.5287,
+      longitude: 77.2196,
+    },
+    dropLocation: {
+      address: 'DLF Mall, Vasant Kunj',
+      latitude: 28.5433,
+      longitude: 77.1589,
+    },
+    startTime: new Date('2024-01-20T16:00:00'),
+    endTime: new Date('2024-01-20T18:00:00'),
+    price: 1200,
+    status: 'completed',
+    paymentMethod: 'upi',
+    paymentStatus: 'paid',
+    vehicleType: 'sedan',
+    createdAt: new Date('2024-01-20T15:30:00'),
+    updatedAt: new Date('2024-01-20T18:00:00'),
+  },
+  {
+    id: 'demo_3',
+    userId: '1',
+    chauffeurId: '3',
+    chauffeurName: 'Mohammad Ali',
+    duration: '8hr',
+    pickupLocation: {
+      address: 'IGI Airport Terminal 3',
+      latitude: 28.5562,
+      longitude: 77.0999,
+    },
+    dropLocation: {
+      address: 'Multiple Stops',
+      latitude: 28.6139,
+      longitude: 77.2090,
+    },
+    startTime: new Date('2024-01-25T08:00:00'),
+    endTime: new Date('2024-01-25T16:00:00'),
+    price: 4800,
+    status: 'cancelled',
+    paymentMethod: 'cash',
+    paymentStatus: 'refunded',
+    vehicleType: 'suv',
+    createdAt: new Date('2024-01-24T20:00:00'),
+    updatedAt: new Date('2024-01-25T07:00:00'),
+  },
+];
+
+const demoActiveBookings: BookingDetails[] = [
+  {
+    id: 'active_1',
+    userId: '1',
+    chauffeurId: '1',
+    chauffeurName: 'Rajesh Kumar',
+    duration: '3hr',
+    pickupLocation: {
+      address: 'Nehru Place Metro Station',
+      latitude: 28.5505,
+      longitude: 77.2515,
+    },
+    dropLocation: {
+      address: 'Qutub Minar',
+      latitude: 28.5244,
+      longitude: 77.1855,
+    },
+    startTime: new Date(Date.now() + 30 * 60000), // 30 minutes from now
+    endTime: new Date(Date.now() + 210 * 60000), // 3.5 hours from now
+    price: 1800,
+    status: 'confirmed',
+    paymentMethod: 'card',
+    paymentStatus: 'pending',
+    vehicleType: 'sedan',
+    createdAt: new Date(Date.now() - 15 * 60000), // 15 minutes ago
+    updatedAt: new Date(),
+  },
+  {
+    id: 'active_2',
+    userId: '1',
+    chauffeurId: '2',
+    chauffeurName: 'Suresh Sharma',
+    duration: '2hr',
+    pickupLocation: {
+      address: 'Your Current Location',
+      latitude: 28.6139,
+      longitude: 77.2090,
+    },
+    dropLocation: {
+      address: 'Lotus Temple',
+      latitude: 28.5535,
+      longitude: 77.2588,
+    },
+    startTime: new Date(),
+    endTime: new Date(Date.now() + 120 * 60000), // 2 hours from now
+    price: 1200,
+    status: 'in_progress',
+    paymentMethod: 'upi',
+    paymentStatus: 'pending',
+    vehicleType: 'sedan',
+    createdAt: new Date(Date.now() - 5 * 60000), // 5 minutes ago
+    updatedAt: new Date(),
+  },
+];
+
 export const useBookingStore = create<BookingState>((set, get) => ({
-  // Initial state
+  // Initial state with demo data
   currentBooking: null,
   selectedDuration: '',
   selectedChauffeur: null,
   selectedPaymentMethod: null,
-  activeBookings: [],
-  bookingHistory: [],
+  activeBookings: demoActiveBookings,
+  bookingHistory: demoBookings,
   availableChauffeurs: [],
   loadingChauffeurs: false,
   activeRideTracking: null,

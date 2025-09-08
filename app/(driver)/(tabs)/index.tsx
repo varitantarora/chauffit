@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
 import { ScrollView, TouchableOpacity, View, Switch, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemedView } from '../../components/common/ThemedView';
-import { ThemedCard } from '../../components/common/ThemedCard';
-import { ThemedText } from '../../components/common/ThemedText';
-import { EnhancedOnlineToggle } from '../../components/driver/status/OnlineToggle';
-import { EarningsSummaryCard } from '../../components/driver/earnings/EarningsCard';
+import { ThemedView } from '../../../components/common/ThemedView';
+import { ThemedCard } from '../../../components/common/ThemedCard';
+import { ThemedText } from '../../../components/common/ThemedText';
+import { EarningsSummaryCard } from '../../../components/driver/earnings/EarningsCard';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '../../store/authStore';
-import { useJobStore } from '../../store/jobStore';
-import { useEarningsStore } from '../../store/earningsStore';
+import { useAuthStore } from '../../../store/authStore';
+import { useJobStore } from '../../../store/jobStore';
+import { useEarningsStore } from '../../../store/earningsStore';
 import { useRouter } from 'expo-router';
 
 export default function DriverHomeScreen() {
@@ -33,11 +32,9 @@ export default function DriverHomeScreen() {
   const todayHistory = getTodayHistory();
   const todayStats = {
     earnings: earnings.todayEarnings,
-    trips: todayHistory.length,
-    hours: 8.5, // This could be calculated from job history
-    rating: todayHistory.length > 0 
-      ? todayHistory.reduce((sum, job) => sum + (job.rating || 0), 0) / todayHistory.length
-      : 4.9
+    trips: todayHistory?.totalRides || 0,
+    hours: todayHistory?.onlineHours || 8.5,
+    rating: todayHistory?.averageRating || 4.9
   };
   
   const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
@@ -54,12 +51,6 @@ export default function DriverHomeScreen() {
     return 'Good evening';
   };
 
-  const todayStats = {
-    earnings: 15000,
-    trips: 12,
-    hours: 8.5,
-    rating: 4.9
-  };
 
   const weeklyGoals = [
     { title: 'Weekly Earnings', current: 62000, target: 67000, unit: '₹' },
@@ -73,13 +64,13 @@ export default function DriverHomeScreen() {
       title: 'View Requests', 
       icon: 'car', 
       color: '#10b981',
-      action: () => router.push('/(driver)/requests') 
+      action: () => router.push('/(driver)/(tabs)/requests') 
     },
     { 
       title: 'Earnings', 
       icon: 'cash', 
       color: '#3b82f6',
-      action: () => router.push('/(driver)/earnings') 
+      action: () => router.push('/(driver)/(tabs)/earnings') 
     },
     { 
       title: 'Vehicle', 
@@ -115,7 +106,7 @@ export default function DriverHomeScreen() {
                   {isOnline ? 'You are online and available' : 'You are offline'}
                 </ThemedText>
               </View>
-              <TouchableOpacity onPress={() => router.push('/(driver)/profile')}>
+              <TouchableOpacity onPress={() => router.push('/(driver)/(tabs)/profile')}>
                 <View className="w-12 h-12 bg-primary rounded-full items-center justify-center">
                   <ThemedText className="text-white text-xl font-bold">
                     {user?.name?.charAt(0).toUpperCase() || 'D'}
@@ -165,7 +156,7 @@ export default function DriverHomeScreen() {
           {pendingRequests.length > 0 && !activeJob && (
             <View className="px-6 mb-4">
               <TouchableOpacity
-                onPress={() => router.push('/(driver)/requests')}
+                onPress={() => router.push('/(driver)/(tabs)/requests')}
                 activeOpacity={0.8}
               >
                 <ThemedCard className="p-4 border-2 border-warning">
@@ -190,12 +181,27 @@ export default function DriverHomeScreen() {
 
           {/* Online Status Toggle */}
           <View className="px-6 mb-4">
-            <EnhancedOnlineToggle />
+            <ThemedCard className="p-4">
+              <View className="flex-row items-center justify-between">
+                <View>
+                  <ThemedText variant="h3">Status</ThemedText>
+                  <ThemedText variant="small">{isOnline ? 'You are online' : 'You are offline'}</ThemedText>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setOnlineStatus(!isOnline)}
+                  className={`px-4 py-2 rounded-lg ${isOnline ? 'bg-success' : 'bg-gray-400'}`}
+                >
+                  <ThemedText className="text-white font-semibold">
+                    {isOnline ? 'Go Offline' : 'Go Online'}
+                  </ThemedText>
+                </TouchableOpacity>
+              </View>
+            </ThemedCard>
           </View>
           
           {/* Earnings Summary */}
           <View className="px-6 mb-4">
-            <EarningsSummaryCard onViewDetails={() => router.push('/(driver)/earnings')} />
+            <EarningsSummaryCard onViewDetails={() => router.push('/(driver)/(tabs)/earnings')} />
           </View>
 
           {/* Performance Dashboard */}
@@ -309,7 +315,7 @@ export default function DriverHomeScreen() {
               <ThemedText variant="title" className="text-lg font-bold">
                 Recent Activity
               </ThemedText>
-              <TouchableOpacity onPress={() => router.push('/(driver)/earnings')}>
+              <TouchableOpacity onPress={() => router.push('/(driver)/(tabs)/earnings')}>
                 <ThemedText className="text-primary">View All</ThemedText>
               </TouchableOpacity>
             </View>

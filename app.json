@@ -1,7 +1,7 @@
 {
   "expo": {
     "scheme": "chauffit",
-    "name": "Chauffit - Premium Chauffeur Service",
+    "name": "Chauffit",
     "slug": "chauffit-main",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -18,137 +18,21 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.chauffit.app",
-      "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "This app needs location access to show your current position and find nearby chauffeurs.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs location access to provide real-time tracking during rides and emergency services.",
-        "NSCameraUsageDescription": "This app needs camera access to take photos for profile verification and document uploads.",
-        "NSMicrophoneUsageDescription": "This app needs microphone access for voice calls with your chauffeur.",
-        "NSContactsUsageDescription": "This app needs contact access to manage your emergency contacts.",
-        "NSSpeechRecognitionUsageDescription": "This app may use speech recognition for voice commands.",
-        "NSFaceIDUsageDescription": "This app uses Face ID for secure authentication and payments.",
-        "NSPhotoLibraryUsageDescription": "This app needs photo library access to select images for profile and document uploads.",
-        "UIBackgroundModes": [
-          "location",
-          "background-fetch",
-          "background-processing"
-        ]
-      },
-      "associatedDomains": [
-        "applinks:chauffit.app"
-      ]
+      "bundleIdentifier": "com.chauffit.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#D9D1C6"
       },
-      "edgeToEdgeEnabled": true,
-      "package": "com.chauffit.app",
-      "permissions": [
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION",
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "RECORD_AUDIO",
-        "READ_CONTACTS",
-        "WRITE_CONTACTS",
-        "CALL_PHONE",
-        "SEND_SMS",
-        "VIBRATE",
-        "WAKE_LOCK",
-        "RECEIVE_BOOT_COMPLETED",
-        "INTERNET",
-        "ACCESS_NETWORK_STATE",
-        "ACCESS_WIFI_STATE",
-        "USE_BIOMETRIC",
-        "USE_FINGERPRINT"
-      ],
-      "intentFilters": [
-        {
-          "action": "VIEW",
-          "autoVerify": true,
-          "data": [
-            {
-              "scheme": "https",
-              "host": "chauffit.app"
-            }
-          ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
-        }
-      ]
+      "package": "com.chauffit.app"
     },
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router",
-      [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "This app needs location access to provide real-time tracking during rides and emergency services.",
-          "locationAlwaysPermission": "This app needs background location access to track your ride progress and provide emergency assistance.",
-          "locationWhenInUsePermission": "This app needs location access to show your current position and find nearby chauffeurs.",
-          "isIosBackgroundLocationEnabled": true,
-          "isAndroidBackgroundLocationEnabled": true
-        }
-      ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/notification-icon.png",
-          "color": "#720C17",
-          "sounds": [
-            "./assets/notification-sound.wav",
-            "./assets/emergency-sound.wav"
-          ]
-        }
-      ],
-      [
-        "expo-contacts",
-        {
-          "contactsPermission": "This app needs contact access to manage your emergency contacts for safety purposes."
-        }
-      ],
-      [
-        "expo-sms",
-        {
-          "smsPermission": "This app needs SMS access to send emergency alerts and OTP verification messages."
-        }
-      ],
-      [
-        "@react-native-google-signin/google-signin"
-      ],
-      [
-        "react-native-maps",
-        {
-          "googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY_HERE"
-        }
-      ],
-      [
-        "@stripe/stripe-react-native"
-      ],
-      [
-        "expo-secure-store"
-      ],
-      [
-        "expo-av"
-      ],
-      [
-        "expo-haptics"
-      ]
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "your-project-id-here"
-      }
-    },
-    "owner": "chauffit-team"
+      "expo-router"
+    ]
   }
 }

@@ -72,9 +72,6 @@ export const ThemedCard: React.FC<ThemedCardProps> = ({
     return (
       <Pressable 
         onPress={onPress}
-        style={({ pressed }) => [{
-          opacity: pressed ? 0.8 : 1
-        }]}
         android_ripple={null}
       >
         {content}

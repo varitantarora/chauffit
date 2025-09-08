@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { ScrollView, TouchableOpacity, View, Switch, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemedView } from '../../components/common/ThemedView';
-import { ThemedCard } from '../../components/common/ThemedCard';
-import { ThemedText } from '../../components/common/ThemedText';
+import { ThemedView } from '../../../components/common/ThemedView';
+import { ThemedCard } from '../../../components/common/ThemedCard';
+import { ThemedText } from '../../../components/common/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '../../store/authStore';
-import { useTaskStore } from '../../store/taskStore';
-import { useBikerEarningsStore } from '../../store/bikerEarningsStore';
-import { TaskCard } from '../../components/biker/task/TaskCard';
-import { ResponseTimer } from '../../components/biker/emergency/ResponseTimer';
-import { IncentiveTracker } from '../../components/biker/earnings/IncentiveTracker';
-import { BikerTask, TaskPriority, TaskType } from '../../types/navigation';
+import { useAuthStore } from '../../../store/authStore';
+import { useTaskStore } from '../../../store/taskStore';
+import { useBikerEarningsStore } from '../../../store/bikerEarningsStore';
+import { TaskCard } from '../../../components/biker/task/TaskCard';
+import { ResponseTimer } from '../../../components/biker/emergency/ResponseTimer';
+import { IncentiveTracker } from '../../../components/biker/earnings/IncentiveTracker';
+import { BikerTask, TaskPriority, TaskType } from '../../../types/navigation';
 import { router } from 'expo-router';
 
 export default function BikerHomeScreen() {
@@ -33,6 +33,7 @@ export default function BikerHomeScreen() {
   const setTypeFilter = useTaskStore((state) => state.setTypeFilter);
   const setSortBy = useTaskStore((state) => state.setSortBy);
   const setAvailableTasks = useTaskStore((state) => state.setAvailableTasks);
+  const setEmergencyAlerts = useTaskStore((state) => state.setEmergencyAlerts);
   
   // Earnings store state
   const currentShift = useBikerEarningsStore((state) => state.currentShift);
@@ -50,110 +51,97 @@ export default function BikerHomeScreen() {
   const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
 
   useEffect(() => {
-    // Load sample tasks for demo
+    // Load sample driver pickup/drop tasks for demo
     const sampleTasks: BikerTask[] = [
       {
         id: '1',
-        type: 'customer_emergency',
-        priority: 'emergency',
-        title: 'Customer Stranded - Car Breakdown',
-        description: 'Customer needs immediate pickup after car breakdown on highway',
-        customerId: '123',
-        customerName: 'Raj Kumar',
-        customerPhone: '+91 98765 43210',
-        pickupLocation: {
-          latitude: 28.6139,
-          longitude: 77.2090,
-          address: 'Connaught Place, New Delhi'
-        },
-        dropoffLocation: {
-          latitude: 28.5355,
-          longitude: 77.3910,
-          address: 'Noida Sector 18'
-        },
-        estimatedDistance: 25.5,
-        estimatedDuration: 45,
-        fare: 350,
-        emergencyBonus: 150,
-        specialInstructions: 'Customer is on busy highway. Use caution.',
-        status: 'pending',
-        createdAt: new Date(),
-        expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
-        responseTimeLimit: 10
-      },
-      {
-        id: '2',
-        type: 'document_delivery',
-        priority: 'urgent',
-        title: 'Emergency Document Delivery',
-        description: 'Deliver passport to customer urgently for flight',
-        customerId: '124',
-        customerName: 'Priya Singh',
-        customerPhone: '+91 98765 43211',
-        pickupLocation: {
-          latitude: 28.7041,
-          longitude: 77.1025,
-          address: 'Karol Bagh, New Delhi'
-        },
-        dropoffLocation: {
-          latitude: 28.5562,
-          longitude: 77.1000,
-          address: 'IGI Airport Terminal 3'
-        },
-        estimatedDistance: 18.2,
-        estimatedDuration: 35,
-        fare: 280,
-        items: [
-          {
-            id: 'doc1',
-            name: 'Passport',
-            quantity: 1,
-            description: 'Indian Passport',
-            confidential: true
-          }
-        ],
-        status: 'pending',
-        createdAt: new Date(Date.now() - 5 * 60 * 1000),
-        expiresAt: new Date(Date.now() + 25 * 60 * 1000)
-      },
-      {
-        id: '3',
-        type: 'regular_delivery',
+        type: 'driver_pickup',
         priority: 'high',
-        title: 'Medicine Delivery',
-        description: 'Urgent medicine delivery to elderly patient',
-        customerId: '125',
-        customerName: 'Dr. Mehta Clinic',
-        customerPhone: '+91 98765 43212',
+        title: 'Driver Pickup - Morning Shift',
+        description: 'Pick up driver Amit from home for client booking in Cyber Hub',
+        driverId: 'DRV123',
+        driverName: 'Amit Sharma',
+        driverPhone: '+91 98765 43210',
         pickupLocation: {
-          latitude: 28.6304,
-          longitude: 77.2177,
-          address: 'Paharganj, New Delhi'
+          latitude: 28.4595,
+          longitude: 77.0266,
+          address: 'Sector 56, Gurgaon'
         },
         dropoffLocation: {
-          latitude: 28.6508,
-          longitude: 77.2311,
-          address: 'Civil Lines, Delhi'
+          latitude: 28.4943,
+          longitude: 77.0882,
+          address: 'Cyber Hub, DLF Phase 3, Gurgaon'
         },
         estimatedDistance: 8.5,
         estimatedDuration: 20,
-        fare: 180,
-        items: [
-          {
-            id: 'med1',
-            name: 'Heart Medication',
-            quantity: 2,
-            description: 'Prescribed medicines',
-            fragile: true
-          }
-        ],
+        fare: 150,
+        specialInstructions: 'Driver shift starts at 8 AM. Client pickup at 8:30 AM.',
+        status: 'pending',
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes
+        responseTimeLimit: 15
+      },
+      {
+        id: '2',
+        type: 'driver_rescue',
+        priority: 'emergency',
+        title: 'Emergency - Customer Vehicle Breakdown',
+        description: 'Urgent pickup! Customer vehicle broke down, driver needs transport',
+        driverId: 'DRV456',
+        driverName: 'Rajesh Kumar',
+        driverPhone: '+91 98765 43211',
+        pickupLocation: {
+          latitude: 28.5041,
+          longitude: 77.0925,
+          address: 'MG Road, Near Metro Station, Gurgaon'
+        },
+        dropoffLocation: {
+          latitude: 28.4595,
+          longitude: 77.0266,
+          address: 'Client destination: Sector 56, Gurgaon'
+        },
+        estimatedDistance: 12.2,
+        estimatedDuration: 25,
+        fare: 250,
+        emergencyBonus: 100,
+        specialInstructions: 'VIP client onboard. Arrange alternate vehicle ASAP.',
+        status: 'pending',
+        createdAt: new Date(Date.now() - 5 * 60 * 1000),
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+        responseTimeLimit: 5
+      },
+      {
+        id: '3',
+        type: 'driver_pickup',
+        priority: 'normal',
+        title: 'Driver Drop - End of Shift',
+        description: 'Drop driver back home after completing evening shift',
+        driverId: 'DRV789',
+        driverName: 'Suresh Yadav',
+        driverPhone: '+91 98765 43212',
+        pickupLocation: {
+          latitude: 28.4089,
+          longitude: 77.0419,
+          address: 'DLF Phase 1, Gurgaon'
+        },
+        dropoffLocation: {
+          latitude: 28.4744,
+          longitude: 77.0434,
+          address: 'Sushant Lok, Gurgaon'
+        },
+        estimatedDistance: 6.5,
+        estimatedDuration: 15,
+        fare: 120,
         status: 'pending',
         createdAt: new Date(Date.now() - 10 * 60 * 1000),
-        expiresAt: new Date(Date.now() + 30 * 60 * 1000)
+        expiresAt: new Date(Date.now() + 45 * 60 * 1000)
       }
     ];
     
     setAvailableTasks(sampleTasks);
+    
+    // Clear any existing emergency alerts to avoid duplicates
+    setEmergencyAlerts([]);
   }, []);
 
   const handleToggleOnline = (value: boolean) => {
@@ -198,10 +186,16 @@ export default function BikerHomeScreen() {
     }, 1000);
   }, []);
 
+  const priorityTasks = getPriorityTasks();
+  
   const getFilteredAndSortedTasks = () => {
     let tasks = availableTasks;
     
-    if (selectedFilter === 'emergency') {
+    // If showing 'all' and there are priority tasks, exclude them from the main list to avoid duplication
+    if (selectedFilter === 'all' && priorityTasks.length > 0) {
+      const priorityTaskIds = priorityTasks.map(t => t.id);
+      tasks = tasks.filter(t => !priorityTaskIds.includes(t.id));
+    } else if (selectedFilter === 'emergency') {
       tasks = tasks.filter(t => t.priority === 'emergency');
     } else if (selectedFilter === 'urgent') {
       tasks = tasks.filter(t => t.priority === 'urgent');
@@ -217,9 +211,8 @@ export default function BikerHomeScreen() {
     });
   };
 
-  const priorityTasks = getPriorityTasks();
   const filteredTasks = getFilteredAndSortedTasks();
-  const todayEarnings = getTodayEarnings();
+  const todayEarnings = getTodayEarnings() || 1250;
 
   return (
     <SafeAreaView className="flex-1">
@@ -238,7 +231,7 @@ export default function BikerHomeScreen() {
                   Hello, {user?.name || 'Biker'}
                 </ThemedText>
                 <ThemedText variant="secondary" className="mt-1">
-                  {isOnline ? 'Ready for emergency tasks' : 'You are offline'}
+                  {isOnline ? 'Ready for driver transport' : 'You are offline'}
                 </ThemedText>
               </View>
               <View className="items-end">
@@ -264,9 +257,9 @@ export default function BikerHomeScreen() {
                     <Ionicons name="warning" size={20} color="white" />
                   </View>
                   <View className="flex-1">
-                    <ThemedText className="font-bold text-red-600">EMERGENCY ALERT</ThemedText>
+                    <ThemedText className="font-bold text-red-600">DRIVER EMERGENCY</ThemedText>
                     <ThemedText className="text-red-500 text-sm">
-                      {emergencyAlerts.length} emergency request{emergencyAlerts.length > 1 ? 's' : ''} available
+                      {emergencyAlerts.length} driver{emergencyAlerts.length > 1 ? 's' : ''} need{emergencyAlerts.length === 1 ? 's' : ''} immediate pickup
                     </ThemedText>
                   </View>
                   <TouchableOpacity className="bg-red-500 px-4 py-2 rounded-lg">
@@ -285,7 +278,7 @@ export default function BikerHomeScreen() {
                   <ThemedText variant="title" className="text-2xl">
                     {acceptedTasks.length + activeTasks.length}
                   </ThemedText>
-                  <ThemedText variant="caption">Active Tasks</ThemedText>
+                  <ThemedText variant="caption">Active Pickups</ThemedText>
                 </View>
                 <View className="items-center">
                   <ThemedText variant="title" className="text-2xl">
@@ -312,7 +305,7 @@ export default function BikerHomeScreen() {
           <View className="px-6 mb-4">
             <View className="flex-row justify-between items-center mb-3">
               <ThemedText variant="title" className="text-lg">
-                Available Tasks ({filteredTasks.length})
+                Driver Pickups ({filteredTasks.length})
               </ThemedText>
               <TouchableOpacity 
                 onPress={() => setShowFilters(!showFilters)}
@@ -393,12 +386,12 @@ export default function BikerHomeScreen() {
                     <Ionicons name="bicycle" size={32} color="#6b7280" />
                   </View>
                   <ThemedText className="font-semibold text-center">
-                    {isOnline ? 'No Tasks Available' : 'Go Online to See Tasks'}
+                    {isOnline ? 'No Driver Pickups Available' : 'Go Online to See Pickups'}
                   </ThemedText>
                   <ThemedText variant="caption" className="text-center mt-1">
                     {isOnline 
-                      ? 'New emergency and delivery tasks will appear here' 
-                      : 'Turn on your availability to start receiving tasks'
+                      ? 'New driver pickup requests will appear here' 
+                      : 'Turn on your availability to start receiving driver pickups'
                     }
                   </ThemedText>
                 </View>

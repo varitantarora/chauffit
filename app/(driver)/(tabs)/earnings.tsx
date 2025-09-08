@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { ScrollView, View, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemedView } from '../../components/common/ThemedView';
-import { ThemedCard } from '../../components/common/ThemedCard';
-import { ThemedText } from '../../components/common/ThemedText';
-import { EarningsCard, EarningsSummaryCard, WeeklyProgressCard } from '../../components/driver/earnings/EarningsCard';
+import { ThemedView } from '../../../components/common/ThemedView';
+import { ThemedCard } from '../../../components/common/ThemedCard';
+import { ThemedText } from '../../../components/common/ThemedText';
+import { EarningsCard, EarningsSummaryCard, WeeklyProgressCard } from '../../../components/driver/earnings/EarningsCard';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '../../store/authStore';
-import { useEarningsStore } from '../../store/earningsStore';
+import { useAuthStore } from '../../../store/authStore';
+import { useEarningsStore } from '../../../store/earningsStore';
 
 export default function EarningsScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);

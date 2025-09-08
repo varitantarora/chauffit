@@ -1,0 +1,290 @@
+import React, { useState } from 'react';
+import { ScrollView, TouchableOpacity, View, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ThemedView } from '../../components/common/ThemedView';
+import { ThemedCard } from '../../components/common/ThemedCard';
+import { ThemedText } from '../../components/common/ThemedText';
+import { PrimaryButton } from '../../components/common/PrimaryButton';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuthStore } from '../../store/authStore';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+
+export default function RideConfirmationScreen() {
+  const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  
+  const [selectedPayment, setSelectedPayment] = useState('visa-1234');
+  const [driverPreference, setDriverPreference] = useState<'luxury' | 'standard'>('standard');
+  
+  const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
+
+  const tripDetails = {
+    pickup: params.pickup || 'Home - 123 Main St, Palo Alto',
+    destination: params.destination || 'Downtown Office - 456 Market St, SF',
+    stops: ['Coffee Shop - 789 Broadway'],
+    when: 'Today, 2:30 PM',
+    type: params.rideType || 'One-way',
+    duration: '~45 minutes',
+    distance: '~35 miles',
+  };
+
+  const driverDetails = {
+    name: 'Marcus Rodriguez',
+    rating: 4.9,
+    experience: '8 years experience',
+    type: 'Professional Chauffeur',
+    vehicle: 'Your BMW X5 (2022)',
+    vehicleDetails: 'Black • License: ABC123',
+  };
+
+  const fareBreakdown = {
+    baseFare: 650,
+    distanceCharge: 120,
+    timeCharge: 45,
+    stopFee: 25,
+    surge: 252,
+    amenities: parseInt(params.fare as string) || 15,
+    serviceFee: 35,
+  };
+
+  const calculateTotal = () => {
+    const subtotal = Object.values(fareBreakdown).reduce((a, b) => a + b, 0);
+    const taxes = subtotal * 0.18;
+    return {
+      subtotal,
+      taxes,
+      total: subtotal + taxes,
+    };
+  };
+
+  const handleConfirmBooking = () => {
+    Alert.alert(
+      'Booking Confirmed!',
+      'Your chauffeur will arrive in 15-20 minutes.',
+      [
+        {
+          text: 'Track Ride',
+          onPress: () => router.push('/(customer)/ride-tracking'),
+        },
+      ]
+    );
+  };
+
+  const totals = calculateTotal();
+
+  return (
+    <SafeAreaView className="flex-1">
+      <ThemedView className="flex-1">
+        {/* Header */}
+        <View className="flex-row items-center justify-between px-6 py-4 border-b border-gray-200">
+          <View className="flex-row items-center">
+            <TouchableOpacity onPress={() => router.back()} className="mr-3">
+              <Ionicons name="arrow-back" size={24} color={iconColor} />
+            </TouchableOpacity>
+            <ThemedText variant="h2">Confirm Booking</ThemedText>
+          </View>
+        </View>
+
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <View className="px-6 py-4">
+            {/* Trip Details Card */}
+            <ThemedCard variant="elevated" className="mb-4">
+              <ThemedText variant="h3" className="mb-4">Trip Details</ThemedText>
+              
+              {/* From */}
+              <View className="flex-row mb-3">
+                <Ionicons name="location" size={20} color={iconColor} className="mt-1" />
+                <View className="ml-3 flex-1">
+                  <ThemedText variant="small" className="text-gray-600">From</ThemedText>
+                  <ThemedText>{tripDetails.pickup}</ThemedText>
+                </View>
+              </View>
+
+              {/* Stops */}
+              {tripDetails.stops.map((stop, index) => (
+                <View key={index} className="flex-row mb-3">
+                  <Ionicons name="flag" size={20} color={iconColor} className="mt-1" />
+                  <View className="ml-3 flex-1">
+                    <ThemedText variant="small" className="text-gray-600">Stop {index + 1}</ThemedText>
+                    <ThemedText>{stop}</ThemedText>
+                  </View>
+                </View>
+              ))}
+
+              {/* To */}
+              <View className="flex-row mb-3">
+                <Ionicons name="navigate" size={20} color={iconColor} className="mt-1" />
+                <View className="ml-3 flex-1">
+                  <ThemedText variant="small" className="text-gray-600">To</ThemedText>
+                  <ThemedText>{tripDetails.destination}</ThemedText>
+                </View>
+              </View>
+
+              <View className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
+                <View className="flex-row justify-between mb-2">
+                  <ThemedText variant="small" className="text-gray-600">When</ThemedText>
+                  <ThemedText variant="small">{tripDetails.when}</ThemedText>
+                </View>
+                <View className="flex-row justify-between mb-2">
+                  <ThemedText variant="small" className="text-gray-600">Type</ThemedText>
+                  <ThemedText variant="small">{tripDetails.type}</ThemedText>
+                </View>
+                <View className="flex-row justify-between mb-2">
+                  <ThemedText variant="small" className="text-gray-600">Duration</ThemedText>
+                  <ThemedText variant="small">{tripDetails.duration}</ThemedText>
+                </View>
+                <View className="flex-row justify-between">
+                  <ThemedText variant="small" className="text-gray-600">Distance</ThemedText>
+                  <ThemedText variant="small">{tripDetails.distance}</ThemedText>
+                </View>
+              </View>
+            </ThemedCard>
+
+            {/* Driver & Vehicle Card */}
+            <ThemedCard variant="elevated" className="mb-4">
+              <ThemedText variant="h3" className="mb-4">Driver & Vehicle</ThemedText>
+              
+              <View className="flex-row items-center mb-4">
+                <View className="w-16 h-16 bg-gray-200 rounded-full mr-3" />
+                <View className="flex-1">
+                  <View className="flex-row items-center">
+                    <ThemedText variant="h3">{driverDetails.name}</ThemedText>
+                    <View className="flex-row items-center ml-2">
+                      <Ionicons name="star" size={16} color="#F59E0B" />
+                      <ThemedText variant="small" className="ml-1">{driverDetails.rating}</ThemedText>
+                    </View>
+                  </View>
+                  <ThemedText variant="small" className="text-gray-600">{driverDetails.type}</ThemedText>
+                  <ThemedText variant="small" className="text-gray-600">{driverDetails.experience}</ThemedText>
+                </View>
+              </View>
+
+              <View className="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl mb-3">
+                <View className="flex-row items-center">
+                  <Ionicons name="car" size={20} color={iconColor} />
+                  <View className="ml-3">
+                    <ThemedText>{driverDetails.vehicle}</ThemedText>
+                    <ThemedText variant="small" className="text-gray-600">{driverDetails.vehicleDetails}</ThemedText>
+                  </View>
+                </View>
+              </View>
+
+              <View>
+                <ThemedText variant="small" className="mb-2">Driver Preference</ThemedText>
+                <View className="flex-row">
+                  <TouchableOpacity
+                    onPress={() => setDriverPreference('luxury')}
+                    className={`flex-1 p-3 rounded-xl border mr-2 ${
+                      driverPreference === 'luxury' 
+                        ? 'bg-burgundy border-burgundy' 
+                        : 'border-gray-300'
+                    }`}
+                  >
+                    <ThemedText 
+                      variant="small" 
+                      className={`text-center ${driverPreference === 'luxury' ? 'text-white' : ''}`}
+                    >
+                      Luxury
+                    </ThemedText>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setDriverPreference('standard')}
+                    className={`flex-1 p-3 rounded-xl border ${
+                      driverPreference === 'standard' 
+                        ? 'bg-burgundy border-burgundy' 
+                        : 'border-gray-300'
+                    }`}
+                  >
+                    <ThemedText 
+                      variant="small" 
+                      className={`text-center ${driverPreference === 'standard' ? 'text-white' : ''}`}
+                    >
+                      Standard
+                    </ThemedText>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ThemedCard>
+
+            {/* Payment Summary Card */}
+            <ThemedCard variant="elevated" className="mb-4">
+              <ThemedText variant="h3" className="mb-4">Payment Summary</ThemedText>
+              
+              <View className="space-y-2">
+                <View className="flex-row justify-between mb-2">
+                  <ThemedText variant="small" className="text-gray-600">Base fare</ThemedText>
+                  <ThemedText variant="small">₹{fareBreakdown.baseFare}.00</ThemedText>
+                </View>
+                <View className="flex-row justify-between mb-2">
+                  <ThemedText variant="small" className="text-gray-600">Distance charge</ThemedText>
+                  <ThemedText variant="small">₹{fareBreakdown.distanceCharge}.00</ThemedText>
+                </View>
+                <View className="flex-row justify-between mb-2">
+                  <ThemedText variant="small" className="text-gray-600">Time charge</ThemedText>
+                  <ThemedText variant="small">₹{fareBreakdown.timeCharge}.00</ThemedText>
+                </View>
+                <View className="flex-row justify-between mb-2">
+                  <ThemedText variant="small" className="text-gray-600">Stop fee</ThemedText>
+                  <ThemedText variant="small">₹{fareBreakdown.stopFee}.00</ThemedText>
+                </View>
+                <View className="flex-row justify-between mb-2">
+                  <ThemedText variant="small" className="text-gray-600">Surge (1.3x)</ThemedText>
+                  <ThemedText variant="small">₹{fareBreakdown.surge}.00</ThemedText>
+                </View>
+                <View className="flex-row justify-between mb-2">
+                  <ThemedText variant="small" className="text-gray-600">Amenities</ThemedText>
+                  <ThemedText variant="small">₹{fareBreakdown.amenities}.00</ThemedText>
+                </View>
+                <View className="flex-row justify-between mb-3">
+                  <ThemedText variant="small" className="text-gray-600">Service fee</ThemedText>
+                  <ThemedText variant="small">₹{fareBreakdown.serviceFee}.00</ThemedText>
+                </View>
+                
+                <View className="border-t border-gray-200 dark:border-gray-700 pt-3">
+                  <View className="flex-row justify-between mb-2">
+                    <ThemedText>Subtotal</ThemedText>
+                    <ThemedText>₹{totals.subtotal.toFixed(2)}</ThemedText>
+                  </View>
+                  <View className="flex-row justify-between mb-3">
+                    <ThemedText variant="small" className="text-gray-600">Taxes (18%)</ThemedText>
+                    <ThemedText variant="small">₹{totals.taxes.toFixed(2)}</ThemedText>
+                  </View>
+                  <View className="border-t border-gray-200 dark:border-gray-700 pt-3">
+                    <View className="flex-row justify-between">
+                      <ThemedText variant="h3">Total</ThemedText>
+                      <ThemedText variant="h3" className="text-burgundy">₹{totals.total.toFixed(2)}</ThemedText>
+                    </View>
+                  </View>
+                </View>
+              </View>
+
+              <TouchableOpacity className="flex-row items-center justify-between mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                <View className="flex-row items-center">
+                  <Ionicons name="card" size={20} color={iconColor} />
+                  <ThemedText className="ml-3">Visa ****1234</ThemedText>
+                </View>
+                <ThemedText variant="small" className="text-burgundy">Change</ThemedText>
+              </TouchableOpacity>
+
+              <ThemedText variant="small" className="text-gray-600 mt-2">
+                Estimated arrival time: 15 min
+              </ThemedText>
+            </ThemedCard>
+
+            {/* Action Buttons */}
+            <PrimaryButton
+              title="CONFIRM BOOKING"
+              onPress={handleConfirmBooking}
+              className="mb-3"
+            />
+            
+            <TouchableOpacity onPress={() => router.back()} className="py-3">
+              <ThemedText className="text-center text-gray-600">Cancel</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </ThemedView>
+    </SafeAreaView>
+  );
+}

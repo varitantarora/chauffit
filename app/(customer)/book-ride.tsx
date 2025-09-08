@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScrollView, TouchableOpacity, View, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../components/common/ThemedView';
@@ -7,7 +7,7 @@ import { ThemedText } from '../../components/common/ThemedText';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 interface Location {
   id: string;
@@ -18,13 +18,24 @@ interface Location {
 export default function BookingScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const router = useRouter();
+  const params = useLocalSearchParams();
   
   const [locations, setLocations] = useState<Location[]>([
     { id: '1', address: '', type: 'pickup' },
-    { id: '2', address: '', type: 'destination' }
+    { id: '2', address: params.destination as string || '', type: 'destination' }
   ]);
   const [selectedVehicle, setSelectedVehicle] = useState<string>('');
   const [specialInstructions, setSpecialInstructions] = useState('');
+
+  useEffect(() => {
+    if (params.destination) {
+      setLocations(prev => prev.map(loc => 
+        loc.type === 'destination' 
+          ? { ...loc, address: params.destination as string }
+          : loc
+      ));
+    }
+  }, [params.destination]);
 
   const iconColor = isDarkMode ? '#BD8C5E' : '#720C17';
 

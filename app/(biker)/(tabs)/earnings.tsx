@@ -1,13 +1,13 @@
 import React from 'react';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemedView } from '../../components/common/ThemedView';
-import { ThemedCard } from '../../components/common/ThemedCard';
-import { ThemedText } from '../../components/common/ThemedText';
+import { ThemedView } from '../../../components/common/ThemedView';
+import { ThemedCard } from '../../../components/common/ThemedCard';
+import { ThemedText } from '../../../components/common/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '../../store/authStore';
-import { useBikerEarningsStore } from '../../store/bikerEarningsStore';
-import { IncentiveTracker } from '../../components/biker/earnings/IncentiveTracker';
+import { useAuthStore } from '../../../store/authStore';
+import { useBikerEarningsStore } from '../../../store/bikerEarningsStore';
+import { IncentiveTracker } from '../../../components/biker/earnings/IncentiveTracker';
 
 export default function BikerEarningsScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);

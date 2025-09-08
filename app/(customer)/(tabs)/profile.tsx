@@ -15,6 +15,8 @@ export default function Profile() {
   const logout = useAuthStore((state) => state.logout);
   const toggleTheme = useAuthStore((state) => state.toggleTheme);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const addRole = useAuthStore((state) => state.addRole);
+  const setActiveRole = useAuthStore((state) => state.setActiveRole);
   const { cars, defaultCar, loadUserCars, deleteCar, setDefaultCar } = useCarStore();
   const router = useRouter();
   const [showAddCarForm, setShowAddCarForm] = useState(false);
@@ -52,9 +54,11 @@ export default function Profile() {
         { 
           text: 'Switch', 
           onPress: () => {
-            // Update user role in store
-            // This would typically involve API calls
-            router.replace(`/(${role})`);
+            // Add the role and set it as active
+            addRole(role);
+            setActiveRole(role);
+            // Navigate to the role's main screen
+            router.push(`/(${role})/(tabs)`);
           }
         }
       ]

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { ScrollView, View, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemedView } from '../../components/common/ThemedView';
-import { ThemedCard } from '../../components/common/ThemedCard';
-import { ThemedText } from '../../components/common/ThemedText';
+import { ThemedView } from '../../../components/common/ThemedView';
+import { ThemedCard } from '../../../components/common/ThemedCard';
+import { ThemedText } from '../../../components/common/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '../../store/authStore';
+import { useAuthStore } from '../../../store/authStore';
 
-export default function DeliveriesScreen() {
+export default function DriverPickupsScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
   
@@ -19,9 +19,9 @@ export default function DeliveriesScreen() {
         <ScrollView showsVerticalScrollIndicator={false}>
           {/* Header */}
           <View className="px-6 pt-4 pb-6">
-            <ThemedText variant="title">Deliveries</ThemedText>
+            <ThemedText variant="title">Driver Pickups</ThemedText>
             <ThemedText variant="secondary" className="mt-1">
-              Manage your delivery tasks
+              Manage your driver pickup/drop tasks
             </ThemedText>
           </View>
           
@@ -150,7 +150,7 @@ export default function DeliveriesScreen() {
                     <View className="ml-3 flex-1">
                       <ThemedText className="font-semibold">Food Delivery #4520</ThemedText>
                       <ThemedText variant="caption">Completed " 2 hours ago</ThemedText>
-                      <ThemedText variant="caption">Pizza Palace ’ Riverside Apt</ThemedText>
+                      <ThemedText variant="caption">Pizza Palace ï¿½ Riverside Apt</ThemedText>
                     </View>
                     <ThemedText className="font-bold">$9.50</ThemedText>
                   </View>
@@ -164,7 +164,7 @@ export default function DeliveriesScreen() {
                     <View className="ml-3 flex-1">
                       <ThemedText className="font-semibold">Package #7891</ThemedText>
                       <ThemedText variant="caption">Completed " 3 hours ago</ThemedText>
-                      <ThemedText variant="caption">Pharmacy ’ Customer Home</ThemedText>
+                      <ThemedText variant="caption">Pharmacy ï¿½ Customer Home</ThemedText>
                     </View>
                     <ThemedText className="font-bold">$6.00</ThemedText>
                   </View>
@@ -178,7 +178,7 @@ export default function DeliveriesScreen() {
                     <View className="ml-3 flex-1">
                       <ThemedText className="font-semibold">Grocery Delivery #2341</ThemedText>
                       <ThemedText variant="caption">Completed " 4 hours ago</ThemedText>
-                      <ThemedText variant="caption">SuperMart ’ Green Valley</ThemedText>
+                      <ThemedText variant="caption">SuperMart ï¿½ Green Valley</ThemedText>
                     </View>
                     <ThemedText className="font-bold">$11.00</ThemedText>
                   </View>

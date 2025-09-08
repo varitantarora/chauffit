@@ -1,10 +1,10 @@
 import React from 'react';
 import { TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemedView } from '../../components/common/ThemedView';
-import { ThemedText } from '../../components/common/ThemedText';
-import { PrimaryButton } from '../../components/common/PrimaryButton';
-import { useAuthStore } from '../../store/authStore';
+import { ThemedView } from '../../../components/common/ThemedView';
+import { ThemedText } from '../../../components/common/ThemedText';
+import { PrimaryButton } from '../../../components/common/PrimaryButton';
+import { useAuthStore } from '../../../store/authStore';
 import { useRouter } from 'expo-router';
 
 export default function BikerProfile() {

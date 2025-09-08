@@ -29,6 +29,7 @@ interface EarningsState {
   getTotalRidesThisMonth: () => number;
   getWeeklyProgress: () => number;
   getMonthlyProgress: () => number;
+  getTodayHistory: () => EarningsBreakdown | undefined;
 }
 
 interface Incentive {
@@ -322,5 +323,13 @@ export const useEarningsStore = create<EarningsState>((set, get) => ({
   getMonthlyProgress: () => {
     const state = get();
     return Math.min((state.earnings.monthlyEarnings / state.monthlyTarget) * 100, 100);
+  },
+
+  getTodayHistory: () => {
+    const state = get();
+    const today = new Date();
+    return state.dailyBreakdown.find(day => 
+      day.date.toDateString() === today.toDateString()
+    );
   }
 }));

@@ -148,6 +148,9 @@ export default function OTPVerification() {
             <ThemedText variant="small" className="text-center text-textSecondary px-4">
               We've sent a 6-digit code to {formatPhoneNumber(phoneNumber || '')}
             </ThemedText>
+            <ThemedText variant="tiny" className="text-center text-secondary mt-2 px-4">
+              Test OTP: 123456
+            </ThemedText>
           </View>
 
           {/* OTP Input */}
