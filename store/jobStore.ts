@@ -35,7 +35,7 @@ interface JobState {
   getTodayHistory: () => JobHistory[];
 }
 
-// Mock data for development
+// Mock data for development - Demo ride requests for testing
 const mockJobRequests: JobRequest[] = [
   {
     id: '1',
@@ -92,6 +92,93 @@ const mockJobRequests: JobRequest[] = [
     specialRequests: 'Please call upon arrival',
     status: 'pending',
     expiresAt: new Date(Date.now() + 8 * 60 * 1000), // 8 minutes from now
+    createdAt: new Date()
+  },
+  {
+    id: '3',
+    customerId: 'customer_3',
+    customerName: 'Amit Singh',
+    customerPhone: '+91 98765 12345',
+    customerRating: 4.7,
+    pickupLocation: {
+      latitude: 28.5355,
+      longitude: 77.3910,
+      address: 'Noida City Centre Metro Station, Noida',
+      name: 'City Centre Metro'
+    },
+    dropoffLocation: {
+      latitude: 28.5245,
+      longitude: 77.1855,
+      address: 'Connaught Place, New Delhi',
+      name: 'Connaught Place'
+    },
+    scheduledTime: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes from now
+    estimatedDuration: 50,
+    estimatedDistance: 28,
+    serviceType: 'trip',
+    fare: 3200,
+    vehicleType: 'sedan',
+    specialRequests: 'AC required, prefer faster route',
+    status: 'pending',
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes from now
+    createdAt: new Date()
+  },
+  {
+    id: '4',
+    customerId: 'customer_4',
+    customerName: 'Neha Gupta',
+    customerPhone: '+91 87654 98765',
+    customerRating: 5.0,
+    pickupLocation: {
+      latitude: 28.6139,
+      longitude: 77.2090,
+      address: 'India Gate, Rajpath, New Delhi',
+      name: 'India Gate'
+    },
+    dropoffLocation: {
+      latitude: 28.6562,
+      longitude: 77.2410,
+      address: 'Red Fort, Chandni Chowk, Old Delhi',
+      name: 'Red Fort'
+    },
+    scheduledTime: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes from now
+    estimatedDuration: 25,
+    estimatedDistance: 8,
+    serviceType: 'sightseeing',
+    fare: 1200,
+    vehicleType: 'hatchback',
+    specialRequests: 'Tourist trip, please drive slowly for photos',
+    status: 'pending',
+    expiresAt: new Date(Date.now() + 12 * 60 * 1000), // 12 minutes from now
+    createdAt: new Date()
+  },
+  {
+    id: '5',
+    customerId: 'customer_5',
+    customerName: 'Vikash Yadav',
+    customerPhone: '+91 76543 21098',
+    customerRating: 4.6,
+    pickupLocation: {
+      latitude: 28.4817,
+      longitude: 77.0910,
+      address: 'Ambience Mall, Vasant Kunj, New Delhi',
+      name: 'Ambience Mall'
+    },
+    dropoffLocation: {
+      latitude: 28.4272,
+      longitude: 77.0688,
+      address: 'Golf Course Road, Sector 54, Gurugram',
+      name: 'Golf Course Road'
+    },
+    scheduledTime: new Date(Date.now() + 1 * 60 * 60 * 1000), // 1 hour from now
+    estimatedDuration: 35,
+    estimatedDistance: 18,
+    serviceType: 'trip',
+    fare: 2100,
+    vehicleType: 'suv',
+    specialRequests: 'Family trip with luggage, need spacious vehicle',
+    status: 'pending',
+    expiresAt: new Date(Date.now() + 7 * 60 * 1000), // 7 minutes from now
     createdAt: new Date()
   }
 ];

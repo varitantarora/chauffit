@@ -200,16 +200,7 @@ export default function DriverProfile() {
                   </TouchableOpacity>
                   
                   <TouchableOpacity
-                    className="flex-row justify-between items-center p-4 bg-surface dark:bg-darkSurface rounded-xl mb-3"
-                  >
-                    <View className="flex-row items-center">
-                      <Ionicons name="car-sport" size={20} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
-                      <ThemedText className="ml-3">Vehicle Details</ThemedText>
-                    </View>
-                    <Ionicons name="chevron-forward" size={20} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity
+                    onPress={() => router.push('/(driver)/banking-details')}
                     className="flex-row justify-between items-center p-4 bg-surface dark:bg-darkSurface rounded-xl mb-3"
                   >
                     <View className="flex-row items-center">
@@ -220,6 +211,7 @@ export default function DriverProfile() {
                   </TouchableOpacity>
                   
                   <TouchableOpacity
+                    onPress={() => router.push('/(driver)/notifications')}
                     className="flex-row justify-between items-center p-4 bg-surface dark:bg-darkSurface rounded-xl mb-3"
                   >
                     <View className="flex-row items-center">
@@ -230,6 +222,7 @@ export default function DriverProfile() {
                   </TouchableOpacity>
                   
                   <TouchableOpacity
+                    onPress={() => router.push('/(driver)/support')}
                     className="flex-row justify-between items-center p-4 bg-surface dark:bg-darkSurface rounded-xl"
                   >
                     <View className="flex-row items-center">
