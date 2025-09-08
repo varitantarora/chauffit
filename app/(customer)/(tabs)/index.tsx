@@ -107,7 +107,7 @@ export default function CustomerHomeScreen() {
                 <View key={index} className="flex-1 mx-1">
                   <ThemedCard 
                     variant="premium" 
-                    className="items-center py-6 min-h-[100px] justify-center"
+                    className="items-center py-2 min-h-[100px] justify-center"
                     pressable
                     onPress={action.action}
                   >

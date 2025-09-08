@@ -51,7 +51,7 @@ export default function BookRideScreen() {
 
   const proceedToConfirmation = () => {
     router.push({
-      pathname: '/(customer)/ride-confirmation',
+      pathname: '/(customer)/trip-insurance',
       params: { 
         pickup: pickupLocation,
         destination,

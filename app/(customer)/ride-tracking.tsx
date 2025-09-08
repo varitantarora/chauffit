@@ -37,7 +37,7 @@ export default function RideTrackingScreen() {
   }, [rideStatus, eta]);
 
   const driverDetails = {
-    name: 'Marcus Rodriguez',
+    name: 'Rajesh Kumar',
     rating: 4.9,
     experience: '8 years experience',
     phone: '+91 9876543210',
@@ -182,7 +182,9 @@ export default function RideTrackingScreen() {
         {/* Driver Details Card */}
         <ThemedCard variant="elevated" className="mx-6 mb-4">
           <View className="flex-row items-center">
-            <View className="w-16 h-16 bg-gray-200 rounded-full mr-4" />
+            <View className="w-16 h-16 bg-gray-200 rounded-full mr-4 items-center justify-center">
+              <Ionicons name="person" size={32} color={iconColor} />
+            </View>
             <View className="flex-1">
               <ThemedText variant="h3">{driverDetails.name}</ThemedText>
               <View className="flex-row items-center mt-1">

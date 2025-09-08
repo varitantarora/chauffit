@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ScrollView, TouchableOpacity, View, Alert } from 'react-native';
+import { ScrollView, TouchableOpacity, View, Alert, Animated, Dimensions } from 'react-native';
+import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../components/common/ThemedView';
 import { ThemedCard } from '../../components/common/ThemedCard';
@@ -16,8 +17,11 @@ export default function RideConfirmationScreen() {
   
   const [selectedPayment, setSelectedPayment] = useState('visa-1234');
   const [driverPreference, setDriverPreference] = useState<'luxury' | 'standard'>('standard');
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [slideValue] = useState(new Animated.Value(0));
   
   const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
+  const screenWidth = Dimensions.get('window').width;
 
   const tripDetails = {
     pickup: params.pickup || 'Home - 123 Main St, Palo Alto',
@@ -26,11 +30,11 @@ export default function RideConfirmationScreen() {
     when: 'Today, 2:30 PM',
     type: params.rideType || 'One-way',
     duration: '~45 minutes',
-    distance: '~35 miles',
+    distance: '~56 km',
   };
 
   const driverDetails = {
-    name: 'Marcus Rodriguez',
+    name: 'Rajesh Kumar',
     rating: 4.9,
     experience: '8 years experience',
     type: 'Professional Chauffeur',
@@ -59,16 +63,16 @@ export default function RideConfirmationScreen() {
   };
 
   const handleConfirmBooking = () => {
-    Alert.alert(
-      'Booking Confirmed!',
-      'Your chauffeur will arrive in 15-20 minutes.',
-      [
-        {
-          text: 'Track Ride',
-          onPress: () => router.push('/(customer)/ride-tracking'),
-        },
-      ]
-    );
+    setShowConfirmationModal(true);
+  };
+
+  const handleSlideComplete = () => {
+    Animated.spring(slideValue, {
+      toValue: 1,
+      useNativeDriver: false,
+    }).start(() => {
+      handleConfirmBooking();
+    });
   };
 
   const totals = calculateTotal();
@@ -146,7 +150,9 @@ export default function RideConfirmationScreen() {
               <ThemedText variant="h3" className="mb-4">Driver & Vehicle</ThemedText>
               
               <View className="flex-row items-center mb-4">
-                <View className="w-16 h-16 bg-gray-200 rounded-full mr-3" />
+                <View className="w-16 h-16 bg-gray-200 rounded-full mr-3 items-center justify-center">
+                  <Ionicons name="person" size={32} color={iconColor} />
+                </View>
                 <View className="flex-1">
                   <View className="flex-row items-center">
                     <ThemedText variant="h3">{driverDetails.name}</ThemedText>
@@ -272,19 +278,293 @@ export default function RideConfirmationScreen() {
               </ThemedText>
             </ThemedCard>
 
-            {/* Action Buttons */}
-            <PrimaryButton
-              title="CONFIRM BOOKING"
-              onPress={handleConfirmBooking}
-              className="mb-3"
-            />
+            {/* Slide to Book Button */}
+            <SlideToBookButton onSlideComplete={handleSlideComplete} />
             
             <TouchableOpacity onPress={() => router.back()} className="py-3">
               <ThemedText className="text-center text-gray-600">Cancel</ThemedText>
             </TouchableOpacity>
           </View>
         </ScrollView>
+        
+        {/* Confirmation Modal */}
+        {showConfirmationModal && (
+          <BookingConfirmationModal
+            isVisible={showConfirmationModal}
+            onClose={() => setShowConfirmationModal(false)}
+            onTrackRide={() => {
+              setShowConfirmationModal(false);
+              router.push('/(customer)/ride-tracking');
+            }}
+            isDarkMode={isDarkMode}
+          />
+        )}
       </ThemedView>
     </SafeAreaView>
   );
 }
+
+// Slide to Book Button Component
+const SlideToBookButton = ({ onSlideComplete }: { onSlideComplete: () => void }) => {
+  const [slideValue] = useState(new Animated.Value(0));
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [progressValue] = useState(new Animated.Value(50));
+  const [textOpacity] = useState(new Animated.Value(1));
+  const [backgroundColor] = useState(new Animated.Value(0));
+  
+  const screenWidth = Dimensions.get('window').width - 48;
+  const BUTTON_WIDTH = screenWidth;
+  const KNOB_SIZE = 50;
+  const PADDING = 6;
+  const SLIDE_THRESHOLD = BUTTON_WIDTH - KNOB_SIZE - PADDING * 2;
+  
+  const onGestureEvent = Animated.event(
+    [{ nativeEvent: { translationX: slideValue } }],
+    { 
+      useNativeDriver: false,
+      listener: (event: any) => {
+        const translationX = Math.max(0, Math.min(event.nativeEvent.translationX, SLIDE_THRESHOLD));
+        const progress = translationX / SLIDE_THRESHOLD;
+        
+        // Update progress bar
+        progressValue.setValue(translationX + KNOB_SIZE);
+        
+        // Fade out text as user slides
+        textOpacity.setValue(Math.max(1 - progress * 2.5, 0));
+        
+        // Change background color
+        backgroundColor.setValue(progress);
+      }
+    }
+  );
+
+  const onHandlerStateChange = (event: any) => {
+    if (event.nativeEvent.state === State.END) {
+      const { translationX } = event.nativeEvent;
+      
+      if (translationX >= SLIDE_THRESHOLD * 0.8) {
+        // Slide completed - animate to end
+        Animated.parallel([
+          Animated.spring(slideValue, {
+            toValue: SLIDE_THRESHOLD,
+            useNativeDriver: false,
+            tension: 400,
+            friction: 50,
+          }),
+          Animated.timing(backgroundColor, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: false,
+          }),
+          Animated.timing(progressValue, {
+            toValue: BUTTON_WIDTH,
+            duration: 200,
+            useNativeDriver: false,
+          })
+        ]).start(() => {
+          setIsUnlocked(true);
+          setTimeout(() => {
+            onSlideComplete();
+          }, 300);
+        });
+      } else {
+        // Reset slide
+        Animated.parallel([
+          Animated.spring(slideValue, {
+            toValue: 0,
+            useNativeDriver: false,
+            tension: 400,
+            friction: 50,
+          }),
+          Animated.timing(backgroundColor, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: false,
+          }),
+          Animated.timing(progressValue, {
+            toValue: KNOB_SIZE,
+            duration: 200,
+            useNativeDriver: false,
+          }),
+          Animated.timing(textOpacity, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: false,
+          })
+        ]).start();
+      }
+    }
+  };
+
+  const animatedBackgroundColor = backgroundColor.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['#BD8C5E', '#720C17'] // light burgundy to dark burgundy
+  });
+
+  return (
+    <View className="mb-3">
+      <Animated.View 
+        className="relative rounded-full justify-center flex items-center"
+        style={{
+          backgroundColor: animatedBackgroundColor,
+          width: BUTTON_WIDTH,
+          height: 62,
+          padding: PADDING,
+        }}
+      >
+        {/* Background progress */}
+        <Animated.View
+          className="absolute top-0 left-0 h-full rounded-full"
+          style={{
+            width: progressValue,
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          }}
+        />
+
+        {/* "Slide to..." text */}
+        <Animated.View
+          className="absolute flex-row items-center justify-center"
+          style={{ opacity: textOpacity }}
+        >
+          <ThemedText className="text-white font-bold text-base">
+            {isUnlocked ? 'BOOKING CONFIRMED' : 'SLIDE TO BOOK'}
+          </ThemedText>
+        </Animated.View>
+
+        {/* Sliding Knob */}
+        <PanGestureHandler
+          onGestureEvent={onGestureEvent}
+          onHandlerStateChange={onHandlerStateChange}
+        >
+          <Animated.View
+            className="absolute bg-white rounded-full items-center justify-center"
+            style={{
+              left: PADDING,
+              top: PADDING,
+              height: KNOB_SIZE,
+              width: KNOB_SIZE,
+              transform: [{ translateX: slideValue }],
+              elevation: 4, // Android shadow
+              shadowColor: '#000', // iOS shadow
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 4,
+            }}
+          >
+            {isUnlocked ? (
+              <Ionicons name="checkmark" size={24} color="#720C17" />
+            ) : (
+              <Ionicons name="chevron-forward" size={24} color="#720C17" />
+            )}
+          </Animated.View>
+        </PanGestureHandler>
+      </Animated.View>
+    </View>
+  );
+};
+
+// Booking Confirmation Modal Component
+const BookingConfirmationModal = ({ 
+  isVisible, 
+  onClose, 
+  onTrackRide, 
+  isDarkMode 
+}: {
+  isVisible: boolean;
+  onClose: () => void;
+  onTrackRide: () => void;
+  isDarkMode: boolean;
+}) => {
+  const [scaleValue] = useState(new Animated.Value(0));
+  const [fadeValue] = useState(new Animated.Value(0));
+  
+  React.useEffect(() => {
+    if (isVisible) {
+      Animated.parallel([
+        Animated.spring(scaleValue, {
+          toValue: 1,
+          tension: 100,
+          friction: 8,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeValue, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isVisible]);
+
+  const handleClose = () => {
+    Animated.parallel([
+      Animated.spring(scaleValue, {
+        toValue: 0,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeValue, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      onClose();
+    });
+  };
+
+  if (!isVisible) return null;
+
+  return (
+    <Animated.View 
+      className="absolute inset-0 bg-black/50 flex-1 justify-center items-center px-8"
+      style={{ opacity: fadeValue }}
+    >
+      <Animated.View 
+        className={`${isDarkMode ? 'bg-darkBackground' : 'bg-white'} rounded-3xl p-8 w-full max-w-sm`}
+        style={{ transform: [{ scale: scaleValue }] }}
+      >
+        {/* Success Icon */}
+        <View className="items-center mb-6">
+          <View className="w-20 h-20 bg-green-100 rounded-full items-center justify-center mb-4">
+            <Ionicons name="checkmark-circle" size={48} color="#10B981" />
+          </View>
+          
+          <ThemedText variant="h2" className="text-center mb-2">
+            Booking Confirmed!
+          </ThemedText>
+          
+          <ThemedText variant="small" className="text-center text-gray-600 mb-4">
+            Your chauffeur will arrive in 15-20 minutes. You'll receive updates via SMS.
+          </ThemedText>
+        </View>
+
+        {/* Booking Details */}
+        <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mb-6">
+          <View className="flex-row justify-between items-center mb-2">
+            <ThemedText variant="small" className="text-gray-600">Driver</ThemedText>
+            <ThemedText variant="small">Rajesh Kumar</ThemedText>
+          </View>
+          <View className="flex-row justify-between items-center mb-2">
+            <ThemedText variant="small" className="text-gray-600">Vehicle</ThemedText>
+            <ThemedText variant="small">BMW X5 (ABC123)</ThemedText>
+          </View>
+          <View className="flex-row justify-between items-center">
+            <ThemedText variant="small" className="text-gray-600">ETA</ThemedText>
+            <ThemedText variant="small" className="text-burgundy font-semibold">15-20 mins</ThemedText>
+          </View>
+        </View>
+
+        {/* Action Buttons */}
+        <PrimaryButton
+          title="TRACK YOUR RIDE"
+          onPress={onTrackRide}
+          className="mb-3"
+        />
+        
+        <TouchableOpacity onPress={handleClose} className="py-3">
+          <ThemedText className="text-center text-gray-600">Close</ThemedText>
+        </TouchableOpacity>
+      </Animated.View>
+    </Animated.View>
+  );
+};

@@ -144,7 +144,7 @@ export default function CarDetails() {
                 <Ionicons name="car" size={20} color={iconColor} />
                 <TextInput
                   className="flex-1 ml-3 text-base"
-                  placeholder="e.g., BMW, Toyota, Honda"
+                  placeholder="Toyota"
                   placeholderTextColor={iconColor}
                   value={carForm.make}
                   onChangeText={(value) => handleInputChange('make', value)}
@@ -161,7 +161,7 @@ export default function CarDetails() {
                 <Ionicons name="speedometer" size={20} color={iconColor} />
                 <TextInput
                   className="flex-1 ml-3 text-base"
-                  placeholder="e.g., X5, Camry, City"
+                  placeholder="Fortuner"
                   placeholderTextColor={iconColor}
                   value={carForm.model}
                   onChangeText={(value) => handleInputChange('model', value)}

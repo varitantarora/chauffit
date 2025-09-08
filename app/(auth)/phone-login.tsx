@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TextInput, TouchableOpacity, Alert, View, SafeAreaView, Text } from 'react-native';
+import { TextInput, TouchableOpacity, Alert, View, SafeAreaView, Text, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedView } from '../../components/common/ThemedView';
 import { ThemedText } from '../../components/common/ThemedText';
@@ -77,8 +77,12 @@ export default function PhoneLogin() {
         </View>
 
         <View className="items-center mb-8">
-          <View className="w-20 h-20 bg-burgundy rounded-full items-center justify-center mb-4">
-            <Ionicons name="car" size={32} color="white" />
+          <View className="rounded-full items-center justify-center mb-4" style={{ width: 100, height: 100 }}>
+            <Image 
+              source={require('../../assets/chauffit-logo.png')} 
+              style={{ width: 100, height: 100 }}
+              resizeMode="contain"
+            />
           </View>
           <ThemedText variant="h1" className="text-center mb-2">
             Welcome to Chauffit
