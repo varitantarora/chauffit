@@ -90,7 +90,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
           ? 'bg-darkSurface border-darkBorder' 
           : 'bg-white border-border'
       }`}
-      activeOpacity={0.7}
+      activeOpacity={1}
     >
       {/* Header */}
       <View className="flex-row items-center justify-between mb-4">

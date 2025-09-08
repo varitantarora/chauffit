@@ -136,7 +136,7 @@ export default function CustomerHomeScreen() {
             
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {services.map((service) => (
-                <TouchableOpacity key={service.id} className="mr-4">
+                <TouchableOpacity key={service.id} className="mr-4" activeOpacity={1}>
                   <ThemedCard className="w-56 p-4 my-2">
                     <View className="flex-row items-center mb-3">
                       <View className="bg-primary/10 p-2 rounded-lg">
