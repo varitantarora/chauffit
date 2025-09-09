@@ -12,7 +12,7 @@ export default function DriverTabsLayout() {
         tabBarStyle: {
           backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
         },
-        tabBarActiveTintColor: '#bd8c5e',
+        tabBarActiveTintColor: '#720C17',
       }}
     >
       <Tabs.Screen

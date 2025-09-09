@@ -64,7 +64,7 @@ export default function EarningsScreen() {
                   key={period}
                   onPress={() => setSelectedPeriod(period)}
                   className={`flex-1 py-3 rounded-lg ${
-                    selectedPeriod === period ? 'bg-primary' : ''
+                    selectedPeriod === period ? 'bg-burgundy' : ''
                   }`}
                 >
                   <ThemedText 
@@ -135,7 +135,7 @@ export default function EarningsScreen() {
                 Recent Breakdown
               </ThemedText>
               <TouchableOpacity>
-                <ThemedText className="text-primary">View All</ThemedText>
+                <ThemedText className="text-burgundy">View All</ThemedText>
               </TouchableOpacity>
             </View>
             
@@ -155,7 +155,7 @@ export default function EarningsScreen() {
                     </ThemedText>
                   </View>
                   <View className="items-end">
-                    <ThemedText className="font-bold text-primary text-lg">
+                    <ThemedText className="font-bold text-burgundy text-lg">
                       ₹{day.totalEarnings.toLocaleString('en-IN')}
                     </ThemedText>
                     <View className="flex-row items-center">
@@ -208,7 +208,7 @@ export default function EarningsScreen() {
                   
                   <View className="bg-surface dark:bg-darkSurface rounded-full h-2 mb-2">
                     <View 
-                      className="bg-primary rounded-full h-2"
+                      className="bg-burgundy rounded-full h-2"
                       style={{ 
                         width: `${Math.min((incentive.current / incentive.target) * 100, 100)}%` 
                       }}

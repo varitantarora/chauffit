@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedCard } from '../../common/ThemedCard';
@@ -15,6 +15,41 @@ interface JobCardProps {
 
 export function JobCard({ job, onAccept, onDecline, onViewDetails }: JobCardProps) {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const [timeLeft, setTimeLeft] = useState(0);
+
+  useEffect(() => {
+    const updateTimer = () => {
+      const now = Date.now();
+      const expiryTime = job.expiresAt.getTime();
+      const remaining = Math.max(0, Math.floor((expiryTime - now) / 1000));
+      setTimeLeft(remaining);
+      
+      // Auto-remove expired requests would be handled by the store cleanup
+      if (remaining <= 0) {
+        return;
+      }
+    };
+
+    // Initial calculation
+    updateTimer();
+    
+    // Update every second
+    const interval = setInterval(updateTimer, 1000);
+    
+    return () => clearInterval(interval);
+  }, [job.expiresAt]);
+
+  const formatTimeLeft = (seconds: number) => {
+    if (seconds <= 0) return "Expired";
+    
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    
+    if (minutes > 0) {
+      return `${minutes}m ${remainingSeconds}s`;
+    }
+    return `${remainingSeconds}s`;
+  };
   
   const formatTime = (date: Date) => {
     return new Date(date).toLocaleTimeString('en-IN', {
@@ -97,7 +132,7 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails }: JobCardProp
             </View>
           </View>
           <View className="items-end">
-            <ThemedText className="text-primary font-bold text-xl">
+            <ThemedText className="text-burgundy font-bold text-xl">
               ₹{job.fare.toLocaleString('en-IN')}
             </ThemedText>
             <ThemedText variant="caption" className="text-secondary">
@@ -108,8 +143,8 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails }: JobCardProp
 
         {/* Customer Info */}
         <View className="flex-row items-center mb-3 p-3 bg-surface dark:bg-darkSurface rounded-lg">
-          <View className="w-10 h-10 bg-secondary/20 rounded-full items-center justify-center mr-3">
-            <ThemedText className="font-bold text-secondary">
+          <View className="w-10 h-10 bg-burgundy/10 rounded-full items-center justify-center mr-3">
+            <ThemedText className="font-bold text-burgundy">
               {job.customerName.charAt(0).toUpperCase()}
             </ThemedText>
           </View>
@@ -130,8 +165,8 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails }: JobCardProp
                 </ThemedText>
               </View>
               <TouchableOpacity className="flex-row items-center">
-                <Ionicons name="call" size={14} color="#10b981" />
-                <ThemedText variant="caption" className="text-success ml-1">
+                <Ionicons name="call" size={14} color="#BD8C5E" />
+                <ThemedText variant="caption" className="text-secondary ml-1">
                   Call
                 </ThemedText>
               </TouchableOpacity>
@@ -142,7 +177,7 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails }: JobCardProp
         {/* Locations */}
         <View className="border-t border-border dark:border-darkBorder pt-3 mb-3">
           <View className="flex-row items-start mb-3">
-            <View className="w-4 h-4 bg-success rounded-full mt-1 mr-3" />
+            <View className="w-4 h-4 bg-secondary rounded-full mt-1 mr-3" />
             <View className="flex-1">
               <ThemedText variant="caption" className="text-secondary uppercase font-semibold mb-1">
                 PICKUP
@@ -160,7 +195,7 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails }: JobCardProp
           
           {job.dropoffLocation && (
             <View className="flex-row items-start">
-              <View className="w-4 h-4 border-2 border-danger rounded-full mt-1 mr-3" />
+              <View className="w-4 h-4 border-2 border-burgundy rounded-full mt-1 mr-3" />
               <View className="flex-1">
                 <ThemedText variant="caption" className="text-secondary uppercase font-semibold mb-1">
                   DROPOFF
@@ -194,9 +229,9 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails }: JobCardProp
         )}
 
         {/* Expires Timer */}
-        <View className="bg-danger/10 border border-danger/20 rounded-lg p-2 mb-3">
-          <ThemedText variant="caption" className="text-center text-danger font-semibold">
-            Request expires in {Math.max(0, Math.floor((job.expiresAt.getTime() - Date.now()) / 1000))}s
+        <View className={`${timeLeft <= 60 ? 'bg-danger/20 border-danger/40' : timeLeft <= 300 ? 'bg-warning/20 border-warning/40' : 'bg-success/20 border-success/40'} border rounded-lg p-2 mb-3`}>
+          <ThemedText variant="caption" className={`text-center font-semibold ${timeLeft <= 60 ? 'text-danger' : timeLeft <= 300 ? 'text-warning' : 'text-success'}`}>
+            {timeLeft <= 0 ? 'Request Expired' : `Expires in ${formatTimeLeft(timeLeft)}`}
           </ThemedText>
         </View>
       </TouchableOpacity>
@@ -204,21 +239,23 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails }: JobCardProp
       {/* Action Buttons */}
       <View className="flex-row border-t border-border dark:border-darkBorder">
         <TouchableOpacity 
-          onPress={() => onDecline(job.id)}
-          className="flex-1 py-4 items-center border-r border-border dark:border-darkBorder"
-          activeOpacity={0.7}
+          onPress={() => timeLeft > 0 && onDecline(job.id)}
+          className={`flex-1 py-4 items-center border-r border-border dark:border-darkBorder ${timeLeft <= 0 ? 'opacity-50' : ''}`}
+          activeOpacity={timeLeft <= 0 ? 1 : 0.7}
+          disabled={timeLeft <= 0}
         >
           <ThemedText className="font-semibold text-danger">
             Decline
           </ThemedText>
         </TouchableOpacity>
         <TouchableOpacity 
-          onPress={() => onAccept(job.id)}
-          className="flex-1 py-4 items-center bg-primary"
-          activeOpacity={0.7}
+          onPress={() => timeLeft > 0 && onAccept(job.id)}
+          className={`flex-1 py-4 items-center bg-burgundy ${timeLeft <= 0 ? 'opacity-50' : ''}`}
+          activeOpacity={timeLeft <= 0 ? 1 : 0.7}
+          disabled={timeLeft <= 0}
         >
           <ThemedText className="font-semibold text-white">
-            Accept Ride
+            {timeLeft <= 0 ? 'Expired' : 'Accept Ride'}
           </ThemedText>
         </TouchableOpacity>
       </View>

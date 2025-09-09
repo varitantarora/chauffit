@@ -141,19 +141,19 @@ const isThisMonth = (date: Date): boolean => {
 };
 
 export const useBikerEarningsStore = create<BikerEarningsState>((set, get) => ({
-  // Initial state
+  // Initial state with mock data
   earnings: {
-    totalEarnings: 0,
-    weeklyEarnings: 0,
-    monthlyEarnings: 0,
-    todayEarnings: 0,
-    pendingAmount: 0,
-    baseTaskEarnings: 0,
-    emergencyBonuses: 0,
-    peakTimeBonuses: 0,
-    distanceBonuses: 0,
+    totalEarnings: 12450.75,
+    weeklyEarnings: 2380.50,
+    monthlyEarnings: 8965.25,
+    todayEarnings: 485.00,
+    pendingAmount: 125.50,
+    baseTaskEarnings: 8200.00,
+    emergencyBonuses: 1850.75,
+    peakTimeBonuses: 1650.00,
+    distanceBonuses: 750.00,
     incentives: 0,
-    lastPayout: undefined
+    lastPayout: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // 7 days ago
   },
   
   currentShift: null,
@@ -168,19 +168,23 @@ export const useBikerEarningsStore = create<BikerEarningsState>((set, get) => ({
   completedIncentives: [],
   
   performanceMetrics: {
-    totalTasks: 0,
-    completedTasks: 0,
-    emergencyTasks: 0,
-    averageRating: 0,
-    averageResponseTime: 0,
-    completionRate: 0,
-    onTimeRate: 0,
-    customerSatisfactionRate: 0,
-    averageEarningsPerTask: 0,
-    averageEarningsPerHour: 0,
-    bestDay: null,
-    currentStreak: 0,
-    longestStreak: 0
+    totalTasks: 847,
+    completedTasks: 839,
+    emergencyTasks: 45,
+    averageRating: 4.8,
+    averageResponseTime: 2.3,
+    completionRate: 99.1,
+    onTimeRate: 96.5,
+    customerSatisfactionRate: 96.0,
+    averageEarningsPerTask: 14.85,
+    averageEarningsPerHour: 185.50,
+    bestDay: {
+      date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      earnings: 680.75,
+      tasks: 18
+    },
+    currentStreak: 12,
+    longestStreak: 28
   },
   
   // Actions

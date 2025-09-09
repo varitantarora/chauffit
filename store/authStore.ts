@@ -19,6 +19,7 @@ interface AuthState {
   updateProfile: (updates: Partial<User>) => void;
   logout: () => void;
   setHasSeenOnboarding: (seen: boolean) => void;
+  switchRole: (role: UserRole) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -65,4 +66,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   }),
   
   setHasSeenOnboarding: (seen) => set({ hasSeenOnboarding: seen }),
+  
+  switchRole: (role) => set((state) => ({
+    activeRole: role,
+    roles: state.roles.includes(role) ? state.roles : [...state.roles, role]
+  })),
 }));

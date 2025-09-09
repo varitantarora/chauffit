@@ -19,7 +19,7 @@ export default function DriverProfile() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const router = useRouter();
   
-  const { isOnline, setOnlineStatus, jobHistory } = useJobStore();
+  const { isOnline, setOnlineStatus, jobHistory, resetDemoRequests } = useJobStore();
   const { earnings } = useEarningsStore();
   
   const [activeTab, setActiveTab] = useState<'profile' | 'documents' | 'stats'>('profile');
@@ -40,6 +40,7 @@ export default function DriverProfile() {
     logout();
     router.replace('/(auth)/login');
   };
+
 
   const handleGoOnline = () => {
     if (!isOnline) {
@@ -71,7 +72,7 @@ export default function DriverProfile() {
           <View className="px-6 mb-6">
             <ThemedCard className="p-6">
               <View className="items-center mb-6">
-                <View className="w-24 h-24 bg-primary rounded-full items-center justify-center mb-4 relative">
+                <View className="w-24 h-24 bg-burgundy rounded-full items-center justify-center mb-4 relative">
                   <ThemedText className="text-white text-3xl font-bold">
                     {user?.name?.charAt(0).toUpperCase()}
                   </ThemedText>
@@ -99,7 +100,7 @@ export default function DriverProfile() {
               <View className="border-t border-border dark:border-darkBorder pt-4">
                 <View className="flex-row justify-around">
                   <View className="items-center">
-                    <ThemedText className="text-2xl font-bold text-primary">
+                    <ThemedText className="text-2xl font-bold text-burgundy">
                       {driverStats.rating.toFixed(1)}
                     </ThemedText>
                     <View className="flex-row items-center">
@@ -165,7 +166,7 @@ export default function DriverProfile() {
                   key={tab.key}
                   onPress={() => setActiveTab(tab.key as any)}
                   className={`flex-1 py-3 rounded-lg ${
-                    activeTab === tab.key ? 'bg-primary' : ''
+                    activeTab === tab.key ? 'bg-burgundy' : ''
                   }`}
                 >
                   <ThemedText 
@@ -194,7 +195,7 @@ export default function DriverProfile() {
                       <Ionicons name="moon" size={20} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
                       <ThemedText className="ml-3">Dark Mode</ThemedText>
                     </View>
-                    <View className={`w-12 h-6 rounded-full ${isDarkMode ? 'bg-primary' : 'bg-gray-300'} justify-center`}>
+                    <View className={`w-12 h-6 rounded-full ${isDarkMode ? 'bg-burgundy' : 'bg-gray-300'} justify-center`}>
                       <View className={`w-5 h-5 bg-white rounded-full ${isDarkMode ? 'self-end mr-0.5' : 'self-start ml-0.5'}`} />
                     </View>
                   </TouchableOpacity>
@@ -223,11 +224,25 @@ export default function DriverProfile() {
                   
                   <TouchableOpacity
                     onPress={() => router.push('/(driver)/support')}
-                    className="flex-row justify-between items-center p-4 bg-surface dark:bg-darkSurface rounded-xl"
+                    className="flex-row justify-between items-center p-4 bg-surface dark:bg-darkSurface rounded-xl mb-3"
                   >
                     <View className="flex-row items-center">
                       <Ionicons name="help-circle" size={20} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
                       <ThemedText className="ml-3">Help & Support</ThemedText>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    onPress={() => {
+                      resetDemoRequests();
+                      router.push('/(driver)/(tabs)/requests');
+                    }}
+                    className="flex-row justify-between items-center p-4 bg-surface dark:bg-darkSurface rounded-xl"
+                  >
+                    <View className="flex-row items-center">
+                      <Ionicons name="refresh" size={20} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
+                      <ThemedText className="ml-3">Reset Demo Requests</ThemedText>
                     </View>
                     <Ionicons name="chevron-forward" size={20} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
                   </TouchableOpacity>
@@ -262,7 +277,7 @@ export default function DriverProfile() {
                     
                     <View className="flex-row justify-between">
                       <ThemedText>Total Earnings:</ThemedText>
-                      <ThemedText className="font-semibold text-primary">
+                      <ThemedText className="font-semibold text-burgundy">
                         ₹{driverStats.totalEarnings.toLocaleString('en-IN')}
                       </ThemedText>
                     </View>
@@ -341,6 +356,7 @@ export default function DriverProfile() {
               </View>
             )}
           </View>
+
 
           {/* Logout Button */}
           <View className="px-6 py-6">

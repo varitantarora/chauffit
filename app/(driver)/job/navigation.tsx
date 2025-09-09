@@ -29,18 +29,23 @@ export default function NavigationScreen() {
   const [hasArrived, setHasArrived] = useState(false);
 
   useEffect(() => {
-    if (!activeJob || activeJob.id !== jobId) {
+    // Check if we have an activeJob, if not redirect back
+    const currentActiveJob = useJobStore.getState().activeJob;
+    if (!currentActiveJob) {
       router.back();
       return;
     }
     
-    // Start navigation mode
-    updateJobStatus('en_route_pickup');
+    // Only update status if it's not already en_route_pickup or arrived_pickup
+    if (currentActiveJob.status !== 'en_route_pickup' && currentActiveJob.status !== 'arrived_pickup') {
+      updateJobStatus('en_route_pickup');
+    }
     setIsNavigating(true);
     
     // Mock location updates
-    startLocationTracking();
-  }, [activeJob, jobId]);
+    const cleanup = startLocationTracking();
+    return cleanup;
+  }, []); // Run only once on mount
 
   const startLocationTracking = () => {
     // Mock location tracking - in real app, use expo-location
@@ -99,12 +104,12 @@ export default function NavigationScreen() {
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Start Ride',
+          text: 'Yes, Get OTP',
           onPress: () => {
-            updateJobStatus('started');
+            // Redirect to OTP screen to verify customer before starting ride
             router.push({
-              pathname: '/(driver)/job/active',
-              params: { jobId }
+              pathname: '/(driver)/job/otp-start',
+              params: { jobId: activeJob?.id }
             });
           }
         }
@@ -243,7 +248,7 @@ export default function NavigationScreen() {
                   <ThemedText variant="secondary" className="text-sm">
                     {activeJob.customerPhone}
                   </ThemedText>
-                  <ThemedText variant="caption" className="text-primary font-semibold">
+                  <ThemedText variant="caption" className="text-burgundy font-semibold">
                     ₹{activeJob.fare.toLocaleString('en-IN')} • {activeJob.eta || 'Calculating...'}
                   </ThemedText>
                 </View>
@@ -303,11 +308,11 @@ export default function NavigationScreen() {
             <View className="flex-row space-x-3">
               <TouchableOpacity
                 onPress={handleOpenMaps}
-                className="flex-1 flex-row items-center justify-center py-4 border border-primary rounded-lg"
+                className="flex-1 flex-row items-center justify-center py-4 border border-secondary rounded-lg"
                 activeOpacity={0.7}
               >
                 <Ionicons name="navigate" size={20} color="#bd8c5e" />
-                <ThemedText className="text-primary font-semibold ml-2">
+                <ThemedText className="text-secondary font-semibold ml-2">
                   Open Maps
                 </ThemedText>
               </TouchableOpacity>
@@ -355,7 +360,7 @@ export default function NavigationScreen() {
                 
                 <TouchableOpacity
                   onPress={handleStartRide}
-                  className="flex-1 flex-row items-center justify-center py-4 bg-primary rounded-lg"
+                  className="flex-1 flex-row items-center justify-center py-4 bg-burgundy rounded-lg"
                   activeOpacity={0.7}
                 >
                   <Ionicons name="play-circle" size={20} color="white" />

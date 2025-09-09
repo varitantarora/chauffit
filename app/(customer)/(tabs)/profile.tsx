@@ -17,6 +17,7 @@ export default function Profile() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const addRole = useAuthStore((state) => state.addRole);
   const setActiveRole = useAuthStore((state) => state.setActiveRole);
+  const switchRole = useAuthStore((state) => state.switchRole);
   const { cars, defaultCar, loadUserCars, deleteCar, setDefaultCar } = useCarStore();
   const router = useRouter();
   const [showAddCarForm, setShowAddCarForm] = useState(false);
@@ -45,25 +46,6 @@ export default function Profile() {
     );
   };
   
-  const handleRoleSwitch = (role: 'driver' | 'biker') => {
-    Alert.alert(
-      'Switch Role',
-      `Are you sure you want to switch to ${role} role?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Switch', 
-          onPress: () => {
-            // Add the role and set it as active
-            addRole(role);
-            setActiveRole(role);
-            // Navigate to the role's main screen
-            router.push(`/(${role})/(tabs)`);
-          }
-        }
-      ]
-    );
-  };
 
   const handleAddCar = () => {
     router.push('/(auth)/car-details');
@@ -93,6 +75,34 @@ export default function Profile() {
 
   const handleSetDefaultCar = (carId: string) => {
     setDefaultCar(carId);
+  };
+  
+  const handleRoleSwitch = (role: 'driver' | 'biker') => {
+    Alert.alert(
+      'Switch to ' + (role === 'driver' ? 'Driver' : 'Biker') + ' App',
+      `You will need to complete the ${role} onboarding process. Continue?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Switch', 
+          onPress: () => {
+            try {
+              // Switch role which will trigger onboarding for that role
+              switchRole(role);
+              // Force navigation to the correct app
+              if (role === 'driver') {
+                router.replace('/(driver)/(tabs)');
+              } else if (role === 'biker') {
+                router.replace('/(biker)/(tabs)');
+              }
+            } catch (error) {
+              console.error('Role switch error:', error);
+              Alert.alert('Error', 'Failed to switch roles. Please try again.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   return (

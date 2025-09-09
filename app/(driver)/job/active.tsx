@@ -34,26 +34,34 @@ export default function ActiveJobScreen() {
   const [isCompleting, setIsCompleting] = useState(false);
 
   useEffect(() => {
-    if (!activeJob || activeJob.id !== jobId) {
+    // Check if we have an activeJob, if not redirect back
+    const currentActiveJob = useJobStore.getState().activeJob;
+    if (!currentActiveJob) {
       router.back();
       return;
     }
     
-    if (activeJob.status !== 'started') {
+    // Only update status if it's not already started
+    if (currentActiveJob.status !== 'started') {
       updateJobStatus('started');
     }
     
     setRideStartTime(new Date());
-    startRideTimer();
-    startLocationTracking();
-  }, [activeJob, jobId]);
+    const timer = startRideTimer();
+    const tracking = startLocationTracking();
+    
+    return () => {
+      if (timer) clearInterval(timer);
+      if (tracking) clearInterval(tracking);
+    };
+  }, []); // Empty dependency array to run only once
 
   const startRideTimer = () => {
     const interval = setInterval(() => {
       setRideDuration(prev => prev + 1);
     }, 1000);
 
-    return () => clearInterval(interval);
+    return interval;
   };
 
   const startLocationTracking = () => {
@@ -69,7 +77,7 @@ export default function ActiveJobScreen() {
       updateCurrentLocation(mockLocation);
     }, 5000);
 
-    return () => clearInterval(interval);
+    return interval;
   };
 
   const formatDuration = (seconds: number) => {
@@ -288,7 +296,7 @@ export default function ActiveJobScreen() {
               
               <TouchableOpacity
                 onPress={handleCallCustomer}
-                className="w-10 h-10 bg-primary/20 rounded-full items-center justify-center"
+                className="w-10 h-10 bg-secondary/20 rounded-full items-center justify-center"
                 activeOpacity={0.7}
               >
                 <Ionicons name="call" size={20} color="#bd8c5e" />
@@ -296,7 +304,7 @@ export default function ActiveJobScreen() {
             </View>
             
             <View className="flex-row justify-between items-center">
-              <ThemedText className="text-primary font-bold text-xl">
+              <ThemedText className="text-burgundy font-bold text-xl">
                 ₹{activeJob.fare.toLocaleString('en-IN')}
               </ThemedText>
               <ThemedText variant="caption" className="text-secondary">
@@ -341,7 +349,7 @@ export default function ActiveJobScreen() {
                 <ThemedText variant="caption">Distance</ThemedText>
               </View>
               <View className="items-center">
-                <ThemedText className="font-bold text-lg text-primary">
+                <ThemedText className="font-bold text-lg text-burgundy">
                   ₹{activeJob.fare.toLocaleString('en-IN')}
                 </ThemedText>
                 <ThemedText variant="caption">Fare</ThemedText>

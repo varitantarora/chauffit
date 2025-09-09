@@ -294,7 +294,7 @@ export function RouteMap({
                 activeOpacity={0.7}
               >
                 <Ionicons 
-                  name={mapType === 'satellite' ? 'map' : 'satellite'} 
+                  name={mapType === 'satellite' ? 'map' : 'globe'} 
                   size={18} 
                   color="#6b7280" 
                 />

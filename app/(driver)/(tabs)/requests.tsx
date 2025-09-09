@@ -94,7 +94,7 @@ export default function RideRequestsScreen() {
               <TouchableOpacity
                 onPress={() => setActiveTab('pending')}
                 className={`flex-1 py-3 rounded-lg ${
-                  activeTab === 'pending' ? 'bg-primary' : ''
+                  activeTab === 'pending' ? 'bg-burgundy' : ''
                 }`}
               >
                 <ThemedText 
@@ -108,7 +108,7 @@ export default function RideRequestsScreen() {
               <TouchableOpacity
                 onPress={() => setActiveTab('accepted')}
                 className={`flex-1 py-3 rounded-lg ${
-                  activeTab === 'accepted' ? 'bg-primary' : ''
+                  activeTab === 'accepted' ? 'bg-burgundy' : ''
                 }`}
               >
                 <ThemedText 
@@ -161,7 +161,7 @@ export default function RideRequestsScreen() {
                           {activeJob.status.replace('_', ' ')}
                         </ThemedText>
                       </View>
-                      <ThemedText className="text-primary font-bold text-xl">
+                      <ThemedText className="text-burgundy font-bold text-xl">
                         ₹{activeJob.fare.toLocaleString('en-IN')}
                       </ThemedText>
                     </View>
@@ -193,7 +193,7 @@ export default function RideRequestsScreen() {
                           router.push(`/(driver)/job/active?jobId=${activeJob.id}`);
                         }
                       }}
-                      className="bg-primary py-3 rounded-lg"
+                      className="bg-burgundy py-3 rounded-lg"
                     >
                       <ThemedText className="text-center text-white font-semibold">
                         {activeJob.status === 'accepted' ? 'Start Navigation' : 'View Ride'}

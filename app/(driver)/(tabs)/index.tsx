@@ -107,7 +107,7 @@ export default function DriverHomeScreen() {
                 </ThemedText>
               </View>
               <TouchableOpacity onPress={() => router.push('/(driver)/(tabs)/profile')}>
-                <View className="w-12 h-12 bg-primary rounded-full items-center justify-center">
+                <View className="w-12 h-12 bg-burgundy rounded-full items-center justify-center">
                   <ThemedText className="text-white text-xl font-bold">
                     {user?.name?.charAt(0).toUpperCase() || 'D'}
                   </ThemedText>
@@ -139,10 +139,10 @@ export default function DriverHomeScreen() {
                       </ThemedText>
                     </View>
                     <View className="items-end">
-                      <ThemedText className="font-bold text-success text-xl">
+                      <ThemedText className="font-bold text-burgundy text-xl">
                         ₹{activeJob.fare.toLocaleString('en-IN')}
                       </ThemedText>
-                      <ThemedText variant="caption" className="text-success">
+                      <ThemedText variant="caption" className="text-secondary">
                         Tap to manage
                       </ThemedText>
                     </View>
@@ -212,7 +212,7 @@ export default function DriverHomeScreen() {
             <ThemedCard className="p-6">
               <View className="flex-row justify-around">
                 <View className="items-center">
-                  <ThemedText variant="title" className="text-2xl font-bold text-primary">
+                  <ThemedText variant="title" className="text-2xl font-bold text-burgundy">
                     ₹{todayStats.earnings.toLocaleString('en-IN')}
                   </ThemedText>
                   <ThemedText variant="caption">Earnings</ThemedText>
@@ -290,7 +290,7 @@ export default function DriverHomeScreen() {
                 </View>
                 <View className="bg-surface dark:bg-darkSurface rounded-full h-2">
                   <View 
-                    className="bg-primary rounded-full h-2"
+                    className="bg-burgundy rounded-full h-2"
                     style={{ width: `${Math.min((goal.current / goal.target) * 100, 100)}%` }}
                   />
                 </View>
@@ -316,7 +316,7 @@ export default function DriverHomeScreen() {
                 Recent Activity
               </ThemedText>
               <TouchableOpacity onPress={() => router.push('/(driver)/(tabs)/earnings')}>
-                <ThemedText className="text-primary">View All</ThemedText>
+                <ThemedText className="text-burgundy">View All</ThemedText>
               </TouchableOpacity>
             </View>
             
@@ -341,7 +341,7 @@ export default function DriverHomeScreen() {
                       </ThemedText>
                     </View>
                     <View className="items-end">
-                      <ThemedText className="font-bold text-primary">
+                      <ThemedText className="font-bold text-burgundy">
                         ₹{(job.fare + job.tips).toLocaleString('en-IN')}
                       </ThemedText>
                       {job.rating && (

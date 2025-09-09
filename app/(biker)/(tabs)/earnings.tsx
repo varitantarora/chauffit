@@ -35,7 +35,7 @@ export default function BikerEarningsScreen() {
           <View className="px-6 pt-4 pb-6">
             <ThemedText variant="title">Earnings</ThemedText>
             <ThemedText variant="secondary" className="mt-1">
-              Emergency response & delivery income
+              Driver pickup & transport income
             </ThemedText>
           </View>
           
@@ -110,7 +110,7 @@ export default function BikerEarningsScreen() {
               <View className="flex-row justify-between items-center">
                 <View>
                   <ThemedText className="font-semibold">Today</ThemedText>
-                  <ThemedText variant="caption">24 deliveries completed</ThemedText>
+                  <ThemedText variant="caption">24 pickups completed</ThemedText>
                 </View>
                 <ThemedText className="font-bold text-primary text-lg">₹6,000</ThemedText>
               </View>
@@ -120,7 +120,7 @@ export default function BikerEarningsScreen() {
               <View className="flex-row justify-between items-center">
                 <View>
                   <ThemedText className="font-semibold">Yesterday</ThemedText>
-                  <ThemedText variant="caption">18 deliveries completed</ThemedText>
+                  <ThemedText variant="caption">18 pickups completed</ThemedText>
                 </View>
                 <ThemedText className="font-bold text-lg">₹4,520</ThemedText>
               </View>
@@ -130,7 +130,7 @@ export default function BikerEarningsScreen() {
               <View className="flex-row justify-between items-center">
                 <View>
                   <ThemedText className="font-semibold">Dec 25</ThemedText>
-                  <ThemedText variant="caption">30 deliveries completed</ThemedText>
+                  <ThemedText variant="caption">30 pickups completed</ThemedText>
                 </View>
                 <ThemedText className="font-bold text-lg">₹7,500</ThemedText>
               </View>
@@ -153,7 +153,7 @@ export default function BikerEarningsScreen() {
               <View className="flex-row justify-between mb-3">
                 <View className="flex-row items-center">
                   <Ionicons name="speedometer" size={20} color="#bd8c5e" />
-                  <ThemedText className="ml-2">Delivery Speed</ThemedText>
+                  <ThemedText className="ml-2">Pickup Speed</ThemedText>
                 </View>
                 <ThemedText className="font-semibold">Excellent</ThemedText>
               </View>
@@ -183,14 +183,14 @@ export default function BikerEarningsScreen() {
               <View className="mb-3">
                 <View className="flex-row justify-between items-center mb-1">
                   <ThemedText>Peak Hour Bonus</ThemedText>
-                  <ThemedText className="font-semibold text-green-600">+$25.00</ThemedText>
+                  <ThemedText className="font-semibold text-green-600">+₹250.00</ThemedText>
                 </View>
-                <ThemedText variant="caption">Completed 10 deliveries during peak hours</ThemedText>
+                <ThemedText variant="caption">Completed 10 pickups during peak hours</ThemedText>
               </View>
               <View className="border-t border-border dark:border-darkBorder pt-3">
                 <View className="flex-row justify-between items-center mb-1">
                   <ThemedText>Weekend Bonus</ThemedText>
-                  <ThemedText className="font-semibold text-green-600">+$15.00</ThemedText>
+                  <ThemedText className="font-semibold text-green-600">+₹150.00</ThemedText>
                 </View>
                 <ThemedText variant="caption">Extra earnings for weekend availability</ThemedText>
               </View>

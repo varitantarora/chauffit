@@ -138,14 +138,14 @@ export function EarningsSummaryCard({ onViewDetails }: { onViewDetails?: () => v
         </ThemedText>
         {onViewDetails && (
           <TouchableOpacity onPress={onViewDetails}>
-            <ThemedText className="text-primary">View Details</ThemedText>
+            <ThemedText className="text-burgundy">View Details</ThemedText>
           </TouchableOpacity>
         )}
       </View>
       
       <View className="flex-row justify-between mb-4">
         <View className="flex-1 items-center">
-          <ThemedText className="text-2xl font-bold text-primary">
+          <ThemedText className="text-2xl font-bold text-burgundy">
             ₹{earnings.today.toLocaleString('en-IN')}
           </ThemedText>
           <ThemedText variant="caption">Today</ThemedText>
@@ -214,7 +214,7 @@ export function WeeklyProgressCard() {
         </View>
         <View className="bg-surface dark:bg-darkSurface rounded-full h-3 mb-2">
           <View 
-            className="bg-primary rounded-full h-3"
+            className="bg-burgundy rounded-full h-3"
             style={{ width: `${Math.min(earningsProgress, 100)}%` }}
           />
         </View>

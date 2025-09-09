@@ -51,7 +51,7 @@ export default function BikerHomeScreen() {
   const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
 
   useEffect(() => {
-    // Load sample driver pickup/drop tasks for demo
+    // Load sample driver pickup tasks for demo
     const sampleTasks: BikerTask[] = [
       {
         id: '1',
@@ -114,8 +114,8 @@ export default function BikerHomeScreen() {
         id: '3',
         type: 'driver_pickup',
         priority: 'normal',
-        title: 'Driver Drop - End of Shift',
-        description: 'Drop driver back home after completing evening shift',
+        title: 'Driver Pickup - End of Shift',
+        description: 'Pick up driver and transport to destination after shift',
         driverId: 'DRV789',
         driverName: 'Suresh Yadav',
         driverPhone: '+91 98765 43212',
@@ -231,7 +231,7 @@ export default function BikerHomeScreen() {
                   Hello, {user?.name || 'Biker'}
                 </ThemedText>
                 <ThemedText variant="secondary" className="mt-1">
-                  {isOnline ? 'Ready for driver transport' : 'You are offline'}
+                  {isOnline ? 'Ready for driver pickups' : 'You are offline'}
                 </ThemedText>
               </View>
               <View className="items-end">
@@ -257,7 +257,7 @@ export default function BikerHomeScreen() {
                     <Ionicons name="warning" size={20} color="white" />
                   </View>
                   <View className="flex-1">
-                    <ThemedText className="font-bold text-red-600">DRIVER EMERGENCY</ThemedText>
+                    <ThemedText className="font-bold text-red-600">PICKUP EMERGENCY</ThemedText>
                     <ThemedText className="text-red-500 text-sm">
                       {emergencyAlerts.length} driver{emergencyAlerts.length > 1 ? 's' : ''} need{emergencyAlerts.length === 1 ? 's' : ''} immediate pickup
                     </ThemedText>

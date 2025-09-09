@@ -165,7 +165,7 @@ export function EnhancedOnlineToggle() {
               <ThemedText variant="caption">Rides</ThemedText>
             </View>
             <View className="flex-1 items-center">
-              <ThemedText className="font-bold text-lg text-primary">
+              <ThemedText className="font-bold text-lg text-burgundy">
                 ₹{onlineStats.totalEarnings.toLocaleString('en-IN')}
               </ThemedText>
               <ThemedText variant="caption">Earned</ThemedText>
@@ -180,7 +180,7 @@ export function EnhancedOnlineToggle() {
               </View>
               <View className="bg-surface dark:bg-darkSurface rounded-full h-2 mb-2">
                 <View 
-                  className="bg-primary rounded-full h-2"
+                  className="bg-burgundy rounded-full h-2"
                   style={{ width: `${(onlineStats.weeklyHours / 50) * 100}%` }}
                 />
               </View>

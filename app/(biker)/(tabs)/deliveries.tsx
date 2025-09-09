@@ -21,7 +21,7 @@ export default function DriverPickupsScreen() {
           <View className="px-6 pt-4 pb-6">
             <ThemedText variant="title">Driver Pickups</ThemedText>
             <ThemedText variant="secondary" className="mt-1">
-              Manage your driver pickup/drop tasks
+              Manage your driver pickup tasks
             </ThemedText>
           </View>
           
@@ -59,11 +59,11 @@ export default function DriverPickupsScreen() {
             </View>
           </View>
           
-          {/* Deliveries List */}
+          {/* Pickups List */}
           <View className="px-6">
             {activeTab === 'active' ? (
               <>
-                {/* Active Delivery 1 */}
+                {/* Active Pickup 1 */}
                 <ThemedCard className="mb-4">
                   <View className="flex-row justify-between items-center mb-3">
                     <View className="bg-orange-500/10 px-3 py-1 rounded-full">
@@ -71,37 +71,37 @@ export default function DriverPickupsScreen() {
                         IN PROGRESS
                       </ThemedText>
                     </View>
-                    <ThemedText className="font-bold text-primary">$12.50</ThemedText>
+                    <ThemedText className="font-bold text-primary">₹125.00</ThemedText>
                   </View>
                   
-                  <ThemedText className="font-bold text-lg mb-2">Restaurant Order #4521</ThemedText>
+                  <ThemedText className="font-bold text-lg mb-2">Driver Pickup #4521</ThemedText>
                   
                   <View className="space-y-2 mb-3">
                     <View className="flex-row items-start">
-                      <Ionicons name="restaurant" size={16} color="#bd8c5e" />
+                      <Ionicons name="location" size={16} color="#bd8c5e" />
                       <View className="ml-2 flex-1">
-                        <ThemedText variant="caption">PICKUP</ThemedText>
-                        <ThemedText>Italian Kitchen - 123 Food Street</ThemedText>
+                        <ThemedText variant="caption">PICKUP LOCATION</ThemedText>
+                        <ThemedText>Sector 15, Gurgaon - Driver Home</ThemedText>
                       </View>
                     </View>
                     <View className="flex-row items-start">
-                      <Ionicons name="home" size={16} color="#bd8c5e" />
+                      <Ionicons name="navigate" size={16} color="#bd8c5e" />
                       <View className="ml-2 flex-1">
-                        <ThemedText variant="caption">DELIVERY</ThemedText>
-                        <ThemedText>456 Oak Avenue, Apt 12B</ThemedText>
+                        <ThemedText variant="caption">DESTINATION</ThemedText>
+                        <ThemedText>Cyber Hub, DLF Phase 3</ThemedText>
                       </View>
                     </View>
                   </View>
                   
                   <View className="flex-row justify-between items-center">
-                    <ThemedText variant="caption">Customer: John D.</ThemedText>
+                    <ThemedText variant="caption">Driver: Amit Sharma</ThemedText>
                     <TouchableOpacity className="bg-primary px-4 py-2 rounded-lg">
                       <ThemedText className="text-white font-semibold">Navigate</ThemedText>
                     </TouchableOpacity>
                   </View>
                 </ThemedCard>
                 
-                {/* Active Delivery 2 */}
+                {/* Active Pickup 2 */}
                 <ThemedCard className="mb-4">
                   <View className="flex-row justify-between items-center mb-3">
                     <View className="bg-blue-500/10 px-3 py-1 rounded-full">
@@ -109,30 +109,30 @@ export default function DriverPickupsScreen() {
                         PICKUP READY
                       </ThemedText>
                     </View>
-                    <ThemedText className="font-bold text-primary">$8.00</ThemedText>
+                    <ThemedText className="font-bold text-primary">₹180.00</ThemedText>
                   </View>
                   
-                  <ThemedText className="font-bold text-lg mb-2">Package Delivery #7892</ThemedText>
+                  <ThemedText className="font-bold text-lg mb-2">Driver Pickup #7892</ThemedText>
                   
                   <View className="space-y-2 mb-3">
                     <View className="flex-row items-start">
-                      <Ionicons name="cube" size={16} color="#bd8c5e" />
+                      <Ionicons name="location" size={16} color="#bd8c5e" />
                       <View className="ml-2 flex-1">
-                        <ThemedText variant="caption">PICKUP</ThemedText>
-                        <ThemedText>QuickMart - Downtown Branch</ThemedText>
+                        <ThemedText variant="caption">PICKUP LOCATION</ThemedText>
+                        <ThemedText>MG Road Metro Station</ThemedText>
                       </View>
                     </View>
                     <View className="flex-row items-start">
-                      <Ionicons name="business" size={16} color="#bd8c5e" />
+                      <Ionicons name="navigate" size={16} color="#bd8c5e" />
                       <View className="ml-2 flex-1">
-                        <ThemedText variant="caption">DELIVERY</ThemedText>
-                        <ThemedText>Office Tower, Floor 15</ThemedText>
+                        <ThemedText variant="caption">DESTINATION</ThemedText>
+                        <ThemedText>Sushant Lok, Gurgaon</ThemedText>
                       </View>
                     </View>
                   </View>
                   
                   <View className="flex-row justify-between items-center">
-                    <ThemedText variant="caption">Customer: Sarah M.</ThemedText>
+                    <ThemedText variant="caption">Driver: Rajesh Kumar</ThemedText>
                     <TouchableOpacity className="bg-primary px-4 py-2 rounded-lg">
                       <ThemedText className="text-white font-semibold">Start Pickup</ThemedText>
                     </TouchableOpacity>
@@ -141,18 +141,18 @@ export default function DriverPickupsScreen() {
               </>
             ) : (
               <>
-                {/* Completed Deliveries */}
+                {/* Completed Pickups */}
                 <ThemedCard className="mb-3">
                   <View className="flex-row items-center">
                     <View className="bg-green-500/10 p-2 rounded-full">
                       <Ionicons name="checkmark-circle" size={20} color="#10b981" />
                     </View>
                     <View className="ml-3 flex-1">
-                      <ThemedText className="font-semibold">Food Delivery #4520</ThemedText>
-                      <ThemedText variant="caption">Completed " 2 hours ago</ThemedText>
-                      <ThemedText variant="caption">Pizza Palace � Riverside Apt</ThemedText>
+                      <ThemedText className="font-semibold">Driver Pickup #4520</ThemedText>
+                      <ThemedText variant="caption">Completed 2 hours ago</ThemedText>
+                      <ThemedText variant="caption">Sector 56 → Cyber Hub</ThemedText>
                     </View>
-                    <ThemedText className="font-bold">$9.50</ThemedText>
+                    <ThemedText className="font-bold">₹95.00</ThemedText>
                   </View>
                 </ThemedCard>
                 
@@ -162,11 +162,11 @@ export default function DriverPickupsScreen() {
                       <Ionicons name="checkmark-circle" size={20} color="#10b981" />
                     </View>
                     <View className="ml-3 flex-1">
-                      <ThemedText className="font-semibold">Package #7891</ThemedText>
-                      <ThemedText variant="caption">Completed " 3 hours ago</ThemedText>
-                      <ThemedText variant="caption">Pharmacy � Customer Home</ThemedText>
+                      <ThemedText className="font-semibold">Driver Pickup #7891</ThemedText>
+                      <ThemedText variant="caption">Completed 3 hours ago</ThemedText>
+                      <ThemedText variant="caption">Dwarka → Airport</ThemedText>
                     </View>
-                    <ThemedText className="font-bold">$6.00</ThemedText>
+                    <ThemedText className="font-bold">₹160.00</ThemedText>
                   </View>
                 </ThemedCard>
                 
@@ -176,11 +176,11 @@ export default function DriverPickupsScreen() {
                       <Ionicons name="checkmark-circle" size={20} color="#10b981" />
                     </View>
                     <View className="ml-3 flex-1">
-                      <ThemedText className="font-semibold">Grocery Delivery #2341</ThemedText>
-                      <ThemedText variant="caption">Completed " 4 hours ago</ThemedText>
-                      <ThemedText variant="caption">SuperMart � Green Valley</ThemedText>
+                      <ThemedText className="font-semibold">Driver Pickup #2341</ThemedText>
+                      <ThemedText variant="caption">Completed 4 hours ago</ThemedText>
+                      <ThemedText variant="caption">Noida → Gurgaon</ThemedText>
                     </View>
-                    <ThemedText className="font-bold">$11.00</ThemedText>
+                    <ThemedText className="font-bold">₹220.00</ThemedText>
                   </View>
                 </ThemedCard>
               </>

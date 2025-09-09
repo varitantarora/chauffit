@@ -307,7 +307,7 @@ export function DocumentUpload({
                 onPress={handleUpload}
                 disabled={isUploading}
                 className={`flex-1 flex-row items-center justify-center py-3 rounded-lg border-2 border-dashed
-                  ${isUploading ? 'border-gray-300 bg-gray-50' : 'border-primary bg-primary/5'}
+                  ${isUploading ? 'border-gray-300 bg-gray-50' : 'border-secondary bg-secondary/5'}
                 `}
                 activeOpacity={0.7}
               >
@@ -317,7 +317,7 @@ export function DocumentUpload({
                   color={isUploading ? '#6b7280' : '#bd8c5e'} 
                 />
                 <ThemedText 
-                  className={`ml-2 font-semibold ${isUploading ? 'text-gray-500' : 'text-primary'}`}
+                  className={`ml-2 font-semibold ${isUploading ? 'text-gray-500' : 'text-secondary'}`}
                 >
                   {isUploading ? 'Uploading...' : 'Upload'}
                 </ThemedText>
@@ -327,11 +327,11 @@ export function DocumentUpload({
                 <TouchableOpacity
                   onPress={handleUpload}
                   disabled={isUploading}
-                  className="flex-1 flex-row items-center justify-center py-2 rounded-lg border border-primary"
+                  className="flex-1 flex-row items-center justify-center py-2 rounded-lg border border-secondary"
                   activeOpacity={0.7}
                 >
                   <Ionicons name="refresh" size={14} color="#bd8c5e" />
-                  <ThemedText className="ml-1 text-primary text-sm">
+                  <ThemedText className="ml-1 text-secondary text-sm">
                     Replace
                   </ThemedText>
                 </TouchableOpacity>

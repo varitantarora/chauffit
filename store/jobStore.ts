@@ -31,6 +31,7 @@ interface JobState {
   
   // Utility functions
   clearExpiredRequests: () => void;
+  resetDemoRequests: () => void;
   getActiveJobRequests: () => JobRequest[];
   getTodayHistory: () => JobHistory[];
 }
@@ -62,7 +63,7 @@ const mockJobRequests: JobRequest[] = [
     fare: 2850,
     vehicleType: 'sedan',
     status: 'pending',
-    expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes from now
+    expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour from now
     createdAt: new Date()
   },
   {
@@ -91,7 +92,7 @@ const mockJobRequests: JobRequest[] = [
     vehicleType: 'sedan',
     specialRequests: 'Please call upon arrival',
     status: 'pending',
-    expiresAt: new Date(Date.now() + 8 * 60 * 1000), // 8 minutes from now
+    expiresAt: new Date(Date.now() + 90 * 60 * 1000), // 1.5 hours from now
     createdAt: new Date()
   },
   {
@@ -120,7 +121,7 @@ const mockJobRequests: JobRequest[] = [
     vehicleType: 'sedan',
     specialRequests: 'AC required, prefer faster route',
     status: 'pending',
-    expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes from now
+    expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
     createdAt: new Date()
   },
   {
@@ -149,7 +150,7 @@ const mockJobRequests: JobRequest[] = [
     vehicleType: 'hatchback',
     specialRequests: 'Tourist trip, please drive slowly for photos',
     status: 'pending',
-    expiresAt: new Date(Date.now() + 12 * 60 * 1000), // 12 minutes from now
+    expiresAt: new Date(Date.now() + 3 * 60 * 60 * 1000), // 3 hours from now
     createdAt: new Date()
   },
   {
@@ -178,7 +179,7 @@ const mockJobRequests: JobRequest[] = [
     vehicleType: 'suv',
     specialRequests: 'Family trip with luggage, need spacious vehicle',
     status: 'pending',
-    expiresAt: new Date(Date.now() + 7 * 60 * 1000), // 7 minutes from now
+    expiresAt: new Date(Date.now() + 4 * 60 * 60 * 1000), // 4 hours from now
     createdAt: new Date()
   }
 ];
@@ -362,6 +363,17 @@ export const useJobStore = create<JobState>((set, get) => ({
     set((state) => ({
       pendingRequests: state.pendingRequests.filter(req => req.expiresAt > now)
     }));
+  },
+
+  // Reset demo requests (for testing)
+  resetDemoRequests: () => {
+    const refreshedRequests = mockJobRequests.map(req => ({
+      ...req,
+      status: 'pending' as const,
+      expiresAt: new Date(Date.now() + (Math.floor(Math.random() * 4) + 1) * 60 * 60 * 1000), // 1-4 hours from now
+      createdAt: new Date()
+    }));
+    set({ pendingRequests: refreshedRequests });
   },
 
   getActiveJobRequests: () => {

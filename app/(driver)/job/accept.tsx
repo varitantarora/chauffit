@@ -214,7 +214,7 @@ export default function JobAcceptScreen() {
                   </ThemedText>
                 </View>
                 <View className="items-end">
-                  <ThemedText className="text-primary font-bold text-2xl">
+                  <ThemedText className="text-burgundy font-bold text-2xl">
                     ₹{job.fare.toLocaleString('en-IN')}
                   </ThemedText>
                   <ThemedText variant="caption">
@@ -396,7 +396,7 @@ export default function JobAcceptScreen() {
                 <View className="border-t border-border dark:border-darkBorder pt-2 mt-2">
                   <View className="flex-row justify-between">
                     <ThemedText className="font-bold text-lg">Total Fare:</ThemedText>
-                    <ThemedText className="font-bold text-lg text-primary">
+                    <ThemedText className="font-bold text-lg text-burgundy">
                       ₹{job.fare.toLocaleString('en-IN')}
                     </ThemedText>
                   </View>
@@ -425,7 +425,7 @@ export default function JobAcceptScreen() {
               className={`flex-2 py-4 items-center rounded-lg ${
                 isAccepting || timeLeft === 0 
                   ? 'bg-gray-400' 
-                  : 'bg-primary'
+                  : 'bg-burgundy'
               }`}
               style={{ flex: 2 }}
               activeOpacity={0.7}
