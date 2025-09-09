@@ -140,6 +140,37 @@ export default function BikerDocumentsScreen() {
     }
   };
 
+  const handleTestBypass = () => {
+    Alert.alert(
+      'Test Bypass Mode',
+      'Skip document upload for testing? This will mark all documents as verified.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Skip for Testing',
+          style: 'destructive',
+          onPress: () => {
+            // Mark all documents as verified for testing
+            const verifiedDocs: Record<DocumentType, DocumentStatus> = {};
+            documentTypes.forEach(docType => {
+              verifiedDocs[docType.key] = {
+                uploaded: true,
+                uri: 'test://placeholder',
+                status: 'verified'
+              };
+            });
+            setDocuments(verifiedDocs);
+            
+            // Navigate to background check immediately
+            setTimeout(() => {
+              router.push('/(biker)/onboarding/background-check');
+            }, 500);
+          }
+        }
+      ]
+    );
+  };
+
   const handleSubmit = async () => {
     const requiredDocs = documentTypes.filter(doc => doc.required);
     const missingDocs = requiredDocs.filter(doc => !documents[doc.key].uploaded);
@@ -329,6 +360,20 @@ export default function BikerDocumentsScreen() {
 
         {/* Submit Button */}
         <View className="p-6 border-t border-border dark:border-darkBorder">
+          {/* Test Bypass Button */}
+          <TouchableOpacity
+            onPress={handleTestBypass}
+            className="w-full py-4 bg-warning rounded-lg items-center mb-4"
+            activeOpacity={0.7}
+          >
+            <View className="flex-row items-center">
+              <Ionicons name="flash" size={20} color="white" />
+              <ThemedText className="text-white font-bold text-lg ml-2">
+                Test Bypass - Skip Documents
+              </ThemedText>
+            </View>
+          </TouchableOpacity>
+          
           <PrimaryButton
             title={isSubmitting ? "Submitting Documents..." : "SUBMIT FOR VERIFICATION"}
             onPress={handleSubmit}

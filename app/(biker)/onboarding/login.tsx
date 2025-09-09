@@ -12,7 +12,8 @@ export default function BikerLoginScreen() {
   const router = useRouter();
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const login = useAuthStore((state) => state.login);
-  const setRoleOnboardingCompleted = useAuthStore((state) => state.setRoleOnboardingCompleted);
+  const addRole = useAuthStore((state) => state.addRole);
+  const setActiveRole = useAuthStore((state) => state.setActiveRole);
   
   const [credentials, setCredentials] = useState({
     phoneOrEmail: '',
@@ -37,42 +38,25 @@ export default function BikerLoginScreen() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000));
       
+      // Login with biker user data
       login({
         id: 'biker_001',
         name: 'Alex Rodriguez',
         email: credentials.phoneOrEmail,
         phone: '+1 (555) 123-4567',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-        userType: 'biker',
-        rating: 4.8,
-        totalPickups: 1247,
-        joinDate: '2023-01-15',
-        vehicleInfo: {
-          type: 'motorcycle',
-          make: 'Honda',
-          model: 'CBR600RR',
-          year: '2023',
-          color: 'Black',
-          licensePlate: 'BIKER01'
-        },
-        verificationStatus: {
-          identity: true,
-          background: true,
-          vehicle: true,
-          license: true
-        }
       });
 
-      // Mark biker onboarding as completed
-      setRoleOnboardingCompleted('biker', true);
+      // Add biker role and set as active
+      addRole('biker');
+      setActiveRole('biker');
 
       Alert.alert(
         'Welcome Back!',
         'Logged in successfully. Ready to hit the road?',
-        [{ text: 'Start Riding', onPress: () => router.replace('/(biker)') }]
+        [{ text: 'Start Riding', onPress: () => router.replace('/(biker)/(tabs)') }]
       );
     } catch (error) {
-      Alert.alert('Login Failed', 'Invalid credentials. Please try again.');
+      Alert.alert('Login Failed', 'Failed to login. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -87,36 +71,19 @@ export default function BikerLoginScreen() {
         { 
           text: 'Quick Start',
           onPress: () => {
+            // Login with quick start user data
             login({
               id: 'biker_quick_001',
               name: 'Quick Access Biker',
               email: 'quick@biker.com',
               phone: '+1 (555) 999-8888',
-              avatar: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=150&h=150&fit=crop&crop=face',
-              userType: 'biker',
-              rating: 4.9,
-              totalPickups: 892,
-              joinDate: '2023-06-10',
-              vehicleInfo: {
-                type: 'motorcycle',
-                make: 'Yamaha',
-                model: 'MT-09',
-                year: '2024',
-                color: 'Blue',
-                licensePlate: 'QUICK01'
-              },
-              verificationStatus: {
-                identity: true,
-                background: true,
-                vehicle: true,
-                license: true
-              }
             });
             
-            // Mark biker onboarding as completed
-            setRoleOnboardingCompleted('biker', true);
+            // Add biker role and set as active
+            addRole('biker');
+            setActiveRole('biker');
             
-            router.replace('/(biker)');
+            router.replace('/(biker)/(tabs)');
           }
         }
       ]

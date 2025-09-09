@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, Alert, TextInput } from 'react-native';
+import { View, TouchableOpacity, Alert, TextInput, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,11 +20,27 @@ export default function OTPStartRideScreen() {
   
   const [otp, setOtp] = useState(['', '', '', '']);
   const [isStarting, setIsStarting] = useState(false);
+  
+  const otpRefs = React.useRef<TextInput[]>([]);
 
   const handleOtpChange = (value: string, index: number) => {
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
+    
+    // Auto-focus next input
+    if (value && index < 3) {
+      otpRefs.current[index + 1]?.focus();
+    }
+    
+    // Auto-dismiss keyboard when all 4 digits are entered
+    if (value && index === 3) {
+      // Check if all digits are filled
+      const allFilled = newOtp.every(digit => digit !== '');
+      if (allFilled) {
+        Keyboard.dismiss();
+      }
+    }
   };
 
   const handleStartRide = async () => {
@@ -130,10 +146,19 @@ export default function OTPStartRideScreen() {
                 {otp.map((digit, index) => (
                   <View key={index} className="w-12 h-12 border-2 border-burgundy rounded-lg">
                     <TextInput
+                      ref={(ref) => {
+                        if (ref) otpRefs.current[index] = ref;
+                      }}
                       value={digit}
                       onChangeText={(value) => handleOtpChange(value, index)}
+                      onKeyPress={({ nativeEvent }) => {
+                        if (nativeEvent.key === 'Backspace' && !digit && index > 0) {
+                          otpRefs.current[index - 1]?.focus();
+                        }
+                      }}
                       maxLength={1}
                       keyboardType="numeric"
+                      selectTextOnFocus
                       className="flex-1 text-center text-xl font-bold text-burgundy"
                       style={{ color: isDarkMode ? '#d9d1c6' : '#720C17' }}
                     />

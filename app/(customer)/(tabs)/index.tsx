@@ -125,14 +125,18 @@ export default function CustomerHomeScreen() {
                 <View key={index} className="flex-1 mx-1">
                   <ThemedCard 
                     variant="premium" 
-                    className="items-center py-2 min-h-[100px] justify-center"
+                    className="items-center py-3 h-[110px] justify-center px-1"
                     pressable
                     onPress={action.action}
                   >
-                    <View className="bg-secondary/10 p-3 rounded-full mb-3">
-                      <Ionicons name={action.icon as any} size={24} color="#BD8C5E" />
+                    <View className="bg-secondary/10 p-2 rounded-full mb-2">
+                      <Ionicons name={action.icon as any} size={22} color="#BD8C5E" />
                     </View>
-                    <ThemedText variant="tiny" className="text-center font-medium">
+                    <ThemedText 
+                      variant="small" 
+                      className="text-center font-medium"
+                      numberOfLines={1}
+                    >
                       {action.title}
                     </ThemedText>
                   </ThemedCard>

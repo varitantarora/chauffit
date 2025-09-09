@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { TextInput, TouchableOpacity, Alert, View, Pressable } from 'react-native';
+import { TextInput, TouchableOpacity, Alert, View, Pressable, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedView } from '../../components/common/ThemedView';
@@ -45,6 +45,15 @@ export default function OTPVerification() {
     // Auto-focus next input
     if (value && index < 5) {
       otpRefs.current[index + 1]?.focus();
+    }
+    
+    // Auto-dismiss keyboard when all 6 digits are entered
+    if (value && index === 5) {
+      // Check if all digits are filled
+      const allFilled = newOtp.every(digit => digit !== '');
+      if (allFilled) {
+        Keyboard.dismiss();
+      }
     }
   };
 

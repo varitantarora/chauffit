@@ -457,6 +457,20 @@ export default function BikerProfile() {
             </ThemedCard>
 
 
+            {/* Test Onboarding Button */}
+            <TouchableOpacity
+              onPress={() => router.push('/(biker)/onboarding/login')}
+              className="w-full py-4 bg-secondary rounded-lg items-center mb-4"
+              activeOpacity={0.7}
+            >
+              <View className="flex-row items-center">
+                <Ionicons name="school" size={20} color="white" />
+                <ThemedText className="text-white font-bold text-lg ml-2">
+                  Test Onboarding
+                </ThemedText>
+              </View>
+            </TouchableOpacity>
+
             {/* Logout Button */}
             <TouchableOpacity
               onPress={handleLogout}
