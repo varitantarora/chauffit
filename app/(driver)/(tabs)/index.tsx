@@ -127,7 +127,7 @@ export default function DriverHomeScreen() {
                     router.push(`/(driver)/job/active?jobId=${activeJob.id}`);
                   }
                 }}
-                activeOpacity={0.8}
+                activeOpacity={1}
               >
                 <ThemedCard className="p-4 border-2 border-success">
                   <View className="flex-row items-center">
@@ -157,7 +157,7 @@ export default function DriverHomeScreen() {
             <View className="px-6 mb-4">
               <TouchableOpacity
                 onPress={() => router.push('/(driver)/(tabs)/requests')}
-                activeOpacity={0.8}
+                activeOpacity={1}
               >
                 <ThemedCard className="p-4 border-2 border-warning">
                   <View className="flex-row items-center justify-between">

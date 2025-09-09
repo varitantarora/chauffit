@@ -31,7 +31,7 @@ export default function DriverPickupsScreen() {
               <TouchableOpacity
                 onPress={() => setActiveTab('active')}
                 className={`flex-1 py-3 rounded-lg ${
-                  activeTab === 'active' ? 'bg-primary' : ''
+                  activeTab === 'active' ? 'bg-burgundy' : ''
                 }`}
               >
                 <ThemedText 
@@ -45,7 +45,7 @@ export default function DriverPickupsScreen() {
               <TouchableOpacity
                 onPress={() => setActiveTab('completed')}
                 className={`flex-1 py-3 rounded-lg ${
-                  activeTab === 'completed' ? 'bg-primary' : ''
+                  activeTab === 'completed' ? 'bg-burgundy' : ''
                 }`}
               >
                 <ThemedText 
@@ -66,26 +66,26 @@ export default function DriverPickupsScreen() {
                 {/* Active Pickup 1 */}
                 <ThemedCard className="mb-4">
                   <View className="flex-row justify-between items-center mb-3">
-                    <View className="bg-orange-500/10 px-3 py-1 rounded-full">
-                      <ThemedText className="text-orange-500 text-xs font-semibold">
+                    <View className="bg-secondary/10 px-3 py-1 rounded-full">
+                      <ThemedText className="text-secondary text-xs font-semibold">
                         IN PROGRESS
                       </ThemedText>
                     </View>
-                    <ThemedText className="font-bold text-primary">₹125.00</ThemedText>
+                    <ThemedText className="font-bold text-burgundy">₹125.00</ThemedText>
                   </View>
                   
                   <ThemedText className="font-bold text-lg mb-2">Driver Pickup #4521</ThemedText>
                   
                   <View className="space-y-2 mb-3">
                     <View className="flex-row items-start">
-                      <Ionicons name="location" size={16} color="#bd8c5e" />
+                      <Ionicons name="location" size={16} color="#BD8C5E" />
                       <View className="ml-2 flex-1">
                         <ThemedText variant="caption">PICKUP LOCATION</ThemedText>
                         <ThemedText>Sector 15, Gurgaon - Driver Home</ThemedText>
                       </View>
                     </View>
                     <View className="flex-row items-start">
-                      <Ionicons name="navigate" size={16} color="#bd8c5e" />
+                      <Ionicons name="navigate" size={16} color="#BD8C5E" />
                       <View className="ml-2 flex-1">
                         <ThemedText variant="caption">DESTINATION</ThemedText>
                         <ThemedText>Cyber Hub, DLF Phase 3</ThemedText>
@@ -95,7 +95,7 @@ export default function DriverPickupsScreen() {
                   
                   <View className="flex-row justify-between items-center">
                     <ThemedText variant="caption">Driver: Amit Sharma</ThemedText>
-                    <TouchableOpacity className="bg-primary px-4 py-2 rounded-lg">
+                    <TouchableOpacity className="bg-burgundy px-4 py-2 rounded-lg">
                       <ThemedText className="text-white font-semibold">Navigate</ThemedText>
                     </TouchableOpacity>
                   </View>
@@ -104,26 +104,26 @@ export default function DriverPickupsScreen() {
                 {/* Active Pickup 2 */}
                 <ThemedCard className="mb-4">
                   <View className="flex-row justify-between items-center mb-3">
-                    <View className="bg-blue-500/10 px-3 py-1 rounded-full">
-                      <ThemedText className="text-blue-500 text-xs font-semibold">
+                    <View className="bg-burgundy/10 px-3 py-1 rounded-full">
+                      <ThemedText className="text-burgundy text-xs font-semibold">
                         PICKUP READY
                       </ThemedText>
                     </View>
-                    <ThemedText className="font-bold text-primary">₹180.00</ThemedText>
+                    <ThemedText className="font-bold text-burgundy">₹180.00</ThemedText>
                   </View>
                   
                   <ThemedText className="font-bold text-lg mb-2">Driver Pickup #7892</ThemedText>
                   
                   <View className="space-y-2 mb-3">
                     <View className="flex-row items-start">
-                      <Ionicons name="location" size={16} color="#bd8c5e" />
+                      <Ionicons name="location" size={16} color="#BD8C5E" />
                       <View className="ml-2 flex-1">
                         <ThemedText variant="caption">PICKUP LOCATION</ThemedText>
                         <ThemedText>MG Road Metro Station</ThemedText>
                       </View>
                     </View>
                     <View className="flex-row items-start">
-                      <Ionicons name="navigate" size={16} color="#bd8c5e" />
+                      <Ionicons name="navigate" size={16} color="#BD8C5E" />
                       <View className="ml-2 flex-1">
                         <ThemedText variant="caption">DESTINATION</ThemedText>
                         <ThemedText>Sushant Lok, Gurgaon</ThemedText>
@@ -133,7 +133,7 @@ export default function DriverPickupsScreen() {
                   
                   <View className="flex-row justify-between items-center">
                     <ThemedText variant="caption">Driver: Rajesh Kumar</ThemedText>
-                    <TouchableOpacity className="bg-primary px-4 py-2 rounded-lg">
+                    <TouchableOpacity className="bg-burgundy px-4 py-2 rounded-lg">
                       <ThemedText className="text-white font-semibold">Start Pickup</ThemedText>
                     </TouchableOpacity>
                   </View>
@@ -144,7 +144,7 @@ export default function DriverPickupsScreen() {
                 {/* Completed Pickups */}
                 <ThemedCard className="mb-3">
                   <View className="flex-row items-center">
-                    <View className="bg-green-500/10 p-2 rounded-full">
+                    <View className="bg-success/10 p-2 rounded-full">
                       <Ionicons name="checkmark-circle" size={20} color="#10b981" />
                     </View>
                     <View className="ml-3 flex-1">
@@ -152,13 +152,13 @@ export default function DriverPickupsScreen() {
                       <ThemedText variant="caption">Completed 2 hours ago</ThemedText>
                       <ThemedText variant="caption">Sector 56 → Cyber Hub</ThemedText>
                     </View>
-                    <ThemedText className="font-bold">₹95.00</ThemedText>
+                    <ThemedText className="font-bold text-burgundy">₹95.00</ThemedText>
                   </View>
                 </ThemedCard>
                 
                 <ThemedCard className="mb-3">
                   <View className="flex-row items-center">
-                    <View className="bg-green-500/10 p-2 rounded-full">
+                    <View className="bg-success/10 p-2 rounded-full">
                       <Ionicons name="checkmark-circle" size={20} color="#10b981" />
                     </View>
                     <View className="ml-3 flex-1">
@@ -166,13 +166,13 @@ export default function DriverPickupsScreen() {
                       <ThemedText variant="caption">Completed 3 hours ago</ThemedText>
                       <ThemedText variant="caption">Dwarka → Airport</ThemedText>
                     </View>
-                    <ThemedText className="font-bold">₹160.00</ThemedText>
+                    <ThemedText className="font-bold text-burgundy">₹160.00</ThemedText>
                   </View>
                 </ThemedCard>
                 
                 <ThemedCard className="mb-3">
                   <View className="flex-row items-center">
-                    <View className="bg-green-500/10 p-2 rounded-full">
+                    <View className="bg-success/10 p-2 rounded-full">
                       <Ionicons name="checkmark-circle" size={20} color="#10b981" />
                     </View>
                     <View className="ml-3 flex-1">
@@ -180,7 +180,7 @@ export default function DriverPickupsScreen() {
                       <ThemedText variant="caption">Completed 4 hours ago</ThemedText>
                       <ThemedText variant="caption">Noida → Gurgaon</ThemedText>
                     </View>
-                    <ThemedText className="font-bold">₹220.00</ThemedText>
+                    <ThemedText className="font-bold text-burgundy">₹220.00</ThemedText>
                   </View>
                 </ThemedCard>
               </>

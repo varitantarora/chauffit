@@ -241,7 +241,7 @@ export default function BikerHomeScreen() {
                   trackColor={{ false: '#767577', true: '#bd8c5e' }}
                   thumbColor={isOnline ? '#ffffff' : '#f4f3f4'}
                 />
-                <ThemedText variant="caption" className="mt-1 text-gray-500">
+                <ThemedText variant="caption" className="mt-1 text-textSecondary">
                   {currentShift ? 'On Shift' : 'Off Shift'}
                 </ThemedText>
               </View>
@@ -253,16 +253,16 @@ export default function BikerHomeScreen() {
             <View className="px-6 mb-4">
               <ThemedCard className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
                 <View className="flex-row items-center">
-                  <View className="bg-red-500 p-2 rounded-full mr-3">
+                  <View className="bg-danger p-2 rounded-full mr-3">
                     <Ionicons name="warning" size={20} color="white" />
                   </View>
                   <View className="flex-1">
-                    <ThemedText className="font-bold text-red-600">PICKUP EMERGENCY</ThemedText>
-                    <ThemedText className="text-red-500 text-sm">
+                    <ThemedText className="font-bold text-danger">PICKUP EMERGENCY</ThemedText>
+                    <ThemedText className="text-danger text-sm">
                       {emergencyAlerts.length} driver{emergencyAlerts.length > 1 ? 's' : ''} need{emergencyAlerts.length === 1 ? 's' : ''} immediate pickup
                     </ThemedText>
                   </View>
-                  <TouchableOpacity className="bg-red-500 px-4 py-2 rounded-lg">
+                  <TouchableOpacity className="bg-danger px-4 py-2 rounded-lg">
                     <ThemedText className="text-white font-semibold text-sm">RESPOND</ThemedText>
                   </TouchableOpacity>
                 </View>
@@ -309,9 +309,9 @@ export default function BikerHomeScreen() {
               </ThemedText>
               <TouchableOpacity 
                 onPress={() => setShowFilters(!showFilters)}
-                className="bg-primary/10 p-2 rounded-lg"
+                className="bg-secondary/10 p-2 rounded-lg"
               >
-                <Ionicons name="filter" size={16} color="#bd8c5e" />
+                <Ionicons name="filter" size={16} color="#BD8C5E" />
               </TouchableOpacity>
             </View>
 
@@ -323,14 +323,14 @@ export default function BikerHomeScreen() {
                     onPress={() => setSelectedFilter(filter)}
                     className={`px-3 py-2 rounded-full ${
                       selectedFilter === filter 
-                        ? 'bg-primary' 
+                        ? 'bg-burgundy' 
                         : 'bg-gray-100 dark:bg-gray-800'
                     }`}
                   >
                     <ThemedText className={`text-sm font-semibold ${
                       selectedFilter === filter 
                         ? 'text-white' 
-                        : 'text-gray-600 dark:text-gray-400'
+                        : 'text-textSecondary'
                     }`}>
                       {filter.charAt(0).toUpperCase() + filter.slice(1)}
                     </ThemedText>
@@ -344,8 +344,8 @@ export default function BikerHomeScreen() {
           {priorityTasks.length > 0 && selectedFilter === 'all' && (
             <View className="px-6 mb-6">
               <View className="flex-row items-center mb-3">
-                <Ionicons name="warning" size={20} color="#ef4444" />
-                <ThemedText className="font-bold text-red-600 ml-2">
+                <Ionicons name="warning" size={20} color="#EF4444" />
+                <ThemedText className="font-bold text-danger ml-2">
                   Priority Tasks - Respond Quickly!
                 </ThemedText>
               </View>
@@ -383,7 +383,7 @@ export default function BikerHomeScreen() {
               <ThemedCard className="p-6">
                 <View className="items-center">
                   <View className="bg-gray-100 dark:bg-gray-800 p-4 rounded-full mb-3">
-                    <Ionicons name="bicycle" size={32} color="#6b7280" />
+                    <Ionicons name="bicycle" size={32} color="#6B7280" />
                   </View>
                   <ThemedText className="font-semibold text-center">
                     {isOnline ? 'No Driver Pickups Available' : 'Go Online to See Pickups'}

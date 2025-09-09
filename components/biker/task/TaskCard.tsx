@@ -88,7 +88,7 @@ export function TaskCard({
 
   if (compact) {
     return (
-      <TouchableOpacity onPress={handleCardPress}>
+      <TouchableOpacity onPress={handleCardPress} activeOpacity={1}>
         <ThemedCard className="mb-3">
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center flex-1">
@@ -96,7 +96,7 @@ export function TaskCard({
                 <Ionicons 
                   name={getTaskIcon(task.type) as any} 
                   size={20} 
-                  color="#bd8c5e" 
+                  color="#BD8C5E" 
                 />
               </View>
               <View className="flex-1">
@@ -104,7 +104,7 @@ export function TaskCard({
                   <ThemedText className="font-semibold mr-2">{task.title}</ThemedText>
                   <PriorityBadge priority={task.priority} size="small" />
                 </View>
-                <ThemedText variant="caption" className="text-gray-500">
+                <ThemedText variant="caption" className="text-textSecondary">
                   {task.estimatedDistance.toFixed(1)} km • {task.estimatedDuration} min
                 </ThemedText>
               </View>
@@ -119,15 +119,15 @@ export function TaskCard({
   }
 
   return (
-    <TouchableOpacity onPress={handleCardPress}>
+    <TouchableOpacity onPress={handleCardPress} activeOpacity={1}>
       <ThemedCard className="mb-4">
         {/* Header with priority and fare */}
         <View className="flex-row justify-between items-center mb-3">
           <View className="flex-row items-center">
             <PriorityBadge priority={task.priority} />
             {task.responseTimeLimit && (
-              <View className="bg-red-500/10 px-2 py-1 rounded-full ml-2">
-                <ThemedText className="text-red-500 text-xs font-semibold">
+              <View className="bg-danger/10 px-2 py-1 rounded-full ml-2">
+                <ThemedText className="text-danger text-xs font-semibold">
                   {calculateTimeRemaining()}
                 </ThemedText>
               </View>
@@ -138,7 +138,7 @@ export function TaskCard({
               ₹{totalFare}
             </ThemedText>
             {task.emergencyBonus && (
-              <ThemedText className="text-green-600 text-xs">
+              <ThemedText className="text-success text-xs">
                 +₹{task.emergencyBonus} bonus
               </ThemedText>
             )}
@@ -172,8 +172,8 @@ export function TaskCard({
                   Customer: {task.customerName}
                 </ThemedText>
                 {task.customerPhone && (
-                  <TouchableOpacity className="ml-auto">
-                    <Ionicons name="call" size={16} color="#bd8c5e" />
+                  <TouchableOpacity className="ml-auto" activeOpacity={1}>
+                    <Ionicons name="call" size={16} color="#BD8C5E" />
                   </TouchableOpacity>
                 )}
               </View>
@@ -185,8 +185,8 @@ export function TaskCard({
                   Driver: {task.driverName}
                 </ThemedText>
                 {task.driverPhone && (
-                  <TouchableOpacity className="ml-auto">
-                    <Ionicons name="call" size={16} color="#bd8c5e" />
+                  <TouchableOpacity className="ml-auto" activeOpacity={1}>
+                    <Ionicons name="call" size={16} color="#BD8C5E" />
                   </TouchableOpacity>
                 )}
               </View>
@@ -197,7 +197,7 @@ export function TaskCard({
         {/* Locations */}
         <View className="mb-3">
           <View className="flex-row items-start mb-2">
-            <Ionicons name="location" size={16} color="#bd8c5e" />
+            <Ionicons name="location" size={16} color="#BD8C5E" />
             <View className="ml-2 flex-1">
               <ThemedText variant="caption">PICKUP</ThemedText>
               <ThemedText className="text-sm">
@@ -208,7 +208,7 @@ export function TaskCard({
           
           {task.dropoffLocation && (
             <View className="flex-row items-start">
-              <Ionicons name="flag" size={16} color="#bd8c5e" />
+              <Ionicons name="flag" size={16} color="#BD8C5E" />
               <View className="ml-2 flex-1">
                 <ThemedText variant="caption">DROP-OFF</ThemedText>
                 <ThemedText className="text-sm">
@@ -222,19 +222,19 @@ export function TaskCard({
         {/* Task details */}
         <View className="flex-row justify-between mb-3">
           <View className="flex-row items-center">
-            <Ionicons name="speedometer" size={14} color="#bd8c5e" />
+            <Ionicons name="speedometer" size={14} color="#BD8C5E" />
             <ThemedText variant="caption" className="ml-1">
               {task.estimatedDistance.toFixed(1)} km
             </ThemedText>
           </View>
           <View className="flex-row items-center">
-            <Ionicons name="time" size={14} color="#bd8c5e" />
+            <Ionicons name="time" size={14} color="#BD8C5E" />
             <ThemedText variant="caption" className="ml-1">
               {task.estimatedDuration} min
             </ThemedText>
           </View>
           <View className="flex-row items-center">
-            <Ionicons name="time-outline" size={14} color="#bd8c5e" />
+            <Ionicons name="time-outline" size={14} color="#BD8C5E" />
             <ThemedText variant="caption" className="ml-1">
               {formatTime(task.createdAt)}
             </ThemedText>
@@ -245,7 +245,7 @@ export function TaskCard({
         {task.specialInstructions && (
           <View className="mb-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
             <View className="flex-row items-start">
-              <Ionicons name="information-circle" size={16} color="#f59e0b" />
+              <Ionicons name="information-circle" size={16} color="#F59E0B" />
               <ThemedText variant="caption" className="ml-2 flex-1 text-yellow-700 dark:text-yellow-300">
                 {task.specialInstructions}
               </ThemedText>
@@ -265,12 +265,12 @@ export function TaskCard({
                 </ThemedText>
                 {item.fragile && (
                   <View className="bg-orange-100 dark:bg-orange-900/20 px-2 py-1 rounded-full mr-1">
-                    <ThemedText className="text-orange-600 text-xs">Fragile</ThemedText>
+                    <ThemedText className="text-warning text-xs">Fragile</ThemedText>
                   </View>
                 )}
                 {item.confidential && (
                   <View className="bg-red-100 dark:bg-red-900/20 px-2 py-1 rounded-full">
-                    <ThemedText className="text-red-600 text-xs">Confidential</ThemedText>
+                    <ThemedText className="text-danger text-xs">Confidential</ThemedText>
                   </View>
                 )}
               </View>
@@ -285,8 +285,9 @@ export function TaskCard({
               <TouchableOpacity 
                 onPress={onDecline}
                 className="flex-1 bg-gray-100 dark:bg-gray-800 py-3 rounded-lg"
+                activeOpacity={1}
               >
-                <ThemedText className="text-center font-semibold text-gray-600 dark:text-gray-300">
+                <ThemedText className="text-center font-semibold text-textSecondary">
                   Decline
                 </ThemedText>
               </TouchableOpacity>
@@ -294,7 +295,8 @@ export function TaskCard({
             {onAccept && (
               <TouchableOpacity 
                 onPress={onAccept}
-                className="flex-1 bg-primary py-3 rounded-lg"
+                className="flex-1 bg-burgundy py-3 rounded-lg"
+                activeOpacity={1}
               >
                 <ThemedText className="text-center font-semibold text-white">
                   Accept Task
@@ -313,9 +315,9 @@ export function TaskCard({
               'bg-gray-100 dark:bg-gray-800'
             }`}>
               <ThemedText className={`text-center font-semibold ${
-                task.status === 'accepted' ? 'text-blue-600' :
-                task.status === 'in_progress' ? 'text-green-600' :
-                'text-gray-600'
+                task.status === 'accepted' ? 'text-info' :
+                task.status === 'in_progress' ? 'text-success' :
+                'text-textSecondary'
               }`}>
                 {task.status === 'accepted' ? 'Task Accepted' :
                  task.status === 'in_progress' ? 'In Progress' :

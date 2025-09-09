@@ -22,48 +22,48 @@ export function PriorityBadge({
     switch (priority) {
       case 'emergency':
         return {
-          bgColor: 'bg-red-500/10',
-          textColor: 'text-red-500',
-          borderColor: 'border-red-500/20',
+          bgColor: 'bg-danger/10',
+          textColor: 'text-danger',
+          borderColor: 'border-danger/20',
           icon: 'warning',
           label: 'EMERGENCY',
-          pulseColor: 'bg-red-500'
+          pulseColor: 'bg-danger'
         };
       case 'urgent':
         return {
-          bgColor: 'bg-orange-500/10',
-          textColor: 'text-orange-500',
-          borderColor: 'border-orange-500/20',
+          bgColor: 'bg-warning/10',
+          textColor: 'text-warning',
+          borderColor: 'border-warning/20',
           icon: 'flash',
           label: 'URGENT',
-          pulseColor: 'bg-orange-500'
+          pulseColor: 'bg-warning'
         };
       case 'high':
         return {
-          bgColor: 'bg-yellow-500/10',
-          textColor: 'text-yellow-600',
-          borderColor: 'border-yellow-500/20',
+          bgColor: 'bg-warning/10',
+          textColor: 'text-warning',
+          borderColor: 'border-warning/20',
           icon: 'chevron-up',
           label: 'HIGH',
-          pulseColor: 'bg-yellow-500'
+          pulseColor: 'bg-warning'
         };
       case 'normal':
         return {
-          bgColor: 'bg-blue-500/10',
-          textColor: 'text-blue-500',
-          borderColor: 'border-blue-500/20',
+          bgColor: 'bg-info/10',
+          textColor: 'text-info',
+          borderColor: 'border-info/20',
           icon: 'checkmark-circle',
           label: 'NORMAL',
-          pulseColor: 'bg-blue-500'
+          pulseColor: 'bg-info'
         };
       default:
         return {
-          bgColor: 'bg-gray-500/10',
-          textColor: 'text-gray-500',
-          borderColor: 'border-gray-500/20',
+          bgColor: 'bg-textSecondary/10',
+          textColor: 'text-textSecondary',
+          borderColor: 'border-textSecondary/20',
           icon: 'ellipse',
           label: 'UNKNOWN',
-          pulseColor: 'bg-gray-500'
+          pulseColor: 'bg-textSecondary'
         };
     }
   };
@@ -134,7 +134,7 @@ export function PriorityBadge({
           <Ionicons 
             name={priorityConfig.icon as any} 
             size={sizeConfig.iconSize} 
-            color={priorityConfig.textColor.replace('text-', '#').replace('-500', '').replace('-600', '')}
+            color={priorityConfig.textColor.includes('danger') ? '#EF4444' : priorityConfig.textColor.includes('warning') ? '#F59E0B' : priorityConfig.textColor.includes('info') ? '#3B82F6' : '#6B7280'}
             style={{ marginRight: showText ? 4 : 0 }}
           />
         )}
@@ -161,7 +161,7 @@ export function PrioritySortIndicator({ priority }: { priority: TaskPriority }) 
     <View className={`
       w-1 
       h-full 
-      ${priorityConfig.pulseColor.replace('bg-', 'bg-').replace('-500', '-400')}
+      ${priorityConfig.pulseColor}
       rounded-r-sm
     `} />
   );
