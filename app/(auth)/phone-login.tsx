@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TextInput, TouchableOpacity, Alert, View, SafeAreaView, Text, Image } from 'react-native';
+import { TextInput, TouchableOpacity, Alert, View, SafeAreaView, Text, Image, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedView } from '../../components/common/ThemedView';
 import { ThemedText } from '../../components/common/ThemedText';
@@ -8,29 +8,69 @@ import { GoogleIcon } from '../../components/icons/GoogleIcon';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
 
+const translations = {
+  EN: {
+    welcome: 'Welcome to Chauffit',
+    tagline: 'Your premium chauffeur service',
+    phone: 'Phone',
+    email: 'Email',
+    phonePlaceholder: 'Enter phone number',
+    sendOTP: 'Send OTP',
+    orContinue: 'Or continue with',
+    google: 'Google',
+    apple: 'Apple',
+    noAccount: "Don't have an account? ",
+    signUp: 'Sign up',
+    termsText: 'By continuing, you agree to our Terms of Service and Privacy Policy',
+    otpSent: 'OTP Sent!',
+    otpMessage: 'For testing purposes, use OTP: 123456\n\nIn production, you would receive this via SMS.',
+    error: 'Error',
+    invalidPhone: 'Please enter a valid phone number',
+  },
+  HI: {
+    welcome: 'चॉफ़िट में आपका स्वागत है',
+    tagline: 'आपकी प्रीमियम ड्राइवर सेवा',
+    phone: 'फ़ोन',
+    email: 'ईमेल',
+    phonePlaceholder: 'फ़ोन नंबर दर्ज करें',
+    sendOTP: 'OTP भेजें',
+    orContinue: 'या जारी रखें',
+    google: 'गूगल',
+    apple: 'एप्पल',
+    noAccount: 'खाता नहीं है? ',
+    signUp: 'साइन अप करें',
+    termsText: 'जारी रखकर, आप हमारी सेवा की शर्तों और गोपनीयता नीति से सहमत होते हैं',
+    otpSent: 'OTP भेजा गया!',
+    otpMessage: 'परीक्षण के उद्देश्य से, OTP का उपयोग करें: 123456\n\nप्रोडक्शन में, आपको यह SMS के माध्यम से प्राप्त होगा।',
+    error: 'त्रुटि',
+    invalidPhone: 'कृपया एक मान्य फ़ोन नंबर दर्ज करें',
+  },
+};
+
 export default function PhoneLogin() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [language, setLanguage] = useState<'EN' | 'HI'>('EN');
-  
+
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const router = useRouter();
+  const t = translations[language];
 
   const handlePhoneLogin = async () => {
     if (!phoneNumber || phoneNumber.length < 10) {
-      Alert.alert('Error', 'Please enter a valid phone number');
+      Alert.alert(t.error, t.invalidPhone);
       return;
     }
-    
+
     setLoading(true);
-    
+
     // Simulate OTP sending
     setTimeout(() => {
       setLoading(false);
       // Show test OTP to user
       Alert.alert(
-        'OTP Sent!', 
-        'For testing purposes, use OTP: 123456\n\nIn production, you would receive this via SMS.',
+        t.otpSent,
+        t.otpMessage,
         [
           {
             text: 'OK',
@@ -78,17 +118,17 @@ export default function PhoneLogin() {
 
         <View className="items-center mb-8">
           <View className="rounded-full items-center justify-center mb-4" style={{ width: 100, height: 100 }}>
-            <Image 
-              source={require('../../assets/chauffit-logo.png')} 
+            <Image
+              source={require('../../assets/chauffit-logo.png')}
               style={{ width: 100, height: 100 }}
               resizeMode="contain"
             />
           </View>
           <ThemedText variant="h1" className="text-center mb-2">
-            Welcome to Chauffit
+            {t.welcome}
           </ThemedText>
           <ThemedText variant="small" className="text-center text-textSecondary">
-            Your premium chauffeur service
+            {t.tagline}
           </ThemedText>
         </View>
 
@@ -96,16 +136,16 @@ export default function PhoneLogin() {
         <View className={`flex-row bg-surface rounded-xl p-1 mb-6 ${isDarkMode ? 'bg-darkSurface' : 'bg-surface'}`}>
           <View className="flex-1 py-3 px-4 rounded-lg bg-primary shadow-sm">
             <ThemedText className="text-center font-semibold text-burgundy">
-              Phone
+              {t.phone}
             </ThemedText>
           </View>
-          
+
           <TouchableOpacity
             onPress={() => router.replace('/(auth)/email-login')}
             className="flex-1 py-3 px-4 rounded-lg"
           >
             <ThemedText className="text-center font-semibold text-textSecondary">
-              Email
+              {t.email}
             </ThemedText>
           </TouchableOpacity>
         </View>
@@ -115,7 +155,11 @@ export default function PhoneLogin() {
           <ThemedText className="text-textSecondary mr-2">+91</ThemedText>
           <TextInput
             className="flex-1 text-base"
-            placeholder="Enter phone number"
+            style={{
+              textAlignVertical: 'center',
+              paddingVertical: Platform.OS === 'ios' ? 0 : 0,
+            }}
+            placeholder={t.phonePlaceholder}
             placeholderTextColor={iconColor}
             value={phoneNumber}
             onChangeText={setPhoneNumber}
@@ -126,7 +170,7 @@ export default function PhoneLogin() {
         </View>
         
         <PrimaryButton
-          title="Send OTP"
+          title={t.sendOTP}
           onPress={handlePhoneLogin}
           loading={loading}
         />
@@ -135,7 +179,7 @@ export default function PhoneLogin() {
         <View className="flex-row items-center my-6">
           <View className={`flex-1 h-px ${isDarkMode ? 'bg-darkBorder' : 'bg-gray-300'}`} />
           <ThemedText variant="small" className="mx-4 text-textSecondary">
-            Or continue with
+            {t.orContinue}
           </ThemedText>
           <View className={`flex-1 h-px ${isDarkMode ? 'bg-darkBorder' : 'bg-gray-300'}`} />
         </View>
@@ -150,7 +194,7 @@ export default function PhoneLogin() {
             }`}
           >
             <GoogleIcon width={20} height={20} />
-            <ThemedText className="font-medium ml-2">Google</ThemedText>
+            <ThemedText className="font-medium ml-2">{t.google}</ThemedText>
           </TouchableOpacity>
 
           {/* Apple Button */}
@@ -160,13 +204,13 @@ export default function PhoneLogin() {
               isDarkMode ? 'border-darkBorder bg-darkSurface' : 'border-gray-300 bg-white'
             }`}
           >
-            <Ionicons 
-              name="logo-apple" 
-              size={20} 
-              color={isDarkMode ? '#d9d1c6' : '#000000'} 
+            <Ionicons
+              name="logo-apple"
+              size={20}
+              color={isDarkMode ? '#d9d1c6' : '#000000'}
               style={{ marginRight: 8 }}
             />
-            <ThemedText className="font-medium">Apple</ThemedText>
+            <ThemedText className="font-medium">{t.apple}</ThemedText>
           </TouchableOpacity>
         </View>
         
@@ -175,14 +219,14 @@ export default function PhoneLogin() {
           className="mt-2"
         >
           <ThemedText variant="small" className="text-center text-secondary">
-            Don't have an account? <ThemedText className="font-semibold">Sign up</ThemedText>
+            {t.noAccount}<ThemedText className="font-semibold">{t.signUp}</ThemedText>
           </ThemedText>
         </TouchableOpacity>
-        
+
         {/* Help Text */}
         <View className="mt-8 px-4">
           <ThemedText variant="tiny" className="text-center text-textSecondary leading-5">
-            By continuing, you agree to our Terms of Service and Privacy Policy
+            {t.termsText}
           </ThemedText>
         </View>
       </ThemedView>

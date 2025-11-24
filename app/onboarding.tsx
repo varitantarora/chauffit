@@ -83,7 +83,7 @@ export default function OnboardingScreen() {
           onPress={handleSkip}
           className="px-4 py-2"
         >
-          <Text className="text-gray-600 font-medium text-base">Skip</Text>
+          <Text className="text-gray-600 font-bold text-base">Skip</Text>
         </TouchableOpacity>
       </View>
 

@@ -14,13 +14,13 @@ export default function OTPVerification() {
   const [resendLoading, setResendLoading] = useState(false);
   const [timer, setTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
-  
+
   const login = useAuthStore((state) => state.login);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const router = useRouter();
   const { phoneNumber } = useLocalSearchParams<{ phoneNumber: string }>();
-  
-  const otpRefs = useRef<TextInput[]>([]);
+
+  const inputRefs = useRef<(TextInput | null)[]>([]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -37,42 +37,62 @@ export default function OTPVerification() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleOtpChange = (value: string, index: number) => {
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
+  useEffect(() => {
+    // Focus first input on mount
+    setTimeout(() => {
+      inputRefs.current[0]?.focus();
+    }, 300);
+  }, []);
 
-    // Auto-focus next input
-    if (value && index < 5) {
-      otpRefs.current[index + 1]?.focus();
-    }
-    
-    // Auto-dismiss keyboard when all 6 digits are entered
-    if (value && index === 5) {
-      // Check if all digits are filled
-      const allFilled = newOtp.every(digit => digit !== '');
-      if (allFilled) {
+  // Auto-focus next empty input after OTP changes
+  useEffect(() => {
+    const firstEmptyIndex = otp.findIndex((digit) => digit === '');
+
+    if (firstEmptyIndex > 0 && firstEmptyIndex < 6) {
+      // Focus next empty input
+      setTimeout(() => {
+        inputRefs.current[firstEmptyIndex]?.focus();
+      }, 50);
+    } else if (firstEmptyIndex === -1) {
+      // All filled, dismiss keyboard
+      setTimeout(() => {
         Keyboard.dismiss();
-      }
+      }, 100);
     }
+  }, [otp]);
+
+  const handleOtpChange = (value: string, index: number) => {
+    // Only accept numeric values
+    if (value && !/^\d+$/.test(value)) {
+      return;
+    }
+
+    // Get single digit
+    const digit = value.slice(-1);
+
+    // Update OTP array - useEffect will handle focus
+    const newOtp = [...otp];
+    newOtp[index] = digit;
+    setOtp(newOtp);
   };
 
-  const handleBackspace = (value: string, index: number) => {
-    if (!value && index > 0) {
-      otpRefs.current[index - 1]?.focus();
+  const handleKeyPress = (e: any, index: number) => {
+    if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
+      // Move to previous input on backspace
+      inputRefs.current[index - 1]?.focus();
     }
   };
 
   const handleVerifyOTP = async () => {
     const otpValue = otp.join('');
-    
+
     if (otpValue.length !== 6) {
       Alert.alert('Error', 'Please enter complete OTP');
       return;
     }
-    
+
     setLoading(true);
-    
+
     // Simulate OTP verification
     setTimeout(() => {
       if (otpValue === '123456') {
@@ -83,28 +103,25 @@ export default function OTPVerification() {
           phone: phoneNumber,
         });
         setLoading(false);
-        // Check if user has cars, if not redirect to car details
         router.replace('/(auth)/car-details');
       } else {
         setLoading(false);
         Alert.alert('Error', 'Invalid OTP. Please try again.');
         setOtp(['', '', '', '', '', '']);
-        otpRefs.current[0]?.focus();
+        inputRefs.current[0]?.focus();
       }
     }, 1500);
   };
 
   const handleResendOTP = async () => {
     setResendLoading(true);
-    
-    // Simulate resend OTP
+
     setTimeout(() => {
       setResendLoading(false);
       setCanResend(false);
       setTimer(60);
       Alert.alert('Success', 'OTP has been resent to your phone number');
-      
-      // Restart timer
+
       const interval = setInterval(() => {
         setTimer((prev) => {
           if (prev <= 1) {
@@ -119,15 +136,11 @@ export default function OTPVerification() {
   };
 
   const formatPhoneNumber = (phone: string) => {
-    if (phone.length >= 10) {
+    if (phone && phone.length >= 10) {
       return `+91 ${phone.slice(0, 2)}XXX XXX${phone.slice(-2)}`;
     }
     return phone;
   };
-
-  const inputClass = isDarkMode 
-    ? 'bg-darkSurface text-darkText border-darkBorder' 
-    : 'bg-white text-textPrimary border-border';
 
   const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
 
@@ -136,7 +149,7 @@ export default function OTPVerification() {
       <ThemedView className="flex-1 px-6">
         {/* Header */}
         <View className="flex-row items-center mt-4 mb-8">
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => router.back()}
             className="mr-4"
           >
@@ -145,7 +158,7 @@ export default function OTPVerification() {
           <ThemedText variant="h2">Verify Phone Number</ThemedText>
         </View>
 
-        <View className="flex-1 justify-center">
+        <Pressable className="flex-1 justify-center" onPress={Keyboard.dismiss}>
           {/* Illustration */}
           <View className="items-center mb-8">
             <View className="w-24 h-24 bg-secondary/20 rounded-full items-center justify-center mb-4">
@@ -167,22 +180,17 @@ export default function OTPVerification() {
             {otp.map((digit, index) => (
               <TextInput
                 key={index}
-                ref={(ref) => {
-                  if (ref) otpRefs.current[index] = ref;
+                ref={(ref) => (inputRefs.current[index] = ref)}
+                className="w-12 h-12 text-center text-xl font-bold rounded-xl border-2"
+                style={{
+                  borderColor: digit ? '#BD8C5E' : (isDarkMode ? '#3A3A3A' : '#E5E5E5'),
+                  backgroundColor: digit ? 'rgba(189, 140, 94, 0.1)' : (isDarkMode ? '#1C1C1C' : '#FFFFFF'),
+                  color: isDarkMode ? '#d9d1c6' : '#314b4c',
                 }}
-                className={`w-12 h-12 text-center text-xl font-bold rounded-xl border-2 ${
-                  digit 
-                    ? 'border-secondary bg-secondary/10' 
-                    : `border-border ${isDarkMode ? 'border-darkBorder bg-darkSurface' : 'border-border bg-white'}`
-                }`}
                 value={digit}
                 onChangeText={(value) => handleOtpChange(value, index)}
-                onKeyPress={({ nativeEvent }) => {
-                  if (nativeEvent.key === 'Backspace') {
-                    handleBackspace(digit, index);
-                  }
-                }}
-                keyboardType="numeric"
+                onKeyPress={(e) => handleKeyPress(e, index)}
+                keyboardType="number-pad"
                 maxLength={1}
                 selectTextOnFocus
               />
@@ -221,7 +229,7 @@ export default function OTPVerification() {
               Didn't receive the code? Check your spam folder or contact support
             </ThemedText>
           </View>
-        </View>
+        </Pressable>
       </ThemedView>
     </SafeAreaView>
   );
