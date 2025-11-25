@@ -36,11 +36,11 @@ export default function CustomerTabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="favorites"
+        name="services"
         options={{
-          title: 'Favorites',
+          title: 'Services',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="heart" size={size} color={color} />
+            <Ionicons name="briefcase-outline" size={size} color={color} />
           ),
         }}
       />
