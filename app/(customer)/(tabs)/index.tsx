@@ -16,8 +16,16 @@ export default function CustomerHomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [showAnimation, setShowAnimation] = useState(true);
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [pickupLocation, setPickupLocation] = useState('');
+  const [destinationLocation, setDestinationLocation] = useState('');
+
   const clipAnimation = useRef(new Animated.Value(0)).current;
-  
+  const searchAnimation = useRef(new Animated.Value(0)).current;
+  const pickupFieldAnimation = useRef(new Animated.Value(0)).current;
+  const destinationFieldAnimation = useRef(new Animated.Value(0)).current;
+  const buttonAnimation = useRef(new Animated.Value(0)).current;
+
   const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
 
   useEffect(() => {
@@ -49,10 +57,10 @@ export default function CustomerHomeScreen() {
   }, []);
 
   const services = [
-    { id: 1, name: 'Airport Transfer', price: 'From ₹2,500', duration: '45 min', icon: 'airplane' },
-    { id: 2, name: 'City Tour', price: 'From ₹4,000/hr', duration: '4 hrs', icon: 'car' },
-    { id: 3, name: 'Business Meeting', price: 'From ₹2,800', duration: '2 hrs', icon: 'business' },
-    { id: 4, name: 'Wedding Service', price: 'From ₹8,000', duration: '6 hrs', icon: 'heart' },
+    { id: 1, name: 'Airport Transfer', description: 'Fast & reliable airport rides', image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&q=80' },
+    { id: 2, name: 'City Tour', description: 'Explore the city in comfort', image: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400&q=80' },
+    { id: 3, name: 'Business Meeting', description: 'Professional corporate travel', image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&q=80' },
+    { id: 4, name: 'Wedding Service', description: 'Make your day special', image: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=80' },
   ];
 
   const handleSearch = () => {
@@ -61,6 +69,90 @@ export default function CustomerHomeScreen() {
         pathname: '/(customer)/book-ride-new',
         params: { destination: searchText.trim() }
       });
+    }
+  };
+
+  const toggleSearchExpansion = () => {
+    if (isSearchExpanded) {
+      // Closing - stagger in reverse
+      Animated.parallel([
+        Animated.spring(buttonAnimation, {
+          toValue: 0,
+          useNativeDriver: true,
+          stiffness: 400,
+          damping: 40,
+        }),
+        Animated.spring(destinationFieldAnimation, {
+          toValue: 0,
+          useNativeDriver: true,
+          stiffness: 400,
+          damping: 40,
+        }),
+        Animated.spring(pickupFieldAnimation, {
+          toValue: 0,
+          useNativeDriver: true,
+          stiffness: 400,
+          damping: 40,
+        }),
+      ]).start();
+
+      Animated.spring(searchAnimation, {
+        toValue: 0,
+        useNativeDriver: false,
+        stiffness: 400,
+        damping: 40,
+      }).start(() => {
+        setIsSearchExpanded(false);
+      });
+    } else {
+      // Opening - set state first, then animate in next frame
+      setIsSearchExpanded(true);
+
+      // Use requestAnimationFrame to ensure state is updated before animations
+      requestAnimationFrame(() => {
+        // Main container expansion
+        Animated.spring(searchAnimation, {
+          toValue: 1,
+          useNativeDriver: false,
+          tension: 50,
+          friction: 10,
+        }).start();
+
+        // Stagger children animations with Animated.stagger
+        Animated.stagger(70, [
+          Animated.spring(pickupFieldAnimation, {
+            toValue: 1,
+            useNativeDriver: true,
+            tension: 100,
+            friction: 10,
+          }),
+          Animated.spring(destinationFieldAnimation, {
+            toValue: 1,
+            useNativeDriver: true,
+            tension: 100,
+            friction: 10,
+          }),
+          Animated.spring(buttonAnimation, {
+            toValue: 1,
+            useNativeDriver: true,
+            tension: 100,
+            friction: 10,
+          }),
+        ]).start();
+      });
+    }
+  };
+
+  const handleExpandedSearch = () => {
+    if (pickupLocation.trim() && destinationLocation.trim()) {
+      router.push({
+        pathname: '/(customer)/book-ride-new',
+        params: {
+          pickup: pickupLocation.trim(),
+          destination: destinationLocation.trim()
+        }
+      });
+      toggleSearchExpansion();
     }
   };
 
@@ -74,7 +166,7 @@ export default function CustomerHomeScreen() {
   return (
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
-        <ScrollView 
+        <ScrollView
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -89,33 +181,157 @@ export default function CustomerHomeScreen() {
               Where would you like to go today?
             </ThemedText>
           </View>
-          
+
           {/* Search Bar */}
           <View className="px-6 mb-6">
-            <View className={`flex-row items-center px-4 py-3 rounded-xl border ${
-              isDarkMode ? 'bg-darkSurface border-darkBorder' : 'bg-white border-border'
-            }`}>
-              <Ionicons name="search" size={20} color={iconColor} />
-              <TextInput
-                className={`flex-1 ml-3 ${isDarkMode ? 'text-darkText' : 'text-textPrimary'}`}
-                placeholder="Search destination..."
-                placeholderTextColor={iconColor}
-                value={searchText}
-                onChangeText={setSearchText}
-                onSubmitEditing={handleSearch}
-                returnKeyType="search"
-              />
-              {searchText.length > 0 && (
-                <View className="flex-row items-center">
-                  <TouchableOpacity onPress={() => setSearchText('')} className="mr-2">
-                    <Ionicons name="close-circle" size={20} color={iconColor} />
+            <Animated.View
+              className={`rounded-xl border ${
+                isDarkMode ? 'bg-darkSurface border-darkBorder' : 'bg-white border-border'
+              }`}
+              style={{
+                height: searchAnimation.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [56, 240],
+                }),
+                overflow: 'hidden',
+              }}
+            >
+              {/* Collapsed Search Bar */}
+              <Animated.View
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  opacity: searchAnimation.interpolate({
+                    inputRange: [0, 0.3, 1],
+                    outputRange: [1, 0, 0],
+                  }),
+                }}
+                pointerEvents={isSearchExpanded ? 'none' : 'auto'}
+              >
+                <TouchableOpacity
+                  className="flex-row items-center px-4 py-3 h-14"
+                  onPress={toggleSearchExpansion}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="search" size={20} color={iconColor} />
+                  <ThemedText className="flex-1 ml-3" style={{ color: iconColor }}>
+                    Search destination...
+                  </ThemedText>
+                </TouchableOpacity>
+              </Animated.View>
+
+              {/* Expanded Search Form */}
+              <Animated.View
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  padding: 16,
+                  opacity: searchAnimation.interpolate({
+                    inputRange: [0, 0.3, 1],
+                    outputRange: [0, 0, 1],
+                  }),
+                }}
+                pointerEvents={isSearchExpanded ? 'auto' : 'none'}
+              >
+                {/* Close button */}
+                <TouchableOpacity
+                  className="absolute top-2 right-2 p-2 z-10"
+                  onPress={toggleSearchExpansion}
+                >
+                  <Ionicons name="close-circle" size={24} color={iconColor} />
+                </TouchableOpacity>
+
+                {/* Pickup Location */}
+                <Animated.View
+                  style={{
+                    opacity: pickupFieldAnimation,
+                    transform: [
+                      {
+                        translateY: pickupFieldAnimation.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [50, 0],
+                        }),
+                      },
+                    ],
+                  }}
+                >
+                  <View
+                    className={`flex-row items-center px-4 py-3 rounded-lg border mb-3 ${
+                      isDarkMode ? 'bg-darkSurface border-darkBorder' : 'bg-gray-50 border-gray-200'
+                    }`}
+                  >
+                    <Ionicons name="location" size={20} color="#10b981" />
+                    <TextInput
+                      className={`flex-1 ml-3 ${isDarkMode ? 'text-darkText' : 'text-textPrimary'}`}
+                      placeholder="Pickup location"
+                      placeholderTextColor={iconColor}
+                      value={pickupLocation}
+                      onChangeText={setPickupLocation}
+                    />
+                  </View>
+                </Animated.View>
+
+                {/* Destination Location */}
+                <Animated.View
+                  style={{
+                    opacity: destinationFieldAnimation,
+                    transform: [
+                      {
+                        translateY: destinationFieldAnimation.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [50, 0],
+                        }),
+                      },
+                    ],
+                  }}
+                >
+                  <View
+                    className={`flex-row items-center px-4 py-3 rounded-lg border mb-4 ${
+                      isDarkMode ? 'bg-darkSurface border-darkBorder' : 'bg-gray-50 border-gray-200'
+                    }`}
+                  >
+                    <Ionicons name="location" size={20} color="#ef4444" />
+                    <TextInput
+                      className={`flex-1 ml-3 ${isDarkMode ? 'text-darkText' : 'text-textPrimary'}`}
+                      placeholder="Destination"
+                      placeholderTextColor={iconColor}
+                      value={destinationLocation}
+                      onChangeText={setDestinationLocation}
+                    />
+                  </View>
+                </Animated.View>
+
+                {/* Search Button */}
+                <Animated.View
+                  style={{
+                    opacity: buttonAnimation,
+                    transform: [
+                      {
+                        translateY: buttonAnimation.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [50, 0],
+                        }),
+                      },
+                    ],
+                  }}
+                >
+                  <TouchableOpacity
+                    className="bg-burgundy py-3 rounded-lg"
+                    onPress={handleExpandedSearch}
+                    disabled={!pickupLocation.trim() || !destinationLocation.trim()}
+                    style={{
+                      opacity: !pickupLocation.trim() || !destinationLocation.trim() ? 0.5 : 1,
+                    }}
+                  >
+                    <ThemedText className="text-white text-center font-semibold">Search</ThemedText>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={handleSearch} className="bg-burgundy px-3 py-1 rounded-lg">
-                    <ThemedText className="text-white text-sm font-medium">Search</ThemedText>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
+                </Animated.View>
+              </Animated.View>
+            </Animated.View>
           </View>
           
           {/* Quick Actions */}
@@ -145,53 +361,12 @@ export default function CustomerHomeScreen() {
             </View>
           </View>
           
-          {/* Popular Services */}
-          <View className="px-3 mb-6 ">
-            <View className="flex-row justify-between items-center mb-4">
-              <ThemedText variant="title" className="text-lg">
-                Popular Services
-              </ThemedText>
-              <TouchableOpacity>
-                <ThemedText className="text-secondary">View All</ThemedText>
-              </TouchableOpacity>
-            </View>
-            
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {services.map((service) => (
-                <TouchableOpacity key={service.id} className="mr-4" activeOpacity={1}>
-                  <ThemedCard className="w-56 p-4 my-2">
-                    <View className="flex-row items-center mb-3">
-                      <View className="bg-primary/10 p-2 rounded-lg">
-                        <Ionicons name={service.icon as any} size={20} color="#bd8c5e" />
-                      </View>
-                      <View className="ml-3 flex-1">
-                        <ThemedText className="font-semibold">{service.name}</ThemedText>
-                        <ThemedText variant="caption">{service.duration}</ThemedText>
-                      </View>
-                    </View>
-                    <ThemedText className="font-bold text-primary mb-2">
-                      {service.price}
-                    </ThemedText>
-                    <TouchableOpacity 
-                      className="bg-secondary py-2 rounded-lg"
-                      onPress={() => router.push('/(customer)/book-ride-new')}
-                    >
-                      <ThemedText className="text-white text-center font-semibold">
-                        Book Now
-                      </ThemedText>
-                    </TouchableOpacity>
-                  </ThemedCard>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-          
           {/* Recent Activity */}
           <View className="px-3 mb-6">
             <ThemedText variant="title" className="text-lg mb-4">
               Recent Activity
             </ThemedText>
-            
+
             <ThemedCard className="mb-3">
               <View className="flex-row items-center">
                 <View className="bg-green-500/10 p-2 rounded-full">
@@ -212,7 +387,7 @@ export default function CustomerHomeScreen() {
                 </View>
               </View>
             </ThemedCard>
-            
+
             <ThemedCard className="mb-3 px-3">
               <View className="flex-row items-center">
                 <View className="bg-blue-500/10 p-2 rounded-full">
@@ -230,7 +405,48 @@ export default function CustomerHomeScreen() {
               </View>
             </ThemedCard>
           </View>
-          
+
+          {/* Popular Services */}
+          <View className="px-3 mb-6">
+            <View className="flex-row justify-between items-center mb-4">
+              <ThemedText variant="title" className="text-lg">
+                Popular Services
+              </ThemedText>
+              <TouchableOpacity>
+                <ThemedText className="text-secondary">View All</ThemedText>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {services.map((service) => (
+                <TouchableOpacity
+                  key={service.id}
+                  className="mr-4"
+                  activeOpacity={0.8}
+                  onPress={() => router.push('/(customer)/book-ride-new')}
+                >
+                  <ThemedCard className="w-48 px-3 pt-3 pb-1 my-2 h-[175px]">
+                    <Image
+                      source={{ uri: service.image }}
+                      className="w-full h-24 rounded-lg mb-2"
+                      resizeMode="cover"
+                    />
+                    <View className="h-5 justify-center">
+                      <ThemedText className="font-semibold text-center" numberOfLines={1}>
+                        {service.name}
+                      </ThemedText>
+                    </View>
+                    <View className="h-10 mt-1 justify-start">
+                      <ThemedText variant="caption" className="text-center text-gray-600" numberOfLines={2}>
+                        {service.description}
+                      </ThemedText>
+                    </View>
+                  </ThemedCard>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
           {/* More Ways to Use Chauffit */}
           <View className="px-3 mb-6">
             <View className="flex-row justify-between items-center mb-4">
@@ -241,74 +457,68 @@ export default function CustomerHomeScreen() {
                 <ThemedText className="text-secondary">Explore All</ThemedText>
               </TouchableOpacity>
             </View>
-            
+
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {[
                 {
                   id: 1,
                   title: 'Business Meetings',
                   description: 'Professional rides for work',
-                  image: '🏢',
-                  backgroundColor: 'bg-blue-50',
-                  action: () => router.push('/(customer)/book-ride-new')
+                  image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&q=80',
                 },
                 {
                   id: 2,
                   title: 'Wedding Events',
                   description: 'Special occasions made memorable',
-                  image: '💒',
-                  backgroundColor: 'bg-pink-50',
-                  action: () => router.push('/(customer)/book-ride-new')
+                  image: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400&q=80',
                 },
                 {
                   id: 3,
                   title: 'Shopping Tours',
                   description: 'Comfortable shopping trips',
-                  image: '🛍️',
-                  backgroundColor: 'bg-purple-50',
-                  action: () => router.push('/(customer)/book-ride-new')
+                  image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400&q=80',
                 },
                 {
                   id: 4,
                   title: 'Date Nights',
                   description: 'Romantic evenings out',
-                  image: '💝',
-                  backgroundColor: 'bg-red-50',
-                  action: () => router.push('/(customer)/book-ride-new')
+                  image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&q=80',
                 },
                 {
                   id: 5,
                   title: 'Medical Visits',
                   description: 'Reliable healthcare transport',
-                  image: '🏥',
-                  backgroundColor: 'bg-green-50',
-                  action: () => router.push('/(customer)/book-ride-new')
+                  image: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=400&q=80',
                 },
                 {
                   id: 6,
                   title: 'Party Nights',
                   description: 'Safe rides for celebrations',
-                  image: '🎉',
-                  backgroundColor: 'bg-yellow-50',
-                  action: () => router.push('/(customer)/book-ride-new')
+                  image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=80',
                 }
               ].map((useCase) => (
-                <TouchableOpacity 
-                  key={useCase.id} 
-                  className="mr-4" 
-                  activeOpacity={1}
-                  onPress={useCase.action}
+                <TouchableOpacity
+                  key={useCase.id}
+                  className="mr-4"
+                  activeOpacity={0.8}
+                  onPress={() => router.push('/(customer)/book-ride-new')}
                 >
-                  <ThemedCard className="w-48 p-4 my-2 h-46">
-                    <View className={`w-full h-20 ${useCase.backgroundColor} rounded-lg mb-3 items-center justify-center`}>
-                      <ThemedText className="text-3xl">{useCase.image}</ThemedText>
+                  <ThemedCard className="w-48 px-3 pt-3 pb-1 my-2 h-[175px]">
+                    <Image
+                      source={{ uri: useCase.image }}
+                      className="w-full h-24 rounded-lg mb-2"
+                      resizeMode="cover"
+                    />
+                    <View className="h-5 justify-center">
+                      <ThemedText className="font-semibold text-center" numberOfLines={1}>
+                        {useCase.title}
+                      </ThemedText>
                     </View>
-                    <ThemedText className="font-semibold text-center mb-2 h-5" numberOfLines={1}>
-                      {useCase.title}
-                    </ThemedText>
-                    <ThemedText variant="caption" className="text-center text-gray-600 h-8" numberOfLines={2}>
-                      {useCase.description}
-                    </ThemedText>
+                    <View className="h-10 mt-1 justify-start">
+                      <ThemedText variant="caption" className="text-center text-gray-600" numberOfLines={2}>
+                        {useCase.description}
+                      </ThemedText>
+                    </View>
                   </ThemedCard>
                 </TouchableOpacity>
               ))}

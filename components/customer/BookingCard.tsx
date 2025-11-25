@@ -22,8 +22,13 @@ export const BookingCard: React.FC<BookingCardProps> = ({
 }) => {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
 
+  // Guard against undefined booking
+  if (!booking) {
+    return null;
+  }
+
   const getStatusColor = () => {
-    switch (booking.status) {
+    switch (booking?.status) {
       case 'pending':
         return '#F59E0B';
       case 'confirmed':
@@ -40,7 +45,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
   };
 
   const getStatusText = () => {
-    switch (booking.status) {
+    switch (booking?.status) {
       case 'pending':
         return 'Pending Confirmation';
       case 'confirmed':
@@ -57,7 +62,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
   };
 
   const getStatusIcon = () => {
-    switch (booking.status) {
+    switch (booking?.status) {
       case 'pending':
         return 'time';
       case 'confirmed':
@@ -73,13 +78,18 @@ export const BookingCard: React.FC<BookingCardProps> = ({
     }
   };
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const formatDate = (date: Date | string | undefined) => {
+    if (!date) return 'Date not available';
+    try {
+      return new Date(date).toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return 'Date not available';
+    }
   };
 
   return (
@@ -100,7 +110,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
             style={{ backgroundColor: getStatusColor() }}
           />
           <ThemedText variant="h3" className="font-bold">
-            {booking.duration} Service
+            {booking?.duration || 'Ride'} Service
           </ThemedText>
         </View>
         
@@ -128,11 +138,11 @@ export const BookingCard: React.FC<BookingCardProps> = ({
             {formatDate(booking.startTime)}
           </ThemedText>
         </View>
-        
+
         <View className="flex-row items-center mb-2">
           <Ionicons name="location" size={16} color="#BD8C5E" />
           <ThemedText variant="small" className="ml-2 text-textSecondary flex-1">
-            {booking.pickupLocation.address}
+            {booking.pickupLocation?.address || 'Location not available'}
           </ThemedText>
         </View>
 
@@ -153,22 +163,22 @@ export const BookingCard: React.FC<BookingCardProps> = ({
             Total Amount
           </ThemedText>
           <ThemedText variant="h3" className="font-bold text-burgundy">
-            ₹{(booking.totalAmount * 1.18).toLocaleString()}
+            ₹{((booking.totalAmount || 0) * 1.18).toLocaleString()}
           </ThemedText>
         </View>
-        
+
         <View className="items-end">
           <ThemedText variant="small" className="text-textSecondary">
             Payment
           </ThemedText>
           <View className="flex-row items-center">
-            <Ionicons 
-              name={booking.paymentStatus === 'paid' ? 'checkmark-circle' : 'time'} 
-              size={14} 
-              color={booking.paymentStatus === 'paid' ? '#10B981' : '#F59E0B'} 
+            <Ionicons
+              name={booking.paymentStatus === 'paid' ? 'checkmark-circle' : 'time'}
+              size={14}
+              color={booking.paymentStatus === 'paid' ? '#10B981' : '#F59E0B'}
             />
-            <ThemedText 
-              variant="small" 
+            <ThemedText
+              variant="small"
               className={`ml-1 font-semibold ${
                 booking.paymentStatus === 'paid' ? 'text-success' : 'text-orange-500'
               }`}
@@ -179,51 +189,51 @@ export const BookingCard: React.FC<BookingCardProps> = ({
         </View>
       </View>
 
-      {/* Actions */}
-      {showActions && (
-        <View className="flex-row space-x-3">
-          {booking.status === 'confirmed' && onTrack && (
-            <TouchableOpacity
-              onPress={onTrack}
-              className="flex-1 bg-secondary rounded-xl py-3"
-            >
-              <ThemedText className="text-white font-semibold text-center">
-                Track Ride
-              </ThemedText>
-            </TouchableOpacity>
-          )}
-          
-          {booking.status === 'in_progress' && onTrack && (
-            <TouchableOpacity
-              onPress={onTrack}
-              className="flex-1 bg-burgundy rounded-xl py-3"
-            >
-              <ThemedText className="text-white font-semibold text-center">
-                View Live
-              </ThemedText>
-            </TouchableOpacity>
-          )}
+      {/* Actions for confirmed/in_progress - show Track and Cancel toggle */}
+      {showActions && (booking?.status === 'confirmed' || booking?.status === 'in_progress') && onTrack && onCancel && (
+        <View className={`flex-row rounded-xl p-1 ${isDarkMode ? 'bg-darkSurface' : 'bg-surface'}`}>
+          <TouchableOpacity
+            onPress={onTrack}
+            className="flex-1 py-3 px-4 rounded-lg bg-primary"
+          >
+            <ThemedText className="text-center font-semibold text-burgundy">
+              {booking?.status === 'in_progress' ? 'View Live' : 'Track Ride'}
+            </ThemedText>
+          </TouchableOpacity>
 
-          {(booking.status === 'pending' || booking.status === 'confirmed') && onCancel && (
-            <TouchableOpacity
-              onPress={onCancel}
-              className="flex-1 border-2 border-burgundy rounded-xl py-3"
-            >
-              <ThemedText className="text-burgundy font-semibold text-center">
-                Cancel
-              </ThemedText>
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            onPress={onCancel}
+            className="flex-1 py-3 px-4 rounded-lg"
+          >
+            <ThemedText className="text-center font-semibold text-textSecondary">
+              Cancel
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
+      )}
 
-          {booking.status === 'completed' && (
-            <TouchableOpacity
-              className="flex-1 border-2 border-secondary rounded-xl py-3"
-            >
-              <ThemedText className="text-secondary font-semibold text-center">
-                Book Again
-              </ThemedText>
-            </TouchableOpacity>
-          )}
+      {/* Actions for pending - only show Cancel */}
+      {showActions && booking?.status === 'pending' && onCancel && (
+        <View className={`flex-row rounded-xl p-1 ${isDarkMode ? 'bg-darkSurface' : 'bg-surface'}`}>
+          <TouchableOpacity
+            onPress={onCancel}
+            className="flex-1 py-3 px-4 rounded-lg bg-primary"
+          >
+            <ThemedText className="text-center font-semibold text-burgundy">
+              Cancel Booking
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Actions for completed - show Book Again */}
+      {showActions && booking?.status === 'completed' && (
+        <View className={`flex-row rounded-xl p-1 ${isDarkMode ? 'bg-darkSurface' : 'bg-surface'}`}>
+          <TouchableOpacity className="flex-1 py-3 px-4 rounded-lg bg-primary">
+            <ThemedText className="text-center font-semibold text-burgundy">
+              Book Again
+            </ThemedText>
+          </TouchableOpacity>
         </View>
       )}
     </TouchableOpacity>

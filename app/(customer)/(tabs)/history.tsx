@@ -25,9 +25,12 @@ export default function HistoryScreen() {
     setTimeout(() => setRefreshing(false), 2000);
   }, []);
 
-  const allBookings = [...activeBookings, ...bookingHistory];
-  
+  const allBookings = [...(activeBookings || []), ...(bookingHistory || [])];
+
   const filteredBookings = allBookings.filter(booking => {
+    // Guard against null/undefined bookings
+    if (!booking || !booking.id) return false;
+
     switch (activeTab) {
       case 'active':
         return booking.status === 'pending' || booking.status === 'confirmed' || booking.status === 'in_progress';
@@ -94,32 +97,43 @@ export default function HistoryScreen() {
 
         {/* Filter Tabs */}
         <View className="px-6 py-4">
-          <View className={`flex-row rounded-xl p-1 border ${
-            isDarkMode ? 'bg-darkSurface border-darkBorder' : 'bg-surface border-border'
-          }`}>
-            {[
-              { key: 'all', label: 'All' },
-              { key: 'active', label: 'Active' },
-              { key: 'completed', label: 'Completed' },
-              { key: 'cancelled', label: 'Cancelled' }
-            ].map((tab) => (
-              <TouchableOpacity
-                key={tab.key}
-                onPress={() => setActiveTab(tab.key as any)}
-                className={`flex-1 py-3 rounded-lg ${
-                  activeTab === tab.key ? 'bg-burgundy' : ''
-                }`}
-              >
-                <ThemedText 
-                  variant="small"
-                  className={`text-center font-semibold ${
-                    activeTab === tab.key ? 'text-white' : 'text-textSecondary'
-                  }`}
-                >
-                  {tab.label}
-                </ThemedText>
+          <View className={`flex-row rounded-xl p-1 ${isDarkMode ? 'bg-darkSurface' : 'bg-surface'}`}>
+            {activeTab === 'all' ? (
+              <View className="flex-1 py-3 rounded-lg bg-burgundy">
+                <ThemedText className="text-center font-semibold text-white">All</ThemedText>
+              </View>
+            ) : (
+              <TouchableOpacity onPress={() => setActiveTab('all')} className="flex-1 py-3 rounded-lg">
+                <ThemedText className="text-center font-semibold text-textSecondary">All</ThemedText>
               </TouchableOpacity>
-            ))}
+            )}
+            {activeTab === 'active' ? (
+              <View className="flex-1 py-3 rounded-lg bg-burgundy">
+                <ThemedText className="text-center font-semibold text-white">Active</ThemedText>
+              </View>
+            ) : (
+              <TouchableOpacity onPress={() => setActiveTab('active')} className="flex-1 py-3 rounded-lg">
+                <ThemedText className="text-center font-semibold text-textSecondary">Active</ThemedText>
+              </TouchableOpacity>
+            )}
+            {activeTab === 'completed' ? (
+              <View className="flex-1 py-3 rounded-lg bg-burgundy">
+                <ThemedText className="text-center font-semibold text-white">Completed</ThemedText>
+              </View>
+            ) : (
+              <TouchableOpacity onPress={() => setActiveTab('completed')} className="flex-1 py-3 rounded-lg">
+                <ThemedText className="text-center font-semibold text-textSecondary">Completed</ThemedText>
+              </TouchableOpacity>
+            )}
+            {activeTab === 'cancelled' ? (
+              <View className="flex-1 py-3 rounded-lg bg-burgundy">
+                <ThemedText className="text-center font-semibold text-white">Cancelled</ThemedText>
+              </View>
+            ) : (
+              <TouchableOpacity onPress={() => setActiveTab('cancelled')} className="flex-1 py-3 rounded-lg">
+                <ThemedText className="text-center font-semibold text-textSecondary">Cancelled</ThemedText>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -139,7 +153,11 @@ export default function HistoryScreen() {
           <View className="px-6">
             {filteredBookings.length > 0 ? (
               filteredBookings
-                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                .sort((a, b) => {
+                  const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                  const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                  return dateB - dateA;
+                })
                 .map((booking) => (
                   <BookingCard
                     key={booking.id}
