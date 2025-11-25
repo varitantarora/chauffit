@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ScrollView, TouchableOpacity, View, Alert } from 'react-native';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { ScrollView, TouchableOpacity, View, Alert, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../components/common/ThemedView';
 import { ThemedCard } from '../../components/common/ThemedCard';
@@ -9,13 +9,102 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
 
+const ITEM_HEIGHT = 50;
+const VISIBLE_ITEMS = 3;
+
+// WheelPicker component using ScrollView instead of FlatList to avoid nesting issues
+const WheelPicker = React.memo(({
+  data,
+  selectedValue,
+  onValueChange,
+  width = 70,
+  isDarkMode
+}: {
+  data: string[];
+  selectedValue: string;
+  onValueChange: (value: string) => void;
+  width?: number;
+  isDarkMode: boolean;
+}) => {
+  const scrollViewRef = useRef<ScrollView>(null);
+  const selectedIndex = data.indexOf(selectedValue);
+
+  const handleMomentumScrollEnd = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetY = event.nativeEvent.contentOffset.y;
+    const index = Math.round(offsetY / ITEM_HEIGHT);
+    const clampedIndex = Math.max(0, Math.min(index, data.length - 1));
+    onValueChange(data[clampedIndex]);
+  }, [data, onValueChange]);
+
+  useEffect(() => {
+    if (scrollViewRef.current && selectedIndex >= 0) {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({ y: selectedIndex * ITEM_HEIGHT, animated: false });
+      }, 100);
+    }
+  }, []);
+
+  // Calculate position for each item relative to center
+  const getItemStyle = (index: number) => {
+    const centerIndex = data.indexOf(selectedValue);
+    const isCenter = index === centerIndex;
+
+    return {
+      fontSize: isCenter ? 24 : 18,
+      fontWeight: isCenter ? '600' as const : '400' as const,
+      color: isCenter
+        ? (isDarkMode ? '#ffffff' : '#000000')
+        : (isDarkMode ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)')
+    };
+  };
+
+  return (
+    <View style={{ width, height: ITEM_HEIGHT * VISIBLE_ITEMS, overflow: 'hidden' }}>
+      <ScrollView
+        ref={scrollViewRef}
+        showsVerticalScrollIndicator={false}
+        snapToInterval={ITEM_HEIGHT}
+        decelerationRate="fast"
+        onMomentumScrollEnd={handleMomentumScrollEnd}
+        nestedScrollEnabled={true}
+        contentContainerStyle={{
+          paddingVertical: ITEM_HEIGHT * Math.floor(VISIBLE_ITEMS / 2)
+        }}
+      >
+        {data.map((item, index) => {
+          const itemStyle = getItemStyle(index);
+          return (
+            <TouchableOpacity
+              key={item}
+              activeOpacity={1}
+              onPress={() => {
+                onValueChange(item);
+                scrollViewRef.current?.scrollTo({ y: index * ITEM_HEIGHT, animated: true });
+              }}
+              style={{
+                height: ITEM_HEIGHT,
+                justifyContent: 'center',
+                alignItems: 'center',
+                width: width
+              }}
+            >
+              <ThemedText style={itemStyle}>
+                {item}
+              </ThemedText>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+});
+
 export default function ScheduleScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const router = useRouter();
   
   const [bookingType, setBookingType] = useState<'scheduled' | 'extended'>('scheduled');
   const [selectedDate, setSelectedDate] = useState<string>('');
-  const [selectedTime, setSelectedTime] = useState<string>('');
   const [selectedDuration, setSelectedDuration] = useState<string>('');
 
   const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
@@ -42,12 +131,14 @@ export default function ScheduleScreen() {
     return options;
   };
 
-  const timeSlots = [
-    '06:00', '06:30', '07:00', '07:30', '08:00', '08:30', '09:00', '09:30',
-    '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
-    '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
-    '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30'
-  ];
+  // Hours and minutes for iOS-style picker
+  const hours = Array.from({ length: 12 }, (_, i) => (i + 1).toString());
+  const minutes = ['00', '15', '30', '45'];
+  const periods = ['AM', 'PM'];
+
+  const [selectedHour, setSelectedHour] = useState('6');
+  const [selectedMinute, setSelectedMinute] = useState('00');
+  const [selectedPeriod, setSelectedPeriod] = useState('AM');
 
   const extendedServices = [
     {
@@ -75,20 +166,26 @@ export default function ScheduleScreen() {
 
   const dateOptions = getDateOptions();
 
+  // Get formatted time string
+  const getFormattedTime = () => {
+    return `${selectedHour}:${selectedMinute} ${selectedPeriod}`;
+  };
+
   const handleSchedule = () => {
+    const formattedTime = getFormattedTime();
     if (bookingType === 'scheduled') {
-      if (!selectedDate || !selectedTime) {
-        Alert.alert('Missing Information', 'Please select both date and time.');
+      if (!selectedDate) {
+        Alert.alert('Missing Information', 'Please select a date.');
         return;
       }
     } else {
-      if (!selectedDate || !selectedTime || !selectedDuration) {
-        Alert.alert('Missing Information', 'Please select date, time, and service duration.');
+      if (!selectedDate || !selectedDuration) {
+        Alert.alert('Missing Information', 'Please select date and service duration.');
         return;
       }
     }
 
-    Alert.alert('Ride Scheduled!', 'Your chauffeur service has been scheduled successfully.');
+    Alert.alert('Ride Scheduled!', `Your chauffeur service has been scheduled for ${formattedTime}.`);
     router.back();
   };
 
@@ -107,35 +204,25 @@ export default function ScheduleScreen() {
           {/* Service Type Toggle */}
           <View className="px-6 py-6">
             <ThemedText variant="title" className="text-lg mb-4">Service Type</ThemedText>
-            <View className="flex-row bg-surface dark:bg-darkSurface rounded-xl p-1">
-              <TouchableOpacity
-                onPress={() => setBookingType('scheduled')}
-                className={`flex-1 py-3 rounded-lg ${
-                  bookingType === 'scheduled' ? 'bg-primary' : ''
-                }`}
-              >
-                <ThemedText 
-                  className={`text-center ${
-                    bookingType === 'scheduled' ? 'text-white font-semibold' : ''
-                  }`}
-                >
-                  Point to Point
-                </ThemedText>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setBookingType('extended')}
-                className={`flex-1 py-3 rounded-lg ${
-                  bookingType === 'extended' ? 'bg-primary' : ''
-                }`}
-              >
-                <ThemedText 
-                  className={`text-center ${
-                    bookingType === 'extended' ? 'text-white font-semibold' : ''
-                  }`}
-                >
-                  Extended Service
-                </ThemedText>
-              </TouchableOpacity>
+            <View className={`flex-row rounded-xl p-1 ${isDarkMode ? 'bg-darkSurface' : 'bg-surface'}`}>
+              {bookingType === 'scheduled' ? (
+                <View className="flex-1 py-3 rounded-lg bg-secondary">
+                  <ThemedText className="text-center font-semibold text-white">Point to Point</ThemedText>
+                </View>
+              ) : (
+                <TouchableOpacity onPress={() => setBookingType('scheduled')} className="flex-1 py-3 rounded-lg">
+                  <ThemedText className="text-center font-semibold text-textSecondary">Point to Point</ThemedText>
+                </TouchableOpacity>
+              )}
+              {bookingType === 'extended' ? (
+                <View className="flex-1 py-3 rounded-lg bg-secondary">
+                  <ThemedText className="text-center font-semibold text-white">Extended Service</ThemedText>
+                </View>
+              ) : (
+                <TouchableOpacity onPress={() => setBookingType('extended')} className="flex-1 py-3 rounded-lg">
+                  <ThemedText className="text-center font-semibold text-textSecondary">Extended Service</ThemedText>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
 
@@ -182,51 +269,71 @@ export default function ScheduleScreen() {
           )}
 
           {/* Date Selection */}
-          <View className="px-6 pb-6">
+          <View className="px-6 pb-8">
             <ThemedText variant="title" className="text-lg mb-4">Select Date</ThemedText>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {dateOptions.map((date) => (
-                <TouchableOpacity
-                  key={date.value}
-                  onPress={() => setSelectedDate(date.value)}
-                  className="mr-3"
-                >
-                  <ThemedCard className={`px-4 py-3 min-w-[100px] items-center ${
-                    selectedDate === date.value ? 'bg-primary' : ''
-                  }`}>
-                    <ThemedText className={`font-semibold ${
-                      selectedDate === date.value ? 'text-white' : ''
-                    }`}>
-                      {date.label}
-                    </ThemedText>
-                  </ThemedCard>
-                </TouchableOpacity>
-              ))}
+              {dateOptions.map((date) => {
+                const isSelected = selectedDate === date.value;
+                return isSelected ? (
+                  <View key={date.value} className="mr-3 px-4 py-3 min-w-[100px] items-center rounded-xl bg-burgundy">
+                    <ThemedText className="font-semibold text-white">{date.label}</ThemedText>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    key={date.value}
+                    onPress={() => setSelectedDate(date.value)}
+                    className={`mr-3 px-4 py-3 min-w-[100px] items-center rounded-xl ${isDarkMode ? 'bg-darkSurface' : 'bg-surface'}`}
+                  >
+                    <ThemedText className="font-semibold text-textSecondary">{date.label}</ThemedText>
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
           </View>
 
-          {/* Time Selection */}
+          {/* Time Selection - iOS Style Wheel Picker */}
           <View className="px-6 pb-6">
             <ThemedText variant="title" className="text-lg mb-4">Select Time</ThemedText>
-            <View className="flex-row flex-wrap">
-              {timeSlots.map((time) => (
-                <TouchableOpacity
-                  key={time}
-                  onPress={() => setSelectedTime(time)}
-                  className="w-[23%] mr-[2%] mb-3"
-                >
-                  <ThemedCard className={`py-3 items-center ${
-                    selectedTime === time ? 'bg-primary' : ''
-                  }`}>
-                    <ThemedText className={`font-semibold ${
-                      selectedTime === time ? 'text-white' : ''
-                    }`}>
-                      {time}
-                    </ThemedText>
-                  </ThemedCard>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <ThemedCard className="p-4">
+              <View className="relative">
+                {/* Selection Indicator */}
+                <View
+                  className="absolute left-0 right-0 bg-secondary/10 rounded-xl"
+                  style={{
+                    top: ITEM_HEIGHT * Math.floor(VISIBLE_ITEMS / 2),
+                    height: ITEM_HEIGHT,
+                  }}
+                  pointerEvents="none"
+                />
+
+                {/* Wheel Pickers */}
+                <View className="flex-row justify-center items-center">
+                  <WheelPicker
+                    data={hours}
+                    selectedValue={selectedHour}
+                    onValueChange={setSelectedHour}
+                    width={60}
+                    isDarkMode={isDarkMode}
+                  />
+                  <ThemedText style={{ fontSize: 22, fontWeight: '600', marginHorizontal: 4 }}>:</ThemedText>
+                  <WheelPicker
+                    data={minutes}
+                    selectedValue={selectedMinute}
+                    onValueChange={setSelectedMinute}
+                    width={60}
+                    isDarkMode={isDarkMode}
+                  />
+                  <View style={{ width: 16 }} />
+                  <WheelPicker
+                    data={periods}
+                    selectedValue={selectedPeriod}
+                    onValueChange={setSelectedPeriod}
+                    width={60}
+                    isDarkMode={isDarkMode}
+                  />
+                </View>
+              </View>
+            </ThemedCard>
           </View>
 
           {/* Service Information */}
@@ -240,11 +347,11 @@ export default function ScheduleScreen() {
                 </View>
                 <View className="flex-row items-center">
                   <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-                  <ThemedText className="ml-3">Luxury vehicle</ThemedText>
+                  <ThemedText className="ml-3">Verified & trained drivers</ThemedText>
                 </View>
                 <View className="flex-row items-center">
                   <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-                  <ThemedText className="ml-3">Complimentary water & phone charger</ThemedText>
+                  <ThemedText className="ml-3">Real-time ride tracking</ThemedText>
                 </View>
                 <View className="flex-row items-center">
                   <Ionicons name="checkmark-circle" size={20} color="#10b981" />
@@ -266,14 +373,14 @@ export default function ScheduleScreen() {
 
         {/* Bottom Actions */}
         <View className="px-6 py-4 border-t border-border dark:border-darkBorder">
-          {selectedDate && selectedTime && (bookingType === 'scheduled' || selectedDuration) && (
+          {selectedDate && (bookingType === 'scheduled' || selectedDuration) && (
             <View className="mb-4 p-4 bg-secondary/10 border border-secondary rounded-xl">
               <View className="flex-row items-center justify-between mb-2">
                 <ThemedText className="font-semibold text-secondary">Schedule Summary</ThemedText>
                 <Ionicons name="calendar" size={20} color="#720c17" />
               </View>
               <ThemedText variant="secondary">
-                {dateOptions.find(d => d.value === selectedDate)?.fullDate} at {selectedTime}
+                {dateOptions.find(d => d.value === selectedDate)?.fullDate} at {getFormattedTime()}
               </ThemedText>
               {bookingType === 'extended' && selectedDuration && (
                 <ThemedText variant="secondary">

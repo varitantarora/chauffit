@@ -56,13 +56,6 @@ export default function CustomerHomeScreen() {
     setTimeout(() => setRefreshing(false), 2000);
   }, []);
 
-  const services = [
-    { id: 1, name: 'Airport Transfer', description: 'Fast & reliable airport rides', image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&q=80' },
-    { id: 2, name: 'City Tour', description: 'Explore the city in comfort', image: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400&q=80' },
-    { id: 3, name: 'Business Meeting', description: 'Professional corporate travel', image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&q=80' },
-    { id: 4, name: 'Wedding Service', description: 'Make your day special', image: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=80' },
-  ];
-
   const handleSearch = () => {
     if (searchText.trim()) {
       router.push({
@@ -404,47 +397,6 @@ export default function CustomerHomeScreen() {
                 </View>
               </View>
             </ThemedCard>
-          </View>
-
-          {/* Popular Services */}
-          <View className="px-3 mb-6">
-            <View className="flex-row justify-between items-center mb-4">
-              <ThemedText variant="title" className="text-lg">
-                Popular Services
-              </ThemedText>
-              <TouchableOpacity>
-                <ThemedText className="text-secondary">View All</ThemedText>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {services.map((service) => (
-                <TouchableOpacity
-                  key={service.id}
-                  className="mr-4"
-                  activeOpacity={0.8}
-                  onPress={() => router.push('/(customer)/book-ride-new')}
-                >
-                  <ThemedCard className="w-48 px-3 pt-3 pb-1 my-2 h-[175px]">
-                    <Image
-                      source={{ uri: service.image }}
-                      className="w-full h-24 rounded-lg mb-2"
-                      resizeMode="cover"
-                    />
-                    <View className="h-5 justify-center">
-                      <ThemedText className="font-semibold text-center" numberOfLines={1}>
-                        {service.name}
-                      </ThemedText>
-                    </View>
-                    <View className="h-10 mt-1 justify-start">
-                      <ThemedText variant="caption" className="text-center text-gray-600" numberOfLines={2}>
-                        {service.description}
-                      </ThemedText>
-                    </View>
-                  </ThemedCard>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
           </View>
 
           {/* More Ways to Use Chauffit */}

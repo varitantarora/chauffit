@@ -9,24 +9,31 @@ interface ThemedCardProps extends ViewProps {
   variant?: 'default' | 'elevated' | 'premium';
 }
 
-export const ThemedCard: React.FC<ThemedCardProps> = ({ 
-  className = '', 
-  style, 
+// Theme colors
+const LIGHT_SURFACE = '#F7F2EB'; // Warm surface color
+const DARK_SURFACE = '#2C2C2C';
+const LIGHT_BORDER = '#E8E0D5';
+const DARK_BORDER = '#4A4A4A';
+
+export const ThemedCard: React.FC<ThemedCardProps> = ({
+  className = '',
+  style,
   children,
   onPress,
   pressable = false,
   variant = 'default',
-  ...props 
+  ...props
 }) => {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
-  
+
   const getCardClasses = () => {
-    const baseClass = isDarkMode 
-      ? 'bg-darkSurface border-darkBorder' 
-      : 'bg-white border-border';
-    
-    return `p-6 rounded-2xl border ${baseClass}`;
+    return `p-6 rounded-2xl border`;
   };
+
+  const getCardStyle = () => ({
+    backgroundColor: isDarkMode ? DARK_SURFACE : LIGHT_SURFACE,
+    borderColor: isDarkMode ? DARK_BORDER : LIGHT_BORDER,
+  });
   
   const getShadowStyle = () => {
     const shadows = {
@@ -56,12 +63,10 @@ export const ThemedCard: React.FC<ThemedCardProps> = ({
     return shadows[variant];
   };
   
-  const pressedStyle = '';
-  
   const content = (
-    <View 
-      className={`${getCardClasses()} ${pressedStyle} ${className}`} 
-      style={[getShadowStyle(), style]}
+    <View
+      className={`${getCardClasses()} ${className}`}
+      style={[getCardStyle(), getShadowStyle(), style]}
       {...props}
     >
       {children}
