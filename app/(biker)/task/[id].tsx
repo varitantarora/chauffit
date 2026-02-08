@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, View, TouchableOpacity, Alert, Linking } from 'react-native';
+import { ScrollView, View, TouchableOpacity, Alert, Linking, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,45 +13,127 @@ import { ResponseTimer } from '../../../components/biker/emergency/ResponseTimer
 import { useTaskStore } from '../../../store/taskStore';
 import { useAuthStore } from '../../../store/authStore';
 import { useBikerEarningsStore } from '../../../store/bikerEarningsStore';
-import { BikerTask, TaskType } from '../../../types/navigation';
+import { BikerTask, TaskType, TaskPriority, TaskStatus } from '../../../types/navigation';
+import BikerTaskApiService, { BikerTaskDetail } from '../../../services/api/BikerTaskApiService';
+
+// Helper function to map API task to UI task format
+const mapApiTaskToUITask = (apiTask: BikerTaskDetail): BikerTask => {
+  // Map API priority to UI priority
+  const mapPriority = (priority: string): TaskPriority => {
+    if (priority === 'urgent') return 'urgent';
+    if (priority === 'high') return 'high';
+    if (priority === 'emergency') return 'emergency';
+    return 'normal';
+  };
+
+  // Map API status to UI status
+  const mapStatus = (status: string): TaskStatus => {
+    if (status === 'requested' || status === 'assigned') return 'pending';
+    if (status === 'accepted') return 'accepted';
+    if (['en_route_to_driver', 'arrived_at_driver', 'driver_picked_up', 'en_route_to_customer', 'arrived_at_customer'].includes(status)) {
+      return 'in_progress';
+    }
+    if (status === 'completed') return 'completed';
+    return 'cancelled';
+  };
+
+  return {
+    id: apiTask.id,
+    type: 'driver_rescue' as TaskType, // API only has 'driver_transport'
+    priority: mapPriority(apiTask.priority),
+    title: `Pickup for ${apiTask.driver_name}`,
+    description: apiTask.special_instructions || `Pickup driver from ${apiTask.pickup_address} to ${apiTask.dropoff_address}`,
+    driverId: apiTask.driver,
+    driverName: apiTask.driver_name,
+    driverPhone: apiTask.driver_phone,
+    pickupLocation: {
+      latitude: parseFloat(apiTask.pickup_location_lat),
+      longitude: parseFloat(apiTask.pickup_location_long),
+      address: apiTask.pickup_address,
+    },
+    dropoffLocation: {
+      latitude: parseFloat(apiTask.dropoff_location_lat),
+      longitude: parseFloat(apiTask.dropoff_location_long),
+      address: apiTask.dropoff_address,
+    },
+    estimatedDistance: parseFloat(apiTask.estimated_distance_km || '0'),
+    estimatedDuration: apiTask.estimated_duration_minutes || 0,
+    fare: parseFloat(apiTask.task_fare),
+    specialInstructions: apiTask.special_instructions || undefined,
+    status: mapStatus(apiTask.task_status),
+    createdAt: new Date(apiTask.created_at),
+    expiresAt: new Date(Date.now() + 30 * 60 * 1000), // Placeholder
+    responseTimeLimit: 15, // Placeholder
+  };
+};
 
 export default function TaskDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
-  const getTaskById = useTaskStore((state) => state.getTaskById);
-  const acceptTask = useTaskStore((state) => state.acceptTask);
+  const acceptTaskStore = useTaskStore((state) => state.acceptTask);
   const startTask = useTaskStore((state) => state.startTask);
   const completeTask = useTaskStore((state) => state.completeTask);
-  const cancelTask = useTaskStore((state) => state.cancelTask);
+  const cancelTaskStore = useTaskStore((state) => state.cancelTask);
+  const updateTaskStatusStore = useTaskStore((state) => state.updateTaskStatus);
   const updateEarnings = useBikerEarningsStore((state) => state.updateEarnings);
   
   const [task, setTask] = useState<BikerTask | null>(null);
   const [currentStep, setCurrentStep] = useState<'accept' | 'navigate' | 'pickup' | 'delivery' | 'complete'>('accept');
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingTask, setLoadingTask] = useState(true);
 
+  // Fetch task from API
   useEffect(() => {
-    if (id) {
-      const foundTask = getTaskById(id);
-      setTask(foundTask);
+    const fetchTask = async () => {
+      if (!id) return;
       
-      // Determine current step based on task status
-      if (foundTask) {
-        switch (foundTask.status) {
-          case 'pending':
-            setCurrentStep('accept');
-            break;
-          case 'accepted':
-            setCurrentStep('navigate');
-            break;
-          case 'in_progress':
-            setCurrentStep(foundTask.dropoffLocation ? 'pickup' : 'delivery');
-            break;
-          default:
-            setCurrentStep('complete');
+      setLoadingTask(true);
+      try {
+        const response = await BikerTaskApiService.getTaskById(id);
+        if (response.success && response.data) {
+          const uiTask = mapApiTaskToUITask(response.data);
+          setTask(uiTask);
+          
+          // Determine current step based on task status
+          switch (uiTask.status) {
+            case 'pending':
+              setCurrentStep('accept');
+              break;
+            case 'accepted':
+              setCurrentStep('navigate');
+              break;
+            case 'in_progress':
+              setCurrentStep(uiTask.dropoffLocation ? 'pickup' : 'delivery');
+              break;
+            default:
+              setCurrentStep('complete');
+          }
+        } else {
+          Alert.alert('Error', response.error || 'Failed to load task details');
+          router.back();
         }
+      } catch (error) {
+        console.error('Error fetching task:', error);
+        Alert.alert('Error', 'Failed to load task details');
+        router.back();
+      } finally {
+        setLoadingTask(false);
       }
-    }
-  }, [id, getTaskById]);
+    };
+
+    fetchTask();
+  }, [id]);
+
+  if (loadingTask) {
+    return (
+      <SafeAreaView className="flex-1">
+        <ThemedView className="flex-1 items-center justify-center p-6">
+          <ActivityIndicator size="large" color="#BD8C5E" />
+          <ThemedText className="mt-4">Loading task details...</ThemedText>
+        </ThemedView>
+      </SafeAreaView>
+    );
+  }
 
   if (!task) {
     return (
@@ -108,26 +190,53 @@ export default function TaskDetailsScreen() {
   };
 
   const handleAcceptTask = async () => {
+    if (!task) return;
+    
     setIsLoading(true);
     try {
-      acceptTask(task.id);
-      setCurrentStep('navigate');
-      
-      // Navigate to appropriate task flow screen
-      switch (task.type) {
-        case 'customer_emergency':
-        case 'driver_rescue':
-          router.push(`/(biker)/task/emergency?id=${task.id}`);
-          break;
-        case 'document_delivery':
-        case 'regular_delivery':
-          router.push(`/(biker)/task/delivery?id=${task.id}`);
-          break;
-        case 'car_retrieval':
-          router.push(`/(biker)/task/driver-pickup?id=${task.id}`);
-          break;
+      const response = await BikerTaskApiService.acceptTask(task.id);
+      if (response.success && response.data) {
+        // Update local task state
+        const updatedTask = mapApiTaskToUITask(response.data);
+        setTask(updatedTask);
+        
+        // Update store
+        acceptTaskStore(task.id);
+        setCurrentStep('navigate');
+        
+        Alert.alert(
+          'Task Accepted!',
+          'You have successfully accepted this task.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Navigate to appropriate task flow screen
+                switch (task.type) {
+                  case 'customer_emergency':
+                  case 'driver_rescue':
+                    router.push(`/(biker)/task/emergency?id=${task.id}`);
+                    break;
+                  case 'document_delivery':
+                  case 'regular_delivery':
+                    router.push(`/(biker)/task/delivery?id=${task.id}`);
+                    break;
+                  case 'car_retrieval':
+                    router.push(`/(biker)/task/driver-pickup?id=${task.id}`);
+                    break;
+                  default:
+                    // For driver_rescue type, navigate to appropriate screen
+                    router.push(`/(biker)/task/driver-pickup?id=${task.id}`);
+                }
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Error', response.error || 'Failed to accept task. Please try again.');
       }
     } catch (error) {
+      console.error('Error accepting task:', error);
       Alert.alert('Error', 'Failed to accept task. Please try again.');
     } finally {
       setIsLoading(false);
@@ -135,11 +244,27 @@ export default function TaskDetailsScreen() {
   };
 
   const handleStartTask = async () => {
+    if (!task) return;
+    
     setIsLoading(true);
     try {
-      startTask(task.id);
-      setCurrentStep('pickup');
+      // Update task status to 'en_route_to_driver'
+      const response = await BikerTaskApiService.updateTaskStatus(task.id, {
+        task_status: 'en_route_to_driver'
+      });
+      
+      if (response.success) {
+        // Update local state
+        const updatedTask = { ...task, status: 'in_progress' as TaskStatus };
+        setTask(updatedTask);
+        updateTaskStatusStore(task.id, 'in_progress');
+        startTask(task.id);
+        setCurrentStep('pickup');
+      } else {
+        Alert.alert('Error', response.error || 'Failed to start task. Please try again.');
+      }
     } catch (error) {
+      console.error('Error starting task:', error);
       Alert.alert('Error', 'Failed to start task. Please try again.');
     } finally {
       setIsLoading(false);
@@ -147,26 +272,42 @@ export default function TaskDetailsScreen() {
   };
 
   const handleCompleteTask = async () => {
+    if (!task) return;
+    
     setIsLoading(true);
     try {
-      completeTask(task.id);
+      // Update task status to 'completed'
+      const response = await BikerTaskApiService.updateTaskStatus(task.id, {
+        task_status: 'completed'
+      });
       
-      // Update earnings
-      updateEarnings(task.fare, 'base_fare');
-      if (task.emergencyBonus) {
-        updateEarnings(task.emergencyBonus, 'emergency_bonus');
+      if (response.success) {
+        // Update local state
+        const updatedTask = { ...task, status: 'completed' as TaskStatus };
+        setTask(updatedTask);
+        updateTaskStatusStore(task.id, 'completed');
+        completeTask(task.id);
+        
+        // Update earnings
+        updateEarnings(task.fare, 'base_fare');
+        if (task.emergencyBonus) {
+          updateEarnings(task.emergencyBonus, 'emergency_bonus');
+        }
+        
+        setCurrentStep('complete');
+        
+        Alert.alert(
+          'Task Completed!',
+          `You've earned ₹${task.fare + (task.emergencyBonus || 0)} for this task.`,
+          [
+            { text: 'OK', onPress: () => router.replace('/(biker)/(tabs)') }
+          ]
+        );
+      } else {
+        Alert.alert('Error', response.error || 'Failed to complete task. Please try again.');
       }
-      
-      setCurrentStep('complete');
-      
-      Alert.alert(
-        'Task Completed!',
-        `You've earned ₹${task.fare + (task.emergencyBonus || 0)} for this task.`,
-        [
-          { text: 'OK', onPress: () => router.replace('/(biker)') }
-        ]
-      );
     } catch (error) {
+      console.error('Error completing task:', error);
       Alert.alert('Error', 'Failed to complete task. Please try again.');
     } finally {
       setIsLoading(false);
@@ -174,6 +315,8 @@ export default function TaskDetailsScreen() {
   };
 
   const handleCancelTask = () => {
+    if (!task) return;
+    
     Alert.alert(
       'Cancel Task',
       'Are you sure you want to cancel this task? This may affect your ratings.',
@@ -182,9 +325,31 @@ export default function TaskDetailsScreen() {
         {
           text: 'Yes, Cancel',
           style: 'destructive',
-          onPress: () => {
-            cancelTask(task.id, 'Biker cancelled');
-            router.replace('/(biker)');
+          onPress: async () => {
+            setIsLoading(true);
+            try {
+              const response = await BikerTaskApiService.cancelTask(task.id, {
+                cancellation_reason: 'Biker cancelled'
+              });
+              
+              if (response.success) {
+                // Update local state
+                const updatedTask = { ...task, status: 'cancelled' as TaskStatus };
+                setTask(updatedTask);
+                cancelTaskStore(task.id, 'Biker cancelled');
+                
+                Alert.alert('Task Cancelled', 'The task has been cancelled successfully.', [
+                  { text: 'OK', onPress: () => router.replace('/(biker)/(tabs)') }
+                ]);
+              } else {
+                Alert.alert('Error', response.error || 'Failed to cancel task. Please try again.');
+              }
+            } catch (error) {
+              console.error('Error cancelling task:', error);
+              Alert.alert('Error', 'Failed to cancel task. Please try again.');
+            } finally {
+              setIsLoading(false);
+            }
           },
         },
       ]

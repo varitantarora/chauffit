@@ -7,6 +7,7 @@ import { ThemedText } from '../../common/ThemedText';
 import { ThemedCard } from '../../common/ThemedCard';
 import { Location as LocationType } from '../../../types/navigation';
 import { useAuthStore } from '../../../store/authStore';
+import BikerApiService from '../../../services/api/BikerApiService';
 
 interface BikerMapProps {
   pickupLocation: LocationType;
@@ -86,7 +87,7 @@ export function BikerMap({
           timeInterval: 10000, // Update every 10 seconds
           distanceInterval: 10, // Update every 10 meters
         },
-        (location) => {
+        async (location) => {
           const updatedLocation: LocationType = {
             latitude: location.coords.latitude,
             longitude: location.coords.longitude,
@@ -94,6 +95,17 @@ export function BikerMap({
           };
           setUserLocation(updatedLocation);
           onLocationUpdate?.(updatedLocation);
+          
+          // Update location on backend
+          try {
+            await BikerApiService.updateLocation({
+              latitude: location.coords.latitude.toString(),
+              longitude: location.coords.longitude.toString(),
+            });
+          } catch (error) {
+            console.error('Error updating location on backend:', error);
+            // Don't show error to user, location tracking should continue
+          }
         }
       );
     } catch (error) {

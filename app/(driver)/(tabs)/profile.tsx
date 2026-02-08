@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { TouchableOpacity, ScrollView, View, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { TouchableOpacity, ScrollView, View, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedView } from '../../../components/common/ThemedView';
@@ -11,6 +11,7 @@ import { useAuthStore } from '../../../store/authStore';
 import { useJobStore } from '../../../store/jobStore';
 import { useEarningsStore } from '../../../store/earningsStore';
 import { useRouter } from 'expo-router';
+import DriverApiService, { DriverProfile as DriverProfileType } from '../../../services/api/DriverApiService';
 
 export default function DriverProfile() {
   const user = useAuthStore((state) => state.user);
@@ -23,17 +24,99 @@ export default function DriverProfile() {
   const { earnings } = useEarningsStore();
   
   const [activeTab, setActiveTab] = useState<'profile' | 'documents' | 'stats'>('profile');
+  const [driverProfile, setDriverProfile] = useState<DriverProfileType | null>(null);
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  // Driver stats
-  const driverStats = {
-    totalRides: jobHistory.length,
-    rating: jobHistory.length > 0 
-      ? jobHistory.reduce((sum, job) => sum + (job.customerRating || 0), 0) / jobHistory.length
-      : 4.9,
-    totalEarnings: earnings.totalEarnings,
-    joinDate: new Date('2024-01-15'), // Mock join date
-    completionRate: 96.5,
-    onlineHours: 450 // Mock total hours
+  // Fetch driver profile, documents on mount
+  useEffect(() => {
+    fetchDriverData();
+  }, []);
+
+  const fetchDriverData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch profile
+      const profileResponse = await DriverApiService.getProfile();
+      
+      if (profileResponse.success && profileResponse.data) {
+        const profile = profileResponse.data;
+        setDriverProfile(profile);
+        // Sync online status with store
+        if (profile.is_online !== isOnline) {
+          setOnlineStatus(profile.is_online);
+        }
+        
+        // If profile has ID, fetch detailed profile with documents
+        if (profile.id) {
+          const detailedResponse = await DriverApiService.getProfileById(profile.id);
+          if (detailedResponse.success && detailedResponse.data) {
+            const detailed = detailedResponse.data as any;
+            if (detailed.documents) setDocuments(detailed.documents);
+          }
+        }
+      } else {
+        console.warn('Failed to load driver profile:', profileResponse.error);
+      }
+      
+      // Also try fetching documents separately as fallback
+      const documentsResponse = await DriverApiService.getDocuments();
+      if (documentsResponse.success && documentsResponse.data) {
+        setDocuments(documentsResponse.data);
+      }
+    } catch (error) {
+      console.error('Error fetching driver data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoOnline = async () => {
+    if (updatingStatus) return;
+
+    try {
+      setUpdatingStatus(true);
+      
+      const newStatus = !isOnline;
+      
+      // Optimistic update
+      setOnlineStatus(newStatus);
+      
+      const response = await DriverApiService.updateStatus({
+        is_online: newStatus,
+        // You can add current location here if available
+      });
+
+      if (!response.success) {
+        // Revert on error
+        setOnlineStatus(!newStatus);
+        Alert.alert(
+          'Error',
+          response.error || 'Failed to update online status. Please try again.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        // Update local profile state
+        if (driverProfile) {
+          setDriverProfile({
+            ...driverProfile,
+            is_online: newStatus,
+          });
+        }
+      }
+    } catch (error) {
+      // Revert on error
+      setOnlineStatus(!isOnline);
+      Alert.alert(
+        'Error',
+        'An unexpected error occurred. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setUpdatingStatus(false);
+    }
   };
 
   const handleLogout = () => {
@@ -41,21 +124,25 @@ export default function DriverProfile() {
     router.replace('/(auth)/login');
   };
 
-
-  const handleGoOnline = () => {
-    if (!isOnline) {
-      Alert.alert(
-        'Go Online?',
-        'You will start receiving ride requests when you go online.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Go Online', onPress: () => setOnlineStatus(true) }
-        ]
-      );
-    } else {
-      setOnlineStatus(false);
-    }
+  // Driver stats from profile - no mock data
+  const driverStats = {
+    totalRides: driverProfile?.total_trips ?? 0,
+    rating: driverProfile?.average_rating ?? 0,
+    totalEarnings: earnings.totalEarnings ?? 0,
+    joinDate: driverProfile?.created_at ? new Date(driverProfile.created_at) : undefined,
+    // completionRate and onlineHours not available in API - will show N/A
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView className="flex-1">
+        <ThemedView className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#BD8C5E" />
+          <ThemedText className="mt-4">Loading profile...</ThemedText>
+        </ThemedView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1">
@@ -74,24 +161,29 @@ export default function DriverProfile() {
               <View className="items-center mb-6">
                 <View className="w-24 h-24 bg-burgundy rounded-full items-center justify-center mb-4 relative">
                   <ThemedText className="text-white text-3xl font-bold">
-                    {user?.name?.charAt(0).toUpperCase()}
+                    {/* {driverProfile?.full_name?.charAt(0).toUpperCase() || user?.name?.charAt(0).toUpperCase()} */}
                   </ThemedText>
+                  
                   {isOnline && (
                     <View className="absolute -bottom-1 -right-1 w-6 h-6 bg-success rounded-full border-2 border-white" />
                   )}
                 </View>
                 <ThemedText variant="title" className="text-xl font-bold">
-                  {user?.name}
+                  {driverProfile?.full_name || user?.name}
                 </ThemedText>
-                <ThemedText variant="secondary">{user?.email}</ThemedText>
-                {user?.phone && (
-                  <ThemedText variant="secondary">{user.phone}</ThemedText>
+                <ThemedText variant="secondary">{driverProfile?.email || user?.email}</ThemedText>
+                {driverProfile?.phone_number && (
+                  <ThemedText variant="secondary">{driverProfile.phone_number}</ThemedText>
                 )}
                 
                 <View className="flex-row items-center mt-3 bg-success/10 px-3 py-2 rounded-full">
-                  <Ionicons name="shield-checkmark" size={16} color="#10b981" />
-                  <ThemedText className="text-success font-semibold ml-2">
-                    Verified Driver
+                  <Ionicons 
+                    name={driverProfile?.is_verified ? "shield-checkmark" : "shield-outline"} 
+                    size={16} 
+                    color={driverProfile?.is_verified ? "#10b981" : "#6b7280"} 
+                  />
+                  <ThemedText className={`font-semibold ml-2 ${driverProfile?.is_verified ? 'text-success' : 'text-secondary'}`}>
+                    {driverProfile?.is_verified ? 'Verified Driver' : 'Pending Verification'}
                   </ThemedText>
                 </View>
               </View>
@@ -116,9 +208,9 @@ export default function DriverProfile() {
                   </View>
                   <View className="items-center">
                     <ThemedText className="text-2xl font-bold">
-                      {Math.round(driverStats.completionRate)}%
+                      ₹{Math.round(driverStats.totalEarnings / 1000)}k
                     </ThemedText>
-                    <ThemedText variant="caption">Complete</ThemedText>
+                    <ThemedText variant="caption">Earnings</ThemedText>
                   </View>
                 </View>
               </View>
@@ -142,13 +234,18 @@ export default function DriverProfile() {
                 </View>
                 <TouchableOpacity
                   onPress={handleGoOnline}
+                  disabled={updatingStatus}
                   className={`px-4 py-2 rounded-lg ${
                     isOnline ? 'bg-danger/10 border border-danger/20' : 'bg-success/10 border border-success/20'
-                  }`}
+                  } ${updatingStatus ? 'opacity-50' : ''}`}
                 >
-                  <ThemedText className={`font-semibold ${isOnline ? 'text-danger' : 'text-success'}`}>
-                    {isOnline ? 'Go Offline' : 'Go Online'}
-                  </ThemedText>
+                  {updatingStatus ? (
+                    <ActivityIndicator size="small" color={isOnline ? "#ef4444" : "#10b981"} />
+                  ) : (
+                    <ThemedText className={`font-semibold ${isOnline ? 'text-danger' : 'text-success'}`}>
+                      {isOnline ? 'Go Offline' : 'Go Online'}
+                    </ThemedText>
+                  )}
                 </TouchableOpacity>
               </View>
             </ThemedCard>
@@ -268,10 +365,12 @@ export default function DriverProfile() {
                     <View className="flex-row justify-between">
                       <ThemedText>Member Since:</ThemedText>
                       <ThemedText className="font-semibold">
-                        {driverStats.joinDate.toLocaleDateString('en-IN', {
-                          month: 'short',
-                          year: 'numeric'
-                        })}
+                        {driverStats.joinDate 
+                          ? driverStats.joinDate.toLocaleDateString('en-IN', {
+                              month: 'short',
+                              year: 'numeric'
+                            })
+                          : 'N/A'}
                       </ThemedText>
                     </View>
                     
@@ -283,16 +382,9 @@ export default function DriverProfile() {
                     </View>
                     
                     <View className="flex-row justify-between">
-                      <ThemedText>Online Hours:</ThemedText>
+                      <ThemedText>Total Rides:</ThemedText>
                       <ThemedText className="font-semibold">
-                        {driverStats.onlineHours}h
-                      </ThemedText>
-                    </View>
-                    
-                    <View className="flex-row justify-between">
-                      <ThemedText>Completion Rate:</ThemedText>
-                      <ThemedText className="font-semibold text-success">
-                        {driverStats.completionRate.toFixed(1)}%
+                        {driverStats.totalRides}
                       </ThemedText>
                     </View>
                     

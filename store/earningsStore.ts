@@ -19,6 +19,7 @@ interface EarningsState {
   setMonthlyTarget: (target: number) => void;
   updatePendingAmount: (amount: number) => void;
   recordPayout: (amount: number) => void;
+  setEarnings: (earnings: Partial<DriverEarnings>) => void; // Set earnings from API
   
   // Analytics
   getWeeklyEarnings: () => number;
@@ -45,8 +46,8 @@ interface Incentive {
   createdAt: Date;
 }
 
-// Mock data for development
-const mockDailyBreakdown: EarningsBreakdown[] = [
+// Mock data for development - COMMENTED OUT: API integrated (DriverApiService.getEarnings, BikerApiService.getEarnings)
+/* const mockDailyBreakdown: EarningsBreakdown[] = [
   {
     date: new Date(),
     totalEarnings: 10700,
@@ -163,7 +164,7 @@ const mockActiveIncentives: Incentive[] = [
     expiresAt: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000), // End of month
     createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
   }
-];
+]; */
 
 export const useEarningsStore = create<EarningsState>((set, get) => ({
   // Initial state
@@ -176,10 +177,10 @@ export const useEarningsStore = create<EarningsState>((set, get) => ({
     lastPayout: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // 1 week ago
   },
   
-  dailyBreakdown: mockDailyBreakdown,
+  dailyBreakdown: [], // mockDailyBreakdown, // COMMENTED OUT: API integrated
   weeklyTarget: 67000,
   monthlyTarget: 280000,
-  activeIncentives: mockActiveIncentives,
+  activeIncentives: [], // mockActiveIncentives, // COMMENTED OUT: API integrated
   completedIncentives: [],
 
   // Actions
@@ -256,6 +257,18 @@ export const useEarningsStore = create<EarningsState>((set, get) => ({
       pendingAmount: Math.max(0, state.earnings.pendingAmount - amount),
       lastPayout: new Date()
     }
+  })),
+
+  setEarnings: (earningsData) => set((state) => ({
+    earnings: {
+      ...state.earnings,
+      ...earningsData,
+      lastPayout: earningsData.lastPayout 
+        ? (earningsData.lastPayout instanceof Date 
+            ? earningsData.lastPayout 
+            : new Date(earningsData.lastPayout))
+        : state.earnings.lastPayout,
+    },
   })),
 
   // Analytics functions

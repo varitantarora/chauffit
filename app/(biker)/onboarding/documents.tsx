@@ -8,6 +8,7 @@ import { ThemedText } from '../../../components/common/ThemedText';
 import { ThemedCard } from '../../../components/common/ThemedCard';
 import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { useAuthStore } from '../../../store/authStore';
+import BikerApiService, { BikerDocumentRequest } from '../../../services/api/BikerApiService';
 import * as ImagePicker from 'expo-image-picker';
 
 type DocumentType = 'license' | 'identity' | 'address' | 'insurance' | 'selfie';
@@ -70,6 +71,18 @@ export default function BikerDocumentsScreen() {
     },
   ];
 
+  // Map document types to API document types
+  const mapDocumentType = (type: DocumentType): 'police_verification' | 'address_proof' | 'passport' | 'other' => {
+    switch (type) {
+      case 'license': return 'other'; // License is handled separately in profile
+      case 'identity': return 'passport';
+      case 'address': return 'address_proof';
+      case 'insurance': return 'other';
+      case 'selfie': return 'police_verification';
+      default: return 'other';
+    }
+  };
+
   const uploadDocument = async (type: DocumentType) => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -104,19 +117,52 @@ export default function BikerDocumentsScreen() {
           }
         }));
 
-        // Simulate upload and verification
-        setTimeout(() => {
+        // Upload to API
+        try {
+          const documentRequest: BikerDocumentRequest = {
+            document_type: mapDocumentType(type),
+            document_file: {
+              uri: result.assets[0].uri,
+              name: `${type}_${Date.now()}.jpg`,
+              type: 'image/jpeg',
+            } as any,
+          };
+
+          const response = await BikerApiService.uploadDocument(documentRequest);
+          
+          if (response.success) {
+            setDocuments(prev => ({
+              ...prev,
+              [type]: { 
+                ...prev[type], 
+                status: 'verified' 
+              }
+            }));
+            Alert.alert('Success', 'Document uploaded successfully');
+          } else {
+            setDocuments(prev => ({
+              ...prev,
+              [type]: { 
+                ...prev[type], 
+                status: 'pending' 
+              }
+            }));
+            Alert.alert('Error', response.error || 'Failed to upload document');
+          }
+        } catch (error) {
           setDocuments(prev => ({
             ...prev,
             [type]: { 
               ...prev[type], 
-              status: 'verified' 
+              status: 'pending' 
             }
           }));
-        }, 2000);
+          Alert.alert('Error', 'Failed to upload document. Please try again.');
+          console.error('Error uploading document:', error);
+        }
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to upload document. Please try again.');
+      Alert.alert('Error', 'Failed to select document. Please try again.');
     }
   };
 
@@ -151,14 +197,13 @@ export default function BikerDocumentsScreen() {
           style: 'destructive',
           onPress: () => {
             // Mark all documents as verified for testing
-            const verifiedDocs: Record<DocumentType, DocumentStatus> = {};
-            documentTypes.forEach(docType => {
-              verifiedDocs[docType.key] = {
-                uploaded: true,
-                uri: 'test://placeholder',
-                status: 'verified'
-              };
-            });
+            const verifiedDocs = {
+              license: { uploaded: true, uri: 'test://placeholder', status: 'verified' as const },
+              identity: { uploaded: true, uri: 'test://placeholder', status: 'verified' as const },
+              address: { uploaded: true, uri: 'test://placeholder', status: 'verified' as const },
+              insurance: { uploaded: true, uri: 'test://placeholder', status: 'verified' as const },
+              selfie: { uploaded: true, uri: 'test://placeholder', status: 'verified' as const },
+            };
             setDocuments(verifiedDocs);
             
             // Navigate to background check immediately
@@ -172,21 +217,27 @@ export default function BikerDocumentsScreen() {
   };
 
   const handleSubmit = async () => {
-    const requiredDocs = documentTypes.filter(doc => doc.required);
-    const missingDocs = requiredDocs.filter(doc => !documents[doc.key].uploaded);
-    
-    if (missingDocs.length > 0) {
+    // Check if at least one document is uploaded
+    if (!atLeastOneUploaded) {
       Alert.alert(
-        'Missing Documents',
-        `Please upload: ${missingDocs.map(doc => doc.title).join(', ')}`
+        'No Documents Uploaded',
+        'Please upload at least one document to continue.'
       );
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // Simulate API submission
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Get all uploaded documents
+      const uploadedDocs = Object.values(documents).filter(doc => doc.status === 'verified' || doc.uploaded);
+      
+      if (uploadedDocs.length === 0) {
+        Alert.alert(
+          'No Documents Uploaded',
+          'Please upload at least one document to continue.'
+        );
+        return;
+      }
       
       Alert.alert(
         'Documents Submitted!',
@@ -205,9 +256,8 @@ export default function BikerDocumentsScreen() {
     }
   };
 
-  const allRequiredUploaded = documentTypes
-    .filter(doc => doc.required)
-    .every(doc => documents[doc.key].uploaded);
+  // Check if at least one document is uploaded (changed from all required)
+  const atLeastOneUploaded = Object.values(documents).some(doc => doc.uploaded);
 
   return (
     <SafeAreaView className="flex-1">
@@ -270,7 +320,7 @@ export default function BikerDocumentsScreen() {
                   <ThemedCard key={docType.key} className="p-4">
                     <View className="flex-row items-center">
                       <View className="w-12 h-12 bg-secondary/20 rounded-full items-center justify-center mr-4">
-                        <Ionicons name={docType.icon} size={24} color="#bd8c5e" />
+                        <Ionicons name={docType.icon as any} size={24} color="#bd8c5e" />
                       </View>
                       
                       <View className="flex-1">
@@ -377,13 +427,13 @@ export default function BikerDocumentsScreen() {
           <PrimaryButton
             title={isSubmitting ? "Submitting Documents..." : "SUBMIT FOR VERIFICATION"}
             onPress={handleSubmit}
-            disabled={isSubmitting || !allRequiredUploaded}
-            className={!allRequiredUploaded ? 'opacity-50' : ''}
+            disabled={isSubmitting || !atLeastOneUploaded}
+            className={!atLeastOneUploaded ? 'opacity-50' : ''}
           />
           
-          {!allRequiredUploaded && (
+          {!atLeastOneUploaded && (
             <ThemedText className="text-center text-secondary mt-2 text-sm">
-              Please upload all required documents to continue
+              Please upload at least one document to continue
             </ThemedText>
           )}
         </View>

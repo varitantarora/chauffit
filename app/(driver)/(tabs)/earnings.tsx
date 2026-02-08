@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, View, TouchableOpacity, RefreshControl } from 'react-native';
+import { ScrollView, View, TouchableOpacity, RefreshControl, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../../components/common/ThemedView';
 import { ThemedCard } from '../../../components/common/ThemedCard';
@@ -8,6 +8,8 @@ import { EarningsCard, EarningsSummaryCard, WeeklyProgressCard } from '../../../
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../store/authStore';
 import { useEarningsStore } from '../../../store/earningsStore';
+import DriverApiService, { DriverStats, DriverDailyEarning, DriverBonus } from '../../../services/api/DriverApiService';
+import { useEffect } from 'react';
 
 export default function EarningsScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
@@ -17,24 +19,155 @@ export default function EarningsScreen() {
     activeIncentives,
     getWeeklyEarnings,
     getMonthlyEarnings,
-    getAveragePerRide,
-    getAveragePerHour
+    getAveragePerRide, 
+    getAveragePerHour,
+    setEarnings
   } = useEarningsStore();
   
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
+  const [stats, setStats] = useState<{
+    averageRating: number;
+    totalRides: number;
+    completionRate: number;
+    distanceCovered: number;
+  } | null>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [dailyEarnings, setDailyEarnings] = useState<DriverDailyEarning[]>([]);
+  const [loadingDaily, setLoadingDaily] = useState(false);
+  const [bonuses, setBonuses] = useState<DriverBonus[]>([]);
+  const [loadingBonuses, setLoadingBonuses] = useState(false);
   
   const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
 
-  const onRefresh = React.useCallback(() => {
+  const fetchEarnings = async () => {
+    try {
+      setLoading(true);
+      const response = await DriverApiService.getEarnings();
+      
+      if (response.success && response.data) {
+        // API returns earnings data in snake_case format
+        const earningsData = response.data as any;
+        
+        // Map API response (snake_case) to store format (camelCase)
+        const mappedEarnings = {
+          totalEarnings: earningsData.total_earnings ?? earningsData.totalEarnings ?? 0,
+          weeklyEarnings: earningsData.week_earnings ?? earningsData.weekly_earnings ?? earningsData.weeklyEarnings ?? 0,
+          monthlyEarnings: earningsData.month_earnings ?? earningsData.monthly_earnings ?? earningsData.monthlyEarnings ?? 0,
+          todayEarnings: earningsData.today_earnings ?? earningsData.todayEarnings ?? 0,
+          pendingAmount: earningsData.pending_amount ?? earningsData.pendingAmount ?? 0,
+          lastPayout: earningsData.last_payout ? new Date(earningsData.last_payout) : undefined,
+        };
+        
+        // Update store with fetched earnings
+        setEarnings(mappedEarnings);
+        console.log('Earnings fetched and updated in store:', mappedEarnings);
+      } else {
+        Alert.alert('Error', response.error || 'Failed to fetch earnings');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to fetch earnings');
+      console.error('Error fetching earnings:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      setLoadingStats(true);
+      const response = await DriverApiService.getStats();
+      
+      if (response.success && response.data) {
+        const statsData = response.data as any;
+        const lifetime = statsData.lifetime || statsData;
+        
+        setStats({
+          averageRating: lifetime.average_rating || 0,
+          totalRides: lifetime.pickups || 0,
+          completionRate: lifetime.completion_rate || 0,
+          distanceCovered: lifetime.distance_covered_km || 0,
+        });
+      } else {
+        console.error('Failed to fetch stats:', response.error);
+        setStats(null);
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      setStats(null);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
+
+  const fetchDailyEarnings = async () => {
+    try {
+      setLoadingDaily(true);
+      const response = await DriverApiService.getDailyEarnings();
+      
+      if (response.success && response.data) {
+        const dailyData = response.data as any[];
+        // Map API response to component format
+        const mappedDaily: DriverDailyEarning[] = dailyData.map((item: any) => ({
+          date: item.date || item.created_at || '',
+          trips: item.trips || item.trips_completed || 0,
+          earnings: (item.earnings || item.total_earnings || '0').toString(),
+        }));
+        setDailyEarnings(mappedDaily);
+      } else {
+        console.error('Failed to fetch daily earnings:', response.error);
+        setDailyEarnings([]);
+      }
+    } catch (error) {
+      console.error('Error fetching daily earnings:', error);
+      setDailyEarnings([]);
+    } finally {
+      setLoadingDaily(false);
+    }
+  };
+
+  const fetchBonuses = async () => {
+    try {
+      setLoadingBonuses(true);
+      const response = await DriverApiService.getBonuses();
+      
+      if (response.success && response.data) {
+        setBonuses(response.data);
+      } else {
+        console.error('Failed to fetch bonuses:', response.error);
+        setBonuses([]);
+      }
+    } catch (error) {
+      console.error('Error fetching bonuses:', error);
+      setBonuses([]);
+    } finally {
+      setLoadingBonuses(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEarnings();
+    fetchStats();
+    fetchDailyEarnings();
+    fetchBonuses();
+  }, []);
+
+  const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    // Simulate API call to refresh earnings data
-    setTimeout(() => setRefreshing(false), 2000);
+    await Promise.all([fetchEarnings(), fetchStats(), fetchDailyEarnings(), fetchBonuses()]);
+    setRefreshing(false);
   }, []);
 
   return (
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
+        {loading && !refreshing && (
+          <View className="absolute inset-0 items-center justify-center bg-black/10 z-10">
+            <ActivityIndicator size="large" color="#BD8C5E" />
+          </View>
+        )}
         <ScrollView 
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -128,105 +261,121 @@ export default function EarningsScreen() {
             </View>
           </View>
           
-          {/* Recent Earnings Breakdown */}
+          {/* Daily Breakdown */}
           <View className="px-6 mb-6">
             <View className="flex-row justify-between items-center mb-4">
               <ThemedText variant="title" className="text-lg font-bold">
-                Recent Breakdown
+                Daily Breakdown
               </ThemedText>
-              <TouchableOpacity>
-                <ThemedText className="text-burgundy">View All</ThemedText>
-              </TouchableOpacity>
             </View>
             
-            {dailyBreakdown.slice(0, 5).map((day, index) => (
-              <ThemedCard key={index} className="mb-3 p-4">
-                <View className="flex-row justify-between items-center mb-2">
-                  <View>
-                    <ThemedText className="font-semibold">
-                      {day.date.toLocaleDateString('en-IN', { 
-                        weekday: 'short', 
-                        month: 'short', 
-                        day: 'numeric' 
-                      })}
-                    </ThemedText>
-                    <ThemedText variant="caption">
-                      {day.totalRides} rides • {day.onlineHours}h online
-                    </ThemedText>
-                  </View>
-                  <View className="items-end">
-                    <ThemedText className="font-bold text-burgundy text-lg">
-                      ₹{day.totalEarnings.toLocaleString('en-IN')}
-                    </ThemedText>
-                    <View className="flex-row items-center">
-                      <Ionicons name="star" size={12} color="#fbbf24" />
-                      <ThemedText variant="caption" className="ml-1">
-                        {day.averageRating.toFixed(1)}
-                      </ThemedText>
-                    </View>
-                  </View>
-                </View>
-                
-                {/* Earnings breakdown */}
-                <View className="flex-row justify-between text-xs">
-                  <ThemedText variant="caption" className="text-secondary">
-                    Base: ₹{day.baseFare.toLocaleString('en-IN')}
-                  </ThemedText>
-                  <ThemedText variant="caption" className="text-secondary">
-                    Tips: ₹{day.tips.toLocaleString('en-IN')}
-                  </ThemedText>
-                  <ThemedText variant="caption" className="text-secondary">
-                    Bonus: ₹{day.incentives.toLocaleString('en-IN')}
+            {loadingDaily ? (
+              <ThemedCard className="p-4">
+                <View className="items-center py-2">
+                  <ActivityIndicator size="small" color="#BD8C5E" />
+                  <ThemedText variant="caption" className="mt-2 text-secondary">
+                    Loading daily breakdown...
                   </ThemedText>
                 </View>
               </ThemedCard>
-            ))}
+            ) : dailyEarnings.length > 0 ? (
+              dailyEarnings.slice(0, 7).map((day, index) => {
+                const date = new Date(day.date);
+                const isToday = date.toDateString() === new Date().toDateString();
+                const isYesterday = date.toDateString() === new Date(Date.now() - 86400000).toDateString();
+                
+                let dateLabel = '';
+                if (isToday) {
+                  dateLabel = 'Today';
+                } else if (isYesterday) {
+                  dateLabel = 'Yesterday';
+                } else {
+                  dateLabel = date.toLocaleDateString('en-IN', { 
+                    weekday: 'short',
+                    month: 'short', 
+                    day: 'numeric' 
+                  });
+                }
+                
+                return (
+                  <ThemedCard key={index} className="mb-3">
+                    <View className="flex-row justify-between items-center">
+                      <View>
+                        <ThemedText className="font-semibold">{dateLabel}</ThemedText>
+                        <ThemedText variant="caption">
+                          {day.trips} trip{day.trips !== 1 ? 's' : ''} completed
+                        </ThemedText>
+                      </View>
+                      <ThemedText className={`font-bold text-lg ${isToday ? 'text-burgundy' : ''}`}>
+                        ₹{parseFloat(day.earnings).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                      </ThemedText>
+                    </View>
+                  </ThemedCard>
+                );
+              })
+            ) : (
+              <ThemedCard className="p-4">
+                <View className="items-center py-2">
+                  <ThemedText className="text-center text-secondary">
+                    No daily earnings data available
+                  </ThemedText>
+                </View>
+              </ThemedCard>
+            )}
           </View>
 
-          {/* Active Incentives */}
-          {activeIncentives.length > 0 && (
-            <View className="px-6 mb-6">
-              <ThemedText variant="title" className="text-lg font-bold mb-4">
-                Active Incentives
-              </ThemedText>
-              
-              {activeIncentives.map((incentive) => (
-                <ThemedCard key={incentive.id} className="mb-3 p-4">
+          {/* Bonuses & Incentives */}
+          <View className="px-6 mb-6">
+            <ThemedText variant="title" className="text-lg font-bold mb-4">
+              Bonuses & Incentives
+            </ThemedText>
+            
+            {loadingBonuses ? (
+              <ThemedCard className="p-4">
+                <View className="items-center py-2">
+                  <ActivityIndicator size="small" color="#BD8C5E" />
+                  <ThemedText variant="caption" className="mt-2 text-secondary">
+                    Loading bonuses...
+                  </ThemedText>
+                </View>
+              </ThemedCard>
+            ) : bonuses.length > 0 ? (
+              bonuses.map((bonus) => (
+                <ThemedCard key={bonus.id} className="mb-3 p-4">
                   <View className="flex-row justify-between items-start mb-2">
                     <View className="flex-1">
-                      <ThemedText className="font-bold">{incentive.title}</ThemedText>
+                      <ThemedText className="font-bold">{bonus.title}</ThemedText>
                       <ThemedText variant="caption" className="text-secondary">
-                        {incentive.description}
+                        {bonus.description}
                       </ThemedText>
+                      {bonus.earnedAt && (
+                        <ThemedText variant="caption" className="text-secondary mt-1">
+                          Earned: {new Date(bonus.earnedAt).toLocaleDateString('en-IN', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </ThemedText>
+                      )}
                     </View>
                     <View className="bg-success/10 px-2 py-1 rounded">
                       <ThemedText variant="caption" className="text-success font-bold">
-                        +₹{incentive.reward}
+                        +₹{bonus.amount.toLocaleString('en-IN')}
                       </ThemedText>
                     </View>
                   </View>
-                  
-                  <View className="bg-surface dark:bg-darkSurface rounded-full h-2 mb-2">
-                    <View 
-                      className="bg-burgundy rounded-full h-2"
-                      style={{ 
-                        width: `${Math.min((incentive.current / incentive.target) * 100, 100)}%` 
-                      }}
-                    />
-                  </View>
-                  
-                  <View className="flex-row justify-between">
-                    <ThemedText variant="caption">
-                      {incentive.current} / {incentive.target} {incentive.type}
-                    </ThemedText>
-                    <ThemedText variant="caption">
-                      {Math.round((incentive.current / incentive.target) * 100)}% complete
-                    </ThemedText>
-                  </View>
                 </ThemedCard>
-              ))}
-            </View>
-          )}
+              ))
+            ) : (
+              <ThemedCard className="p-4">
+                <View className="items-center py-2">
+                  <ThemedText className="text-center text-secondary">
+                    No bonuses or incentives available
+                  </ThemedText>
+                </View>
+              </ThemedCard>
+            )}
+          </View>
           
           {/* Performance Metrics */}
           <View className="px-6 mb-6">
@@ -234,34 +383,59 @@ export default function EarningsScreen() {
               Performance Metrics
             </ThemedText>
             <ThemedCard className="p-4">
-              <View className="flex-row justify-between mb-3">
-                <View className="flex-row items-center">
-                  <Ionicons name="star" size={20} color="#bd8c5e" />
-                  <ThemedText className="ml-2">Average Rating</ThemedText>
+              {loadingStats ? (
+                <View className="py-4 items-center">
+                  <ActivityIndicator size="small" color="#BD8C5E" />
+                  <ThemedText variant="caption" className="mt-2 text-textSecondary">
+                    Loading stats...
+                  </ThemedText>
                 </View>
-                <ThemedText className="font-semibold">4.9/5.0</ThemedText>
-              </View>
-              <View className="flex-row justify-between mb-3">
-                <View className="flex-row items-center">
-                  <Ionicons name="checkmark-circle" size={20} color="#bd8c5e" />
-                  <ThemedText className="ml-2">Acceptance Rate</ThemedText>
+              ) : stats ? (
+                <>
+                  <View className="flex-row justify-between mb-3">
+                    <View className="flex-row items-center">
+                      <Ionicons name="star" size={20} color="#bd8c5e" />
+                      <ThemedText className="ml-2">Average Rating</ThemedText>
+                    </View>
+                    <ThemedText className="font-semibold">
+                      {stats.averageRating > 0 ? stats.averageRating.toFixed(1) : 'N/A'}
+                    </ThemedText>
+                  </View>
+                  <View className="flex-row justify-between mb-3">
+                    <View className="flex-row items-center">
+                      <Ionicons name="checkmark-circle" size={20} color="#bd8c5e" />
+                      <ThemedText className="ml-2">Completion Rate</ThemedText>
+                    </View>
+                    <ThemedText className="font-semibold">
+                      {stats.completionRate > 0 ? `${stats.completionRate.toFixed(1)}%` : 'N/A'}
+                    </ThemedText>
+                  </View>
+                  <View className="flex-row justify-between mb-3">
+                    <View className="flex-row items-center">
+                      <Ionicons name="navigate" size={20} color="#bd8c5e" />
+                      <ThemedText className="ml-2">Distance Covered</ThemedText>
+                    </View>
+                    <ThemedText className="font-semibold">
+                      {stats.distanceCovered > 0 ? `${stats.distanceCovered.toFixed(1)} km` : 'N/A'}
+                    </ThemedText>
+                  </View>
+                  <View className="flex-row justify-between">
+                    <View className="flex-row items-center">
+                      <Ionicons name="car" size={20} color="#bd8c5e" />
+                      <ThemedText className="ml-2">Total Rides</ThemedText>
+                    </View>
+                    <ThemedText className="font-semibold">
+                      {stats.totalRides > 0 ? stats.totalRides.toLocaleString('en-IN') : 'N/A'}
+                    </ThemedText>
+                  </View>
+                </>
+              ) : (
+                <View className="py-4">
+                  <ThemedText className="text-center text-textSecondary">
+                    No stats available
+                  </ThemedText>
                 </View>
-                <ThemedText className="font-semibold">95%</ThemedText>
-              </View>
-              <View className="flex-row justify-between mb-3">
-                <View className="flex-row items-center">
-                  <Ionicons name="time" size={20} color="#bd8c5e" />
-                  <ThemedText className="ml-2">Weekly Online Hours</ThemedText>
-                </View>
-                <ThemedText className="font-semibold">42h / 50h</ThemedText>
-              </View>
-              <View className="flex-row justify-between">
-                <View className="flex-row items-center">
-                  <Ionicons name="car" size={20} color="#bd8c5e" />
-                  <ThemedText className="ml-2">Total Rides</ThemedText>
-                </View>
-                <ThemedText className="font-semibold">1,247</ThemedText>
-              </View>
+              )}
             </ThemedCard>
           </View>
         </ScrollView>

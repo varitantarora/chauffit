@@ -17,9 +17,7 @@ export default function Signup() {
   const [selectedRole, setSelectedRole] = useState<UserRole>('customer');
   const [loading, setLoading] = useState(false);
   
-  const login = useAuthStore((state) => state.login);
-  const setActiveRole = useAuthStore((state) => state.setActiveRole);
-  const addRole = useAuthStore((state) => state.addRole);
+  const register = useAuthStore((state) => state.register);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const router = useRouter();
 
@@ -33,20 +31,48 @@ export default function Signup() {
       Alert.alert('Error', 'Passwords do not match');
       return;
     }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+
+    // Basic phone validation (should be 10 digits)
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(phone)) {
+      Alert.alert('Error', 'Please enter a valid 10-digit phone number');
+      return;
+    }
     
     setLoading(true);
-    setTimeout(() => {
-      addRole(selectedRole);
-      setActiveRole(selectedRole);
-      login({
-        id: '1',
-        email: email,
-        name: name,
-        phone: phone,
+    
+    try {
+      // Split name into first and last name
+      const nameParts = name.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      const result = await register({
+        email,
+        phone_number: `+91${phone}`, // Add country code
+        password,
+        first_name: firstName,
+        last_name: lastName,
+        user_type: selectedRole,
       });
+
+      if (result.success) {
+        router.replace('/');
+      } else {
+        Alert.alert('Error', result.error || 'Registration failed. Please try again.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    } finally {
       setLoading(false);
-      router.replace('/');
-    }, 1500);
+    }
   };
 
   const inputClass = isDarkMode 

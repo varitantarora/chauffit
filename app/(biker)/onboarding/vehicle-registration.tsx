@@ -8,6 +8,7 @@ import { ThemedText } from '../../../components/common/ThemedText';
 import { ThemedCard } from '../../../components/common/ThemedCard';
 import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { useAuthStore } from '../../../store/authStore';
+import BikerApiService, { BikerVehicleRequest } from '../../../services/api/BikerApiService';
 import * as ImagePicker from 'expo-image-picker';
 
 type VehicleType = 'motorcycle' | 'scooter' | 'bicycle' | 'ebike';
@@ -24,6 +25,9 @@ export default function VehicleRegistrationScreen() {
     licensePlate: '',
     color: '',
     photo: null as string | null,
+    rcBookPhoto: null as string | null,
+    insurancePhoto: null as string | null,
+    registrationExpiry: '',
   });
   
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +43,8 @@ export default function VehicleRegistrationScreen() {
     setVehicleData(prev => ({ ...prev, type }));
   };
 
-  const handlePhotoUpload = async () => {
+
+  const handlePhotoUpload = async (type: 'photo' | 'rcBook' | 'insurance') => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
@@ -55,7 +60,13 @@ export default function VehicleRegistrationScreen() {
       });
 
       if (!result.canceled && result.assets[0]) {
-        setVehicleData(prev => ({ ...prev, photo: result.assets[0].uri }));
+        if (type === 'photo') {
+          setVehicleData(prev => ({ ...prev, photo: result.assets[0].uri }));
+        } else if (type === 'rcBook') {
+          setVehicleData(prev => ({ ...prev, rcBookPhoto: result.assets[0].uri }));
+        } else if (type === 'insurance') {
+          setVehicleData(prev => ({ ...prev, insurancePhoto: result.assets[0].uri }));
+        }
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to upload photo. Please try again.');
@@ -65,39 +76,95 @@ export default function VehicleRegistrationScreen() {
   const handleContinue = async () => {
     // Validation
     if (!vehicleData.make.trim()) {
-      Alert.alert('Required', 'Please enter vehicle make');
+      Alert.alert('Required', 'Please enter vehicle make/brand');
       return;
     }
     if (!vehicleData.model.trim()) {
       Alert.alert('Required', 'Please enter vehicle model');
       return;
     }
-    if (!vehicleData.year.trim()) {
-      Alert.alert('Required', 'Please enter vehicle year');
+    if (!vehicleData.licensePlate.trim()) {
+      Alert.alert('Required', 'Please enter registration number');
       return;
     }
     if (!vehicleData.color.trim()) {
       Alert.alert('Required', 'Please enter vehicle color');
       return;
     }
+    if (!vehicleData.registrationExpiry.trim()) {
+      Alert.alert('Required', 'Please enter registration expiry date');
+      return;
+    }
+    if (!vehicleData.rcBookPhoto) {
+      Alert.alert('Required', 'Please upload RC Book photo');
+      return;
+    }
+    if (!vehicleData.insurancePhoto) {
+      Alert.alert('Required', 'Please upload Insurance photo');
+      return;
+    }
 
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Map vehicle type to API format
+      const vehicleType = vehicleData.type === 'bicycle' || vehicleData.type === 'ebike' 
+        ? 'motorcycle' // API only supports motorcycle/scooter
+        : vehicleData.type === 'motorcycle' 
+        ? 'motorcycle' 
+        : 'scooter';
       
-      Alert.alert(
-        'Vehicle Registered!',
-        'Your vehicle has been registered successfully. Proceed to document verification.',
-        [
-          {
-            text: 'Continue',
-            onPress: () => router.push('/(biker)/onboarding/documents')
-          }
-        ]
-      );
+      // Map make to API brand enum
+      const brandMap: Record<string, 'honda' | 'bajaj' | 'tvs' | 'hero' | 'royal_enfield' | 'yamaha' | 'suzuki' | 'other'> = {
+        'honda': 'honda',
+        'bajaj': 'bajaj',
+        'tvs': 'tvs',
+        'hero': 'hero',
+        'royal enfield': 'royal_enfield',
+        'yamaha': 'yamaha',
+        'suzuki': 'suzuki',
+      };
+      const brand = brandMap[vehicleData.make.toLowerCase()] || 'other';
+
+      // In React Native, we can pass URI objects directly to FormData
+      // The API service will handle the FormData creation
+      const vehicleRequest: BikerVehicleRequest = {
+        vehicle_type: vehicleType,
+        brand: brand,
+        model_name: vehicleData.model,
+        registration_number: vehicleData.licensePlate,
+        registration_expiry: vehicleData.registrationExpiry,
+        vehicle_color: vehicleData.color,
+        rc_book_photo: {
+          uri: vehicleData.rcBookPhoto!,
+          name: 'rc_book.jpg',
+          type: 'image/jpeg',
+        } as any,
+        insurance_photo: {
+          uri: vehicleData.insurancePhoto!,
+          name: 'insurance.jpg',
+          type: 'image/jpeg',
+        } as any,
+      };
+
+      const response = await BikerApiService.addVehicle(vehicleRequest);
+      
+      if (response.success) {
+        Alert.alert(
+          'Vehicle Registered!',
+          'Your vehicle has been registered successfully. Proceed to document verification.',
+          [
+            {
+              text: 'Continue',
+              onPress: () => router.push('/(biker)/onboarding/documents')
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Error', response.error || 'Failed to register vehicle. Please try again.');
+      }
     } catch (error) {
       Alert.alert('Error', 'Failed to register vehicle. Please try again.');
+      console.error('Error registering vehicle:', error);
     } finally {
       setIsLoading(false);
     }
@@ -217,16 +284,31 @@ export default function VehicleRegistrationScreen() {
                   />
                 </View>
 
-                {/* License Plate */}
+                {/* Registration Number */}
                 <View>
-                  <ThemedText className="font-semibold mb-2">License Plate</ThemedText>
-                  <ThemedText variant="caption" className="text-secondary mb-2">(if applicable)</ThemedText>
+                  <ThemedText className="font-semibold mb-2">Registration Number *</ThemedText>
                   <TextInput
                     value={vehicleData.licensePlate}
                     onChangeText={(text) => setVehicleData(prev => ({ ...prev, licensePlate: text.toUpperCase() }))}
                     placeholder="ABC123"
                     placeholderTextColor={isDarkMode ? '#9ca3af' : '#6b7280'}
                     autoCapitalize="characters"
+                    className="w-full p-3 border border-border dark:border-darkBorder rounded-lg"
+                    style={{ 
+                      backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
+                      color: isDarkMode ? '#d9d1c6' : '#314b4c'
+                    }}
+                  />
+                </View>
+
+                {/* Registration Expiry */}
+                <View>
+                  <ThemedText className="font-semibold mb-2">Registration Expiry *</ThemedText>
+                  <TextInput
+                    value={vehicleData.registrationExpiry}
+                    onChangeText={(text) => setVehicleData(prev => ({ ...prev, registrationExpiry: text }))}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor={isDarkMode ? '#9ca3af' : '#6b7280'}
                     className="w-full p-3 border border-border dark:border-darkBorder rounded-lg"
                     style={{ 
                       backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
@@ -253,19 +335,19 @@ export default function VehicleRegistrationScreen() {
               </View>
             </ThemedCard>
 
-            {/* Vehicle Photo Upload */}
-            <ThemedCard className="p-4 mb-8">
-              <ThemedText className="font-semibold text-lg mb-4">Vehicle Photo</ThemedText>
+            {/* RC Book Photo Upload */}
+            <ThemedCard className="p-4 mb-6">
+              <ThemedText className="font-semibold text-lg mb-4">RC Book Photo *</ThemedText>
               
-              {vehicleData.photo ? (
+              {vehicleData.rcBookPhoto ? (
                 <View className="items-center">
                   <Image 
-                    source={{ uri: vehicleData.photo }} 
+                    source={{ uri: vehicleData.rcBookPhoto }} 
                     className="w-full h-48 rounded-lg mb-4"
                     resizeMode="cover"
                   />
                   <TouchableOpacity
-                    onPress={handlePhotoUpload}
+                    onPress={() => handlePhotoUpload('rcBook')}
                     className="bg-secondary/20 px-4 py-2 rounded-lg"
                     activeOpacity={0.7}
                   >
@@ -274,16 +356,46 @@ export default function VehicleRegistrationScreen() {
                 </View>
               ) : (
                 <TouchableOpacity
-                  onPress={handlePhotoUpload}
+                  onPress={() => handlePhotoUpload('rcBook')}
                   className="border-2 border-dashed border-border dark:border-darkBorder rounded-lg p-8 items-center"
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="camera" size={48} color={isDarkMode ? '#9ca3af' : '#6b7280'} />
+                  <Ionicons name="document" size={48} color={isDarkMode ? '#9ca3af' : '#6b7280'} />
                   <ThemedText className="text-secondary font-semibold text-lg mt-2">
-                    Upload Vehicle Photo
+                    Upload RC Book Photo
                   </ThemedText>
-                  <ThemedText variant="caption" className="text-secondary text-center mt-1">
-                    Take a clear photo of your vehicle{'\n'}for verification purposes
+                </TouchableOpacity>
+              )}
+            </ThemedCard>
+
+            {/* Insurance Photo Upload */}
+            <ThemedCard className="p-4 mb-8">
+              <ThemedText className="font-semibold text-lg mb-4">Insurance Photo *</ThemedText>
+              
+              {vehicleData.insurancePhoto ? (
+                <View className="items-center">
+                  <Image 
+                    source={{ uri: vehicleData.insurancePhoto }} 
+                    className="w-full h-48 rounded-lg mb-4"
+                    resizeMode="cover"
+                  />
+                  <TouchableOpacity
+                    onPress={() => handlePhotoUpload('insurance')}
+                    className="bg-secondary/20 px-4 py-2 rounded-lg"
+                    activeOpacity={0.7}
+                  >
+                    <ThemedText className="text-secondary font-semibold">Change Photo</ThemedText>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  onPress={() => handlePhotoUpload('insurance')}
+                  className="border-2 border-dashed border-border dark:border-darkBorder rounded-lg p-8 items-center"
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="shield-checkmark" size={48} color={isDarkMode ? '#9ca3af' : '#6b7280'} />
+                  <ThemedText className="text-secondary font-semibold text-lg mt-2">
+                    Upload Insurance Photo
                   </ThemedText>
                 </TouchableOpacity>
               )}

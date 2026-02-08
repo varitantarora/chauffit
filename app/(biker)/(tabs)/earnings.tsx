@@ -1,5 +1,5 @@
-import React from 'react';
-import { ScrollView, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { ScrollView, View, RefreshControl, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../../components/common/ThemedView';
 import { ThemedCard } from '../../../components/common/ThemedCard';
@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../store/authStore';
 import { useBikerEarningsStore } from '../../../store/bikerEarningsStore';
 import { IncentiveTracker } from '../../../components/biker/earnings/IncentiveTracker';
+import BikerApiService from '../../../services/api/BikerApiService';
 
 export default function BikerEarningsScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
@@ -19,18 +20,189 @@ export default function BikerEarningsScreen() {
   const activeIncentives = useBikerEarningsStore((state) => state.activeIncentives);
   const completedIncentives = useBikerEarningsStore((state) => state.completedIncentives);
   const performanceMetrics = useBikerEarningsStore((state) => state.performanceMetrics);
-  const getTodayEarnings = useBikerEarningsStore((state) => state.getTodayEarnings);
-  const getWeekEarnings = useBikerEarningsStore((state) => state.getWeekEarnings);
-  const getMonthEarnings = useBikerEarningsStore((state) => state.getMonthEarnings);
+  const setEarnings = useBikerEarningsStore((state) => state.setEarnings);
 
-  const todayEarnings = getTodayEarnings() || 1250;
-  const weekEarnings = getWeekEarnings() || 8200;
-  const monthEarnings = getMonthEarnings() || 28200;
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [stats, setStats] = useState<{
+    averageRating: number;
+    totalPickups: number;
+    completionRate: number;
+    distanceCovered: number;
+  } | null>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [dailyEarnings, setDailyEarnings] = useState<Array<{
+    date: string;
+    pickups: number;
+    earnings: number;
+  }>>([]);
+  const [loadingDaily, setLoadingDaily] = useState(false);
+  const [bonuses, setBonuses] = useState<Array<{
+    title: string;
+    description: string;
+    amount: number;
+  }>>([]);
+  const [loadingBonuses, setLoadingBonuses] = useState(false);
+
+  // Use earnings directly from store (populated from API)
+  const todayEarnings = earnings.todayEarnings ?? 0;
+  const weekEarnings = earnings.weeklyEarnings ?? 0;
+  const monthEarnings = earnings.monthlyEarnings ?? 0;
+  const totalEarnings = earnings.totalEarnings ?? 0;
+
+  const fetchEarnings = async () => {
+    try {
+      setLoading(true);
+      const response = await BikerApiService.getEarnings();
+      
+      if (response.success && response.data) {
+        // API returns earnings data in snake_case format
+        const earningsData = response.data as any;
+        
+        // Map API response (snake_case) to store format (camelCase)
+        const mappedEarnings = {
+          totalEarnings: earningsData.total_earnings ?? 0,
+          weeklyEarnings: earningsData.week_earnings ?? 0,
+          monthlyEarnings: earningsData.month_earnings ?? 0,
+          todayEarnings: earningsData.today_earnings ?? 0,
+          pendingAmount: earningsData.pending_amount ?? 0,
+          baseTaskEarnings: earningsData.base_task_earnings ?? 0,
+          emergencyBonuses: earningsData.emergency_bonuses ?? 0,
+          peakTimeBonuses: earningsData.peak_time_bonuses ?? 0,
+          distanceBonuses: earningsData.distance_bonuses ?? 0,
+          incentives: earningsData.incentives ?? 0,
+          lastPayout: earningsData.last_payout ? new Date(earningsData.last_payout) : undefined,
+        };
+        console.log('Mapped earnings:', mappedEarnings);
+        
+        // Update store with fetched earnings
+        setEarnings(mappedEarnings);
+        console.log('Earnings fetched and updated in store:', mappedEarnings);
+      } else {
+        Alert.alert('Error', response.error || 'Failed to fetch earnings');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to fetch earnings');
+      console.error('Error fetching earnings:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      setLoadingStats(true);
+      const response = await BikerApiService.getStats();
+      
+      if (response.success && response.data) {
+        const statsData = response.data as any;
+        const lifetime = statsData.lifetime || statsData;
+        
+        setStats({
+          averageRating: lifetime.average_rating || 0,
+          totalPickups: lifetime.pickups || 0,
+          completionRate: lifetime.completion_rate || 0,
+          distanceCovered: lifetime.distance_covered_km || 0,
+        });
+        console.log('Stats fetched:', statsData);
+      } else {
+        console.error('Failed to fetch stats:', response.error);
+        setStats(null);
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      setStats(null);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
+
+  const fetchDailyEarnings = async () => {
+    try {
+      setLoadingDaily(true);
+      const response = await BikerApiService.getDailyEarnings();
+      
+      if (response.success && response.data) {
+        const dailyData = response.data as any[];
+        // Map API response to component format
+        const mappedDaily = dailyData.map((item: any) => ({
+          date: item.date || item.created_at || '',
+          pickups: item.pickups || item.pickups_completed || 0,
+          earnings: parseFloat(item.earnings || item.total_earnings || '0'),
+        }));
+        setDailyEarnings(mappedDaily);
+        console.log('Daily earnings fetched:', mappedDaily);
+      } else {
+        console.error('Failed to fetch daily earnings:', response.error);
+        setDailyEarnings([]);
+      }
+    } catch (error) {
+      console.error('Error fetching daily earnings:', error);
+      setDailyEarnings([]);
+    } finally {
+      setLoadingDaily(false);
+    }
+  };
+
+  const fetchBonuses = async () => {
+    try {
+      setLoadingBonuses(true);
+      const response = await BikerApiService.getBonuses();
+      
+      if (response.success && response.data) {
+        const bonusesData = response.data as any[];
+        // Map API response to component format
+        const mappedBonuses = bonusesData.map((item: any) => ({
+          title: item.title || item.name || item.bonus_type || 'Bonus',
+          description: item.description || `Bonus earned on ${item.earned_at || item.date || item.created_at || 'recent date'}`,
+          amount: parseFloat(item.amount || item.reward || item.bonus_amount || '0'),
+        }));
+        setBonuses(mappedBonuses);
+        console.log('Bonuses fetched:', mappedBonuses);
+      } else {
+        console.error('Failed to fetch bonuses:', response.error);
+        setBonuses([]);
+      }
+    } catch (error) {
+      console.error('Error fetching bonuses:', error);
+      setBonuses([]);
+    } finally {
+      setLoadingBonuses(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEarnings();
+    fetchStats();
+    fetchDailyEarnings();
+    fetchBonuses();
+  }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([fetchEarnings(), fetchStats(), fetchDailyEarnings(), fetchBonuses()]);
+  };
 
   return (
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
-        <ScrollView showsVerticalScrollIndicator={false}>
+        {loading && !refreshing ? (
+          <View className="flex-1 items-center justify-center">
+            <ActivityIndicator size="large" color="#BD8C5E" />
+            <ThemedText className="mt-4">Loading earnings...</ThemedText>
+          </View>
+        ) : (
+          <ScrollView 
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor="#BD8C5E"
+              />
+            }
+          >
           {/* Header */}
           <View className="px-6 pt-4 pb-6">
             <ThemedText variant="title">Earnings</ThemedText>
@@ -40,7 +212,7 @@ export default function BikerEarningsScreen() {
           </View>
           
           {/* Current Shift */}
-          {currentShift && (
+          {/* {currentShift && (
             <View className="px-6 mb-6">
               <ThemedCard className="p-4 bg-blue-50 dark:bg-blue-900/20">
                 <View className="flex-row items-center justify-between">
@@ -68,13 +240,13 @@ export default function BikerEarningsScreen() {
                 </View>
               </ThemedCard>
             </View>
-          )}
+          )} */}
 
           {/* Earnings Summary */}
           <View className="px-6 mb-6">
             <ThemedCard className="p-6">
               <ThemedText variant="secondary" className="mb-2">Total Earnings</ThemedText>
-              <ThemedText variant="title" className="text-3xl mb-4">₹{monthEarnings}</ThemedText>
+              <ThemedText variant="title" className="text-3xl mb-4">₹{totalEarnings}</ThemedText>
               <View className="flex-row justify-between">
                 <View>
                   <ThemedText variant="caption">Today</ThemedText>
@@ -86,7 +258,7 @@ export default function BikerEarningsScreen() {
                 </View>
                 <View>
                   <ThemedText variant="caption">Pending</ThemedText>
-                  <ThemedText className="font-semibold">₹{earnings.pendingAmount || 1070}</ThemedText>
+                  <ThemedText className="font-semibold">₹{earnings.pendingAmount ?? 0}</ThemedText>
                 </View>
               </View>
             </ThemedCard>
@@ -106,35 +278,58 @@ export default function BikerEarningsScreen() {
               Daily Breakdown
             </ThemedText>
             
-            <ThemedCard className="mb-3">
-              <View className="flex-row justify-between items-center">
-                <View>
-                  <ThemedText className="font-semibold">Today</ThemedText>
-                  <ThemedText variant="caption">24 pickups completed</ThemedText>
+            {loadingDaily ? (
+              <ThemedCard className="p-4">
+                <View className="items-center py-2">
+                  <ActivityIndicator size="small" color="#BD8C5E" />
+                  <ThemedText variant="caption" className="mt-2 text-textSecondary">
+                    Loading daily breakdown...
+                  </ThemedText>
                 </View>
-                <ThemedText className="font-bold text-primary text-lg">₹6,000</ThemedText>
-              </View>
-            </ThemedCard>
-            
-            <ThemedCard className="mb-3">
-              <View className="flex-row justify-between items-center">
-                <View>
-                  <ThemedText className="font-semibold">Yesterday</ThemedText>
-                  <ThemedText variant="caption">18 pickups completed</ThemedText>
+              </ThemedCard>
+            ) : dailyEarnings.length > 0 ? (
+              dailyEarnings.map((day, index) => {
+                const date = new Date(day.date);
+                const isToday = date.toDateString() === new Date().toDateString();
+                const isYesterday = date.toDateString() === new Date(Date.now() - 86400000).toDateString();
+                
+                let dateLabel = '';
+                if (isToday) {
+                  dateLabel = 'Today';
+                } else if (isYesterday) {
+                  dateLabel = 'Yesterday';
+                } else {
+                  dateLabel = date.toLocaleDateString('en-IN', { 
+                    month: 'short', 
+                    day: 'numeric' 
+                  });
+                }
+                
+                return (
+                  <ThemedCard key={index} className="mb-3">
+                    <View className="flex-row justify-between items-center">
+                      <View>
+                        <ThemedText className="font-semibold">{dateLabel}</ThemedText>
+                        <ThemedText variant="caption">
+                          {day.pickups} pickup{day.pickups !== 1 ? 's' : ''} completed
+                        </ThemedText>
+                      </View>
+                      <ThemedText className={`font-bold text-lg ${isToday ? 'text-primary' : ''}`}>
+                        ₹{day.earnings.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                      </ThemedText>
+                    </View>
+                  </ThemedCard>
+                );
+              })
+            ) : (
+              <ThemedCard className="p-4">
+                <View className="items-center py-2">
+                  <ThemedText className="text-center text-textSecondary">
+                    No daily earnings data available
+                  </ThemedText>
                 </View>
-                <ThemedText className="font-bold text-lg">₹4,520</ThemedText>
-              </View>
-            </ThemedCard>
-            
-            <ThemedCard className="mb-3">
-              <View className="flex-row justify-between items-center">
-                <View>
-                  <ThemedText className="font-semibold">Dec 25</ThemedText>
-                  <ThemedText variant="caption">30 pickups completed</ThemedText>
-                </View>
-                <ThemedText className="font-bold text-lg">₹7,500</ThemedText>
-              </View>
-            </ThemedCard>
+              </ThemedCard>
+            )}
           </View>
           
           {/* Performance Metrics */}
@@ -143,34 +338,59 @@ export default function BikerEarningsScreen() {
               Performance Stats
             </ThemedText>
             <ThemedCard>
-              <View className="flex-row justify-between mb-3">
-                <View className="flex-row items-center">
-                  <Ionicons name="star" size={20} color="#bd8c5e" />
-                  <ThemedText className="ml-2">Customer Rating</ThemedText>
+              {loadingStats ? (
+                <View className="py-4 items-center">
+                  <ActivityIndicator size="small" color="#BD8C5E" />
+                  <ThemedText variant="caption" className="mt-2 text-textSecondary">
+                    Loading stats...
+                  </ThemedText>
                 </View>
-                <ThemedText className="font-semibold">4.8/5.0</ThemedText>
-              </View>
-              <View className="flex-row justify-between mb-3">
-                <View className="flex-row items-center">
-                  <Ionicons name="speedometer" size={20} color="#bd8c5e" />
-                  <ThemedText className="ml-2">Pickup Speed</ThemedText>
+              ) : stats ? (
+                <>
+                  <View className="flex-row justify-between mb-3">
+                    <View className="flex-row items-center">
+                      <Ionicons name="star" size={20} color="#bd8c5e" />
+                      <ThemedText className="ml-2">Customer Rating</ThemedText>
+                    </View>
+                    <ThemedText className="font-semibold">
+                      {stats.averageRating > 0 ? `${stats.averageRating.toFixed(1)}/5.0` : 'N/A'}
+                    </ThemedText>
+                  </View>
+                  <View className="flex-row justify-between mb-3">
+                    <View className="flex-row items-center">
+                      <Ionicons name="bicycle" size={20} color="#bd8c5e" />
+                      <ThemedText className="ml-2">Total Pickups</ThemedText>
+                    </View>
+                    <ThemedText className="font-semibold">
+                      {stats.totalPickups > 0 ? stats.totalPickups.toLocaleString('en-IN') : 'N/A'}
+                    </ThemedText>
+                  </View>
+                  <View className="flex-row justify-between mb-3">
+                    <View className="flex-row items-center">
+                      <Ionicons name="checkmark-circle" size={20} color="#bd8c5e" />
+                      <ThemedText className="ml-2">Completion Rate</ThemedText>
+                    </View>
+                    <ThemedText className="font-semibold">
+                      {stats.completionRate > 0 ? `${stats.completionRate.toFixed(1)}%` : 'N/A'}
+                    </ThemedText>
+                  </View>
+                  <View className="flex-row justify-between">
+                    <View className="flex-row items-center">
+                      <Ionicons name="navigate" size={20} color="#bd8c5e" />
+                      <ThemedText className="ml-2">Distance Covered</ThemedText>
+                    </View>
+                    <ThemedText className="font-semibold">
+                      {stats.distanceCovered > 0 ? `${stats.distanceCovered.toFixed(1)} km` : 'N/A'}
+                    </ThemedText>
+                  </View>
+                </>
+              ) : (
+                <View className="py-4">
+                  <ThemedText className="text-center text-textSecondary">
+                    No stats available
+                  </ThemedText>
                 </View>
-                <ThemedText className="font-semibold">Excellent</ThemedText>
-              </View>
-              <View className="flex-row justify-between mb-3">
-                <View className="flex-row items-center">
-                  <Ionicons name="checkmark-circle" size={20} color="#bd8c5e" />
-                  <ThemedText className="ml-2">Completion Rate</ThemedText>
-                </View>
-                <ThemedText className="font-semibold">98%</ThemedText>
-              </View>
-              <View className="flex-row justify-between">
-                <View className="flex-row items-center">
-                  <Ionicons name="bicycle" size={20} color="#bd8c5e" />
-                  <ThemedText className="ml-2">Distance Covered</ThemedText>
-                </View>
-                <ThemedText className="font-semibold">342 km</ThemedText>
-              </View>
+              )}
             </ThemedCard>
           </View>
           
@@ -179,24 +399,44 @@ export default function BikerEarningsScreen() {
             <ThemedText variant="title" className="text-lg mb-4">
               Bonuses & Incentives
             </ThemedText>
-            <ThemedCard>
-              <View className="mb-3">
-                <View className="flex-row justify-between items-center mb-1">
-                  <ThemedText>Peak Hour Bonus</ThemedText>
-                  <ThemedText className="font-semibold text-green-600">+₹250.00</ThemedText>
+            {loadingBonuses ? (
+              <ThemedCard className="p-4">
+                <View className="items-center py-2">
+                  <ActivityIndicator size="small" color="#BD8C5E" />
+                  <ThemedText variant="caption" className="mt-2 text-textSecondary">
+                    Loading bonuses...
+                  </ThemedText>
                 </View>
-                <ThemedText variant="caption">Completed 10 pickups during peak hours</ThemedText>
-              </View>
-              <View className="border-t border-border dark:border-darkBorder pt-3">
-                <View className="flex-row justify-between items-center mb-1">
-                  <ThemedText>Weekend Bonus</ThemedText>
-                  <ThemedText className="font-semibold text-green-600">+₹150.00</ThemedText>
+              </ThemedCard>
+            ) : bonuses.length > 0 ? (
+              <ThemedCard>
+                {bonuses.map((bonus, index) => (
+                  <View 
+                    key={index}
+                    className={index > 0 ? 'border-t border-border dark:border-darkBorder pt-3 mt-3' : 'mb-3'}
+                  >
+                    <View className="flex-row justify-between items-center mb-1">
+                      <ThemedText>{bonus.title}</ThemedText>
+                      <ThemedText className="font-semibold text-green-600">
+                        +₹{bonus.amount.toFixed(2)}
+                      </ThemedText>
+                    </View>
+                    <ThemedText variant="caption">{bonus.description}</ThemedText>
+                  </View>
+                ))}
+              </ThemedCard>
+            ) : (
+              <ThemedCard className="p-4">
+                <View className="items-center py-2">
+                  <ThemedText className="text-center text-textSecondary">
+                    No bonuses or incentives available
+                  </ThemedText>
                 </View>
-                <ThemedText variant="caption">Extra earnings for weekend availability</ThemedText>
-              </View>
-            </ThemedCard>
+              </ThemedCard>
+            )}
           </View>
-        </ScrollView>
+          </ScrollView>
+        )}
       </ThemedView>
     </SafeAreaView>
   );

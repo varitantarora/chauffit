@@ -7,6 +7,7 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { GoogleIcon } from '../../components/icons/GoogleIcon';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
+import AuthApiService from '../../services/api/AuthApiService';
 
 const translations = {
   EN: {
@@ -71,26 +72,30 @@ export default function EmailLogin() {
 
     setLoading(true);
 
-    // Simulate OTP sending
-    setTimeout(() => {
-      setLoading(false);
-      // Show test OTP to user
+    try {
+      // For email login, we'll use password-based login instead of OTP
+      // But if OTP is needed, we can use sendOTP with email
+      // For now, redirect to password login or show password input
+      // Note: Backend might need email-based OTP support
       Alert.alert(
-        t.otpSent,
-        t.otpMessage,
+        'Email Login',
+        'Please use password login for email. Redirecting to password login...',
         [
           {
             text: 'OK',
             onPress: () => {
-              router.push({
-                pathname: '/(auth)/otp-verification',
-                params: { email }
-              });
+              // You can add a password login screen here
+              // For now, we'll show an alert
+              Alert.alert('Info', 'Password login screen will be implemented');
             }
           }
         ]
       );
-    }, 1500);
+    } catch (error) {
+      Alert.alert(t.error, 'An unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inputClass = isDarkMode 

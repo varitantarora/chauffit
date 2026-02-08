@@ -79,31 +79,46 @@ export function DocumentUpload({
     );
   };
 
+  // Map local document type to API document type
+  const mapLocalTypeToApi = (localType: DriverDocument['type']): 'police_verification' | 'address_proof' | 'passport' | 'insurance' | 'other' => {
+    switch (localType) {
+      case 'license':
+        return 'other';
+      case 'insurance':
+        return 'insurance';
+      case 'registration':
+        return 'other';
+      case 'permit':
+        return 'police_verification';
+      case 'passport':
+        return 'passport';
+      default:
+        return 'other';
+    }
+  };
+
   const uploadFromCamera = async () => {
     try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please allow camera access to upload documents');
+        return;
+      }
+
       setIsUploading(true);
       
-      // Mock camera upload
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const mockDocument: Partial<DriverDocument> = {
-        id: `doc_${Date.now()}`,
-        type,
-        number: generateMockNumber(type),
-        imageUrl: 'https://via.placeholder.com/400x300?text=Document',
-        isVerified: false,
-        uploadedAt: new Date()
-      };
-      
-      onUpload(mockDocument);
-      
-      Alert.alert(
-        'Upload Successful',
-        'Your document has been uploaded and is under review. You will be notified once it\'s verified.'
-      );
-      
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await uploadDocumentToApi(result.assets[0].uri);
+      }
     } catch (error) {
       Alert.alert('Upload Failed', 'Please try again later.');
+      console.error('Error uploading from camera:', error);
     } finally {
       setIsUploading(false);
     }
@@ -111,46 +126,65 @@ export function DocumentUpload({
 
   const uploadFromGallery = async () => {
     try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please allow photo access to upload documents');
+        return;
+      }
+
       setIsUploading(true);
       
-      // Mock gallery upload
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const mockDocument: Partial<DriverDocument> = {
-        id: `doc_${Date.now()}`,
-        type,
-        number: generateMockNumber(type),
-        imageUrl: 'https://via.placeholder.com/400x300?text=Document',
-        isVerified: false,
-        uploadedAt: new Date()
-      };
-      
-      onUpload(mockDocument);
-      
-      Alert.alert(
-        'Upload Successful',
-        'Your document has been uploaded and is under review. You will be notified once it\'s verified.'
-      );
-      
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await uploadDocumentToApi(result.assets[0].uri);
+      }
     } catch (error) {
       Alert.alert('Upload Failed', 'Please try again later.');
+      console.error('Error uploading from gallery:', error);
     } finally {
       setIsUploading(false);
     }
   };
 
-  const generateMockNumber = (type: DriverDocument['type']) => {
-    switch (type) {
-      case 'license':
-        return `DL-${Math.random().toString().substr(2, 10)}`;
-      case 'insurance':
-        return `INS-${Math.random().toString().substr(2, 8)}`;
-      case 'registration':
-        return `REG-${Math.random().toString().substr(2, 8)}`;
-      case 'permit':
-        return `PER-${Math.random().toString().substr(2, 8)}`;
-      default:
-        return `DOC-${Math.random().toString().substr(2, 8)}`;
+  const uploadDocumentToApi = async (uri: string) => {
+    try {
+      const documentRequest: DriverDocumentRequest = {
+        document_type: mapLocalTypeToApi(type),
+        document_file: {
+          uri,
+          name: `${type}_${Date.now()}.jpg`,
+          type: 'image/jpeg',
+        } as any,
+      };
+
+      const response = await DriverApiService.uploadDocument(documentRequest);
+      
+      if (response.success) {
+        const uploadedDoc: Partial<DriverDocument> = {
+          id: `doc_${Date.now()}`,
+          type,
+          imageUrl: uri,
+          isVerified: false,
+          uploadedAt: new Date()
+        };
+        
+        onUpload(uploadedDoc);
+        Alert.alert(
+          'Upload Successful',
+          'Your document has been uploaded and is under review. You will be notified once it\'s verified.'
+        );
+      } else {
+        Alert.alert('Upload Failed', response.error || 'Please try again later.');
+      }
+    } catch (error) {
+      Alert.alert('Upload Failed', 'Please try again later.');
+      console.error('Error uploading document to API:', error);
     }
   };
 
@@ -353,8 +387,32 @@ export function DocumentUpload({
 }
 
 // Document list component
-export function DocumentsList() {
-  const [documents, setDocuments] = useState<DriverDocument[]>([]);
+interface DocumentsListProps {
+  documents?: any[];
+  onRefresh?: () => void;
+}
+
+export function DocumentsList({ documents: apiDocuments = [], onRefresh }: DocumentsListProps) {
+  const [localDocuments, setLocalDocuments] = useState<DriverDocument[]>([]);
+  
+  // Map API documents to local format
+  const mappedDocuments = React.useMemo(() => {
+    if (apiDocuments && apiDocuments.length > 0) {
+      return apiDocuments.map((doc: any) => ({
+        id: doc.id,
+        type: mapApiDocumentTypeToLocal(doc.document_type),
+        number: doc.document_number || '',
+        imageUrl: doc.document_file || '',
+        isVerified: doc.verification_status === 'approved',
+        uploadedAt: new Date(doc.created_at),
+        expiryDate: doc.expiry_date ? new Date(doc.expiry_date) : undefined,
+        verifiedAt: doc.verified_at ? new Date(doc.verified_at) : undefined,
+      }));
+    }
+    return [];
+  }, [apiDocuments]);
+
+  const allDocuments = [...mappedDocuments, ...localDocuments];
   
   const requiredDocuments = [
     {
@@ -383,6 +441,20 @@ export function DocumentsList() {
     }
   ];
 
+  const mapApiDocumentTypeToLocal = (apiType: string): DriverDocument['type'] => {
+    switch (apiType) {
+      case 'police_verification':
+      case 'address_proof':
+        return 'permit';
+      case 'insurance':
+        return 'insurance';
+      case 'passport':
+        return 'passport';
+      default:
+        return 'license';
+    }
+  };
+
   const handleUpload = (documentData: Partial<DriverDocument>) => {
     const newDocument: DriverDocument = {
       id: documentData.id || `doc_${Date.now()}`,
@@ -394,11 +466,13 @@ export function DocumentsList() {
       ...documentData
     };
 
-    setDocuments(prev => [...prev.filter(doc => doc.type !== newDocument.type), newDocument]);
+    setLocalDocuments(prev => [...prev.filter(doc => doc.type !== newDocument.type), newDocument]);
+    onRefresh?.();
   };
 
   const handleDelete = (documentId: string) => {
-    setDocuments(prev => prev.filter(doc => doc.id !== documentId));
+    setLocalDocuments(prev => prev.filter(doc => doc.id !== documentId));
+    onRefresh?.();
   };
 
   return (
@@ -408,7 +482,7 @@ export function DocumentsList() {
       </ThemedText>
       
       {requiredDocuments.map((docType) => {
-        const existingDocument = documents.find(doc => doc.type === docType.type);
+        const existingDocument = allDocuments.find(doc => doc.type === docType.type);
         
         return (
           <DocumentUpload

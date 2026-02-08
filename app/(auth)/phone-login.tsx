@@ -7,6 +7,7 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { GoogleIcon } from '../../components/icons/GoogleIcon';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
+import AuthApiService from '../../services/api/AuthApiService';
 
 const translations = {
   EN: {
@@ -64,26 +65,37 @@ export default function PhoneLogin() {
 
     setLoading(true);
 
-    // Simulate OTP sending
-    setTimeout(() => {
-      setLoading(false);
-      // Show test OTP to user
-      Alert.alert(
-        t.otpSent,
-        t.otpMessage,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              router.push({
-                pathname: '/(auth)/otp-verification',
-                params: { phoneNumber }
-              });
+    try {
+      const response = await AuthApiService.sendOTP({
+        phone_number: `${phoneNumber}`, // Add country code
+        otp_type: 'phone_verification',
+      });
+
+      if (response.success) {
+        // Show success message
+        Alert.alert(
+          t.otpSent,
+          `OTP has been sent to +91 ${phoneNumber}\n\nFor testing, check console for OTP code.`,
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                router.push({
+                  pathname: '/(auth)/otp-verification',
+                  params: { phoneNumber }
+                });
+              }
             }
-          }
-        ]
-      );
-    }, 1500);
+          ]
+        );
+      } else {
+        Alert.alert(t.error, response.error || 'Failed to send OTP. Please try again.');
+      }
+    } catch (error) {
+      Alert.alert(t.error, 'An unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inputClass = isDarkMode 

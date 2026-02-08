@@ -13,6 +13,8 @@ import { ResponseTimer } from '../../../components/biker/emergency/ResponseTimer
 import { IncentiveTracker } from '../../../components/biker/earnings/IncentiveTracker';
 import { BikerTask, TaskPriority, TaskType } from '../../../types/navigation';
 import { router } from 'expo-router';
+import BikerApiService from '../../../services/api/BikerApiService';
+import BikerTaskApiService, { BikerTaskDetail } from '../../../services/api/BikerTaskApiService';
 
 export default function BikerHomeScreen() {
   const user = useAuthStore((state) => state.user);
@@ -35,6 +37,10 @@ export default function BikerHomeScreen() {
   const setAvailableTasks = useTaskStore((state) => state.setAvailableTasks);
   const setEmergencyAlerts = useTaskStore((state) => state.setEmergencyAlerts);
   
+  // Auth store state (biker online status)
+  const isOnline = useAuthStore((state) => state.bikerIsOnline);
+  const setIsOnline = useAuthStore((state) => state.setBikerIsOnline);
+  
   // Earnings store state
   const currentShift = useBikerEarningsStore((state) => state.currentShift);
   const earnings = useBikerEarningsStore((state) => state.earnings);
@@ -42,149 +48,265 @@ export default function BikerHomeScreen() {
   const startShift = useBikerEarningsStore((state) => state.startShift);
   const endShift = useBikerEarningsStore((state) => state.endShift);
   const getTodayEarnings = useBikerEarningsStore((state) => state.getTodayEarnings);
-  
-  const [isOnline, setIsOnline] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'emergency' | 'urgent'>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [requestedTasks, setRequestedTasks] = useState<BikerTaskDetail[]>([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+  const [stats, setStats] = useState<{
+    averageRating: number;
+  } | null>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [todayEarningsValue, setTodayEarningsValue] = useState<number>(0);
+  const [loadingEarnings, setLoadingEarnings] = useState(false);
 
   const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
 
-  useEffect(() => {
-    // Load sample driver pickup tasks for demo
-    const sampleTasks: BikerTask[] = [
-      {
-        id: '1',
-        type: 'driver_pickup',
-        priority: 'high',
-        title: 'Driver Pickup - Morning Shift',
-        description: 'Pick up driver Amit from home for client booking in Cyber Hub',
-        driverId: 'DRV123',
-        driverName: 'Amit Sharma',
-        driverPhone: '+91 98765 43210',
-        pickupLocation: {
-          latitude: 28.4595,
-          longitude: 77.0266,
-          address: 'Sector 56, Gurgaon'
-        },
-        dropoffLocation: {
-          latitude: 28.4943,
-          longitude: 77.0882,
-          address: 'Cyber Hub, DLF Phase 3, Gurgaon'
-        },
-        estimatedDistance: 8.5,
-        estimatedDuration: 20,
-        fare: 150,
-        specialInstructions: 'Driver shift starts at 8 AM. Client pickup at 8:30 AM.',
-        status: 'pending',
-        createdAt: new Date(),
-        expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes
-        responseTimeLimit: 15
-      },
-      {
-        id: '2',
-        type: 'driver_rescue',
-        priority: 'emergency',
-        title: 'Emergency - Customer Vehicle Breakdown',
-        description: 'Urgent pickup! Customer vehicle broke down, driver needs transport',
-        driverId: 'DRV456',
-        driverName: 'Rajesh Kumar',
-        driverPhone: '+91 98765 43211',
-        pickupLocation: {
-          latitude: 28.5041,
-          longitude: 77.0925,
-          address: 'MG Road, Near Metro Station, Gurgaon'
-        },
-        dropoffLocation: {
-          latitude: 28.4595,
-          longitude: 77.0266,
-          address: 'Client destination: Sector 56, Gurgaon'
-        },
-        estimatedDistance: 12.2,
-        estimatedDuration: 25,
-        fare: 250,
-        emergencyBonus: 100,
-        specialInstructions: 'VIP client onboard. Arrange alternate vehicle ASAP.',
-        status: 'pending',
-        createdAt: new Date(Date.now() - 5 * 60 * 1000),
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
-        responseTimeLimit: 5
-      },
-      {
-        id: '3',
-        type: 'driver_pickup',
-        priority: 'normal',
-        title: 'Driver Pickup - End of Shift',
-        description: 'Pick up driver and transport to destination after shift',
-        driverId: 'DRV789',
-        driverName: 'Suresh Yadav',
-        driverPhone: '+91 98765 43212',
-        pickupLocation: {
-          latitude: 28.4089,
-          longitude: 77.0419,
-          address: 'DLF Phase 1, Gurgaon'
-        },
-        dropoffLocation: {
-          latitude: 28.4744,
-          longitude: 77.0434,
-          address: 'Sushant Lok, Gurgaon'
-        },
-        estimatedDistance: 6.5,
-        estimatedDuration: 15,
-        fare: 120,
-        status: 'pending',
-        createdAt: new Date(Date.now() - 10 * 60 * 1000),
-        expiresAt: new Date(Date.now() + 45 * 60 * 1000)
+  const fetchRequestedTasks = async () => {
+    try {
+      setLoadingTasks(true);
+      const response = await BikerTaskApiService.getTasks({
+        task_status: 'requested',
+      });
+
+      if (response.success && response.data) {
+        const tasks = response.data.results || [];
+        setRequestedTasks(tasks);
+        
+        // Convert API tasks to BikerTask format for TaskCard component
+        const convertedTasks: BikerTask[] = tasks.map((task) => ({
+          id: task.id,
+          type: 'driver_pickup' as TaskType,
+          priority: task.priority === 'urgent' ? 'emergency' : task.priority === 'high' ? 'high' : 'normal' as TaskPriority,
+          title: `Driver Pickup ${task.task_reference}`,
+          description: task.special_instructions || `Pick up driver ${task.driver_name}`,
+          driverId: task.driver,
+          driverName: task.driver_name,
+          driverPhone: task.driver_phone,
+          pickupLocation: {
+            latitude: parseFloat(task.pickup_location_lat),
+            longitude: parseFloat(task.pickup_location_long),
+            address: task.pickup_address,
+          },
+          dropoffLocation: {
+            latitude: parseFloat(task.dropoff_location_lat),
+            longitude: parseFloat(task.dropoff_location_long),
+            address: task.dropoff_address,
+          },
+          estimatedDistance: task.estimated_distance_km ? parseFloat(task.estimated_distance_km) : 0,
+          estimatedDuration: task.estimated_duration_minutes || 0,
+          fare: parseFloat(task.biker_earnings),
+          specialInstructions: task.special_instructions || undefined,
+          status: 'pending',
+          createdAt: new Date(task.created_at),
+          expiresAt: task.assigned_at ? new Date(new Date(task.assigned_at).getTime() + 30 * 60 * 1000) : new Date(Date.now() + 30 * 60 * 1000),
+          responseTimeLimit: 15,
+        }));
+        
+        setAvailableTasks(convertedTasks);
+      } else {
+        console.error('Failed to fetch requested tasks:', response.error);
+        setRequestedTasks([]);
+        setAvailableTasks([]);
       }
-    ];
-    
-    setAvailableTasks(sampleTasks);
-    
+    } catch (error) {
+      console.error('Error fetching requested tasks:', error);
+      setRequestedTasks([]);
+      setAvailableTasks([]);
+    } finally {
+      setLoadingTasks(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOnline) {
+      fetchRequestedTasks();
+    } else {
+      setAvailableTasks([]);
+      setRequestedTasks([]);
+    }
+  }, [isOnline]);
+
+  const fetchStats = async () => {
+    try {
+      setLoadingStats(true);
+      const response = await BikerApiService.getStats();
+      
+      if (response.success && response.data) {
+        const statsData = response.data as any;
+        const lifetime = statsData.lifetime || statsData;
+        
+        setStats({
+          averageRating: lifetime.average_rating || 0,
+        });
+      } else {
+        console.error('Failed to fetch stats:', response.error);
+        setStats(null);
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      setStats(null);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
+
+  const fetchEarnings = async () => {
+    try {
+      setLoadingEarnings(true);
+      const response = await BikerApiService.getEarnings();
+      
+      if (response.success && response.data) {
+        const earningsData = response.data as any;
+        setTodayEarningsValue(earningsData.today_earnings ?? 0);
+      } else {
+        console.error('Failed to fetch earnings:', response.error);
+        setTodayEarningsValue(0);
+      }
+    } catch (error) {
+      console.error('Error fetching earnings:', error);
+      setTodayEarningsValue(0);
+    } finally {
+      setLoadingEarnings(false);
+    }
+  };
+
+  useEffect(() => {
     // Clear any existing emergency alerts to avoid duplicates
     setEmergencyAlerts([]);
+    
+    // Initialize online status from API
+    const initializeOnlineStatus = async () => {
+      try {
+        const response = await BikerApiService.getProfile();
+        if (response.success && response.data) {
+          setIsOnline(response.data.is_online);
+        }
+      } catch (error) {
+        console.error('Error fetching online status:', error);
+      }
+    };
+    
+    initializeOnlineStatus();
+    fetchStats();
+    fetchEarnings();
   }, []);
 
-  const handleToggleOnline = (value: boolean) => {
-    setIsOnline(value);
-    if (value && !currentShift) {
-      startShift();
-    } else if (!value && currentShift) {
-      Alert.alert(
-        'End Shift',
-        'Are you sure you want to go offline and end your current shift?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'End Shift', 
-            style: 'destructive',
-            onPress: endShift 
-          }
-        ]
-      );
+  const handleToggleOnline = async (value: boolean) => {
+    try {
+      if (value && !currentShift) {
+        // Going online - start shift
+        // Call API to update status to online
+        const response = await BikerApiService.updateStatus({
+          is_online: true,
+        });
+
+        if (response.success) {
+          setIsOnline(true);
+          startShift();
+        } else {
+          Alert.alert('Error', response.error || 'Failed to go online. Please try again.');
+          setIsOnline(false); // Revert toggle on error
+        }
+      } else if (!value && currentShift) {
+        // Going offline - end shift
+        
+        Alert.alert(
+          'End Shift',
+          'Are you sure you want to go offline and end your current shift?',
+          [
+            { 
+              text: 'Cancel', 
+              style: 'cancel',
+              // Toggle already reverted, no action needed
+            },
+            { 
+              text: 'End Shift', 
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  // Call API to update status to offline
+                  const response = await BikerApiService.updateStatus({
+                    is_online: false,
+                  });
+
+                  if (response.success) {
+                    endShift();
+                    setIsOnline(false); // Set offline when ending shift
+                  } else {
+                    Alert.alert('Error', response.error || 'Failed to go offline. Please try again.');
+                    setIsOnline(true); // Revert toggle on error
+                  }
+                } catch (error) {
+                  console.error('Error ending shift:', error);
+                  Alert.alert('Error', 'Failed to go offline. Please try again.');
+                  setIsOnline(true); // Revert toggle on error
+                }
+              }
+            }
+          ]
+        );
+      } else {
+        // Just update toggle state if no shift change
+        const response = await BikerApiService.updateStatus({
+          is_online: value,
+        });
+        
+        if (response.success) {
+          setIsOnline(value);
+        } else {
+          Alert.alert('Error', response.error || 'Failed to update status. Please try again.');
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling online status:', error);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+      // Revert toggle state
+      setIsOnline(!value);
     }
   };
 
-  const handleAcceptTask = (taskId: string) => {
-    acceptTask(taskId);
+  const handleAcceptTask = async (taskId: string) => {
     const task = availableTasks.find(t => t.id === taskId);
-    if (task) {
-      Alert.alert(
-        'Task Accepted!',
-        `You've accepted "${task.title}". Navigate to task details to continue.`,
-        [
-          { text: 'OK', onPress: () => router.push(`/(biker)/task/${taskId}`) }
-        ]
-      );
+    if (!task) return;
+
+    try {
+      const response = await BikerTaskApiService.acceptTask(taskId);
+      if (response.success && response.data) {
+        // Update local store
+        acceptTask(taskId);
+        
+        Alert.alert(
+          'Task Accepted!',
+          `You've accepted "${task.title}". Navigate to task details to continue.`,
+          [
+            { text: 'OK', onPress: () => router.push(`/(biker)/task/${taskId}`) }
+          ]
+        );
+        
+        // Refresh available tasks
+        fetchRequestedTasks();
+      } else {
+        Alert.alert('Error', response.error || 'Failed to accept task. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error accepting task:', error);
+      Alert.alert('Error', 'Failed to accept task. Please try again.');
     }
   };
 
-  const onRefresh = React.useCallback(() => {
+  const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    // Simulate refresh
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
-  }, []);
+    const promises = [
+      fetchStats(),
+      fetchEarnings(),
+    ];
+    if (isOnline) {
+      promises.push(fetchRequestedTasks());
+    }
+    await Promise.all(promises);
+    setRefreshing(false);
+  }, [isOnline]);
 
   const priorityTasks = getPriorityTasks();
   
@@ -212,7 +334,8 @@ export default function BikerHomeScreen() {
   };
 
   const filteredTasks = getFilteredAndSortedTasks();
-  const todayEarnings = getTodayEarnings() || 1250;
+  // Use today's earnings from API (fetched via fetchEarnings)
+  const todayEarnings = todayEarningsValue;
 
   return (
     <SafeAreaView className="flex-1">
@@ -282,12 +405,14 @@ export default function BikerHomeScreen() {
                 </View>
                 <View className="items-center">
                   <ThemedText variant="title" className="text-2xl">
-                    ₹{todayEarnings}
+                    {loadingEarnings ? '...' : `₹${todayEarnings.toFixed(0)}`}
                   </ThemedText>
                   <ThemedText variant="caption">Today's Earnings</ThemedText>
                 </View>
                 <View className="items-center">
-                  <ThemedText variant="title" className="text-2xl">4.8</ThemedText>
+                  <ThemedText variant="title" className="text-2xl">
+                    {loadingStats ? '...' : (stats?.averageRating ? stats.averageRating.toFixed(1) : 'N/A')}
+                  </ThemedText>
                   <ThemedText variant="caption">Rating</ThemedText>
                 </View>
               </View>
@@ -339,6 +464,16 @@ export default function BikerHomeScreen() {
               </View>
             )}
           </View>
+          
+          {loadingTasks && (
+            <View className="px-6 mb-4">
+              <ThemedCard className="p-4">
+                <ThemedText className="text-center text-textSecondary">
+                  Loading driver pickups...
+                </ThemedText>
+              </ThemedCard>
+            </View>
+          )}
 
           {/* Emergency Tasks First */}
           {priorityTasks.length > 0 && selectedFilter === 'all' && (

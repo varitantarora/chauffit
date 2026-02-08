@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { TouchableOpacity, ScrollView, View, Alert, Switch } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { TouchableOpacity, ScrollView, View, Alert, Switch, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedView } from '../../../components/common/ThemedView';
@@ -8,45 +8,121 @@ import { ThemedCard } from '../../../components/common/ThemedCard';
 import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { useAuthStore } from '../../../store/authStore';
 import { useBikerEarningsStore } from '../../../store/bikerEarningsStore';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
+import BikerApiService, { BikerProfile as BikerProfileType } from '../../../services/api/BikerApiService';
 
 export default function BikerProfile() {
   const user = useAuthStore((state) => state.user);
+  const userType = useAuthStore((state) => state.userType);
+  const userCreatedAt = useAuthStore((state) => state.userCreatedAt);
+  const userIsVerified = useAuthStore((state) => state.userIsVerified);
   const logout = useAuthStore((state) => state.logout);
   const toggleTheme = useAuthStore((state) => state.toggleTheme);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const { earnings } = useBikerEarningsStore();
+  const isOnline = useAuthStore((state) => state.bikerIsOnline);
+  const setIsOnline = useAuthStore((state) => state.setBikerIsOnline);
   const router = useRouter();
-  
-  const [isOnline, setIsOnline] = useState(true);
   const [autoAccept, setAutoAccept] = useState(false);
+  const [bikerProfile, setBikerProfile] = useState<BikerProfileType | null>(null);
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   
-  // Mock user data with vehicle info
-  const bikerProfile = {
-    name: user?.name || 'Rajesh Kumar',
-    email: user?.email || 'rajesh.kumar@example.com',
-    phone: user?.phone || '+91 98765 43210',
-    rating: 4.8,
-    completedPickups: 847,
-    memberSince: 'March 2023',
-    vehicleInfo: {
-      type: 'Motorcycle',
-      make: 'Honda',
-      model: 'CBR600RR',
-      year: '2022',
-      plate: 'KA 01 AB 1234',
-      color: 'Red'
-    },
-    documents: {
-      license: { status: 'verified', expiryDate: '2026-12-15' },
-      insurance: { status: 'verified', expiryDate: '2024-11-30' },
-      registration: { status: 'verified', expiryDate: '2025-08-20' }
-    },
-    preferences: {
-      zone: 'Central Bangalore',
-      maxDistance: '15 km',
-      workHours: '9 AM - 8 PM'
+  // Fetch biker profile, vehicles, and documents on mount
+  useEffect(() => {
+    fetchBikerData();
+  }, []);
+
+  // Refresh documents when screen comes into focus (e.g., after uploading documents)
+  useFocusEffect(
+    React.useCallback(() => {
+      // Only refresh documents, not the entire profile (to avoid unnecessary API calls)
+      const refreshDocuments = async () => {
+        try {
+          const documentsResponse = await BikerApiService.getDocuments();
+          if (documentsResponse.success && documentsResponse.data) {
+            setDocuments(documentsResponse.data);
+          }
+        } catch (error) {
+          console.error('Error refreshing documents:', error);
+        }
+      };
+      refreshDocuments();
+    }, [])
+  );
+
+  const fetchBikerData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch profile
+      const profileResponse = await BikerApiService.getProfile();
+      if (profileResponse.success && profileResponse.data) {
+        const profile = profileResponse.data;
+        setBikerProfile(profile);
+        setIsOnline(profile.is_online); // Update shared store
+        
+        // If profile has ID, fetch detailed profile with vehicles and documents
+        if (profile.id) {
+          const detailedResponse = await BikerApiService.getProfileById(profile.id);
+          if (detailedResponse.success && detailedResponse.data) {
+            const detailed = detailedResponse.data as any;
+            if (detailed.vehicles) setVehicles(detailed.vehicles);
+            if (detailed.documents) setDocuments(detailed.documents);
+          }
+        }
+      } else {
+        Alert.alert('Error', profileResponse.error || 'Failed to fetch profile');
+      }
+      
+      // Also try fetching vehicles and documents separately as fallback
+      const vehiclesResponse = await BikerApiService.getVehicles();
+      if (vehiclesResponse.success && vehiclesResponse.data) {
+        setVehicles(vehiclesResponse.data);
+      }
+      
+      const documentsResponse = await BikerApiService.getDocuments();
+      if (documentsResponse.success && documentsResponse.data) {
+        setDocuments(documentsResponse.data);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to fetch biker data');
+      console.error('Error fetching biker data:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    await fetchBikerData();
+  }, []);
+
+  // Use actual API data, show N/A or empty when not available
+  const displayName = bikerProfile?.full_name || user?.name || 'N/A';
+  const displayEmail = bikerProfile?.email || user?.email || 'N/A';
+  const displayPhone = bikerProfile?.phone_number || user?.phone || 'N/A';
+  const displayRating = bikerProfile?.average_rating ?? 0;
+  const displayCompletedPickups = bikerProfile?.total_tasks ?? 0;
+  // Extract date from createdAt (which is a datetime string) and format for Member Since
+  const displayMemberSince = userCreatedAt 
+    ? (() => {
+        const date = new Date(userCreatedAt);
+        // Extract just the date part and format it
+        return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      })()
+    : 'N/A';
+  const displayLicenseExpiry = bikerProfile?.license_expiry_date || 'N/A';
+  
+  // Determine account type based on user_type and is_verified from login API
+  const getAccountType = () => {
+    if (!userType) return 'N/A';
+    const roleCapitalized = userType.charAt(0).toUpperCase() + userType.slice(1);
+    return userIsVerified ? `Verified ${roleCapitalized}` : roleCapitalized;
   };
 
   const handleLogout = () => {
@@ -106,12 +182,33 @@ export default function BikerProfile() {
   };
 
   
-  const toggleOnlineStatus = () => {
-    setIsOnline(!isOnline);
-    Alert.alert(
-      'Status Updated',
-      `You are now ${!isOnline ? 'online and available' : 'offline'} for pickup requests.`
-    );
+  const toggleOnlineStatus = async () => {
+    const newStatus = !isOnline;
+    
+    try {
+      setUpdatingStatus(true);
+      const response = await BikerApiService.updateStatus({
+        is_online: newStatus,
+      });
+      
+      if (response.success) {
+        setIsOnline(newStatus);
+        if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+          setBikerProfile(response.data[0]);
+        }
+        Alert.alert(
+          'Status Updated',
+          `You are now ${newStatus ? 'online and available' : 'offline'} for pickup requests.`
+        );
+      } else {
+        Alert.alert('Error', response.error || 'Failed to update status');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update status');
+      console.error('Error updating status:', error);
+    } finally {
+      setUpdatingStatus(false);
+    }
   };
   
   const getDocumentStatusColor = (status: string) => {
@@ -145,26 +242,42 @@ export default function BikerProfile() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
-          <View className="p-6">
-            {/* Profile Header */}
-            <ThemedCard className="p-6 mb-6">
-              <View className="items-center mb-4">
-                <View className="w-24 h-24 bg-burgundy rounded-full items-center justify-center mb-4">
-                  <ThemedText className="text-white text-3xl font-bold">
-                    {bikerProfile.name.charAt(0).toUpperCase()}
+        <ScrollView 
+          showsVerticalScrollIndicator={false} 
+          className="flex-1"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#BD8C5E"
+            />
+          }
+        >
+          {loading ? (
+            <View className="flex-1 items-center justify-center p-6">
+              <ActivityIndicator size="large" color="#BD8C5E" />
+              <ThemedText className="mt-4">Loading profile...</ThemedText>
+            </View>
+          ) : (
+            <View className="p-6">
+              {/* Profile Header */}
+              <ThemedCard className="p-6 mb-6">
+                <View className="items-center mb-4">
+                  <View className="w-24 h-24 bg-burgundy rounded-full items-center justify-center mb-4">
+                    <ThemedText className="text-white text-3xl font-bold">
+                      {displayName !== 'N/A' ? displayName.charAt(0).toUpperCase() : '?'}
+                    </ThemedText>
+                  </View>
+                  <ThemedText variant="title" className="font-bold text-xl">
+                    {displayName}
+                  </ThemedText>
+                  <ThemedText variant="secondary" className="mb-2">
+                    {displayEmail}
+                  </ThemedText>
+                  <ThemedText variant="secondary">
+                    {displayPhone}
                   </ThemedText>
                 </View>
-                <ThemedText variant="title" className="font-bold text-xl">
-                  {bikerProfile.name}
-                </ThemedText>
-                <ThemedText variant="secondary" className="mb-2">
-                  {bikerProfile.email}
-                </ThemedText>
-                <ThemedText variant="secondary">
-                  {bikerProfile.phone}
-                </ThemedText>
-              </View>
               
               {/* Status Toggle */}
               <View className="flex-row items-center justify-between p-3 bg-surface dark:bg-darkSurface rounded-lg mb-4">
@@ -174,12 +287,16 @@ export default function BikerProfile() {
                     {isOnline ? 'Online - Available for pickups' : 'Offline'}
                   </ThemedText>
                 </View>
-                <Switch
-                  value={isOnline}
-                  onValueChange={toggleOnlineStatus}
-                  trackColor={{ false: '#9ca3af', true: '#10b981' }}
-                  thumbColor={isOnline ? '#ffffff' : '#f4f3f4'}
-                />
+                {updatingStatus ? (
+                  <ActivityIndicator size="small" color="#BD8C5E" />
+                ) : (
+                  <Switch
+                    value={isOnline}
+                    onValueChange={toggleOnlineStatus}
+                    trackColor={{ false: '#9ca3af', true: '#10b981' }}
+                    thumbColor={isOnline ? '#ffffff' : '#f4f3f4'}
+                  />
+                )}
               </View>
               
               {/* Quick Stats */}
@@ -188,20 +305,20 @@ export default function BikerProfile() {
                   <View className="flex-row items-center mb-1">
                     <Ionicons name="star" size={16} color="#fbbf24" />
                     <ThemedText className="font-bold text-lg ml-1">
-                      {bikerProfile.rating}
+                      {displayRating > 0 ? displayRating.toFixed(1) : 'N/A'}
                     </ThemedText>
                   </View>
                   <ThemedText variant="caption">Rating</ThemedText>
                 </View>
                 <View className="items-center">
                   <ThemedText className="font-bold text-lg text-burgundy">
-                    {bikerProfile.completedPickups}
+                    {displayCompletedPickups}
                   </ThemedText>
                   <ThemedText variant="caption">Pickups</ThemedText>
                 </View>
                 <View className="items-center">
                   <ThemedText className="font-bold text-lg text-success">
-                    ₹{(earnings?.totalEarnings || 0).toLocaleString('en-IN')}
+                    ₹{(earnings?.totalEarnings ?? 0).toLocaleString('en-IN')}
                   </ThemedText>
                   <ThemedText variant="caption">Total Earned</ThemedText>
                 </View>
@@ -217,26 +334,36 @@ export default function BikerProfile() {
                 </ThemedText>
               </View>
               
-              <View className="space-y-3">
-                <View className="flex-row justify-between">
-                  <ThemedText>Type:</ThemedText>
-                  <ThemedText className="font-semibold">{bikerProfile.vehicleInfo.type}</ThemedText>
-                </View>
-                <View className="flex-row justify-between">
-                  <ThemedText>Vehicle:</ThemedText>
-                  <ThemedText className="font-semibold">
-                    {bikerProfile.vehicleInfo.make} {bikerProfile.vehicleInfo.model}
+              {vehicles && vehicles.length > 0 ? (
+                vehicles.map((vehicle: any, index: number) => (
+                  <View key={vehicle.id || index} className="space-y-3 mb-4">
+                    <View className="flex-row justify-between">
+                      <ThemedText>Type:</ThemedText>
+                      <ThemedText className="font-semibold capitalize">{vehicle.vehicle_type || 'N/A'}</ThemedText>
+                    </View>
+                    <View className="flex-row justify-between">
+                      <ThemedText>Vehicle:</ThemedText>
+                      <ThemedText className="font-semibold capitalize">
+                        {vehicle.brand ? `${vehicle.brand} ${vehicle.model_name || ''}`.trim() : 'N/A'}
+                      </ThemedText>
+                    </View>
+                    <View className="flex-row justify-between">
+                      <ThemedText>Plate Number:</ThemedText>
+                      <ThemedText className="font-semibold">{vehicle.registration_number || 'N/A'}</ThemedText>
+                    </View>
+                    <View className="flex-row justify-between">
+                      <ThemedText>Color:</ThemedText>
+                      <ThemedText className="font-semibold capitalize">{vehicle.vehicle_color || 'N/A'}</ThemedText>
+                    </View>
+                  </View>
+                ))
+              ) : (
+                <View className="space-y-3">
+                  <ThemedText variant="secondary" className="text-center py-4">
+                    No vehicle information available. Please add your vehicle details.
                   </ThemedText>
                 </View>
-                <View className="flex-row justify-between">
-                  <ThemedText>Plate Number:</ThemedText>
-                  <ThemedText className="font-semibold">{bikerProfile.vehicleInfo.plate}</ThemedText>
-                </View>
-                <View className="flex-row justify-between">
-                  <ThemedText>Color:</ThemedText>
-                  <ThemedText className="font-semibold">{bikerProfile.vehicleInfo.color}</ThemedText>
-                </View>
-              </View>
+              )}
               
               <TouchableOpacity
                 onPress={handleVehicleDetails}
@@ -262,33 +389,64 @@ export default function BikerProfile() {
               </View>
               
               <View className="space-y-3">
-                {Object.entries(bikerProfile.documents).map(([key, doc]) => (
-                  <View key={key} className="flex-row items-center justify-between">
-                    <View className="flex-row items-center flex-1">
-                      <Ionicons 
-                        name={getDocumentStatusIcon(doc.status)} 
-                        size={20} 
-                        color={getDocumentStatusColor(doc.status)} 
-                      />
-                      <View className="ml-3 flex-1">
-                        <ThemedText className="font-semibold capitalize">
-                          {key === 'license' ? 'Driving License' : key === 'registration' ? 'Vehicle Registration' : 'Insurance'}
-                        </ThemedText>
-                        <ThemedText variant="caption" className="text-secondary">
-                          Expires: {doc.expiryDate}
-                        </ThemedText>
-                      </View>
+                {/* License from profile */}
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center flex-1">
+                    <Ionicons 
+                      name={bikerProfile?.license_number ? 'checkmark-circle' : 'document'} 
+                      size={20} 
+                      color={bikerProfile?.license_number ? '#10b981' : '#6b7280'} 
+                    />
+                    <View className="ml-3 flex-1">
+                      <ThemedText className="font-semibold">Driving License</ThemedText>
+                      <ThemedText variant="caption" className="text-secondary">
+                        {displayLicenseExpiry !== 'N/A' ? `Expires: ${displayLicenseExpiry}` : 'Not provided'}
+                      </ThemedText>
                     </View>
-                    <ThemedText 
-                      className={`font-semibold capitalize ${
-                        doc.status === 'verified' ? 'text-success' :
-                        doc.status === 'pending' ? 'text-warning' : 'text-danger'
-                      }`}
-                    >
-                      {doc.status}
-                    </ThemedText>
                   </View>
-                ))}
+                  <ThemedText 
+                    className={`font-semibold capitalize ${
+                      bikerProfile?.license_number ? 'text-success' : 'text-secondary'
+                    }`}
+                  >
+                    {bikerProfile?.license_number ? 'Provided' : 'N/A'}
+                  </ThemedText>
+                </View>
+                
+                {/* Documents from API */}
+                {documents && documents.length > 0 ? (
+                  documents.map((doc: any) => (
+                    <View key={doc.id} className="flex-row items-center justify-between">
+                      <View className="flex-row items-center flex-1">
+                        <Ionicons 
+                          name={getDocumentStatusIcon(doc.verification_status)} 
+                          size={20} 
+                          color={getDocumentStatusColor(doc.verification_status)} 
+                        />
+                        <View className="ml-3 flex-1">
+                          <ThemedText className="font-semibold capitalize">
+                            {doc.document_type?.replace('_', ' ') || 'Document'}
+                          </ThemedText>
+                          <ThemedText variant="caption" className="text-secondary">
+                            {doc.expiry_date ? `Expires: ${doc.expiry_date}` : doc.issue_date ? `Issued: ${doc.issue_date}` : 'No date'}
+                          </ThemedText>
+                        </View>
+                      </View>
+                      <ThemedText 
+                        className={`font-semibold capitalize ${
+                          doc.verification_status === 'approved' ? 'text-success' :
+                          doc.verification_status === 'pending' ? 'text-warning' : 'text-danger'
+                        }`}
+                      >
+                        {doc.verification_status || 'N/A'}
+                      </ThemedText>
+                    </View>
+                  ))
+                ) : (
+                  <ThemedText variant="secondary" className="text-center py-2">
+                    No additional documents available
+                  </ThemedText>
+                )}
               </View>
               
               <TouchableOpacity
@@ -310,22 +468,22 @@ export default function BikerProfile() {
               <View className="flex-row items-center mb-4">
                 <Ionicons name="settings" size={20} color="#BD8C5E" />
                 <ThemedText className="font-bold text-lg ml-2">
-                  ⚙️ WORK PREFERENCES
+                  ⚙️ WORK PREFERENCES (Coming Soon)
                 </ThemedText>
               </View>
               
               <View className="space-y-3">
                 <View className="flex-row justify-between">
                   <ThemedText>Service Zone:</ThemedText>
-                  <ThemedText className="font-semibold">{bikerProfile.preferences.zone}</ThemedText>
+                  <ThemedText className="font-semibold">N/A</ThemedText>
                 </View>
                 <View className="flex-row justify-between">
                   <ThemedText>Max Distance:</ThemedText>
-                  <ThemedText className="font-semibold">{bikerProfile.preferences.maxDistance}</ThemedText>
+                  <ThemedText className="font-semibold">N/A</ThemedText>
                 </View>
                 <View className="flex-row justify-between">
                   <ThemedText>Work Hours:</ThemedText>
-                  <ThemedText className="font-semibold">{bikerProfile.preferences.workHours}</ThemedText>
+                  <ThemedText className="font-semibold">N/A</ThemedText>
                 </View>
               </View>
               
@@ -443,11 +601,11 @@ export default function BikerProfile() {
               <View className="space-y-3">
                 <View className="flex-row justify-between">
                   <ThemedText>Member Since:</ThemedText>
-                  <ThemedText className="font-semibold">{bikerProfile.memberSince}</ThemedText>
+                  <ThemedText className="font-semibold">{displayMemberSince}</ThemedText>
                 </View>
                 <View className="flex-row justify-between">
                   <ThemedText>Account Type:</ThemedText>
-                  <ThemedText className="font-semibold text-burgundy">Verified Biker</ThemedText>
+                  <ThemedText className="font-semibold text-burgundy">{getAccountType()}</ThemedText>
                 </View>
                 <View className="flex-row justify-between">
                   <ThemedText>App Version:</ThemedText>
@@ -485,6 +643,7 @@ export default function BikerProfile() {
               </View>
             </TouchableOpacity>
           </View>
+          )}
         </ScrollView>
       </ThemedView>
     </SafeAreaView>

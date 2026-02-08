@@ -8,6 +8,8 @@ import { ThemedCard } from '../../../components/common/ThemedCard';
 import { ThemedText } from '../../../components/common/ThemedText';
 import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { useAuthStore } from '../../../store/authStore';
+import DriverApiService, { DriverDocumentRequest } from '../../../services/api/DriverApiService';
+import * as ImagePicker from 'expo-image-picker';
 
 interface DocumentStatus {
   id: string;
@@ -57,16 +59,103 @@ export default function DocumentUploadScreen() {
     status: 'pending'
   });
 
-  const handleUploadDocument = (docId: string) => {
-    setDocuments(docs => docs.map(doc => 
-      doc.id === docId ? { ...doc, uploaded: true, status: 'uploaded' } : doc
-    ));
-    Alert.alert('Document Uploaded', 'Document uploaded successfully!');
+  // Map document ID to API document type
+  const mapDocIdToApiType = (docId: string): 'police_verification' | 'address_proof' | 'passport' | 'insurance' | 'other' => {
+    switch (docId) {
+      case 'license':
+        return 'other';
+      case 'id':
+        return 'passport';
+      case 'address':
+        return 'address_proof';
+      case 'bank':
+        return 'other';
+      default:
+        return 'other';
+    }
   };
 
-  const handleTakeSelfie = () => {
-    setLiveSelfie({ taken: true, status: 'uploaded' });
-    Alert.alert('Photo Captured', 'Live selfie captured successfully!');
+  const handleUploadDocument = async (docId: string) => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please allow access to photos to upload documents');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        // Upload to API
+        const documentRequest: DriverDocumentRequest = {
+          document_type: mapDocIdToApiType(docId),
+          document_file: {
+            uri: result.assets[0].uri,
+            name: `${docId}_${Date.now()}.jpg`,
+            type: 'image/jpeg',
+          } as any,
+        };
+
+        const response = await DriverApiService.uploadDocument(documentRequest);
+        
+        if (response.success) {
+          setDocuments(docs => docs.map(doc => 
+            doc.id === docId ? { ...doc, uploaded: true, status: 'uploaded' } : doc
+          ));
+          Alert.alert('Document Uploaded', 'Document uploaded successfully! It will be reviewed shortly.');
+        } else {
+          Alert.alert('Upload Failed', response.error || 'Please try again later.');
+        }
+      }
+    } catch (error) {
+      Alert.alert('Upload Failed', 'Please try again later.');
+      console.error('Error uploading document:', error);
+    }
+  };
+
+  const handleTakeSelfie = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please allow camera access to take a selfie');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        // Upload selfie as a document
+        const documentRequest: DriverDocumentRequest = {
+          document_type: 'police_verification', // Using police_verification for selfie
+          document_file: {
+            uri: result.assets[0].uri,
+            name: `selfie_${Date.now()}.jpg`,
+            type: 'image/jpeg',
+          } as any,
+        };
+
+        const response = await DriverApiService.uploadDocument(documentRequest);
+        
+        if (response.success) {
+          setLiveSelfie({ taken: true, status: 'uploaded' });
+          Alert.alert('Photo Captured', 'Live selfie captured successfully!');
+        } else {
+          Alert.alert('Upload Failed', response.error || 'Please try again later.');
+        }
+      }
+    } catch (error) {
+      Alert.alert('Upload Failed', 'Please try again later.');
+      console.error('Error taking selfie:', error);
+    }
   };
 
   const handleSubmit = () => {

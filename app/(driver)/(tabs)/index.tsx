@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScrollView, TouchableOpacity, View, Switch, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../../components/common/ThemedView';
@@ -10,6 +10,7 @@ import { useAuthStore } from '../../../store/authStore';
 import { useJobStore } from '../../../store/jobStore';
 import { useEarningsStore } from '../../../store/earningsStore';
 import { useRouter } from 'expo-router';
+import DriverApiService from '../../../services/api/DriverApiService';
 
 export default function DriverHomeScreen() {
   const user = useAuthStore((state) => state.user);
@@ -24,24 +25,93 @@ export default function DriverHomeScreen() {
     jobHistory 
   } = useJobStore();
   
-  const { earnings, getTodayHistory } = useEarningsStore();
+  const { earnings, getTodayHistory, setEarnings } = useEarningsStore();
   
   const [refreshing, setRefreshing] = useState(false);
-  
-  // Get today's stats
-  const todayHistory = getTodayHistory();
-  const todayStats = {
-    earnings: earnings.todayEarnings,
-    trips: todayHistory?.totalRides || 0,
-    hours: todayHistory?.onlineHours || 8.5,
-    rating: todayHistory?.averageRating || 4.9
-  };
+  const [stats, setStats] = useState<{
+    averageRating: number;
+    totalTrips: number;
+  } | null>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [todayEarningsValue, setTodayEarningsValue] = useState<number>(0);
+  const [loadingEarnings, setLoadingEarnings] = useState(false);
   
   const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
 
-  const onRefresh = React.useCallback(() => {
+  const fetchStats = async () => {
+    try {
+      setLoadingStats(true);
+      const response = await DriverApiService.getStats();
+      
+      if (response.success && response.data) {
+        const statsData = response.data as any;
+        const lifetime = statsData.lifetime || statsData;
+        
+        setStats({
+          averageRating: lifetime.average_rating || 0,
+          totalTrips: lifetime.pickups || 0,
+        });
+      } else {
+        console.error('Failed to fetch stats:', response.error);
+        setStats(null);
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      setStats(null);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
+
+  const fetchEarnings = async () => {
+    try {
+      setLoadingEarnings(true);
+      const response = await DriverApiService.getEarnings();
+      
+      if (response.success && response.data) {
+        const earningsData = response.data as any;
+        setTodayEarningsValue(earningsData.today_earnings ?? 0);
+        
+        // Also update the store
+        const mappedEarnings = {
+          totalEarnings: earningsData.total_earnings ?? earningsData.totalEarnings ?? 0,
+          weeklyEarnings: earningsData.week_earnings ?? earningsData.weekly_earnings ?? earningsData.weeklyEarnings ?? 0,
+          monthlyEarnings: earningsData.month_earnings ?? earningsData.monthly_earnings ?? earningsData.monthlyEarnings ?? 0,
+          todayEarnings: earningsData.today_earnings ?? earningsData.todayEarnings ?? 0,
+          pendingAmount: earningsData.pending_amount ?? earningsData.pendingAmount ?? 0,
+          lastPayout: earningsData.last_payout ? new Date(earningsData.last_payout) : undefined,
+        };
+        setEarnings(mappedEarnings);
+      } else {
+        console.error('Failed to fetch earnings:', response.error);
+        setTodayEarningsValue(0);
+      }
+    } catch (error) {
+      console.error('Error fetching earnings:', error);
+      setTodayEarningsValue(0);
+    } finally {
+      setLoadingEarnings(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStats();
+    fetchEarnings();
+  }, []);
+
+  // Get today's stats
+  const todayHistory = getTodayHistory();
+  const todayStats = {
+    earnings: todayEarningsValue || earnings.todayEarnings || 0,
+    trips: todayHistory?.totalRides || 0,
+    hours: todayHistory?.onlineHours || 0,
+    rating: stats?.averageRating || todayHistory?.averageRating || 0
+  };
+
+  const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 2000);
+    await Promise.all([fetchStats(), fetchEarnings()]);
+    setRefreshing(false);
   }, []);
 
   const getGreeting = () => {

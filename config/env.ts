@@ -71,7 +71,7 @@ const defaultConfig: AppConfig = {
   // App Configuration
   appEnvironment: (process.env.EXPO_PUBLIC_APP_ENV as 'development' | 'staging' | 'production') || 'development',
   appVersion: process.env.EXPO_PUBLIC_APP_VERSION || '1.0.0',
-  apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL || 'https://api.chauffit.com',
+  apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL || 'http://16.112.161.95',
   
   // Indian Market Specific
   upiEnabled: process.env.EXPO_PUBLIC_UPI_ENABLED === 'true',
@@ -103,21 +103,21 @@ const defaultConfig: AppConfig = {
 // Environment-specific configurations
 const environmentConfigs = {
   development: {
-    apiBaseUrl: 'http://localhost:3000',
+    apiBaseUrl: 'http://16.112.161.95/api/v1',
     features: {
       ...defaultConfig.features,
       // Enable all features in development
     },
   },
   staging: {
-    apiBaseUrl: 'https://staging-api.chauffit.com',
+    apiBaseUrl: 'https://staging-api.chauffit.com/api/v1',
     features: {
       ...defaultConfig.features,
       loyaltyProgram: false, // Disable in staging
     },
   },
   production: {
-    apiBaseUrl: 'https://api.chauffit.com',
+    apiBaseUrl: 'https://api.chauffit.com/api/v1',
     features: {
       ...defaultConfig.features,
     },
@@ -188,10 +188,14 @@ export const isGSTEnabled = (): boolean => appConfig.gstCalculationEnabled;
 // API endpoints configuration
 export const API_ENDPOINTS = {
   // Authentication
-  LOGIN: '/auth/login',
-  SIGNUP: '/auth/signup',
-  VERIFY_OTP: '/auth/verify-otp',
-  REFRESH_TOKEN: '/auth/refresh',
+  LOGIN: '/auth/login/',
+  SIGNUP: '/auth/register/',
+  VERIFY_OTP: '/auth/otp-login/verify/',
+  REFRESH_TOKEN: '/auth/refresh/',
+  SEND_OTP: '/auth/send-otp/',
+  LOGOUT: '/auth/logout/',
+  CHANGE_PASSWORD: '/auth/change-password/',
+  AUTH_PROFILE: '/auth/profile/',
   
   // User Management
   USER_PROFILE: '/user/profile',
@@ -226,8 +230,13 @@ export const API_ENDPOINTS = {
 
 // Get full API URL
 export const getApiUrl = (endpoint: string, params?: Record<string, string>): string => {
-  let url = `${appConfig.apiBaseUrl}${endpoint}`;
+  // Ensure endpoint starts with /
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   
+  // Build URL - apiBaseUrl already includes /api/v1
+  let url = `${appConfig.apiBaseUrl}${cleanEndpoint}`;
+  
+  // Replace path parameters
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       url = url.replace(`:${key}`, value);

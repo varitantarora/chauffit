@@ -135,7 +135,7 @@ export default function OnboardingScreen() {
           {onboardingData.map((_, index) => (
             <View
               key={index}
-              className={`mx-1 rounded-full transition-all ${
+              className={`mx-1 rounded-full ${
                 index === currentIndex
                   ? 'w-8 h-2 bg-burgundy'
                   : 'w-2 h-2 bg-gray-300'

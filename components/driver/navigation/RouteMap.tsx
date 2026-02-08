@@ -6,6 +6,7 @@ import { ThemedCard } from '../../common/ThemedCard';
 import { ThemedText } from '../../common/ThemedText';
 import { Location } from '../../../types/navigation';
 import { useAuthStore } from '../../../store/authStore';
+import DriverApiService from '../../../services/api/DriverApiService';
 import * as ExpoLocation from 'expo-location';
 
 interface RouteMapProps {
@@ -78,13 +79,24 @@ export function RouteMap({
           timeInterval: 5000, // Update every 5 seconds
           distanceInterval: 10, // Update every 10 meters
         },
-        (location) => {
+        async (location) => {
           const newLocation: Location = {
             latitude: location.coords.latitude,
             longitude: location.coords.longitude,
             address: 'Current Location'
           };
           onLocationUpdate?.(newLocation);
+          
+          // Update location on backend
+          try {
+            await DriverApiService.updateLocation({
+              latitude: location.coords.latitude.toString(),
+              longitude: location.coords.longitude.toString(),
+            });
+          } catch (error) {
+            console.error('Error updating location on backend:', error);
+            // Don't show error to user, location tracking should continue
+          }
         }
       );
 

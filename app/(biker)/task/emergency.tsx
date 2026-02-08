@@ -14,6 +14,7 @@ import { useTaskStore } from '../../../store/taskStore';
 import { useAuthStore } from '../../../store/authStore';
 import { useBikerEarningsStore } from '../../../store/bikerEarningsStore';
 import { BikerTask } from '../../../types/navigation';
+import BikerTaskApiService from '../../../services/api/BikerTaskApiService';
 import * as Haptics from 'expo-haptics';
 
 type EmergencyStep = 'responding' | 'arrived' | 'assessing' | 'rescuing' | 'completed';
@@ -22,7 +23,7 @@ export default function EmergencyResponseScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const getTaskById = useTaskStore((state) => state.getTaskById);
-  const updateTaskStatus = useTaskStore((state) => state.updateTaskStatus);
+  const updateTaskStatusStore = useTaskStore((state) => state.updateTaskStatus);
   const completeTask = useTaskStore((state) => state.completeTask);
   const updateEarnings = useBikerEarningsStore((state) => state.updateEarnings);
   
@@ -49,7 +50,17 @@ export default function EmergencyResponseScreen() {
         case 'arrived':
           setArrivalTime(new Date());
           setCurrentStep('assessing');
-          updateTaskStatus(task!.id, 'in_progress');
+          // Update task status via API
+          try {
+            await BikerTaskApiService.updateTaskStatus(task!.id, {
+              task_status: 'arrived_at_driver'
+            });
+            updateTaskStatusStore(task!.id, 'in_progress');
+          } catch (error) {
+            console.error('Error updating task status:', error);
+            // Still update local state even if API fails
+            updateTaskStatusStore(task!.id, 'in_progress');
+          }
           break;
         
         case 'assessing':

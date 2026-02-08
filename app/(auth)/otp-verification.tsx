@@ -7,6 +7,8 @@ import { ThemedText } from '../../components/common/ThemedText';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { UserRole } from '../../types/navigation';
+import AuthApiService from '../../services/api/AuthApiService';
 
 export default function OTPVerification() {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -15,10 +17,9 @@ export default function OTPVerification() {
   const [timer, setTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
 
-  const login = useAuthStore((state) => state.login);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const router = useRouter();
-  const { phoneNumber } = useLocalSearchParams<{ phoneNumber: string }>();
+  const { phoneNumber, email } = useLocalSearchParams<{ phoneNumber?: string; email?: string }>();
 
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
@@ -93,46 +94,137 @@ export default function OTPVerification() {
 
     setLoading(true);
 
-    // Simulate OTP verification
-    setTimeout(() => {
-      if (otpValue === '123456') {
-        login({
-          id: '1',
-          email: `user@example.com`,
-          name: 'Rajesh Kumar',
-          phone: phoneNumber,
-        });
+    try {
+      if (!phoneNumber) {
+        Alert.alert('Error', 'Phone number is required');
         setLoading(false);
-        router.replace('/(auth)/car-details');
+        return;
+      }
+
+      const response = await AuthApiService.verifyOTP({
+        phone_number: phoneNumber.startsWith('+91') ? phoneNumber : `+91${phoneNumber}`,
+        otp: otpValue,
+        otp_type: 'login', // Use 'login' type for OTP-based login
+      });
+
+      if (response.success) {
+        // OTP verified successfully
+        // If user data is in response, set it in auth store
+        if (response.data?.user) {
+          const appUser = {
+            id: response.data.user.id,
+            email: response.data.user.email,
+            name: response.data.user.full_name || `${response.data.user.first_name} ${response.data.user.last_name}`,
+            phone: response.data.user.phone_number,
+            avatar: response.data.user.profile_picture,
+          };
+          
+          const userRole = response.data.user.user_type as 'customer' | 'driver' | 'biker';
+          
+          // Set user and role in auth store
+          const authStore = useAuthStore.getState();
+          authStore.setUser(appUser);
+          authStore.addRole(userRole);
+          authStore.setActiveRole(userRole);
+          
+          // Set user metadata if available in response
+          if (response.data.user.user_type) {
+            useAuthStore.setState({ userType: response.data.user.user_type as UserRole });
+          }
+          if (response.data.user.created_at) {
+            useAuthStore.setState({ userCreatedAt: response.data.user.created_at });
+          }
+          if (response.data.user.is_verified !== undefined) {
+            useAuthStore.setState({ userIsVerified: response.data.user.is_verified });
+          }
+          
+          // Set is_online status based on status field (active = true, otherwise false)
+          if (response.data.user.status !== undefined) {
+            const isOnline = response.data.user.status === 'active';
+            
+            // Set online status based on user type
+            if (userRole === 'biker') {
+              useAuthStore.setState({ bikerIsOnline: isOnline });
+            } else if (userRole === 'driver') {
+              // Set in both authStore and jobStore for drivers (drivers use jobStore for isOnline)
+              useAuthStore.setState({ driverIsOnline: isOnline });
+              const { useJobStore } = await import('../../store/jobStore');
+              useJobStore.getState().setOnlineStatus(isOnline);
+            }
+          }
+          
+          // Redirect will happen automatically via app/index.tsx based on activeRole
+          router.replace('/');
+        } else {
+          // If no user data, fetch profile to get user_type
+          const profileFetched = await useAuthStore.getState().fetchProfile();
+          if (profileFetched) {
+            // Redirect will happen automatically via app/index.tsx based on activeRole
+            router.replace('/');
+          } else {
+            // New user, redirect to registration
+            Alert.alert('Success', 'Phone number verified successfully!', [
+              {
+                text: 'OK',
+                onPress: () => {
+                  router.replace('/(auth)/car-details');
+                }
+              }
+            ]);
+          }
+        }
       } else {
-        setLoading(false);
-        Alert.alert('Error', 'Invalid OTP. Please try again.');
+        Alert.alert('Error', response.error || 'Invalid OTP. Please try again.');
         setOtp(['', '', '', '', '', '']);
         inputRefs.current[0]?.focus();
       }
-    }, 1500);
+    } catch (error) {
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+      setOtp(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleResendOTP = async () => {
+    if (!phoneNumber) {
+      Alert.alert('Error', 'Phone number is required');
+      return;
+    }
+
     setResendLoading(true);
 
-    setTimeout(() => {
-      setResendLoading(false);
-      setCanResend(false);
-      setTimer(60);
-      Alert.alert('Success', 'OTP has been resent to your phone number');
+    try {
+      const response = await AuthApiService.sendOTP({
+        phone_number: phoneNumber.startsWith('+91') ? phoneNumber : `+91${phoneNumber}`,
+        otp_type: 'phone_verification',
+      });
 
-      const interval = setInterval(() => {
-        setTimer((prev) => {
-          if (prev <= 1) {
-            setCanResend(true);
-            clearInterval(interval);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }, 1000);
+      if (response.success) {
+        setResendLoading(false);
+        setCanResend(false);
+        setTimer(60);
+        Alert.alert('Success', 'OTP has been resent to your phone number');
+
+        const interval = setInterval(() => {
+          setTimer((prev) => {
+            if (prev <= 1) {
+              setCanResend(true);
+              clearInterval(interval);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      } else {
+        Alert.alert('Error', response.error || 'Failed to resend OTP. Please try again.');
+        setResendLoading(false);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+      setResendLoading(false);
+    }
   };
 
   const formatPhoneNumber = (phone: string) => {

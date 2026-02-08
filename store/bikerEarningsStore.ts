@@ -34,6 +34,7 @@ interface BikerEarningsState {
   startShift: () => void;
   endShift: () => void;
   updateEarnings: (amount: number, type: EarningType) => void;
+  setEarnings: (earnings: Partial<BikerEarnings>) => void; // Set earnings from API
   addTaskToHistory: (task: TaskHistory) => void;
   updatePerformanceMetrics: () => void;
   addIncentive: (incentive: Incentive) => void;
@@ -141,19 +142,19 @@ const isThisMonth = (date: Date): boolean => {
 };
 
 export const useBikerEarningsStore = create<BikerEarningsState>((set, get) => ({
-  // Initial state with mock data
+  // Initial state - will be populated from API
   earnings: {
-    totalEarnings: 12450.75,
-    weeklyEarnings: 2380.50,
-    monthlyEarnings: 8965.25,
-    todayEarnings: 485.00,
-    pendingAmount: 125.50,
-    baseTaskEarnings: 8200.00,
-    emergencyBonuses: 1850.75,
-    peakTimeBonuses: 1650.00,
-    distanceBonuses: 750.00,
+    totalEarnings: 0,
+    weeklyEarnings: 0,
+    monthlyEarnings: 0,
+    todayEarnings: 0,
+    pendingAmount: 0,
+    baseTaskEarnings: 0,
+    emergencyBonuses: 0,
+    peakTimeBonuses: 0,
+    distanceBonuses: 0,
     incentives: 0,
-    lastPayout: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // 7 days ago
+    lastPayout: undefined
   },
   
   currentShift: null,
@@ -218,7 +219,7 @@ export const useBikerEarningsStore = create<BikerEarningsState>((set, get) => ({
     
     return {
       currentShift: null,
-      shiftHistory: [endedShift, ...state.shiftHistory]
+      shiftHistory: [endedShift, ...state.shiftHistory],
     };
   }),
   
@@ -259,6 +260,22 @@ export const useBikerEarningsStore = create<BikerEarningsState>((set, get) => ({
       earnings: updatedEarnings,
       currentShift
     };
+  }),
+
+  setEarnings: (earningsData) => set((state) => {
+    console.log('Earnings data:', earningsData);
+    const updatedEarnings: BikerEarnings = {
+      ...state.earnings,
+      ...earningsData,
+      // Convert lastPayout string to Date if provided
+      lastPayout: earningsData.lastPayout 
+        ? (earningsData.lastPayout instanceof Date 
+            ? earningsData.lastPayout 
+            : new Date(earningsData.lastPayout))
+        : state.earnings.lastPayout,
+    };
+    console.log('Updated earnings:', updatedEarnings);
+    return { earnings: updatedEarnings };
   }),
   
   addTaskToHistory: (task) => set((state) => ({
@@ -332,6 +349,11 @@ export const useBikerEarningsStore = create<BikerEarningsState>((set, get) => ({
   // Getters
   getTodayEarnings: () => {
     const state = get();
+    // Use earnings data from API (stored in state.earnings)
+    // Fallback to calculating from dailyEarnings if available
+    if (state.earnings.todayEarnings !== undefined && state.earnings.todayEarnings !== null) {
+      return state.earnings.todayEarnings;
+    }
     return state.dailyEarnings
       .filter(day => isToday(day.date))
       .reduce((total, day) => total + day.totalEarnings, 0);
@@ -339,6 +361,11 @@ export const useBikerEarningsStore = create<BikerEarningsState>((set, get) => ({
   
   getWeekEarnings: () => {
     const state = get();
+    // Use earnings data from API (stored in state.earnings)
+    // Fallback to calculating from dailyEarnings if available
+    if (state.earnings.weeklyEarnings !== undefined && state.earnings.weeklyEarnings !== null) {
+      return state.earnings.weeklyEarnings;
+    }
     return state.dailyEarnings
       .filter(day => isThisWeek(day.date))
       .reduce((total, day) => total + day.totalEarnings, 0);
@@ -346,6 +373,11 @@ export const useBikerEarningsStore = create<BikerEarningsState>((set, get) => ({
   
   getMonthEarnings: () => {
     const state = get();
+    // Use earnings data from API (stored in state.earnings)
+    // Fallback to calculating from dailyEarnings if available
+    if (state.earnings.monthlyEarnings !== undefined && state.earnings.monthlyEarnings !== null) {
+      return state.earnings.monthlyEarnings;
+    }
     return state.dailyEarnings
       .filter(day => isThisMonth(day.date))
       .reduce((total, day) => total + day.totalEarnings, 0);
