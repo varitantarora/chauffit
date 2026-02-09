@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { TouchableOpacity, ScrollView, View, Alert, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { TouchableOpacity, ScrollView, View, Alert, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedView } from '../../../components/common/ThemedView';
@@ -10,45 +10,64 @@ import { DocumentsList } from '../../../components/driver/profile/DocumentUpload
 import { useAuthStore } from '../../../store/authStore';
 import { useJobStore } from '../../../store/jobStore';
 import { useEarningsStore } from '../../../store/earningsStore';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import DriverApiService, { DriverProfile as DriverProfileType } from '../../../services/api/DriverApiService';
+import { appConfig } from '../../../config/env';
 
 export default function DriverProfile() {
   const user = useAuthStore((state) => state.user);
+  const userCreatedAt = useAuthStore((state) => state.userCreatedAt);
+  const userIsVerified = useAuthStore((state) => state.userIsVerified);
   const logout = useAuthStore((state) => state.logout);
   const toggleTheme = useAuthStore((state) => state.toggleTheme);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const router = useRouter();
-  
+
   const { isOnline, setOnlineStatus, jobHistory, resetDemoRequests } = useJobStore();
   const { earnings } = useEarningsStore();
-  
+
   const [activeTab, setActiveTab] = useState<'profile' | 'documents' | 'stats'>('profile');
   const [driverProfile, setDriverProfile] = useState<DriverProfileType | null>(null);
   const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  // Fetch driver profile, documents on mount
+  // Helper to get full image URL (handles relative URLs from backend)
+  const getImageUrl = (url: string | null | undefined): string | null => {
+    if (!url) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    const baseUrl = appConfig.apiBaseUrl.replace('/api/v1', '');
+    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
+  // Fetch driver profile, documents on mount and focus
   useEffect(() => {
     fetchDriverData();
-  }, []);
+  }, [fetchDriverData]);
 
-  const fetchDriverData = async () => {
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchDriverData();
+    }, [fetchDriverData])
+  );
+
+  const fetchDriverData = React.useCallback(async () => {
     try {
       setLoading(true);
-      
-      // Fetch profile
+
+      // Fetch profile - but handle gracefully if it fails
       const profileResponse = await DriverApiService.getProfile();
-      
+
       if (profileResponse.success && profileResponse.data) {
         const profile = profileResponse.data;
         setDriverProfile(profile);
         // Sync online status with store
-        if (profile.is_online !== isOnline) {
+        if (profile.is_online !== undefined) {
           setOnlineStatus(profile.is_online);
         }
-        
+
         // If profile has ID, fetch detailed profile with documents
         if (profile.id) {
           const detailedResponse = await DriverApiService.getProfileById(profile.id);
@@ -58,35 +77,40 @@ export default function DriverProfile() {
           }
         }
       } else {
+        // Profile fetch failed - likely because driver profile doesn't exist yet
         console.warn('Failed to load driver profile:', profileResponse.error);
+        // Don't show error to user, just use fallback to auth store data
       }
-      
+
       // Also try fetching documents separately as fallback
-      const documentsResponse = await DriverApiService.getDocuments();
-      if (documentsResponse.success && documentsResponse.data) {
-        setDocuments(documentsResponse.data);
+      try {
+        const documentsResponse = await DriverApiService.getDocuments();
+        if (documentsResponse.success && documentsResponse.data) {
+          setDocuments(documentsResponse.data);
+        }
+      } catch (error) {
+        console.warn('Failed to fetch documents:', error);
       }
     } catch (error) {
       console.error('Error fetching driver data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [setOnlineStatus]);
 
   const handleGoOnline = async () => {
     if (updatingStatus) return;
 
     try {
       setUpdatingStatus(true);
-      
+
       const newStatus = !isOnline;
-      
+
       // Optimistic update
       setOnlineStatus(newStatus);
-      
+
       const response = await DriverApiService.updateStatus({
         is_online: newStatus,
-        // You can add current location here if available
       });
 
       if (!response.success) {
@@ -108,7 +132,7 @@ export default function DriverProfile() {
       }
     } catch (error) {
       // Revert on error
-      setOnlineStatus(!isOnline);
+      setOnlineStatus(!newStatus);
       Alert.alert(
         'Error',
         'An unexpected error occurred. Please try again.',
@@ -120,17 +144,48 @@ export default function DriverProfile() {
   };
 
   const handleLogout = () => {
-    logout();
-    router.replace('/(auth)/login');
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: () => {
+            logout();
+            router.replace('/(auth)/phone-login');
+          }
+        }
+      ]
+    );
   };
 
-  // Driver stats from profile - no mock data
+  const handleEditProfile = () => {
+    router.push('/(driver)/edit-profile');
+  };
+
+  // Use actual API data, show N/A or empty when not available
+  const displayName = driverProfile?.full_name || user?.name || 'N/A';
+  const displayEmail = driverProfile?.email || user?.email || 'N/A';
+  const displayPhone = driverProfile?.phone_number || user?.phone || 'N/A';
+  const displayRating = driverProfile?.average_rating ?? 0;
+  const displayCompletedTrips = driverProfile?.total_trips ?? 0;
+
+  // Extract date from createdAt (which is a datetime string) and format for Member Since
+  const displayMemberSince = driverProfile?.created_at || userCreatedAt
+    ? (() => {
+        const date = new Date(driverProfile?.created_at || userCreatedAt || '');
+        return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      })()
+    : 'N/A';
+
+  // Driver stats from profile
   const driverStats = {
     totalRides: driverProfile?.total_trips ?? 0,
     rating: driverProfile?.average_rating ?? 0,
     totalEarnings: earnings.totalEarnings ?? 0,
     joinDate: driverProfile?.created_at ? new Date(driverProfile.created_at) : undefined,
-    // completionRate and onlineHours not available in API - will show N/A
   };
 
   if (loading) {
@@ -147,75 +202,114 @@ export default function DriverProfile() {
   return (
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Header */}
-          <View className="px-6 pt-4 pb-6">
-            <ThemedText variant="title" className="text-2xl font-bold text-center">
-              Driver Profile
-            </ThemedText>
-          </View>
+        {/* Header */}
+        <View className="flex-row items-center justify-between p-4 border-b border-border dark:border-darkBorder">
+          <ThemedText variant="title" className="font-bold">
+            Driver Profile
+          </ThemedText>
+          <TouchableOpacity onPress={handleEditProfile}>
+            <Ionicons name="create" size={24} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
+          </TouchableOpacity>
+        </View>
 
+        <ScrollView showsVerticalScrollIndicator={false}>
           {/* Profile Card */}
-          <View className="px-6 mb-6">
+          <View className="p-6 mb-6">
             <ThemedCard className="p-6">
               <View className="items-center mb-6">
-                <View className="w-24 h-24 bg-burgundy rounded-full items-center justify-center mb-4 relative">
-                  <ThemedText className="text-white text-3xl font-bold">
-                    {/* {driverProfile?.full_name?.charAt(0).toUpperCase() || user?.name?.charAt(0).toUpperCase()} */}
-                  </ThemedText>
-                  
-                  {isOnline && (
-                    <View className="absolute -bottom-1 -right-1 w-6 h-6 bg-success rounded-full border-2 border-white" />
-                  )}
-                </View>
-                <ThemedText variant="title" className="text-xl font-bold">
-                  {driverProfile?.full_name || user?.name}
-                </ThemedText>
-                <ThemedText variant="secondary">{driverProfile?.email || user?.email}</ThemedText>
-                {driverProfile?.phone_number && (
-                  <ThemedText variant="secondary">{driverProfile.phone_number}</ThemedText>
-                )}
-                
-                <View className="flex-row items-center mt-3 bg-success/10 px-3 py-2 rounded-full">
-                  <Ionicons 
-                    name={driverProfile?.is_verified ? "shield-checkmark" : "shield-outline"} 
-                    size={16} 
-                    color={driverProfile?.is_verified ? "#10b981" : "#6b7280"} 
+                {user?.avatar ? (
+                  <Image
+                    source={{ uri: getImageUrl(user.avatar) || undefined }}
+                    className="w-24 h-24 rounded-full mb-4"
+                    style={{ backgroundColor: '#BD8C5E' }}
                   />
-                  <ThemedText className={`font-semibold ml-2 ${driverProfile?.is_verified ? 'text-success' : 'text-secondary'}`}>
-                    {driverProfile?.is_verified ? 'Verified Driver' : 'Pending Verification'}
+                ) : (
+                  <View className="w-24 h-24 bg-burgundy rounded-full items-center justify-center mb-4 relative">
+                    <ThemedText className="text-white text-3xl font-bold">
+                      {displayName !== 'N/A' ? displayName.charAt(0).toUpperCase() : '?'}
+                    </ThemedText>
+                  </View>
+                )}
+
+                {isOnline && (
+                  <View className="absolute top-24 left-1/2 ml-12 w-6 h-6 bg-success rounded-full border-2 border-white" />
+                )}
+              </View>
+
+              <View className="items-center mb-4">
+                <ThemedText variant="title" className="text-xl font-bold">
+                  {displayName}
+                </ThemedText>
+                <ThemedText variant="secondary">{displayEmail}</ThemedText>
+                <ThemedText variant="secondary">{displayPhone}</ThemedText>
+
+                <View className="flex-row items-center mt-3 bg-success/10 px-3 py-2 rounded-full">
+                  <Ionicons
+                    name={userIsVerified ? 'shield-checkmark' : 'shield-outline'}
+                    size={16}
+                    color={userIsVerified ? '#10b981' : '#6b7280'}
+                  />
+                  <ThemedText className={`font-semibold ml-2 ${userIsVerified ? 'text-success' : 'text-secondary'}`}>
+                    {userIsVerified ? 'Verified Driver' : 'Pending Verification'}
                   </ThemedText>
                 </View>
               </View>
-              
+
               {/* Driver Stats */}
               <View className="border-t border-border dark:border-darkBorder pt-4">
                 <View className="flex-row justify-around">
                   <View className="items-center">
-                    <ThemedText className="text-2xl font-bold text-burgundy">
-                      {driverStats.rating.toFixed(1)}
-                    </ThemedText>
-                    <View className="flex-row items-center">
-                      <Ionicons name="star" size={12} color="#fbbf24" />
-                      <ThemedText variant="caption" className="ml-1">Rating</ThemedText>
+                    <View className="flex-row items-center mb-1">
+                      <Ionicons name="star" size={16} color="#fbbf24" />
+                      <ThemedText className="font-bold text-lg ml-1">
+                        {displayRating > 0 ? displayRating.toFixed(1) : 'N/A'}
+                      </ThemedText>
                     </View>
+                    <ThemedText variant="caption">Rating</ThemedText>
                   </View>
                   <View className="items-center">
                     <ThemedText className="text-2xl font-bold">
-                      {driverStats.totalRides}
+                      {displayCompletedTrips}
                     </ThemedText>
                     <ThemedText variant="caption">Rides</ThemedText>
                   </View>
                   <View className="items-center">
-                    <ThemedText className="text-2xl font-bold">
-                      ₹{Math.round(driverStats.totalEarnings / 1000)}k
+                    <ThemedText className="text-2xl font-bold text-success">
+                      ₹{(earnings?.totalEarnings ?? 0).toLocaleString('en-IN')}
                     </ThemedText>
-                    <ThemedText variant="caption">Earnings</ThemedText>
+                    <ThemedText variant="caption">Total Earned</ThemedText>
                   </View>
                 </View>
               </View>
             </ThemedCard>
           </View>
+
+          {/* Profile Completion Notice - Show only if driver profile is not complete */}
+          {!driverProfile && !loading && (
+            <View className="px-6 mb-6">
+              <ThemedCard className="p-4 bg-secondary/10 border border-secondary/30">
+                <View className="flex-row items-center">
+                  <Ionicons name="information-circle" size={20} color="#BD8C5E" />
+                  <View className="flex-1 ml-3">
+                    <ThemedText className="font-semibold text-secondary mb-1">
+                      Complete Your Profile
+                    </ThemedText>
+                    <ThemedText variant="small" className="text-textSecondary">
+                      Add your license and ID details to start receiving ride requests.
+                    </ThemedText>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  onPress={handleEditProfile}
+                  className="mt-3 bg-secondary px-4 py-2 rounded-lg self-start"
+                >
+                  <ThemedText className="text-white font-semibold">
+                    Complete Profile
+                  </ThemedText>
+                </TouchableOpacity>
+              </ThemedCard>
+            </View>
+          )}
 
           {/* Online Status */}
           <View className="px-6 mb-6">
@@ -240,7 +334,7 @@ export default function DriverProfile() {
                   } ${updatingStatus ? 'opacity-50' : ''}`}
                 >
                   {updatingStatus ? (
-                    <ActivityIndicator size="small" color={isOnline ? "#ef4444" : "#10b981"} />
+                    <ActivityIndicator size="small" color={isOnline ? '#ef4444' : '#10b981'} />
                   ) : (
                     <ThemedText className={`font-semibold ${isOnline ? 'text-danger' : 'text-success'}`}>
                       {isOnline ? 'Go Offline' : 'Go Online'}
@@ -266,7 +360,7 @@ export default function DriverProfile() {
                     activeTab === tab.key ? 'bg-burgundy' : ''
                   }`}
                 >
-                  <ThemedText 
+                  <ThemedText
                     className={`text-center ${
                       activeTab === tab.key ? 'text-white font-semibold' : ''
                     }`}
@@ -282,6 +376,44 @@ export default function DriverProfile() {
           <View className="px-6">
             {activeTab === 'profile' && (
               <View>
+                {/* Account Info */}
+                <ThemedCard className="p-4 mb-6">
+                  <ThemedText className="font-bold text-lg mb-4">
+                    ℹ️ ACCOUNT INFORMATION
+                  </ThemedText>
+
+                  <View className="space-y-3">
+                    <View className="flex-row justify-between">
+                      <ThemedText>Member Since:</ThemedText>
+                      <ThemedText className="font-semibold">{displayMemberSince}</ThemedText>
+                    </View>
+                    {driverProfile ? (
+                      <>
+                        <View className="flex-row justify-between">
+                          <ThemedText>License Number:</ThemedText>
+                          <ThemedText className="font-semibold">{driverProfile?.license_number || 'N/A'}</ThemedText>
+                        </View>
+                        <View className="flex-row justify-between">
+                          <ThemedText>License Expiry:</ThemedText>
+                          <ThemedText className="font-semibold">{driverProfile?.license_expiry_date || 'N/A'}</ThemedText>
+                        </View>
+                        <View className="flex-row justify-between">
+                          <ThemedText>Experience:</ThemedText>
+                          <ThemedText className="font-semibold">
+                            {driverProfile?.years_of_experience ? `${driverProfile.years_of_experience} years` : 'N/A'}
+                          </ThemedText>
+                        </View>
+                      </>
+                    ) : (
+                      <View className="items-center py-2">
+                        <ThemedText variant="secondary" className="text-center">
+                          Complete your profile to see detailed information
+                        </ThemedText>
+                      </View>
+                    )}
+                  </View>
+                </ThemedCard>
+
                 {/* Account Settings */}
                 <View className="mb-6">
                   <TouchableOpacity
@@ -289,14 +421,14 @@ export default function DriverProfile() {
                     className="flex-row justify-between items-center p-4 bg-surface dark:bg-darkSurface rounded-xl mb-3"
                   >
                     <View className="flex-row items-center">
-                      <Ionicons name="moon" size={20} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
+                      <Ionicons name={isDarkMode ? 'moon' : 'sunny'} size={20} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
                       <ThemedText className="ml-3">Dark Mode</ThemedText>
                     </View>
                     <View className={`w-12 h-6 rounded-full ${isDarkMode ? 'bg-burgundy' : 'bg-gray-300'} justify-center`}>
                       <View className={`w-5 h-5 bg-white rounded-full ${isDarkMode ? 'self-end mr-0.5' : 'self-start ml-0.5'}`} />
                     </View>
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     onPress={() => router.push('/(driver)/banking-details')}
                     className="flex-row justify-between items-center p-4 bg-surface dark:bg-darkSurface rounded-xl mb-3"
@@ -305,9 +437,9 @@ export default function DriverProfile() {
                       <Ionicons name="card" size={20} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
                       <ThemedText className="ml-3">Banking Details</ThemedText>
                     </View>
-                    <Ionicons name="chevron-forward" size={20} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
+                    <Ionicons name="chevron-forward" size={20} color={isDarkMode ? '#9ca3af' : '#6b7280'} />
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     onPress={() => router.push('/(driver)/notifications')}
                     className="flex-row justify-between items-center p-4 bg-surface dark:bg-darkSurface rounded-xl mb-3"
@@ -316,9 +448,9 @@ export default function DriverProfile() {
                       <Ionicons name="notifications" size={20} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
                       <ThemedText className="ml-3">Notifications</ThemedText>
                     </View>
-                    <Ionicons name="chevron-forward" size={20} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
+                    <Ionicons name="chevron-forward" size={20} color={isDarkMode ? '#9ca3af' : '#6b7280'} />
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     onPress={() => router.push('/(driver)/support')}
                     className="flex-row justify-between items-center p-4 bg-surface dark:bg-darkSurface rounded-xl mb-3"
@@ -327,9 +459,9 @@ export default function DriverProfile() {
                       <Ionicons name="help-circle" size={20} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
                       <ThemedText className="ml-3">Help & Support</ThemedText>
                     </View>
-                    <Ionicons name="chevron-forward" size={20} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
+                    <Ionicons name="chevron-forward" size={20} color={isDarkMode ? '#9ca3af' : '#6b7280'} />
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     onPress={() => {
                       resetDemoRequests();
@@ -341,7 +473,7 @@ export default function DriverProfile() {
                       <Ionicons name="refresh" size={20} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
                       <ThemedText className="ml-3">Reset Demo Requests</ThemedText>
                     </View>
-                    <Ionicons name="chevron-forward" size={20} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
+                    <Ionicons name="chevron-forward" size={20} color={isDarkMode ? '#9ca3af' : '#6b7280'} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -349,7 +481,7 @@ export default function DriverProfile() {
 
             {activeTab === 'documents' && (
               <View>
-                <DocumentsList />
+                <DocumentsList documents={documents} onRefresh={fetchDriverData} />
               </View>
             )}
 
@@ -360,12 +492,12 @@ export default function DriverProfile() {
                   <ThemedText variant="title" className="font-bold mb-4">
                     Career Statistics
                   </ThemedText>
-                  
+
                   <View className="space-y-3">
                     <View className="flex-row justify-between">
                       <ThemedText>Member Since:</ThemedText>
                       <ThemedText className="font-semibold">
-                        {driverStats.joinDate 
+                        {driverStats.joinDate
                           ? driverStats.joinDate.toLocaleDateString('en-IN', {
                               month: 'short',
                               year: 'numeric'
@@ -373,21 +505,21 @@ export default function DriverProfile() {
                           : 'N/A'}
                       </ThemedText>
                     </View>
-                    
+
                     <View className="flex-row justify-between">
                       <ThemedText>Total Earnings:</ThemedText>
                       <ThemedText className="font-semibold text-burgundy">
                         ₹{driverStats.totalEarnings.toLocaleString('en-IN')}
                       </ThemedText>
                     </View>
-                    
+
                     <View className="flex-row justify-between">
                       <ThemedText>Total Rides:</ThemedText>
                       <ThemedText className="font-semibold">
                         {driverStats.totalRides}
                       </ThemedText>
                     </View>
-                    
+
                     <View className="flex-row justify-between">
                       <ThemedText>Average Rating:</ThemedText>
                       <View className="flex-row items-center">
@@ -405,7 +537,7 @@ export default function DriverProfile() {
                   <ThemedText variant="title" className="font-bold mb-4">
                     Recent Reviews
                   </ThemedText>
-                  
+
                   {jobHistory.filter(job => job.customerComment).slice(0, 3).map((job) => (
                     <View key={job.id} className="mb-4 last:mb-0">
                       <View className="flex-row items-center mb-2">
@@ -418,11 +550,11 @@ export default function DriverProfile() {
                           <ThemedText className="font-semibold">{job.customerName}</ThemedText>
                           <View className="flex-row items-center">
                             {[1, 2, 3, 4, 5].map((star) => (
-                              <Ionicons 
-                                key={star} 
-                                name={star <= (job.customerRating || 0) ? "star" : "star-outline"} 
-                                size={12} 
-                                color="#fbbf24" 
+                              <Ionicons
+                                key={star}
+                                name={star <= (job.customerRating || 0) ? 'star' : 'star-outline'}
+                                size={12}
+                                color="#fbbf24"
                               />
                             ))}
                             <ThemedText variant="caption" className="ml-2">
@@ -438,7 +570,7 @@ export default function DriverProfile() {
                       )}
                     </View>
                   ))}
-                  
+
                   {jobHistory.filter(job => job.customerComment).length === 0 && (
                     <ThemedText variant="secondary" className="text-center">
                       No reviews yet. Complete rides to receive customer feedback.
@@ -448,7 +580,6 @@ export default function DriverProfile() {
               </View>
             )}
           </View>
-
 
           {/* Logout Button */}
           <View className="px-6 py-6">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TouchableOpacity, ScrollView, View, Alert, Switch, ActivityIndicator, RefreshControl } from 'react-native';
+import { TouchableOpacity, ScrollView, View, Alert, Switch, ActivityIndicator, RefreshControl, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedView } from '../../../components/common/ThemedView';
@@ -10,6 +10,7 @@ import { useAuthStore } from '../../../store/authStore';
 import { useBikerEarningsStore } from '../../../store/bikerEarningsStore';
 import { useRouter, useFocusEffect } from 'expo-router';
 import BikerApiService, { BikerProfile as BikerProfileType } from '../../../services/api/BikerApiService';
+import { appConfig } from '../../../config/env';
 
 export default function BikerProfile() {
   const user = useAuthStore((state) => state.user);
@@ -36,10 +37,13 @@ export default function BikerProfile() {
     fetchBikerData();
   }, []);
 
-  // Refresh documents when screen comes into focus (e.g., after uploading documents)
+  // Refresh user profile and biker data when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      // Only refresh documents, not the entire profile (to avoid unnecessary API calls)
+      // Refresh user profile (for avatar, name updates)
+      useAuthStore.getState().fetchProfile();
+
+      // Refresh documents
       const refreshDocuments = async () => {
         try {
           const documentsResponse = await BikerApiService.getDocuments();
@@ -125,6 +129,18 @@ export default function BikerProfile() {
     return userIsVerified ? `Verified ${roleCapitalized}` : roleCapitalized;
   };
 
+  // Helper to get full image URL (handles relative URLs from backend)
+  const getImageUrl = (url: string | null | undefined): string | null => {
+    if (!url) return null;
+    // If URL is already absolute (starts with http), return as is
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    // Otherwise, prepend the base URL
+    const baseUrl = appConfig.apiBaseUrl.replace('/api/v1', '');
+    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
   const handleLogout = () => {
     Alert.alert(
       'Logout',
@@ -144,7 +160,7 @@ export default function BikerProfile() {
   };
   
   const handleEditProfile = () => {
-    Alert.alert('Edit Profile', 'Profile editing feature coming soon!');
+    router.push('/(biker)/edit-profile');
   };
   
   const handleVehicleDetails = () => {
@@ -263,11 +279,19 @@ export default function BikerProfile() {
               {/* Profile Header */}
               <ThemedCard className="p-6 mb-6">
                 <View className="items-center mb-4">
-                  <View className="w-24 h-24 bg-burgundy rounded-full items-center justify-center mb-4">
-                    <ThemedText className="text-white text-3xl font-bold">
-                      {displayName !== 'N/A' ? displayName.charAt(0).toUpperCase() : '?'}
-                    </ThemedText>
-                  </View>
+                  {user?.avatar ? (
+                    <Image
+                      source={{ uri: getImageUrl(user.avatar) || undefined }}
+                      className="w-24 h-24 rounded-full mb-4"
+                      style={{ backgroundColor: '#BD8C5E' }}
+                    />
+                  ) : (
+                    <View className="w-24 h-24 bg-burgundy rounded-full items-center justify-center mb-4">
+                      <ThemedText className="text-white text-3xl font-bold">
+                        {displayName !== 'N/A' ? displayName.charAt(0).toUpperCase() : '?'}
+                      </ThemedText>
+                    </View>
+                  )}
                   <ThemedText variant="title" className="font-bold text-xl">
                     {displayName}
                   </ThemedText>

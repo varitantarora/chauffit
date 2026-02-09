@@ -66,28 +66,20 @@ export default function PhoneLogin() {
     setLoading(true);
 
     try {
-      const response = await AuthApiService.sendOTP({
-        phone_number: `${phoneNumber}`, // Add country code
-        otp_type: 'phone_verification',
+      // Use OTP login send endpoint for login
+      const response = await AuthApiService.otpLoginSend({
+        phone_number: `+91${phoneNumber}`,
       });
 
       if (response.success) {
-        // Show success message
-        Alert.alert(
-          t.otpSent,
-          `OTP has been sent to +91 ${phoneNumber}\n\nFor testing, check console for OTP code.`,
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                router.push({
-                  pathname: '/(auth)/otp-verification',
-                  params: { phoneNumber }
-                });
-              }
-            }
-          ]
-        );
+        // Navigate to OTP verification screen with phone number
+        router.push({
+          pathname: '/(auth)/otp-verification',
+          params: {
+            phoneNumber: `+91${phoneNumber}`,
+            isLogin: 'true',
+          }
+        });
       } else {
         Alert.alert(t.error, response.error || 'Failed to send OTP. Please try again.');
       }
@@ -164,7 +156,18 @@ export default function PhoneLogin() {
 
         {/* Phone Number Input */}
         <View className={`flex-row items-center p-4 rounded-xl border mb-6 ${inputClass}`}>
-          <ThemedText className="text-textSecondary mr-2">+91</ThemedText>
+          {/* Fixed Country Code */}
+          <View className="flex-row items-center bg-secondary/10 px-3 py-2 rounded-lg mr-3">
+            <Ionicons
+              name="flag"
+              size={16}
+              color="#BD8C5E"
+              className="mr-1"
+            />
+            <ThemedText className="text-secondary font-bold text-base">
+              +91
+            </ThemedText>
+          </View>
           <TextInput
             className="flex-1 text-base"
             style={{
