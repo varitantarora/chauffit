@@ -96,6 +96,140 @@ export interface DriverDocumentRequest {
   rejection_reason?: string;
 }
 
+// ============================================================================
+// EARNINGS TYPES - Based on API Contract v1.0.0
+// ============================================================================
+
+/**
+ * Driver Earnings Summary
+ * GET /api/v1/drivers/earnings/
+ */
+export interface DriverEarningsSummary {
+  total_earnings: string;    // Lifetime net earnings (all time)
+  total_trips: number;        // Total completed trips (all time)
+  today_earnings: string;     // Net earnings for today
+  today_trips: number;         // Completed trips today
+  week_earnings: string;      // Net earnings for last 7 days
+  week_trips: number;          // Completed trips in last 7 days
+  month_earnings: string;     // Net earnings for last 30 days
+  month_trips: number;         // Completed trips in last 30 days
+}
+
+/**
+ * Daily Earning Entry
+ * Part of daily breakdown response
+ */
+export interface DailyEarningEntry {
+  date: string;               // YYYY-MM-DD format
+  trips_completed: number;    // Number of trips completed on that day
+  total_earnings: string;     // Total fare amount earned (before fees)
+  net_earnings: string;       // Net earnings after platform fee
+}
+
+/**
+ * Daily Earnings Response
+ * GET /api/v1/earnings/driver/daily/
+ */
+export interface DailyEarningsResponse {
+  daily_breakdown: DailyEarningEntry[];
+  summary: {
+    total_trips: number;
+    total_earnings: string;
+    total_net_earnings: string;
+  };
+}
+
+/**
+ * Bonus/Tip Entry
+ */
+export interface BonusTipEntry {
+  id: string;
+  earning_type: 'bonus' | 'tip';
+  earning_type_display: string;
+  bonus_type: string;
+  amount: string;
+  platform_fee: string;
+  net_earnings: string;
+  payment_status: 'pending' | 'processing' | 'paid' | 'failed';
+  payment_status_display: string;
+  created_at: string;
+}
+
+/**
+ * Bonuses and Incentives Response
+ * GET /api/v1/earnings/driver/bonuses/
+ */
+export interface BonusesIncentivesResponse {
+  summary: {
+    total_count: number;
+    total_amount: string;
+    total_net_earnings: string;
+    pending_amount: string;
+    paid_amount: string;
+    bonus: {
+      count: number;
+      amount: string;
+    };
+    tips: {
+      count: number;
+      amount: string;
+    };
+  };
+  bonuses: BonusTipEntry[];
+}
+
+/**
+ * Daily Earnings Request Parameters
+ */
+export interface DailyEarningsParams {
+  days?: number;              // Number of days to fetch (max 90, default 30)
+  start_date?: string;        // Start date (YYYY-MM-DD format)
+  end_date?: string;          // End date (YYYY-MM-DD format)
+}
+
+/**
+ * Bonuses Request Parameters
+ */
+export interface BonusesParams {
+  type?: 'bonus' | 'tip' | 'all';     // Filter by type (default: all)
+  status?: 'pending' | 'processing' | 'paid' | 'failed' | 'all';  // Filter by status (default: all)
+}
+
+// ============================================================================
+// STATS TYPES - Based on API Contract v1.0.0
+// ============================================================================
+
+/**
+ * Driver Stats Period
+ * Stats for a specific time period
+ */
+export interface DriverStatsPeriod {
+  trips: number;                  // Number of completed trips
+  earned: string;                 // Net earnings (after fees)
+  average_rating: number;         // Average rating (1-5 scale)
+  rating_count: number;           // Number of ratings received
+  completion_rate: number;        // Percentage of accepted trips completed
+  distance_covered_km: number;    // Total distance driven in km
+}
+
+/**
+ * Driver Stats Response
+ * GET /api/v1/drivers/stats/
+ */
+export interface DriverStats {
+  lifetime: DriverStatsPeriod;
+  today: DriverStatsPeriod;
+  week: DriverStatsPeriod;
+  month: DriverStatsPeriod;
+  current_streak: {
+    days: number;                 // Consecutive days with at least one completed trip
+  };
+}
+
+// ============================================================================
+// DRIVER API SERVICE
+// ============================================================================
+
 class DriverApiService {
   private basePath = '/drivers';
 
@@ -141,15 +275,15 @@ class DriverApiService {
   async createProfile(data: DriverProfileRequest): Promise<ApiResponse<DriverProfile>> {
     try {
       const isFormData = !!(data.license_photo_front || data.license_photo_back || data.aadhar_photo);
-      
+
       if (isFormData) {
         const formData = new FormData();
-        
+
         // Add text fields
         formData.append('license_number', data.license_number);
         formData.append('license_expiry_date', data.license_expiry_date);
         formData.append('aadhar_number', data.aadhar_number);
-        
+
         if (data.bio) formData.append('bio', data.bio);
         if (data.years_of_experience !== undefined) {
           formData.append('years_of_experience', data.years_of_experience.toString());
@@ -163,7 +297,7 @@ class DriverApiService {
         }
         if (data.current_location_lat) formData.append('current_location_lat', data.current_location_lat);
         if (data.current_location_long) formData.append('current_location_long', data.current_location_long);
-        
+
         // Add file fields
         if (data.license_photo_front) {
           formData.append('license_photo_front', data.license_photo_front as any);
@@ -196,10 +330,10 @@ class DriverApiService {
   async updateProfile(id: string, data: Partial<DriverProfileRequest>): Promise<ApiResponse<DriverProfile>> {
     try {
       const isFormData = !!(data.license_photo_front || data.license_photo_back || data.aadhar_photo);
-      
+
       if (isFormData) {
         const formData = new FormData();
-        
+
         Object.entries(data).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
             if (value instanceof File || value instanceof Blob) {
@@ -233,10 +367,10 @@ class DriverApiService {
   async patchProfile(id: string, data: Partial<DriverProfileRequest>): Promise<ApiResponse<DriverProfile>> {
     try {
       const isFormData = !!(data.license_photo_front || data.license_photo_back || data.aadhar_photo);
-      
+
       if (isFormData) {
         const formData = new FormData();
-        
+
         Object.entries(data).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
             if (value instanceof File || value instanceof Blob) {
@@ -284,8 +418,8 @@ class DriverApiService {
       const response = await BaseApiService.get<any>(`${this.basePath}/documents/`);
       // API might return array directly or nested in data property
       if (response.success && response.data) {
-        const documents = Array.isArray(response.data) 
-          ? response.data 
+        const documents = Array.isArray(response.data)
+          ? response.data
           : (response.data.documents || []);
         return {
           success: true,
@@ -305,9 +439,9 @@ class DriverApiService {
   async uploadDocument(data: DriverDocumentRequest): Promise<ApiResponse<DriverProfile>> {
     try {
       const formData = new FormData();
-      
+
       formData.append('document_type', data.document_type);
-      
+
       // Handle React Native file objects (with uri, name, type)
       const docFile = data.document_file as any;
       if (docFile.uri) {
@@ -315,7 +449,7 @@ class DriverApiService {
       } else {
         formData.append('document_file', data.document_file as any);
       }
-      
+
       if (data.document_number) formData.append('document_number', data.document_number);
       if (data.issue_date) formData.append('issue_date', data.issue_date);
       if (data.expiry_date) formData.append('expiry_date', data.expiry_date);
@@ -332,18 +466,6 @@ class DriverApiService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to upload document',
-      };
-    }
-  }
-
-  // Get earnings
-  async getEarnings(): Promise<ApiResponse<DriverProfile>> {
-    try {
-      return await BaseApiService.get<DriverProfile>(`${this.basePath}/earnings/`);
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch earnings',
       };
     }
   }
@@ -385,7 +507,105 @@ class DriverApiService {
     }
   }
 
-  // Get driver stats
+  // =========================================================================
+  // EARNINGS API METHODS - Based on API Contract v1.0.0
+  // =========================================================================
+
+  /**
+   * Get Driver Earnings Summary
+   * GET /api/v1/drivers/earnings/
+   *
+   * Quick overview of driver's earnings across different time periods.
+   */
+  async getEarningsSummary(): Promise<ApiResponse<DriverEarningsSummary>> {
+    try {
+      return await BaseApiService.get<DriverEarningsSummary>(`${this.basePath}/earnings/`);
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch earnings summary',
+      };
+    }
+  }
+
+  /**
+   * Get Daily Earnings Breakdown
+   * GET /api/v1/earnings/driver/daily/
+   *
+   * Detailed daily breakdown of earnings with date, trips completed, and amounts.
+   *
+   * @param params - Optional query parameters (days, start_date, end_date)
+   */
+  async getDailyEarnings(params?: DailyEarningsParams): Promise<ApiResponse<DailyEarningsResponse>> {
+    try {
+      const queryParams: Record<string, string> = {};
+
+      if (params?.days) {
+        queryParams.days = params.days.toString();
+      }
+      if (params?.start_date) {
+        queryParams.start_date = params.start_date;
+      }
+      if (params?.end_date) {
+        queryParams.end_date = params.end_date;
+      }
+
+      const hasParams = Object.keys(queryParams).length > 0;
+      return await BaseApiService.get<DailyEarningsResponse>(
+        '/earnings/driver/daily/',
+        hasParams ? queryParams : undefined
+      );
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch daily earnings',
+      };
+    }
+  }
+
+  /**
+   * Get Bonuses and Incentives
+   * GET /api/v1/earnings/driver/bonuses/
+   *
+   * Get summary and list of all bonuses and tips received by the driver.
+   *
+   * @param params - Optional query parameters (type, status)
+   */
+  async getBonusesIncentives(params?: BonusesParams): Promise<ApiResponse<BonusesIncentivesResponse>> {
+    try {
+      const queryParams: Record<string, string> = {};
+
+      if (params?.type && params.type !== 'all') {
+        queryParams.type = params.type;
+      }
+      if (params?.status && params.status !== 'all') {
+        queryParams.status = params.status;
+      }
+
+      const hasParams = Object.keys(queryParams).length > 0;
+      return await BaseApiService.get<BonusesIncentivesResponse>(
+        '/earnings/driver/bonuses/',
+        hasParams ? queryParams : undefined
+      );
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch bonuses and incentives',
+      };
+    }
+  }
+
+  // =========================================================================
+  // STATS API METHODS - Based on API Contract v1.0.0
+  // =========================================================================
+
+  /**
+   * Get Driver Statistics
+   * GET /api/v1/drivers/stats/
+   *
+   * Comprehensive statistics including trips, earnings, ratings,
+   * completion rate, distance, and streaks.
+   */
   async getStats(): Promise<ApiResponse<DriverStats>> {
     try {
       return await BaseApiService.get<DriverStats>(`${this.basePath}/stats/`);
@@ -397,84 +617,23 @@ class DriverApiService {
     }
   }
 
-  // Get daily earnings breakdown (GET /earnings/driver/daily/)
-  async getDailyEarnings(): Promise<ApiResponse<DriverDailyEarning[]>> {
-    try {
-      const response = await BaseApiService.get<any>(`/earnings/driver/daily/`);
-      // API might return array directly or nested in data property
-      if (response.success && response.data) {
-        const dailyEarnings = Array.isArray(response.data) 
-          ? response.data 
-          : (response.data.results || response.data.daily || []);
-        return {
-          success: true,
-          data: dailyEarnings,
-        };
-      }
-      return response as ApiResponse<DriverDailyEarning[]>;
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch daily earnings',
-      };
-    }
-  }
+  // =========================================================================
+  // LEGACY METHODS (Deprecated - Use new methods above)
+  // =========================================================================
 
-  // Get bonuses and incentives (GET /earnings/driver/bonuses/)
-  async getBonuses(): Promise<ApiResponse<DriverBonus[]>> {
-    try {
-      const response = await BaseApiService.get<any>(`/earnings/driver/bonuses/`);
-      // API might return array directly or nested in data property
-      if (response.success && response.data) {
-        const bonuses = Array.isArray(response.data) 
-          ? response.data 
-          : (response.data.results || response.data.bonuses || []);
-        
-        const mappedBonuses: DriverBonus[] = bonuses.map((item: any) => ({
-          id: item.id || item.bonus_id || Math.random().toString(),
-          title: item.title || item.name || item.bonus_type || 'Bonus',
-          description: item.description || item.details || '',
-          amount: parseFloat(item.amount || item.reward || item.bonus_amount || '0'),
-          earnedAt: item.earned_at || item.date || item.created_at || new Date().toISOString(),
-        }));
-        return {
-          success: true,
-          data: mappedBonuses,
-        };
-      }
-      return response as ApiResponse<DriverBonus[]>;
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch driver bonuses',
-      };
-    }
+  /**
+   * @deprecated Use getEarningsSummary() instead
+   */
+  async getEarnings(): Promise<ApiResponse<DriverProfile>> {
+    return this.getEarningsSummary() as any;
   }
 }
 
-export interface DriverStatsPeriod {
-  pickups: number;
-  earned: string;
-  average_rating: number;
-  rating_count: number;
-  completion_rate: number;
-  distance_covered_km: number;
-}
-
-export interface DriverStats {
-  lifetime: DriverStatsPeriod;
-  today: DriverStatsPeriod;
-  week: DriverStatsPeriod;
-  month: DriverStatsPeriod;
-  current_streak: {
-    days: number;
-  };
-}
-
+// Legacy type exports for backward compatibility
 export interface DriverDailyEarning {
-  date: string; // ISO date string
-  trips: number; // or trips_completed
-  earnings: string; // or total_earnings
+  date: string;
+  trips: number;
+  earnings: string;
   trips_completed?: number;
   total_earnings?: string;
 }

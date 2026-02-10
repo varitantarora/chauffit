@@ -8,7 +8,7 @@ import { EarningsCard, EarningsSummaryCard, WeeklyProgressCard } from '../../../
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../store/authStore';
 import { useEarningsStore } from '../../../store/earningsStore';
-import DriverApiService, { DriverStats, DriverDailyEarning, DriverBonus } from '../../../services/api/DriverApiService';
+import DriverApiService, { DriverStats, DailyEarningsResponse, BonusesIncentivesResponse, BonusTipEntry } from '../../../services/api/DriverApiService';
 import { useEffect } from 'react';
 
 export default function EarningsScreen() {
@@ -34,9 +34,19 @@ export default function EarningsScreen() {
     distanceCovered: number;
   } | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
-  const [dailyEarnings, setDailyEarnings] = useState<DriverDailyEarning[]>([]);
+  const [dailyEarnings, setDailyEarnings] = useState<{
+    date: string;
+    trips: number;
+    earnings: string;
+  }[]>([]);
   const [loadingDaily, setLoadingDaily] = useState(false);
-  const [bonuses, setBonuses] = useState<DriverBonus[]>([]);
+  const [bonuses, setBonuses] = useState<{
+    id: string;
+    title: string;
+    description: string;
+    amount: number;
+    earnedAt: string;
+  }[]>([]);
   const [loadingBonuses, setLoadingBonuses] = useState(false);
   
   const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
@@ -44,22 +54,22 @@ export default function EarningsScreen() {
   const fetchEarnings = async () => {
     try {
       setLoading(true);
-      const response = await DriverApiService.getEarnings();
-      
+      const response = await DriverApiService.getEarningsSummary();
+
       if (response.success && response.data) {
-        // API returns earnings data in snake_case format
-        const earningsData = response.data as any;
-        
+        // API returns earnings data matching DriverEarningsSummary interface
+        const earningsData = response.data;
+
         // Map API response (snake_case) to store format (camelCase)
         const mappedEarnings = {
-          totalEarnings: earningsData.total_earnings ?? earningsData.totalEarnings ?? 0,
-          weeklyEarnings: earningsData.week_earnings ?? earningsData.weekly_earnings ?? earningsData.weeklyEarnings ?? 0,
-          monthlyEarnings: earningsData.month_earnings ?? earningsData.monthly_earnings ?? earningsData.monthlyEarnings ?? 0,
-          todayEarnings: earningsData.today_earnings ?? earningsData.todayEarnings ?? 0,
-          pendingAmount: earningsData.pending_amount ?? earningsData.pendingAmount ?? 0,
-          lastPayout: earningsData.last_payout ? new Date(earningsData.last_payout) : undefined,
+          totalEarnings: parseFloat(earningsData.total_earnings) || 0,
+          weeklyEarnings: parseFloat(earningsData.week_earnings) || 0,
+          monthlyEarnings: parseFloat(earningsData.month_earnings) || 0,
+          todayEarnings: parseFloat(earningsData.today_earnings) || 0,
+          pendingAmount: 0, // Not included in summary, would need separate endpoint
+          lastPayout: undefined,
         };
-        
+
         // Update store with fetched earnings
         setEarnings(mappedEarnings);
         console.log('Earnings fetched and updated in store:', mappedEarnings);
@@ -79,14 +89,14 @@ export default function EarningsScreen() {
     try {
       setLoadingStats(true);
       const response = await DriverApiService.getStats();
-      
+
       if (response.success && response.data) {
-        const statsData = response.data as any;
+        const statsData: DriverStats = response.data;
         const lifetime = statsData.lifetime || statsData;
-        
+
         setStats({
           averageRating: lifetime.average_rating || 0,
-          totalRides: lifetime.pickups || 0,
+          totalRides: lifetime.trips || 0,
           completionRate: lifetime.completion_rate || 0,
           distanceCovered: lifetime.distance_covered_km || 0,
         });
@@ -106,14 +116,14 @@ export default function EarningsScreen() {
     try {
       setLoadingDaily(true);
       const response = await DriverApiService.getDailyEarnings();
-      
+
       if (response.success && response.data) {
-        const dailyData = response.data as any[];
+        const dailyData: DailyEarningsResponse = response.data;
         // Map API response to component format
-        const mappedDaily: DriverDailyEarning[] = dailyData.map((item: any) => ({
-          date: item.date || item.created_at || '',
-          trips: item.trips || item.trips_completed || 0,
-          earnings: (item.earnings || item.total_earnings || '0').toString(),
+        const mappedDaily = dailyData.daily_breakdown.map((item) => ({
+          date: item.date,
+          trips: item.trips_completed,
+          earnings: item.net_earnings || item.total_earnings,
         }));
         setDailyEarnings(mappedDaily);
       } else {
@@ -131,10 +141,19 @@ export default function EarningsScreen() {
   const fetchBonuses = async () => {
     try {
       setLoadingBonuses(true);
-      const response = await DriverApiService.getBonuses();
-      
+      const response = await DriverApiService.getBonusesIncentives();
+
       if (response.success && response.data) {
-        setBonuses(response.data);
+        const bonusesData: BonusesIncentivesResponse = response.data;
+        // Map API response to component format
+        const mappedBonuses = bonusesData.bonuses.map((item: BonusTipEntry) => ({
+          id: item.id,
+          title: item.earning_type_display || item.bonus_type || (item.earning_type === 'tip' ? 'Tip' : 'Bonus'),
+          description: `${item.payment_status_display}`,
+          amount: parseFloat(item.net_earnings || item.amount),
+          earnedAt: item.created_at,
+        }));
+        setBonuses(mappedBonuses);
       } else {
         console.error('Failed to fetch bonuses:', response.error);
         setBonuses([]);

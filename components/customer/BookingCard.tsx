@@ -39,6 +39,12 @@ export const BookingCard: React.FC<BookingCardProps> = ({
 }) => {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
 
+  const formatDate = (dateValue: Date | string): string => {
+    const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return 'Date unavailable';
+    return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
   // Guard against undefined booking
   if (!booking) {
     return null;

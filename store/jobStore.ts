@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { JobRequest, ActiveJob, JobHistory, Location } from '../types/navigation';
-import { BookingDetail } from '../services/api/BookingApiService';
-import DriverRidesApiService from '../services/api/DriverRidesApiService';
+import DriverRidesApiService, { BookingDetail } from '../services/api/DriverRidesApiService';
 import { useAuthStore } from './authStore';
 import { isProduction } from '../config/env';
 

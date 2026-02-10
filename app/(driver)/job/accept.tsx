@@ -11,8 +11,7 @@ import { RouteMap } from '../../../components/driver/navigation/RouteMap';
 import { useJobStore } from '../../../store/jobStore';
 import { useAuthStore } from '../../../store/authStore';
 import { JobRequest } from '../../../types/navigation';
-import DriverRidesApiService from '../../../services/api/DriverRidesApiService';
-import { BookingDetail } from '../../../services/api/BookingApiService';
+import DriverRidesApiService, { BookingDetail } from '../../../services/api/DriverRidesApiService';
 
 export default function JobAcceptScreen() {
   const router = useRouter();
