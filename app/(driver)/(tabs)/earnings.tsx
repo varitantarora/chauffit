@@ -13,26 +13,22 @@ import { useEffect } from 'react';
 
 export default function EarningsScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
-  const { 
-    earnings, 
-    dailyBreakdown, 
+  const {
+    earnings,
+    dailyBreakdown,
     activeIncentives,
     getWeeklyEarnings,
     getMonthlyEarnings,
-    getAveragePerRide, 
+    getAveragePerRide,
     getAveragePerHour,
-    setEarnings
+    setEarnings,
+    weeklyTarget
   } = useEarningsStore();
-  
+
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
-  const [stats, setStats] = useState<{
-    averageRating: number;
-    totalRides: number;
-    completionRate: number;
-    distanceCovered: number;
-  } | null>(null);
+  const [stats, setStats] = useState<DriverStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
   const [dailyEarnings, setDailyEarnings] = useState<{
     date: string;
@@ -92,14 +88,8 @@ export default function EarningsScreen() {
 
       if (response.success && response.data) {
         const statsData: DriverStats = response.data;
-        const lifetime = statsData.lifetime || statsData;
-
-        setStats({
-          averageRating: lifetime.average_rating || 0,
-          totalRides: lifetime.trips || 0,
-          completionRate: lifetime.completion_rate || 0,
-          distanceCovered: lifetime.distance_covered_km || 0,
-        });
+        // Store full stats data for WeeklyProgressCard
+        setStats(statsData);
       } else {
         console.error('Failed to fetch stats:', response.error);
         setStats(null);
@@ -234,7 +224,14 @@ export default function EarningsScreen() {
           {/* Weekly Progress */}
           {selectedPeriod === 'weekly' && (
             <View className="px-6 mb-6">
-              <WeeklyProgressCard />
+              <WeeklyProgressCard
+                weeklyEarnings={earnings.weeklyEarnings}
+                weeklyTarget={weeklyTarget}
+                weeklyRides={stats?.week?.trips || stats?.lifetime?.trips || 0}
+                weeklyRidesTarget={80}
+                onlineHours={0} // TODO: Add online hours tracking
+                onlineHoursTarget={50}
+              />
             </View>
           )}
 
@@ -409,7 +406,7 @@ export default function EarningsScreen() {
                     Loading stats...
                   </ThemedText>
                 </View>
-              ) : stats ? (
+              ) : stats?.lifetime ? (
                 <>
                   <View className="flex-row justify-between mb-3">
                     <View className="flex-row items-center">
@@ -417,7 +414,7 @@ export default function EarningsScreen() {
                       <ThemedText className="ml-2">Average Rating</ThemedText>
                     </View>
                     <ThemedText className="font-semibold">
-                      {stats.averageRating > 0 ? stats.averageRating.toFixed(1) : 'N/A'}
+                      {stats.lifetime.average_rating > 0 ? stats.lifetime.average_rating.toFixed(1) : 'N/A'}
                     </ThemedText>
                   </View>
                   <View className="flex-row justify-between mb-3">
@@ -426,7 +423,7 @@ export default function EarningsScreen() {
                       <ThemedText className="ml-2">Completion Rate</ThemedText>
                     </View>
                     <ThemedText className="font-semibold">
-                      {stats.completionRate > 0 ? `${stats.completionRate.toFixed(1)}%` : 'N/A'}
+                      {stats.lifetime.completion_rate > 0 ? `${stats.lifetime.completion_rate.toFixed(1)}%` : 'N/A'}
                     </ThemedText>
                   </View>
                   <View className="flex-row justify-between mb-3">
@@ -435,7 +432,7 @@ export default function EarningsScreen() {
                       <ThemedText className="ml-2">Distance Covered</ThemedText>
                     </View>
                     <ThemedText className="font-semibold">
-                      {stats.distanceCovered > 0 ? `${stats.distanceCovered.toFixed(1)} km` : 'N/A'}
+                      {stats.lifetime.distance_covered_km > 0 ? `${stats.lifetime.distance_covered_km.toFixed(1)} km` : 'N/A'}
                     </ThemedText>
                   </View>
                   <View className="flex-row justify-between">
@@ -444,7 +441,7 @@ export default function EarningsScreen() {
                       <ThemedText className="ml-2">Total Rides</ThemedText>
                     </View>
                     <ThemedText className="font-semibold">
-                      {stats.totalRides > 0 ? stats.totalRides.toLocaleString('en-IN') : 'N/A'}
+                      {stats.lifetime.trips > 0 ? stats.lifetime.trips.toLocaleString('en-IN') : 'N/A'}
                     </ThemedText>
                   </View>
                 </>

@@ -330,7 +330,7 @@ const mapBookingToJobHistory = (booking: BookingDetail): JobHistory => {
     distance: parseFloat(String(booking.actual_distance_km || booking.estimated_distance_km)) || 0,
     fare: parseFloat(String(booking.actual_fare || booking.estimated_fare)) || 0,
     tips: 0,
-    rating: 0,
+    rating: undefined,
     status: 'completed'
   };
 };
@@ -786,6 +786,10 @@ export const useJobStore = create<JobState>((set, get) => ({
             status: 'accepted' as const
           }]
         });
+
+        // Refresh accepted jobs from API to ensure sync with backend
+        await get().fetchAcceptedJobs();
+
         return true;
       } else {
         set({ lastAcceptError: response.error || 'Failed to accept ride' });
@@ -851,7 +855,7 @@ export const useJobStore = create<JobState>((set, get) => ({
             distance: state.activeJob.actualDistance || 0,
             fare: state.activeJob.fare,
             tips: 0,
-            rating: 0,
+            rating: undefined,
             status: 'completed'
           };
 
@@ -862,6 +866,10 @@ export const useJobStore = create<JobState>((set, get) => ({
             acceptedJobs: state.acceptedJobs.filter(job => job.id !== rideId)
           });
         }
+
+        // Refresh completed jobs from API to ensure sync
+        await get().fetchCompletedJobs();
+
         return true;
       }
       return false;
