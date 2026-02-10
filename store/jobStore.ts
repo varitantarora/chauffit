@@ -265,27 +265,27 @@ const mapBookingToJobRequest = (booking: BookingDetail, status: JobRequest['stat
 
   return {
     id: booking.id,
-    customerId: booking.customer,
+    customerId: customerDetails?.id || booking.customer || '',
     customerName: customerDetails?.name || 'Customer',
     customerPhone: customerDetails?.mobile || '',
     customerRating: customerDetails?.overall_rating ?? 4.5,
     pickupLocation: {
-      latitude: parseFloat(booking.pickup_lat) || 0,
-      longitude: parseFloat(booking.pickup_long) || 0,
+      latitude: parseFloat(String(booking.pickup_lat)) || 0,
+      longitude: parseFloat(String(booking.pickup_long)) || 0,
       address: booking.pickup_address,
       name: booking.pickup_address.split(',')[0]
     },
     dropoffLocation: {
-      latitude: parseFloat(booking.dropoff_lat) || 0,
-      longitude: parseFloat(booking.dropoff_long) || 0,
+      latitude: parseFloat(String(booking.dropoff_lat)) || 0,
+      longitude: parseFloat(String(booking.dropoff_long)) || 0,
       address: booking.dropoff_address,
       name: booking.dropoff_address.split(',')[0]
     },
     scheduledTime: booking.scheduled_at ? new Date(booking.scheduled_at) : new Date(),
     estimatedDuration: booking.estimated_duration_minutes || 30,
-    estimatedDistance: parseFloat(booking.estimated_distance_km) || 10,
+    estimatedDistance: parseFloat(String(booking.estimated_distance_km)) || 10,
     serviceType: booking.trip_type === 'hourly_charter' ? 'hourly' : 'trip',
-    fare: parseFloat(booking.estimated_fare) || 0,
+    fare: parseFloat(String(booking.estimated_fare)) || 0,
     vehicleType: 'sedan',
     status,
     expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
@@ -302,24 +302,24 @@ const mapBookingToJobHistory = (booking: BookingDetail): JobHistory => {
 
   return {
     id: booking.id,
-    customerId: booking.customer,
+    customerId: customerDetails?.id || booking.customer || '',
     customerName: customerDetails?.name || 'Customer',
     date: new Date(booking.created_at),
     pickupLocation: {
-      latitude: parseFloat(booking.pickup_lat) || 0,
-      longitude: parseFloat(booking.pickup_long) || 0,
+      latitude: parseFloat(String(booking.pickup_lat)) || 0,
+      longitude: parseFloat(String(booking.pickup_long)) || 0,
       address: booking.pickup_address,
       name: booking.pickup_address.split(',')[0]
     },
     dropoffLocation: {
-      latitude: parseFloat(booking.dropoff_lat) || 0,
-      longitude: parseFloat(booking.dropoff_long) || 0,
+      latitude: parseFloat(String(booking.dropoff_lat)) || 0,
+      longitude: parseFloat(String(booking.dropoff_long)) || 0,
       address: booking.dropoff_address,
       name: booking.dropoff_address.split(',')[0]
     },
     duration: booking.actual_duration_minutes || booking.estimated_duration_minutes || 0,
-    distance: parseFloat(booking.actual_distance_km || booking.estimated_distance_km) || 0,
-    fare: parseFloat(booking.actual_fare || booking.estimated_fare) || 0,
+    distance: parseFloat(String(booking.actual_distance_km || booking.estimated_distance_km)) || 0,
+    fare: parseFloat(String(booking.actual_fare || booking.estimated_fare)) || 0,
     tips: 0,
     rating: 0,
     status: 'completed'
@@ -606,18 +606,25 @@ export const useJobStore = create<JobState>((set, get) => ({
   fetchAcceptedJobs: async () => {
     set({ loadingAccepted: true });
     try {
+      console.log('[JobStore] Fetching accepted jobs...');
       const response = await DriverRidesApiService.getDriverRides('accepted');
+      console.log('[JobStore] Accepted jobs API response:', response);
       if (response.success && response.data) {
-        const accepted = normalizeBookings(response.data).filter((ride) =>
+        const normalized = normalizeBookings(response.data);
+        console.log('[JobStore] Normalized accepted bookings:', normalized);
+        const accepted = normalized.filter((ride) =>
           ACCEPTED_BOOKING_STATUSES.has(ride.booking_status)
         );
+        console.log('[JobStore] Filtered accepted bookings:', accepted);
         const jobs = accepted.map((booking) => mapBookingToJobRequest(booking, 'accepted'));
+        console.log('[JobStore] Mapped accepted jobs:', jobs);
         set({ acceptedJobs: jobs });
       } else {
+        console.log('[JobStore] Failed to fetch accepted jobs:', response.error);
         set({ acceptedJobs: [] });
       }
     } catch (error) {
-      console.error('Error fetching accepted jobs:', error);
+      console.error('[JobStore] Error fetching accepted jobs:', error);
       set({ acceptedJobs: [] });
     } finally {
       set({ loadingAccepted: false });
@@ -628,17 +635,26 @@ export const useJobStore = create<JobState>((set, get) => ({
   fetchInProgressJobs: async () => {
     set({ loadingInProgress: true });
     try {
+      console.log('[JobStore] Fetching in-progress jobs...');
       const response = await DriverRidesApiService.getDriverRides('in-progress');
+      console.log('[JobStore] In-progress jobs API response:', response);
       if (response.success && response.data) {
-        const inProgress = normalizeBookings(response.data).filter((ride) =>
+        const normalized = normalizeBookings(response.data);
+        console.log('[JobStore] Normalized in-progress bookings:', normalized);
+        const inProgress = normalized.filter((ride) =>
           IN_PROGRESS_BOOKING_STATUSES.has(ride.booking_status)
         );
+        console.log('[JobStore] Filtered in-progress bookings:', inProgress);
         const jobs = inProgress.map((booking) => mapBookingToJobRequest(booking, 'in-progress'));
+        console.log('[JobStore] Mapped in-progress jobs:', jobs);
         set({ inProgressJobs: jobs });
 
         // Update activeJob if there's an in-progress ride
         if (jobs.length > 0) {
           const latestJob = jobs[0];
+          const booking = normalized[0]; // Get raw booking for vehicle info
+          const vehicleInfo = booking.vehicle_info as any;
+
           set({
             activeJob: {
               id: latestJob.id,
@@ -652,7 +668,10 @@ export const useJobStore = create<JobState>((set, get) => ({
               status: latestJob.status as ActiveJob['status'],
               eta: '5 min',
               distance: latestJob.estimatedDistance?.toString() || '5 km',
-              price: latestJob.fare,
+              fare: latestJob.fare,
+              vehicleMake: vehicleInfo?.make,
+              vehicleModel: vehicleInfo?.model,
+              vehiclePlate: vehicleInfo?.plate,
             }
           });
         }
@@ -714,37 +733,55 @@ export const useJobStore = create<JobState>((set, get) => ({
       set({ lastAcceptError: null });
       const response = await DriverRidesApiService.acceptRide(rideId);
       if (response.success) {
-        // Remove from pending and add to active
+        // Get the accepted ride details
+        const acceptedRide = response.data;
+        const customerDetails = typeof acceptedRide.customer_details === 'object'
+          ? acceptedRide.customer_details
+          : null;
+        const vehicleInfo = (acceptedRide as any).vehicle_info;
+
+        const activeJob: ActiveJob = {
+          id: rideId,
+          jobRequestId: rideId,
+          customerId: customerDetails?.id || '',
+          customerName: customerDetails?.name || 'Customer',
+          customerPhone: customerDetails?.mobile || '',
+          pickupLocation: {
+            latitude: parseFloat(String(acceptedRide.pickup_lat)) || 0,
+            longitude: parseFloat(String(acceptedRide.pickup_long)) || 0,
+            address: acceptedRide.pickup_address,
+          },
+          dropoffLocation: {
+            latitude: parseFloat(String(acceptedRide.dropoff_lat)) || 0,
+            longitude: parseFloat(String(acceptedRide.dropoff_long)) || 0,
+            address: acceptedRide.dropoff_address,
+          },
+          currentLocation: get().currentLocation || undefined,
+          status: 'accepted',
+          fare: parseFloat(String(acceptedRide.estimated_fare)) || 0,
+          route: [],
+          eta: '15 min',
+          lastLocationUpdate: new Date(),
+          vehicleMake: vehicleInfo?.make,
+          vehicleModel: vehicleInfo?.model,
+          vehiclePlate: vehicleInfo?.plate,
+        };
+
+        // Remove from pending and set active
         const state = get();
-        const request = state.pendingRequests.find(req => req.id === rideId);
-
-        if (request) {
-          const activeJob: ActiveJob = {
-            id: rideId,
-            jobRequestId: rideId,
-            customerId: request.customerId,
-            customerName: request.customerName,
-            customerPhone: request.customerPhone,
-            pickupLocation: request.pickupLocation,
-            dropoffLocation: request.dropoffLocation,
-            currentLocation: state.currentLocation || undefined,
-            status: 'accepted',
-            fare: request.fare,
-            route: [],
-            eta: '15 min',
-            lastLocationUpdate: new Date()
-          };
-
-          set({
-            pendingRequests: state.pendingRequests.filter(req => req.id !== rideId),
-            activeJob,
-            acceptedJobs: [...state.acceptedJobs, request]
-          });
-        }
+        set({
+          pendingRequests: state.pendingRequests.filter(req => req.id !== rideId),
+          activeJob,
+          acceptedJobs: [...state.acceptedJobs, {
+            ...state.pendingRequests.find(req => req.id === rideId)!,
+            status: 'accepted' as const
+          }]
+        });
         return true;
+      } else {
+        set({ lastAcceptError: response.error || 'Failed to accept ride' });
+        return false;
       }
-      set({ lastAcceptError: response.error || 'Failed to accept ride' });
-      return false;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to accept ride';
       console.error('Error accepting ride:', error);

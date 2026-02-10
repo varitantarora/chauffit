@@ -41,58 +41,61 @@ export type PaymentStatus = 'pending' | 'processing' | 'completed' | 'failed' | 
 // ============================================================================
 
 /**
- * Customer Info (embedded in ride response)
+ * User Details (embedded in driver ride response)
  */
-export interface CustomerInfo {
+export interface UserInfo {
   id: string;
-  full_name: string;
-  phone_number: string;
-  profile_picture?: string;
-  average_rating?: number;
+  name: string;
+  mobile: string;
+  profile_picture?: string | null;
+  overall_rating?: number | null;
+  total_rides?: number;
 }
 
 /**
- * Car Info (embedded in ride response)
+ * Vehicle Info (embedded in driver ride response)
  */
-export interface CarInfo {
-  id?: string;
+export interface VehicleInfo {
   make: string;
   model: string;
-  plate_number: string;
+  plate: string;
   color: string;
-  vehicle_type?: string;
+  vehicle_type: string;
 }
 
 /**
- * Driver Ride - Basic response for list endpoints
+ * Driver Ride - Basic response for list endpoints (matches backend DriverRideListSerializer)
  */
 export interface DriverRide {
   id: string;
   booking_reference: string;
   booking_status: BookingStatus;
   pickup_address: string;
-  pickup_lat: number;
-  pickup_long: number;
+  pickup_lat: string;
+  pickup_long: string;
   dropoff_address: string;
-  dropoff_lat: number;
-  dropoff_long: number;
-  estimated_distance_km?: number;
+  dropoff_lat: string;
+  dropoff_long: string;
+  trip_type: TripType;
+  estimated_distance_km?: string;
+  estimated_duration_minutes?: number;
   estimated_fare: string;
-  estimated_earnings?: string;
-  distance_from_driver_km?: number;
+  pickup_distance_km?: number | null;
+  waiting_duration_minutes?: number | null;
+  scheduled_at?: string | null;
   special_requests?: string;
-  customer: CustomerInfo;
-  car: CarInfo;
-  created_at?: string;
+  created_at: string;
+  customer_details: UserInfo;
+  driver_details: UserInfo | null;
+  biker_details: UserInfo | null;
+  vehicle_info: VehicleInfo;
 }
 
 /**
  * Driver Ride Detail - Full response for detail endpoint
  */
 export interface DriverRideDetail extends DriverRide {
-  trip_type: TripType;
   service_type: ServiceType;
-  estimated_duration_minutes?: number;
   actual_distance_km?: number | null;
   actual_duration_minutes?: number | null;
   actual_fare?: string | null;

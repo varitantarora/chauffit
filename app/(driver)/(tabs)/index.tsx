@@ -394,12 +394,12 @@ export default function DriverHomeScreen() {
                         })}
                       </ThemedText>
                       <ThemedText variant="caption">
-                        {job.pickupLocation.name || job.pickupLocation.address} → {job.dropoffLocation?.name || job.dropoffLocation?.address || 'Destination'}
+                        {job.pickupLocation.name || job.pickupLocation.address} to {job.dropoffLocation?.name || job.dropoffLocation?.address || 'Destination'}
                       </ThemedText>
                     </View>
                     <View className="items-end">
                       <ThemedText className="font-bold text-burgundy">
-                        ₹{(job.fare + job.tips).toLocaleString('en-IN')}
+                        ₹{((job.fare || 0) + (job.tips || 0)).toLocaleString('en-IN')}
                       </ThemedText>
                       {job.rating && (
                         <View className="flex-row items-center mt-1">

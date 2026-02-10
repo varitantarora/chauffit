@@ -195,6 +195,10 @@ export interface ActiveJob {
   route?: Location[];
   eta?: string;
   lastLocationUpdate?: Date;
+  // Vehicle info
+  vehicleMake?: string;
+  vehicleModel?: string;
+  vehiclePlate?: string;
 }
 
 export interface JobHistory {

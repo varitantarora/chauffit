@@ -254,7 +254,7 @@ export default function OTPStartRideScreen() {
             <View className="items-center mb-4">
               <ThemedText className="font-bold text-lg">Customer: {activeJob.customerName}</ThemedText>
               <ThemedText variant="secondary">
-                Vehicle: {activeJob.vehicleMake} {activeJob.vehicleModel} • {activeJob.vehiclePlate}
+                Vehicle: {activeJob.vehicleMake || 'BMW'} {activeJob.vehicleModel || 'X5'} • {activeJob.vehiclePlate || 'MH01AB1234'}
               </ThemedText>
             </View>
           </ThemedCard>
