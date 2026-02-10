@@ -12,19 +12,40 @@ import { useAuthStore } from '../../../store/authStore';
 import { ActiveJob, Location } from '../../../types/navigation';
 import DriverRidesApiService from '../../../services/api/DriverRidesApiService';
 
+// Map backend booking status to frontend ActiveJob status
+const mapBackendStatusToFrontend = (bookingStatus: string): ActiveJob['status'] => {
+  switch (bookingStatus) {
+    case 'requested':
+      return 'accepted' as const;
+    case 'driver_assigned':
+    case 'biker_assigned':
+      return 'accepted' as const;
+    case 'driver_en_route':
+      return 'en_route_pickup' as const;
+    case 'driver_arrived':
+      return 'arrived_pickup' as const;
+    case 'trip_started':
+      return 'started' as const;
+    case 'trip_completed':
+      return 'completed' as const;
+    default:
+      return 'accepted' as const;
+  }
+};
+
 export default function NavigationScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const jobId = params.jobId as string;
-  
+
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
-  const { 
-    activeJob, 
-    updateJobStatus, 
-    updateCurrentLocation, 
-    updateETA 
+  const {
+    activeJob,
+    updateJobStatus,
+    updateCurrentLocation,
+    updateETA
   } = useJobStore();
-  
+
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
   const [hasArrived, setHasArrived] = useState(false);
@@ -48,22 +69,87 @@ export default function NavigationScreen() {
     return true;
   };
 
+  // Get current ride status from backend and redirect appropriately
+  const initializeNavigation = async (rideId: string) => {
+    try {
+      const response = await DriverRidesApiService.getRideDetails(rideId);
+
+      if (!response.success || !response.data) {
+        Alert.alert('Error', 'Failed to fetch ride details.', [
+          { text: 'OK', onPress: () => router.back() }
+        ]);
+        return;
+      }
+
+      const bookingStatus = response.data.booking_status;
+      console.log('[Navigation] Current booking status:', bookingStatus);
+
+      // If ride is still requested, try to accept it first
+      if (bookingStatus === 'requested') {
+        console.log('[Navigation] Ride still in requested status, accepting...');
+        const acceptResponse = await DriverRidesApiService.acceptRide(rideId);
+        if (!acceptResponse.success) {
+          console.error('[Navigation] Failed to accept ride:', acceptResponse.error);
+          Alert.alert(
+            'Cannot Start Navigation',
+            'Please accept this ride first.',
+            [{ text: 'OK', onPress: () => router.back() }]
+          );
+          return;
+        }
+      }
+
+      // If trip has already started, redirect to active trip page
+      if (bookingStatus === 'trip_started') {
+        console.log('[Navigation] Trip already started, redirecting to active trip page');
+        router.replace({
+          pathname: '/(driver)/job/active',
+          params: { jobId: rideId }
+        });
+        return;
+      }
+
+      // Map backend status to frontend status and update local state
+      const frontendStatus = mapBackendStatusToFrontend(bookingStatus);
+
+      // Only update status if it's not already en_route_pickup or arrived_pickup
+      const currentActiveJob = (useJobStore as any).getState().activeJob;
+      if (currentActiveJob &&
+          currentActiveJob.status !== 'en_route_pickup' &&
+          currentActiveJob.status !== 'arrived_pickup' &&
+          currentActiveJob.status !== frontendStatus) {
+        updateJobStatus(frontendStatus);
+      }
+
+      // If status is driver_arrived, skip to arrived state
+      if (bookingStatus === 'driver_arrived') {
+        setHasArrived(true);
+      }
+
+      // Start backend sync if status is still early
+      if (bookingStatus === 'driver_assigned' || bookingStatus === 'biker_assigned') {
+        updateBackendRideStatus('driver_en_route');
+      }
+
+      setIsNavigating(true);
+    } catch (error) {
+      console.error('[Navigation] Error initializing navigation:', error);
+      Alert.alert('Error', 'Failed to initialize navigation.', [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
+    }
+  };
+
   useEffect(() => {
     // Check if we have an activeJob, if not redirect back
-    const currentActiveJob = useJobStore.getState().activeJob;
+    const currentActiveJob = (useJobStore as any).getState().activeJob;
     if (!currentActiveJob) {
       router.back();
       return;
     }
-    
-    // Only update status if it's not already en_route_pickup or arrived_pickup
-    if (currentActiveJob.status !== 'en_route_pickup' && currentActiveJob.status !== 'arrived_pickup') {
-      updateJobStatus('en_route_pickup');
-      // Keep backend in sync with driver status transitions
-      updateBackendRideStatus('driver_en_route');
-    }
-    setIsNavigating(true);
-    
+
+    initializeNavigation(currentActiveJob.id);
+
     // Mock location updates
     const cleanup = startLocationTracking();
     return cleanup;

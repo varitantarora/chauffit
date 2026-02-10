@@ -178,20 +178,35 @@ export function EarningsSummaryCard({ onViewDetails }: { onViewDetails?: () => v
   );
 }
 
-// Weekly progress card
-export function WeeklyProgressCard() {
-  const weeklyData = {
-    target: 67000,
-    achieved: 62000,
-    ridesTarget: 80,
-    ridesAchieved: 68,
-    hoursTarget: 50,
-    hoursAchieved: 42
-  };
-  
-  const earningsProgress = (weeklyData.achieved / weeklyData.target) * 100;
-  const ridesProgress = (weeklyData.ridesAchieved / weeklyData.ridesTarget) * 100;
-  const hoursProgress = (weeklyData.hoursAchieved / weeklyData.hoursTarget) * 100;
+// Weekly progress card - Uses real data from earnings store and stats
+interface WeeklyProgressCardProps {
+  weeklyEarnings?: number;
+  weeklyTarget?: number;
+  weeklyRides?: number;
+  weeklyRidesTarget?: number;
+  onlineHours?: number;
+  onlineHoursTarget?: number;
+}
+
+export function WeeklyProgressCard({
+  weeklyEarnings = 0,
+  weeklyTarget = 67000,
+  weeklyRides = 0,
+  weeklyRidesTarget = 80,
+  onlineHours = 0,
+  onlineHoursTarget = 50
+}: WeeklyProgressCardProps) {
+  // Use real data from props, fall back to store values
+  const { useEarningsStore } = require('../../../store/earningsStore');
+  const { earnings, weeklyTarget: storeWeeklyTarget } = useEarningsStore();
+
+  // Use provided props or fall back to store
+  const actualEarnings = weeklyEarnings || earnings.weeklyEarnings || 0;
+  const actualTarget = weeklyTarget || storeWeeklyTarget || 67000;
+
+  const earningsProgress = actualTarget > 0 ? (actualEarnings / actualTarget) * 100 : 0;
+  const ridesProgress = weeklyRidesTarget > 0 ? (weeklyRides / weeklyRidesTarget) * 100 : 0;
+  const hoursProgress = onlineHoursTarget > 0 ? (onlineHours / onlineHoursTarget) * 100 : 0;
 
   return (
     <ThemedCard className="mb-4 p-4">
@@ -204,11 +219,11 @@ export function WeeklyProgressCard() {
         <View className="flex-row justify-between items-center mb-2">
           <ThemedText className="font-semibold">Earnings</ThemedText>
           <ThemedText className="font-bold">
-            ₹{weeklyData.achieved.toLocaleString('en-IN')} / ₹{weeklyData.target.toLocaleString('en-IN')}
+            ₹{Math.round(actualEarnings).toLocaleString('en-IN')} / ₹{actualTarget.toLocaleString('en-IN')}
           </ThemedText>
         </View>
         <View className="bg-surface dark:bg-darkSurface rounded-full h-3 mb-2">
-          <View 
+          <View
             className="bg-burgundy rounded-full h-3"
             style={{ width: `${Math.min(earningsProgress, 100)}%` }}
           />
@@ -217,42 +232,42 @@ export function WeeklyProgressCard() {
           {Math.round(earningsProgress)}% complete
         </ThemedText>
       </View>
-      
+
       {/* Rides Progress */}
       <View className="mb-4">
         <View className="flex-row justify-between items-center mb-2">
           <ThemedText className="font-semibold">Rides</ThemedText>
           <ThemedText className="font-bold">
-            {weeklyData.ridesAchieved} / {weeklyData.ridesTarget}
+            {weeklyRides} / {weeklyRidesTarget}
           </ThemedText>
         </View>
         <View className="bg-surface dark:bg-darkSurface rounded-full h-3 mb-2">
-          <View 
+          <View
             className="bg-success rounded-full h-3"
             style={{ width: `${Math.min(ridesProgress, 100)}%` }}
           />
         </View>
         <ThemedText variant="caption" className="text-right">
-          {Math.round(ridesProgress)}% complete
+          {weeklyRidesTarget > 0 ? Math.round(ridesProgress) : 0}% complete
         </ThemedText>
       </View>
-      
+
       {/* Hours Progress */}
       <View>
         <View className="flex-row justify-between items-center mb-2">
           <ThemedText className="font-semibold">Online Hours</ThemedText>
           <ThemedText className="font-bold">
-            {weeklyData.hoursAchieved}h / {weeklyData.hoursTarget}h
+            {onlineHours}h / {onlineHoursTarget}h
           </ThemedText>
         </View>
         <View className="bg-surface dark:bg-darkSurface rounded-full h-3 mb-2">
-          <View 
+          <View
             className="bg-secondary rounded-full h-3"
             style={{ width: `${Math.min(hoursProgress, 100)}%` }}
           />
         </View>
         <ThemedText variant="caption" className="text-right">
-          {Math.round(hoursProgress)}% complete
+          {onlineHoursTarget > 0 ? Math.round(hoursProgress) : 0}% complete
         </ThemedText>
       </View>
     </ThemedCard>

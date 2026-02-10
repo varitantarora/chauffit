@@ -11,6 +11,7 @@ import { useJobStore } from '../../../store/jobStore';
 import { useEarningsStore } from '../../../store/earningsStore';
 import { useAuthStore } from '../../../store/authStore';
 import { ActiveJob, Location } from '../../../types/navigation';
+import DriverRidesApiService from '../../../services/api/DriverRidesApiService';
 
 export default function ActiveJobScreen() {
   const router = useRouter();
@@ -18,12 +19,13 @@ export default function ActiveJobScreen() {
   const jobId = params.jobId as string;
   
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
-  const { 
-    activeJob, 
-    updateJobStatus, 
-    updateCurrentLocation, 
+  const {
+    activeJob,
+    updateJobStatus,
+    updateCurrentLocation,
     completeJob,
-    cancelJob
+    cancelJob,
+    completeRideFromAPI
   } = useJobStore();
   
   const { addJobEarnings } = useEarningsStore();
@@ -133,21 +135,35 @@ export default function ActiveJobScreen() {
 
   const completeRideWithRating = async (customerRating?: number) => {
     if (!activeJob) return;
-    
+
     setIsCompleting(true);
-    
+
     try {
       // Calculate trip details
       const actualDuration = Math.floor(rideDuration / 60); // Convert to minutes
       const actualDistance = Math.round(Math.random() * 5 + activeJob.estimatedDistance || 10);
       const tips = Math.floor(Math.random() * 200); // Random tips
-      
-      // Add earnings
+
+      // Call backend API to complete the ride
+      const success = await completeRideFromAPI(activeJob.id, {
+        dropoff_lat: currentLocation?.latitude?.toString() || '0',
+        dropoff_long: currentLocation?.longitude?.toString() || '0',
+        actual_distance_km: actualDistance,
+        actual_duration_minutes: actualDuration,
+      });
+
+      if (!success) {
+        Alert.alert('Error', 'Failed to complete ride on server. Please try again.');
+        setIsCompleting(false);
+        return;
+      }
+
+      // Add earnings locally
       addJobEarnings(activeJob.fare, tips, actualDistance, actualDuration);
-      
-      // Complete the job
+
+      // Complete the job locally
       completeJob(tips, customerRating);
-      
+
       Alert.alert(
         'Ride Completed!',
         `Great job! You earned ₹${(activeJob.fare + tips).toLocaleString('en-IN')} for this trip.`,
@@ -155,19 +171,20 @@ export default function ActiveJobScreen() {
           {
             text: 'View Earnings',
             onPress: () => {
-              router.replace('/(driver)/earnings');
+              router.replace('/(driver)/(tabs)/earnings');
             }
           },
           {
             text: 'Find Next Ride',
             onPress: () => {
-              router.replace('/(driver)');
+              router.replace('/(driver)/(tabs)');
             }
           }
         ]
       );
-      
+
     } catch (error) {
+      console.error('Error completing ride:', error);
       Alert.alert('Error', 'Failed to complete the ride. Please try again.');
       setIsCompleting(false);
     }

@@ -107,6 +107,14 @@ export interface DriverRideDetail extends DriverRide {
   trip_started_at?: string | null;
   trip_completed_at?: string | null;
   cancelled_at?: string | null;
+  customer_rating?: {
+    overall_rating: number;
+    punctuality?: number | null;
+    communication?: number | null;
+    behavior?: number | null;
+    review?: string | null;
+    rated_at?: string | null;
+  } | null;
 }
 
 /**
@@ -270,15 +278,15 @@ class DriverRidesApiService {
 
   /**
    * Accept Ride
-   * POST /api/v1/rides/{id}/accept/
+   * POST /api/v1/rides/driver/{id}/accept/
    *
-   * Accept a ride request.
+   * Accept a ride request as a driver.
    *
    * @param rideId - The booking ID
    */
   async acceptRide(rideId: string): Promise<ApiResponse<DriverRideDetail>> {
     try {
-      return await BaseApiService.post<DriverRideDetail>(`/rides/${rideId}/accept/`, {});
+      return await BaseApiService.post<DriverRideDetail>(`${this.basePath}/${rideId}/accept/`, {});
     } catch (error) {
       return {
         success: false,
@@ -449,18 +457,30 @@ class DriverRidesApiService {
    * Submit a rating for the customer after a completed trip.
    *
    * @param rideId - The booking ID
-   * @param rating - Rating from 1 to 5
-   * @param comment - Optional comment about the customer
+   * @param overallRating - Rating from 1 to 5
+   * @param review - Optional comment about the customer
+   * @param punctuality - Optional rating (1-5)
+   * @param communication - Optional rating (1-5)
+   * @param behavior - Optional rating (1-5)
    */
   async rateCustomer(
     rideId: string,
-    rating: number,
-    comment?: string
-  ): Promise<ApiResponse<{ message: string; rating: number }>> {
+    overallRating: number,
+    review?: string,
+    punctuality?: number,
+    communication?: number,
+    behavior?: number
+  ): Promise<ApiResponse<{ message: string }>> {
     try {
-      return await BaseApiService.post<{ message: string; rating: number }>(
+      return await BaseApiService.post<{ message: string }>(
         `${this.basePath}/${rideId}/rate-customer/`,
-        { rating, comment }
+        {
+          overall_rating: overallRating,
+          review,
+          punctuality,
+          communication,
+          behavior,
+        }
       );
     } catch (error) {
       return {

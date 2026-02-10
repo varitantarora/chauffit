@@ -10,7 +10,7 @@ import { useAuthStore } from '../../../store/authStore';
 import { useJobStore } from '../../../store/jobStore';
 import { useEarningsStore } from '../../../store/earningsStore';
 import { useRouter } from 'expo-router';
-import DriverApiService from '../../../services/api/DriverApiService';
+import DriverApiService, { DriverStats } from '../../../services/api/DriverApiService';
 
 export default function DriverHomeScreen() {
   const user = useAuthStore((state) => state.user);
@@ -27,13 +27,10 @@ export default function DriverHomeScreen() {
     fetchPendingRequests,
   } = useJobStore();
 
-  const { earnings, getTodayHistory, setEarnings, fetchEarnings, fetchDailyEarnings } = useEarningsStore();
+  const { earnings, getTodayHistory, setEarnings, fetchEarnings, fetchDailyEarnings, weeklyTarget } = useEarningsStore();
 
   const [refreshing, setRefreshing] = useState(false);
-  const [stats, setStats] = useState<{
-    averageRating: number;
-    totalTrips: number;
-  } | null>(null);
+  const [stats, setStats] = useState<DriverStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
   const [todayEarningsValue, setTodayEarningsValue] = useState<number>(0);
   const [loadingEarnings, setLoadingEarnings] = useState(false);
@@ -45,15 +42,9 @@ export default function DriverHomeScreen() {
     try {
       setLoadingStats(true);
       const response = await DriverApiService.getStats();
-      
+
       if (response.success && response.data) {
-        const statsData = response.data as any;
-        const lifetime = statsData.lifetime || statsData;
-        
-        setStats({
-          averageRating: lifetime.average_rating || 0,
-          totalTrips: lifetime.pickups || 0,
-        });
+        setStats(response.data);
       } else {
         console.error('Failed to fetch stats:', response.error);
         setStats(null);
@@ -88,7 +79,7 @@ export default function DriverHomeScreen() {
     earnings: todayEarningsValue || earnings.todayEarnings || 0,
     trips: todayHistory?.totalRides || 0,
     hours: todayHistory?.onlineHours || 0,
-    rating: stats?.averageRating || todayHistory?.averageRating || 0
+    rating: stats?.lifetime?.average_rating || stats?.today?.average_rating || todayHistory?.averageRating || 0
   };
 
   const onRefresh = useCallback(async () => {
@@ -108,12 +99,32 @@ export default function DriverHomeScreen() {
     return 'Good evening';
   };
 
-
+  // Weekly goals - using real data from API
   const weeklyGoals = [
-    { title: 'Weekly Earnings', current: 62000, target: 67000, unit: '₹' },
-    { title: 'Total Trips', current: 68, target: 80, unit: '' },
-    { title: 'Online Hours', current: 42, target: 50, unit: 'h' },
-    { title: 'Rating', current: 4.9, target: 4.8, unit: '/5' }
+    {
+      title: 'Weekly Earnings',
+      current: earnings.weeklyEarnings || 0,
+      target: weeklyTarget || 67000,
+      unit: '₹'
+    },
+    {
+      title: 'Total Trips',
+      current: stats?.week?.trips || stats?.today?.trips || 0,
+      target: 80,
+      unit: ''
+    },
+    {
+      title: 'Online Hours',
+      current: 0, // TODO: Add online hours tracking from API
+      target: 50,
+      unit: 'h'
+    },
+    {
+      title: 'Rating',
+      current: stats?.week?.average_rating || stats?.lifetime?.average_rating || 0,
+      target: 4.8,
+      unit: '/5'
+    }
   ];
 
   const quickActions = [
