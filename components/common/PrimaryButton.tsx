@@ -30,7 +30,7 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
     const variantClasses = {
       primary: 'bg-burgundy',
       secondary: 'bg-secondary',
-      outline: 'border-2 border-burgundy bg-transparent'
+      outline: 'border-2 border-burgundy bg-transparent dark:border-primary'
     }[variant];
     
     const disabledClass = disabled || loading ? 'opacity-60' : '';
@@ -39,7 +39,10 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   };
   
   const getTextColor = () => {
-    return variant === 'outline' ? 'text-burgundy' : 'text-white';
+    if (variant === 'outline') {
+      return 'text-burgundy dark:text-primary';
+    }
+    return 'text-white';
   };
   
   const getTextSize = () => {

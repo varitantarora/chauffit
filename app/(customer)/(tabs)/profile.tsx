@@ -10,12 +10,14 @@ import { useAuthStore } from '../../../store/authStore';
 import { useCarStore } from '../../../store/carStore';
 import { useRouter } from 'expo-router';
 import { appConfig } from '../../../config/env';
+import { LightColors, DarkColors, useThemeColors } from '../../../constants/Colors';
 
 export default function Profile() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const toggleTheme = useAuthStore((state) => state.toggleTheme);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const colors = useThemeColors(isDarkMode);
   const addRole = useAuthStore((state) => state.addRole);
   const setActiveRole = useAuthStore((state) => state.setActiveRole);
   const switchRole = useAuthStore((state) => state.switchRole);
@@ -138,8 +140,8 @@ export default function Profile() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={['#BD8C5E']}
-              tintColor="#BD8C5E"
+              colors={[colors.secondary]}
+              tintColor={colors.secondary}
             />
           }
         >
@@ -147,7 +149,7 @@ export default function Profile() {
           <View className="flex-row items-center justify-between px-6 py-4 border-b border-border dark:border-darkBorder">
             <ThemedText variant="h1">Profile</ThemedText>
             <TouchableOpacity onPress={() => router.push('/(customer)/edit-profile')}>
-              <Ionicons name="create" size={24} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
+              <Ionicons name="create" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 

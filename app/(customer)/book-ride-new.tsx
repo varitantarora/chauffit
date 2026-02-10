@@ -836,7 +836,7 @@ export default function BookRideScreen() {
                     onPress={() => selectVehicle(car)}
                     className={`mb-3 p-4 rounded-xl border ${
                       selectedCar?.id === car.id
-                        ? 'border-burgundy bg-burgundy/10'
+                        ? 'border-burgundy bg-burgundy/10 dark:border-secondary dark:bg-secondary/10'
                         : 'border-gray-200 dark:border-darkBorder'
                     }`}
                   >
@@ -899,16 +899,16 @@ export default function BookRideScreen() {
                   {/* Trip Summary */}
                   <View className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                     <View className="flex-row items-center mb-2">
-                      <Ionicons name="location" size={16} color="#666" />
+                      <Ionicons name="location" size={16} color={isDarkMode ? '#BD8C5E' : '#666'} />
                       <ThemedText variant="small" className="ml-2 flex-1">
                         {pickupLocation.address}
                       </ThemedText>
                     </View>
                     <View className="flex-row items-center justify-center my-2">
-                      <Ionicons name="arrow-down" size={16} color="#666" />
+                      <Ionicons name="arrow-down" size={16} color={isDarkMode ? '#BD8C5E' : '#666'} />
                     </View>
                     <View className="flex-row items-center">
-                      <Ionicons name="navigate" size={16} color="#666" />
+                      <Ionicons name="navigate" size={16} color={isDarkMode ? '#BD8C5E' : '#666'} />
                       <ThemedText variant="small" className="ml-2 flex-1">
                         {dropLocation?.address}
                       </ThemedText>
@@ -1098,27 +1098,27 @@ export default function BookRideScreen() {
                               onPress={() => handleDateSelect(day.date)}
                               className={`px-4 py-3 rounded-xl border-2 min-w-[70px] items-center ${
                                 isSelected
-                                  ? 'border-burgundy bg-burgundy/10'
+                                  ? 'border-burgundy bg-burgundy/10 dark:border-secondary dark:bg-secondary/10'
                                   : 'border-gray-200 dark:border-gray-700'
                               }`}
                             >
                               <ThemedText
                                 variant="tiny"
                                 className={`${
-                                  isSelected ? 'text-burgundy font-semibold' : 'text-gray-500'
+                                  isSelected ? 'text-burgundy dark:text-secondary font-semibold' : 'text-gray-500'
                                 }`}
                               >
                                 {isToday ? 'Today' : day.dayName}
                               </ThemedText>
                               <ThemedText
                                 variant="h3"
-                                className={`${isSelected ? 'text-burgundy' : ''} mt-1`}
+                                className={`${isSelected ? 'text-burgundy dark:text-secondary' : ''} mt-1`}
                               >
                                 {day.dayNumber}
                               </ThemedText>
                               <ThemedText
                                 variant="tiny"
-                                className={`${isSelected ? 'text-burgundy' : 'text-gray-400'}`}
+                                className={`${isSelected ? 'text-burgundy dark:text-secondary' : 'text-gray-400'}`}
                               >
                                 {day.month}
                               </ThemedText>
@@ -1160,7 +1160,7 @@ export default function BookRideScreen() {
                                   isDisabled
                                     ? 'text-gray-400'
                                     : isSelected
-                                    ? 'text-burgundy font-semibold'
+                                    ? 'text-burgundy dark:text-secondary font-semibold'
                                     : ''
                                 }`}
                               >

@@ -388,7 +388,7 @@ export default function SearchingDriversScreen() {
                 </Animated.View>
               </View>
 
-              <ThemedText variant="small" className="text-center text-gray-600 px-4">
+              <ThemedText variant="small" className="text-center dark:text-gray-400 px-4">
                 We're connecting you with the best chauffeur in your area. This usually takes 10-30 seconds.
               </ThemedText>
 
@@ -397,13 +397,13 @@ export default function SearchingDriversScreen() {
                 <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
                   <View className="flex-row items-center mb-2">
                     <Ionicons name="location" size={16} color="#10B981" />
-                    <ThemedText variant="small" className="ml-2 text-gray-600">From</ThemedText>
+                    <ThemedText variant="small" className="ml-2">From</ThemedText>
                   </View>
                   <ThemedText className="mb-3 pl-6">{tripDetails.pickup}</ThemedText>
 
                   <View className="flex-row items-center mb-2">
                     <Ionicons name="navigate" size={16} color="#EF4444" />
-                    <ThemedText variant="small" className="ml-2 text-gray-600">To</ThemedText>
+                    <ThemedText variant="small" className="ml-2">To</ThemedText>
                   </View>
                   <ThemedText className="pl-6">{tripDetails.destination}</ThemedText>
                 </View>
@@ -414,7 +414,7 @@ export default function SearchingDriversScreen() {
           {/* Curtain Animation Overlay */}
           {showCurtain && (
             <Animated.View
-              className="absolute inset-0 bg-white dark:bg-gray-900 items-center justify-center"
+              className="absolute inset-0 bg-background dark:bg-darkBackground items-center justify-center"
               style={{
                 transform: [{
                   translateY: curtainAnim,
@@ -422,13 +422,13 @@ export default function SearchingDriversScreen() {
               }}
             >
               <View className="items-center">
-                <View className="w-16 h-16 bg-green-100 rounded-full items-center justify-center mb-4">
+                <View className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full items-center justify-center mb-4">
                   <Ionicons name="checkmark-circle" size={32} color="#10B981" />
                 </View>
                 <ThemedText variant="h3" className="text-center mb-2">
                   Driver Found!
                 </ThemedText>
-                <ThemedText variant="small" className="text-center text-gray-600">
+                <ThemedText variant="small" className="text-center">
                   {rideDetails?.driver?.full_name || 'Your driver'} is on the way
                 </ThemedText>
               </View>

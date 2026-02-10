@@ -91,7 +91,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     activeRole: state.activeRole === role ? 'customer' : state.activeRole
   })),
   
-  toggleTheme: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
+  toggleTheme: () => {
+    const newDarkMode = !get().isDarkMode;
+    const { colorScheme } = require('nativewind');
+    colorScheme.set(newDarkMode ? 'dark' : 'light');
+    set({ isDarkMode: newDarkMode });
+    AsyncStorage.setItem('is_dark_mode', JSON.stringify(newDarkMode));
+  },
   
   login: (user) => set((state) => ({
     user,
@@ -298,6 +304,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Check if tokens exist in AsyncStorage
       const accessToken = await AsyncStorage.getItem('access_token');
       const refreshToken = await AsyncStorage.getItem('refresh_token');
+      const savedTheme = await AsyncStorage.getItem('is_dark_mode');
+    const isDark = savedTheme ? JSON.parse(savedTheme) : false;
+    
+    const { colorScheme } = require('nativewind');
+    colorScheme.set(isDark ? 'dark' : 'light');
+    set({ isDarkMode: isDark });
       
       if (!accessToken || !refreshToken) {
         // No tokens found, user is not authenticated

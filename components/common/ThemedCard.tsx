@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, ViewProps, Pressable } from 'react-native';
-import { useAuthStore } from '../../store/authStore';
 
 interface ThemedCardProps extends ViewProps {
   className?: string;
@@ -8,12 +7,6 @@ interface ThemedCardProps extends ViewProps {
   pressable?: boolean;
   variant?: 'default' | 'elevated' | 'premium';
 }
-
-// Theme colors
-const LIGHT_SURFACE = '#F7F2EB'; // Warm surface color
-const DARK_SURFACE = '#2C2C2C';
-const LIGHT_BORDER = '#E8E0D5';
-const DARK_BORDER = '#4A4A4A';
 
 export const ThemedCard: React.FC<ThemedCardProps> = ({
   className = '',
@@ -24,17 +17,10 @@ export const ThemedCard: React.FC<ThemedCardProps> = ({
   variant = 'default',
   ...props
 }) => {
-  const isDarkMode = useAuthStore((state) => state.isDarkMode);
-
   const getCardClasses = () => {
-    return `p-6 rounded-2xl border`;
+    return `p-6 rounded-2xl border bg-surface dark:bg-darkSurface border-border dark:border-darkBorder`;
   };
 
-  const getCardStyle = () => ({
-    backgroundColor: isDarkMode ? DARK_SURFACE : LIGHT_SURFACE,
-    borderColor: isDarkMode ? DARK_BORDER : LIGHT_BORDER,
-  });
-  
   const getShadowStyle = () => {
     const shadows = {
       default: {
@@ -66,7 +52,7 @@ export const ThemedCard: React.FC<ThemedCardProps> = ({
   const content = (
     <View
       className={`${getCardClasses()} ${className}`}
-      style={[getCardStyle(), getShadowStyle(), style]}
+      style={[getShadowStyle(), style]}
       {...props}
     >
       {children}

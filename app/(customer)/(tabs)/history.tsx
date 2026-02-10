@@ -235,7 +235,7 @@ export default function HistoryScreen() {
       </View>
     ) : (
       <TouchableOpacity onPress={() => setActiveTab(tab)} className="flex-1 py-3 rounded-lg">
-        <ThemedText className="text-center font-semibold text-textSecondary">{label}</ThemedText>
+        <ThemedText className="text-center font-semibold text-textSecondary dark:text-darkTextSecondary">{label}</ThemedText>
       </TouchableOpacity>
     );
   };

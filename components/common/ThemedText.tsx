@@ -14,37 +14,37 @@ export const ThemedText: React.FC<ThemedTextProps> = ({
   children, 
   ...props 
 }) => {
-  const isDarkMode = useAuthStore((state) => state.isDarkMode);
-  
   const getVariantClass = () => {
-    const textColor = isDarkMode ? 'text-darkText' : 'text-textPrimary';
-    const secondaryColor = isDarkMode ? 'text-darkTextSecondary' : 'text-textSecondary';
+    const textColor = 'text-textPrimary dark:text-darkText';
+    const secondaryColor = 'text-textSecondary dark:text-darkTextSecondary';
+    
+    // Check if className already has a text color override (including dark: variants)
+    const hasColorOverride = /\b(dark:)?text-\w+/.test(className);
     
     switch (variant) {
       case 'display':
-        return `text-4xl font-bold ${textColor}`; // 36px - Hero headlines
+        return `text-4xl font-bold ${hasColorOverride ? '' : textColor}`;
       case 'h1':
-        return `text-3xl font-bold ${textColor}`; // 30px - Page titles
+        return `text-3xl font-bold ${hasColorOverride ? '' : textColor}`;
       case 'h2':
-        return `text-2xl font-semibold ${textColor}`; // 24px - Section headers
+        return `text-2xl font-semibold ${hasColorOverride ? '' : textColor}`;
       case 'h3':
-        return `text-xl font-semibold ${textColor}`; // 20px - Card titles
+        return `text-xl font-semibold ${hasColorOverride ? '' : textColor}`;
       case 'body':
-        return `text-base font-normal ${textColor}`; // 16px - Default text
+        return `text-base font-normal ${hasColorOverride ? '' : textColor}`;
       case 'small':
-        return `text-sm font-normal ${secondaryColor}`; // 14px - Secondary text
+        return `text-sm font-normal ${hasColorOverride ? '' : secondaryColor}`;
       case 'tiny':
-        return `text-xs font-normal ${secondaryColor}`; // 12px - Captions
-      // Legacy variants for backward compatibility
+        return `text-xs font-normal ${hasColorOverride ? '' : secondaryColor}`;
       case 'title':
-        return `text-2xl font-bold ${textColor}`;
+        return `text-2xl font-bold ${hasColorOverride ? '' : textColor}`;
       case 'secondary':
-        return secondaryColor;
+        return hasColorOverride ? '' : secondaryColor;
       case 'caption':
-        return `text-sm ${secondaryColor}`;
+        return `text-sm ${hasColorOverride ? '' : secondaryColor}`;
       case 'primary':
       default:
-        return textColor;
+        return hasColorOverride ? '' : textColor;
     }
   };
   

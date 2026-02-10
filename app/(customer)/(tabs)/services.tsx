@@ -302,7 +302,7 @@ export default function ServicesScreen() {
           {/* Header */}
           <View className="px-6 pt-4 pb-6">
             <ThemedText variant="h1">Services</ThemedText>
-            <ThemedText variant="small" className="mt-1 text-textSecondary">
+            <ThemedText variant="small" className="mt-1 text-textSecondary dark:text-darkTextSecondary">
               Go anywhere, get anything
             </ThemedText>
           </View>
@@ -381,7 +381,7 @@ export default function ServicesScreen() {
                       </ThemedText>
                     </View>
                     <View className="h-10 mt-1 justify-start">
-                      <ThemedText variant="caption" className="text-center text-gray-600" numberOfLines={2}>
+                      <ThemedText variant="caption" className="text-center dark:text-gray-400" numberOfLines={2}>
                         {service.description}
                       </ThemedText>
                     </View>
@@ -472,7 +472,7 @@ export default function ServicesScreen() {
                   </View>
                 </View>
 
-                <ThemedText variant="caption" className="text-center text-textSecondary mt-4">
+                <ThemedText variant="caption" className="text-center text-textSecondary dark:text-darkTextSecondary mt-4">
                   Select amenities during booking to customize your ride experience
                 </ThemedText>
               </ScrollView>

@@ -1,18 +1,21 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../store/authStore';
+import { LightColors, DarkColors } from '../../../constants/Colors';
 
 export default function BikerTabsLayout() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const colors = isDarkMode ? DarkColors : LightColors;
   
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
+          backgroundColor: colors.background,
+          borderTopColor: colors.border,
         },
-        tabBarActiveTintColor: '#bd8c5e',
+        tabBarActiveTintColor: colors.secondary,
       }}
     >
       <Tabs.Screen

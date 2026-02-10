@@ -44,7 +44,7 @@ export function GooglePlacesAutocomplete({
   const [predictions, setPredictions] = useState<GooglePlace[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // Update query when value prop changes
   useEffect(() => {
@@ -141,11 +141,11 @@ export function GooglePlacesAutocomplete({
       >
         <Ionicons name={icon as any} size={20} color={iconColor} />
         <TextInput
-          className="flex-1 ml-3 text-base"
+          className={`flex-1 ml-3 text-base ${isDarkMode ? 'text-darkText' : 'text-textPrimary'}`}
           placeholder={placeholder}
           value={query}
           onChangeText={setQuery}
-          placeholderTextColor="#999"
+          placeholderTextColor={isDarkMode ? '#999' : '#666'}
           autoFocus={false}
         />
         {query.length > 0 && (

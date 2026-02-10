@@ -164,14 +164,14 @@ export const BookingCard: React.FC<BookingCardProps> = ({
       <View className="mb-4">
         <View className="flex-row items-center mb-2">
           <Ionicons name="calendar" size={16} color="#BD8C5E" />
-          <ThemedText variant="small" className="ml-2 text-textSecondary">
+          <ThemedText variant="small" className="ml-2 text-textSecondary dark:text-darkTextSecondary">
             {formatDate(booking.startTime)}
           </ThemedText>
         </View>
 
         <View className="flex-row items-center mb-2">
           <Ionicons name="location" size={16} color="#BD8C5E" />
-          <ThemedText variant="small" className="ml-2 text-textSecondary flex-1">
+          <ThemedText variant="small" className="ml-2 text-textSecondary dark:text-darkTextSecondary flex-1">
             {booking.pickupLocation?.address || 'Location not available'}
           </ThemedText>
         </View>
@@ -179,7 +179,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
         {booking.id && (
           <View className="flex-row items-center">
             <Ionicons name="document-text" size={16} color="#BD8C5E" />
-            <ThemedText variant="small" className="ml-2 text-textSecondary font-mono">
+            <ThemedText variant="small" className="ml-2 text-textSecondary dark:text-darkTextSecondary font-mono">
               #{booking.id.slice(-6).toUpperCase()}
             </ThemedText>
           </View>
@@ -189,16 +189,16 @@ export const BookingCard: React.FC<BookingCardProps> = ({
       {/* Amount */}
       <View className="flex-row items-center justify-between mb-4">
         <View>
-          <ThemedText variant="small" className="text-textSecondary">
+          <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
             Total Amount
           </ThemedText>
-          <ThemedText variant="h3" className="font-bold text-burgundy">
+          <ThemedText variant="h3" className="font-bold text-burgundy dark:text-secondary">
             ₹{((booking.totalAmount || 0) * 1.18).toLocaleString()}
           </ThemedText>
         </View>
 
         <View className="items-end">
-          <ThemedText variant="small" className="text-textSecondary">
+          <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
             Payment
           </ThemedText>
           <View className="flex-row items-center">
@@ -236,7 +236,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
               onPress={onViewDetails}
               className="flex-1 py-3 px-4 rounded-lg"
             >
-              <ThemedText className="text-center font-semibold text-textSecondary">
+              <ThemedText className="text-center font-semibold text-textSecondary dark:text-darkTextSecondary">
                 Details
               </ThemedText>
             </TouchableOpacity>
