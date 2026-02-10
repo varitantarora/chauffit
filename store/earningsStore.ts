@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { EarningsBreakdown, DriverEarnings } from '../types/navigation';
+import DriverApiService from '../services/api/DriverApiService';
 
 interface EarningsState {
   // Current earnings data
@@ -7,11 +8,15 @@ interface EarningsState {
   dailyBreakdown: EarningsBreakdown[];
   weeklyTarget: number;
   monthlyTarget: number;
-  
+
   // Incentives and bonuses
   activeIncentives: Incentive[];
   completedIncentives: Incentive[];
-  
+
+  // Loading states
+  loadingEarnings: boolean;
+  loadingDaily: boolean;
+
   // Actions
   updateTodayEarnings: (amount: number, tips?: number, incentives?: number) => void;
   addJobEarnings: (fare: number, tips: number, distance: number, duration: number) => void;
@@ -20,7 +25,11 @@ interface EarningsState {
   updatePendingAmount: (amount: number) => void;
   recordPayout: (amount: number) => void;
   setEarnings: (earnings: Partial<DriverEarnings>) => void; // Set earnings from API
-  
+
+  // API Integration
+  fetchEarnings: () => Promise<void>;
+  fetchDailyEarnings: () => Promise<void>;
+
   // Analytics
   getWeeklyEarnings: () => number;
   getMonthlyEarnings: () => number;
@@ -169,19 +178,20 @@ const mockActiveIncentives: Incentive[] = [
 export const useEarningsStore = create<EarningsState>((set, get) => ({
   // Initial state
   earnings: {
-    totalEarnings: 245000,
-    weeklyEarnings: 82400,
-    monthlyEarnings: 245000,
-    todayEarnings: 10700,
-    pendingAmount: 4200,
-    lastPayout: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // 1 week ago
+    totalEarnings: 0,
+    weeklyEarnings: 0,
+    monthlyEarnings: 0,
+    todayEarnings: 0,
+    pendingAmount: 0,
   },
-  
-  dailyBreakdown: [], // mockDailyBreakdown, // COMMENTED OUT: API integrated
+
+  dailyBreakdown: [],
   weeklyTarget: 67000,
   monthlyTarget: 280000,
-  activeIncentives: [], // mockActiveIncentives, // COMMENTED OUT: API integrated
+  activeIncentives: [],
   completedIncentives: [],
+  loadingEarnings: false,
+  loadingDaily: false,
 
   // Actions
   updateTodayEarnings: (amount, tips = 0, incentives = 0) => {
@@ -341,8 +351,67 @@ export const useEarningsStore = create<EarningsState>((set, get) => ({
   getTodayHistory: () => {
     const state = get();
     const today = new Date();
-    return state.dailyBreakdown.find(day => 
+    return state.dailyBreakdown.find(day =>
       day.date.toDateString() === today.toDateString()
     );
+  },
+
+  // API Integration: Fetch earnings from backend
+  fetchEarnings: async () => {
+    set({ loadingEarnings: true });
+    try {
+      const response = await DriverApiService.getEarnings();
+      if (response.success && response.data) {
+        const data = response.data as any;
+
+        set({
+          earnings: {
+            totalEarnings: data.total_earnings || data.totalEarnings || 0,
+            weeklyEarnings: data.week_earnings || data.weeklyEarnings || 0,
+            monthlyEarnings: data.month_earnings || data.monthlyEarnings || 0,
+            todayEarnings: data.today_earnings || data.todayEarnings || 0,
+            pendingAmount: data.pending_amount || data.pendingAmount || 0,
+            lastPayout: data.last_payout ? new Date(data.last_payout) : undefined,
+          },
+          loadingEarnings: false,
+        });
+      } else {
+        set({ loadingEarnings: false });
+      }
+    } catch (error) {
+      console.error('Error fetching earnings:', error);
+      set({ loadingEarnings: false });
+    }
+  },
+
+  // API Integration: Fetch daily earnings breakdown
+  fetchDailyEarnings: async () => {
+    set({ loadingDaily: true });
+    try {
+      const response = await DriverApiService.getDailyEarnings();
+      if (response.success && response.data) {
+        const dailyData = Array.isArray(response.data) ? response.data : [];
+
+        // Map API data to EarningsBreakdown format
+        const breakdown: EarningsBreakdown[] = dailyData.map((item: any) => ({
+          date: new Date(item.date || item.created_at),
+          totalEarnings: item.earnings || item.total_earnings || 0,
+          baseFare: item.base_fare || 0,
+          tips: item.tips || 0,
+          incentives: item.incentives || 0,
+          fuelReimbursement: item.fuel_reimbursement || 0,
+          totalRides: item.trips || item.trips_completed || 0,
+          onlineHours: item.online_hours || 0,
+          averageRating: item.average_rating || 0,
+        }));
+
+        set({ dailyBreakdown: breakdown, loadingDaily: false });
+      } else {
+        set({ loadingDaily: false });
+      }
+    } catch (error) {
+      console.error('Error fetching daily earnings:', error);
+      set({ loadingDaily: false });
+    }
   }
 }));

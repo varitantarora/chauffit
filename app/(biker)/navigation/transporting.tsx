@@ -200,7 +200,7 @@ export default function TransportingScreen() {
         {/* Header */}
         <View className="flex-row items-center justify-between p-4 border-b border-border dark:border-darkBorder">
           <View className="flex-row items-center">
-            <View className="w-3 h-3 bg-success rounded-full mr-2 animate-pulse" />
+            <View className="w-3 h-3 bg-success rounded-full mr-2" />
             <View>
               <ThemedText variant="title" className="font-bold">
                 Transporting Driver

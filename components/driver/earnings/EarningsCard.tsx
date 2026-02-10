@@ -122,13 +122,8 @@ export function EarningsCard({
 // Earnings summary card with multiple metrics
 export function EarningsSummaryCard({ onViewDetails }: { onViewDetails?: () => void }) {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
-  
-  const earnings = {
-    today: 10700,
-    week: 62000,
-    month: 245000,
-    pending: 4200
-  };
+  const { useEarningsStore } = require('../../../store/earningsStore');
+  const { earnings } = useEarningsStore();
 
   return (
     <ThemedCard className="mb-4 p-4">
@@ -142,29 +137,29 @@ export function EarningsSummaryCard({ onViewDetails }: { onViewDetails?: () => v
           </TouchableOpacity>
         )}
       </View>
-      
+
       <View className="flex-row justify-between mb-4">
         <View className="flex-1 items-center">
           <ThemedText className="text-2xl font-bold text-burgundy">
-            ₹{earnings.today.toLocaleString('en-IN')}
+            ₹{(earnings.todayEarnings || 0).toLocaleString('en-IN')}
           </ThemedText>
           <ThemedText variant="caption">Today</ThemedText>
         </View>
         <View className="flex-1 items-center">
           <ThemedText className="text-2xl font-bold">
-            ₹{earnings.week.toLocaleString('en-IN')}
+            ₹{(earnings.weeklyEarnings || 0).toLocaleString('en-IN')}
           </ThemedText>
           <ThemedText variant="caption">This Week</ThemedText>
         </View>
         <View className="flex-1 items-center">
           <ThemedText className="text-2xl font-bold">
-            ₹{earnings.month.toLocaleString('en-IN')}
+            ₹{(earnings.monthlyEarnings || 0).toLocaleString('en-IN')}
           </ThemedText>
           <ThemedText variant="caption">This Month</ThemedText>
         </View>
       </View>
-      
-      {earnings.pending > 0 && (
+
+      {earnings.pendingAmount > 0 && (
         <View className="bg-warning/10 border border-warning/20 rounded-lg p-3">
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center">
@@ -174,7 +169,7 @@ export function EarningsSummaryCard({ onViewDetails }: { onViewDetails?: () => v
               </ThemedText>
             </View>
             <ThemedText className="font-bold text-warning">
-              ₹{earnings.pending.toLocaleString('en-IN')}
+              ₹{(earnings.pendingAmount || 0).toLocaleString('en-IN')}
             </ThemedText>
           </View>
         </View>

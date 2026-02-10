@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedCard } from '../../common/ThemedCard';
 import { ThemedText } from '../../common/ThemedText';
@@ -8,12 +8,13 @@ import { useAuthStore } from '../../../store/authStore';
 
 interface JobCardProps {
   job: JobRequest;
-  onAccept: (jobId: string) => void;
-  onDecline: (jobId: string) => void;
+  onAccept?: (jobId: string) => void;
+  onDecline?: (jobId: string) => void;
   onViewDetails?: (jobId: string) => void;
+  processing?: boolean;
 }
 
-export function JobCard({ job, onAccept, onDecline, onViewDetails }: JobCardProps) {
+export function JobCard({ job, onAccept, onDecline, onViewDetails, processing = false }: JobCardProps) {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const [timeLeft, setTimeLeft] = useState(0);
 
@@ -237,28 +238,50 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails }: JobCardProp
       </TouchableOpacity>
 
       {/* Action Buttons */}
-      <View className="flex-row border-t border-border dark:border-darkBorder">
-        <TouchableOpacity 
-          onPress={() => timeLeft > 0 && onDecline(job.id)}
-          className={`flex-1 py-4 items-center border-r border-border dark:border-darkBorder ${timeLeft <= 0 ? 'opacity-50' : ''}`}
-          activeOpacity={timeLeft <= 0 ? 1 : 0.7}
-          disabled={timeLeft <= 0}
-        >
-          <ThemedText className="font-semibold text-danger">
-            Decline
-          </ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          onPress={() => timeLeft > 0 && onAccept(job.id)}
-          className={`flex-1 py-4 items-center bg-burgundy ${timeLeft <= 0 ? 'opacity-50' : ''}`}
-          activeOpacity={timeLeft <= 0 ? 1 : 0.7}
-          disabled={timeLeft <= 0}
-        >
-          <ThemedText className="font-semibold text-white">
-            {timeLeft <= 0 ? 'Expired' : 'Accept Ride'}
-          </ThemedText>
-        </TouchableOpacity>
-      </View>
+      {onAccept && onDecline ? (
+        <View className="flex-row border-t border-border dark:border-darkBorder">
+          <TouchableOpacity
+            onPress={() => timeLeft > 0 && !processing && onDecline(job.id)}
+            className={`flex-1 py-4 items-center border-r border-border dark:border-darkBorder ${(timeLeft <= 0 || processing) ? 'opacity-50' : ''}`}
+            activeOpacity={timeLeft <= 0 || processing ? 1 : 0.7}
+            disabled={timeLeft <= 0 || processing}
+          >
+            <ThemedText className="font-semibold text-danger">
+              Decline
+            </ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => timeLeft > 0 && !processing && onAccept(job.id)}
+            className={`flex-1 py-4 items-center bg-burgundy flex-row justify-center ${(timeLeft <= 0 || processing) ? 'opacity-50' : ''}`}
+            activeOpacity={timeLeft <= 0 || processing ? 1 : 0.7}
+            disabled={timeLeft <= 0 || processing}
+          >
+            {processing ? (
+              <>
+                <ActivityIndicator size="small" color="white" />
+                <ThemedText className="font-semibold text-white ml-2">
+                  Processing...
+                </ThemedText>
+              </>
+            ) : (
+              <ThemedText className="font-semibold text-white">
+                {timeLeft <= 0 ? 'Expired' : 'Accept Ride'}
+              </ThemedText>
+            )}
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View className="border-t border-border dark:border-darkBorder">
+          <TouchableOpacity
+            onPress={() => onViewDetails?.(job.id)}
+            className="w-full py-4 items-center bg-burgundy"
+          >
+            <ThemedText className="font-semibold text-white">
+              View Details
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
+      )}
     </ThemedCard>
   );
 }

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, Alert, Linking, ScrollView } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, TouchableOpacity, Alert, Linking, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../components/common/ThemedView';
 import { ThemedCard } from '../../components/common/ThemedCard';
@@ -8,6 +8,19 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import BookingApiService, { BookingDetail } from '../../services/api/BookingApiService';
+import UniversalMapView, { MapMarker, MapRoute } from '../../components/shared/MapView';
+import { appConfig } from '../../config/env';
+
+// Helper to get full image URL
+const getImageUrl = (url: string | null | undefined): string | null => {
+  if (!url) return null;
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  const baseUrl = appConfig.apiBaseUrl.replace('/api/v1', '');
+  return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+};
 
 type RideStatus = 'driver_coming' | 'driver_arrived' | 'in_progress' | 'completed';
 
@@ -20,7 +33,8 @@ export default function RideTrackingScreen() {
   const [eta, setEta] = useState(18);
   const [isSharing, setIsSharing] = useState(false);
   const [showSOS, setShowSOS] = useState(false);
-  
+  const [rideDetails, setRideDetails] = useState<BookingDetail | null>(null);
+
   const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
 
   useEffect(() => {
@@ -36,18 +50,128 @@ export default function RideTrackingScreen() {
     return () => clearTimeout(timer);
   }, [rideStatus, eta]);
 
-  const driverDetails = {
-    name: 'Rajesh Kumar',
-    rating: 4.9,
-    experience: '8 years experience',
-    phone: '+91 9876543210',
-    bikerName: 'Alex Kumar',
-    bikerRating: 4.8,
-    vehicleInfo: 'Your BMW X5 • ABC123',
-    location: 'Home garage',
-  };
+  useEffect(() => {
+    const bookingId = String(params.bookingId || '');
+    if (!bookingId) return;
+
+    let isMounted = true;
+    const fetchRideDetails = async () => {
+      try {
+        const response = await BookingApiService.getRideDetails(bookingId);
+        if (!isMounted) return;
+        if (response.success && response.data) {
+          setRideDetails(response.data);
+        }
+      } catch {
+        // ignore for now
+      }
+    };
+
+    fetchRideDetails();
+    const interval = setInterval(fetchRideDetails, 5000); // Poll every 5 seconds
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [params.bookingId]);
+
+  const driverDetails = useMemo(() => {
+    // Use embedded details from API response
+    const driverName = rideDetails?.driver_details?.name || 'Chauffeur';
+    const driverPhone = rideDetails?.driver_details?.mobile || 'NA';
+    const driverRating = rideDetails?.driver_details?.overall_rating ?? 4.5;
+    const driverPicture = getImageUrl(rideDetails?.driver_details?.profile_picture);
+    const driverRides = rideDetails?.driver_details?.total_rides ?? 0;
+
+    const bikerName = rideDetails?.biker_details?.name || 'Biker';
+    const bikerRating = rideDetails?.biker_details?.overall_rating ?? 4.5;
+    const bikerPicture = getImageUrl(rideDetails?.biker_details?.profile_picture);
+    const bikerPhone = rideDetails?.biker_details?.mobile;
+
+    return {
+      name: driverName,
+      rating: driverRating,
+      experience: driverRides > 0 ? `${driverRides} rides` : 'Experienced',
+      phone: driverPhone,
+      picture: driverPicture,
+      bikerName,
+      bikerRating,
+      bikerPicture,
+      vehicleInfo: rideDetails?.driver_details?.vehicle_info || 'Your vehicle',
+      location: 'En route to your location',
+    };
+  }, [rideDetails]);
+
+  // Map coordinates and markers
+  const pickupCoordinate = useMemo(() => {
+    if (!rideDetails?.pickup_lat || !rideDetails?.pickup_long) return null;
+    const latitude = Number(rideDetails.pickup_lat);
+    const longitude = Number(rideDetails.pickup_long);
+    if (Number.isNaN(latitude) || Number.isNaN(longitude)) return null;
+    return { latitude, longitude };
+  }, [rideDetails?.pickup_lat, rideDetails?.pickup_long]);
+
+  const dropoffCoordinate = useMemo(() => {
+    if (!rideDetails?.dropoff_lat || !rideDetails?.dropoff_long) return null;
+    const latitude = Number(rideDetails.dropoff_lat);
+    const longitude = Number(rideDetails.dropoff_long);
+    if (Number.isNaN(latitude) || Number.isNaN(longitude)) return null;
+    return { latitude, longitude };
+  }, [rideDetails?.dropoff_lat, rideDetails?.dropoff_long]);
+
+  const initialMapRegion = useMemo(() => {
+    if (pickupCoordinate) {
+      return {
+        ...pickupCoordinate,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      };
+    }
+    // Default to Delhi region
+    return {
+      latitude: 28.6139,
+      longitude: 77.2090,
+      latitudeDelta: 0.0922,
+      longitudeDelta: 0.0922,
+    };
+  }, [pickupCoordinate]);
+
+  const mapMarkers: MapMarker[] = useMemo(() => {
+    const markers: MapMarker[] = [];
+    if (pickupCoordinate) {
+      markers.push({
+        id: 'pickup',
+        coordinate: pickupCoordinate,
+        title: 'Pickup',
+        description: rideDetails?.pickup_address || 'Pickup Location',
+        type: 'pickup',
+      });
+    }
+    if (dropoffCoordinate) {
+      markers.push({
+        id: 'dropoff',
+        coordinate: dropoffCoordinate,
+        title: 'Destination',
+        description: rideDetails?.dropoff_address || 'Destination',
+        type: 'dropoff',
+      });
+    }
+    return markers;
+  }, [pickupCoordinate, dropoffCoordinate, rideDetails]);
+
+  const mapRoute: MapRoute | undefined = useMemo(() => {
+    if (!pickupCoordinate || !dropoffCoordinate) return undefined;
+    return {
+      origin: pickupCoordinate,
+      destination: dropoffCoordinate,
+      strokeColor: '#BD8C5E',
+      strokeWidth: 4,
+    };
+  }, [pickupCoordinate, dropoffCoordinate]);
 
   const handleCallDriver = () => {
+    if (!driverDetails.phone || driverDetails.phone === 'NA') return;
     Linking.openURL(`tel:${driverDetails.phone}`);
   };
 
@@ -142,33 +266,45 @@ export default function RideTrackingScreen() {
           )}
         </View>
 
-        {/* Map Placeholder */}
-        <ThemedCard variant="elevated" className="mx-6 mb-4 h-60">
-          <View className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-xl items-center justify-center">
-            <Ionicons name="map" size={48} color={iconColor} />
-            <ThemedText className="mt-2">Live Map View</ThemedText>
-            <ThemedText variant="small" className="text-gray-600">
-              {rideStatus === 'driver_coming' && '🚗 Driver location • 📍 Your vehicle location'}
-              {rideStatus === 'in_progress' && '🚗 Current location • 🏢 Destination'}
-            </ThemedText>
-          </View>
-        </ThemedCard>
+        {/* Map View with Live Tracking */}
+        <View className="mx-6 mb-4 h-64 rounded-2xl overflow-hidden border border-border dark:border-darkBorder bg-white dark:bg-darkSurface">
+          <UniversalMapView
+            initialRegion={initialMapRegion}
+            markers={mapMarkers}
+            route={mapRoute}
+            googleMapsApiKey={appConfig.googleMapsApiKey}
+            showUserLocation={true}
+            className="flex-1"
+          />
+        </View>
 
         {/* Driver/Biker Info */}
-        {rideStatus === 'driver_coming' && (
+        {rideStatus === 'driver_coming' && rideDetails?.biker_details && (
           <ThemedCard variant="elevated" className="mx-6 mb-4">
             <ThemedText variant="small" className="text-gray-600 mb-3">
-              Marcus is being transported by Alex (Biker) to your vehicle
+              {driverDetails.name} is being transported by {driverDetails.bikerName} (Biker) to your vehicle
             </ThemedText>
-            
+
             <View className="flex-row items-center mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-              <Ionicons name="bicycle" size={24} color="#3B82F6" />
-              <View className="ml-3 flex-1">
+              {driverDetails.bikerPicture ? (
+                <Image
+                  source={{ uri: driverDetails.bikerPicture }}
+                  className="w-12 h-12 rounded-full mr-3"
+                  style={{ backgroundColor: '#BD8C5E' }}
+                />
+              ) : (
+                <View className="w-12 h-12 bg-blue-100 rounded-full mr-3 items-center justify-center">
+                  <Ionicons name="bicycle" size={20} color="#3B82F6" />
+                </View>
+              )}
+              <View className="flex-1">
                 <View className="flex-row items-center">
                   <ThemedText>🏍️ {driverDetails.bikerName}</ThemedText>
                   <View className="flex-row items-center ml-2">
                     <Ionicons name="star" size={16} color="#F59E0B" />
-                    <ThemedText variant="small" className="ml-1">{driverDetails.bikerRating}</ThemedText>
+                    <ThemedText variant="small" className="ml-1">
+                      {typeof driverDetails.bikerRating === 'number' ? driverDetails.bikerRating.toFixed(1) : driverDetails.bikerRating}
+                    </ThemedText>
                   </View>
                 </View>
                 <ThemedText variant="small" className="text-gray-600">
@@ -182,26 +318,34 @@ export default function RideTrackingScreen() {
         {/* Driver Details Card */}
         <ThemedCard variant="elevated" className="mx-6 mb-4">
           <View className="flex-row items-center">
-            <View className="w-16 h-16 bg-gray-200 rounded-full mr-4 items-center justify-center">
-              <Ionicons name="person" size={32} color={iconColor} />
-            </View>
+            {driverDetails.picture ? (
+              <Image
+                source={{ uri: driverDetails.picture }}
+                className="w-16 h-16 rounded-full mr-4"
+                style={{ backgroundColor: '#BD8C5E' }}
+              />
+            ) : (
+              <View className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full mr-4 items-center justify-center">
+                <Ionicons name="person" size={32} color={iconColor} />
+              </View>
+            )}
             <View className="flex-1">
               <ThemedText variant="h3">{driverDetails.name}</ThemedText>
               <View className="flex-row items-center mt-1">
                 <Ionicons name="star" size={16} color="#F59E0B" />
                 <ThemedText variant="small" className="ml-1 text-gray-600">
-                  {driverDetails.rating} • {driverDetails.experience}
+                  {typeof driverDetails.rating === 'number' ? driverDetails.rating.toFixed(1) : driverDetails.rating} • {driverDetails.experience}
                 </ThemedText>
               </View>
             </View>
             <View className="flex-row">
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={handleCallDriver}
                 className="bg-burgundy/10 p-3 rounded-full mr-2"
               >
                 <Ionicons name="call" size={20} color="#722F37" />
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={handleMessageDriver}
                 className="bg-blue-100 p-3 rounded-full"
               >

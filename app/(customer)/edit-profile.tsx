@@ -88,19 +88,10 @@ export default function CustomerEditProfile() {
         return;
       }
 
-      if (response.data) {
-        updateUser({
-          name: response.data.full_name || `${response.data.first_name || ''} ${response.data.last_name || ''}`.trim(),
-          avatar: response.data.profile_picture,
-        });
-      } else {
-        updateUser({
-          name: `${firstName.trim()} ${lastName.trim()}`.trim(),
-          avatar: profilePicture || undefined,
-        });
-      }
+      // Refresh profile from API after update
+      await fetchProfile();
 
-      Alert.alert('Success', 'Profile updated');
+      Alert.alert('Success', 'Profile updated successfully');
       router.back();
     } catch (error) {
       Alert.alert('Error', 'Failed to update profile');

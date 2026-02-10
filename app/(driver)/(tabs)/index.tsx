@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ScrollView, TouchableOpacity, View, Switch, RefreshControl, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ScrollView, TouchableOpacity, View, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../../components/common/ThemedView';
 import { ThemedCard } from '../../../components/common/ThemedCard';
@@ -16,17 +16,19 @@ export default function DriverHomeScreen() {
   const user = useAuthStore((state) => state.user);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const router = useRouter();
-  
-  const { 
-    isOnline, 
-    setOnlineStatus, 
-    pendingRequests, 
-    activeJob, 
-    jobHistory 
+
+  const {
+    isOnline,
+    setOnlineStatus,
+    pendingRequests,
+    activeJob,
+    jobHistory,
+    getPendingCount,
+    fetchPendingRequests,
   } = useJobStore();
-  
-  const { earnings, getTodayHistory, setEarnings } = useEarningsStore();
-  
+
+  const { earnings, getTodayHistory, setEarnings, fetchEarnings, fetchDailyEarnings } = useEarningsStore();
+
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState<{
     averageRating: number;
@@ -35,7 +37,8 @@ export default function DriverHomeScreen() {
   const [loadingStats, setLoadingStats] = useState(false);
   const [todayEarningsValue, setTodayEarningsValue] = useState<number>(0);
   const [loadingEarnings, setLoadingEarnings] = useState(false);
-  
+  const [pendingCount, setPendingCount] = useState<number>(0);
+
   const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
 
   const fetchStats = async () => {
@@ -63,41 +66,21 @@ export default function DriverHomeScreen() {
     }
   };
 
-  const fetchEarnings = async () => {
-    try {
-      setLoadingEarnings(true);
-      const response = await DriverApiService.getEarnings();
-      
-      if (response.success && response.data) {
-        const earningsData = response.data as any;
-        setTodayEarningsValue(earningsData.today_earnings ?? 0);
-        
-        // Also update the store
-        const mappedEarnings = {
-          totalEarnings: earningsData.total_earnings ?? earningsData.totalEarnings ?? 0,
-          weeklyEarnings: earningsData.week_earnings ?? earningsData.weekly_earnings ?? earningsData.weeklyEarnings ?? 0,
-          monthlyEarnings: earningsData.month_earnings ?? earningsData.monthly_earnings ?? earningsData.monthlyEarnings ?? 0,
-          todayEarnings: earningsData.today_earnings ?? earningsData.todayEarnings ?? 0,
-          pendingAmount: earningsData.pending_amount ?? earningsData.pendingAmount ?? 0,
-          lastPayout: earningsData.last_payout ? new Date(earningsData.last_payout) : undefined,
-        };
-        setEarnings(mappedEarnings);
-      } else {
-        console.error('Failed to fetch earnings:', response.error);
-        setTodayEarningsValue(0);
-      }
-    } catch (error) {
-      console.error('Error fetching earnings:', error);
-      setTodayEarningsValue(0);
-    } finally {
-      setLoadingEarnings(false);
-    }
+  const fetchEarningsData = async () => {
+    await Promise.all([fetchEarnings(), fetchDailyEarnings()]);
   };
 
   useEffect(() => {
     fetchStats();
-    fetchEarnings();
+    fetchEarningsData();
+    fetchPendingRequestsFromAPI();
   }, []);
+
+  // Fetch pending requests from API
+  const fetchPendingRequestsFromAPI = async () => {
+    await fetchPendingRequests();
+    setPendingCount(getPendingCount());
+  };
 
   // Get today's stats
   const todayHistory = getTodayHistory();
@@ -108,9 +91,13 @@ export default function DriverHomeScreen() {
     rating: stats?.averageRating || todayHistory?.averageRating || 0
   };
 
-  const onRefresh = React.useCallback(async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([fetchStats(), fetchEarnings()]);
+    await Promise.all([
+      fetchStats(),
+      fetchEarningsData(),
+      fetchPendingRequestsFromAPI()
+    ]);
     setRefreshing(false);
   }, []);
 
@@ -223,7 +210,7 @@ export default function DriverHomeScreen() {
           )}
 
           {/* Pending Requests Alert */}
-          {pendingRequests.length > 0 && !activeJob && (
+          {pendingCount > 0 && !activeJob && (
             <View className="px-6 mb-4">
               <TouchableOpacity
                 onPress={() => router.push('/(driver)/(tabs)/requests')}
@@ -232,10 +219,10 @@ export default function DriverHomeScreen() {
                 <ThemedCard className="p-4 border-2 border-warning">
                   <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center">
-                      <View className="w-4 h-4 bg-warning rounded-full mr-3 animate-pulse" />
+                      <View className="w-4 h-4 bg-warning rounded-full mr-3" />
                       <View>
                         <ThemedText className="font-bold text-lg">
-                          {pendingRequests.length} New Request{pendingRequests.length > 1 ? 's' : ''}
+                          {pendingCount} New Request{pendingCount > 1 ? 's' : ''}
                         </ThemedText>
                         <ThemedText variant="secondary">
                           Tap to view and accept rides

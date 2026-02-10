@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { View, TouchableOpacity, Alert } from 'react-native';
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedCard } from '../../common/ThemedCard';
 import { ThemedText } from '../../common/ThemedText';
 import { Location } from '../../../types/navigation';
 import { useAuthStore } from '../../../store/authStore';
 import DriverApiService from '../../../services/api/DriverApiService';
+import UniversalMapView, { MapMarker, MapRoute, MapViewRef } from '../../shared/MapView';
+import { appConfig } from '../../../config/env';
 import * as ExpoLocation from 'expo-location';
 
 interface RouteMapProps {
@@ -35,14 +36,8 @@ export function RouteMap({
   distance
 }: RouteMapProps) {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
-  const [mapType, setMapType] = useState<'standard' | 'satellite' | 'hybrid'>('standard');
+  const mapRef = useRef<MapViewRef>(null);
   const [isTrackingLocation, setIsTrackingLocation] = useState(false);
-  const [region, setRegion] = useState({
-    latitude: pickupLocation.latitude,
-    longitude: pickupLocation.longitude,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
-  });
 
   // Request location permissions and start tracking
   useEffect(() => {
@@ -71,7 +66,7 @@ export function RouteMap({
   const startLocationTracking = async () => {
     try {
       setIsTrackingLocation(true);
-      
+
       // Start watching position
       const locationSubscription = await ExpoLocation.watchPositionAsync(
         {
@@ -86,7 +81,7 @@ export function RouteMap({
             address: 'Current Location'
           };
           onLocationUpdate?.(newLocation);
-          
+
           // Update location on backend
           try {
             await DriverApiService.updateLocation({
@@ -111,48 +106,108 @@ export function RouteMap({
   };
 
   const centerOnLocation = (location: Location) => {
-    setRegion({
+    mapRef.current?.animateToCoordinate({
       latitude: location.latitude,
       longitude: location.longitude,
-      latitudeDelta: 0.01,
-      longitudeDelta: 0.01,
     });
   };
 
   const fitToCoordinates = () => {
-    const coordinates = [pickupLocation];
-    if (dropoffLocation) coordinates.push(dropoffLocation);
-    if (currentLocation) coordinates.push(currentLocation);
-    
-    // This would typically use the map ref to fit coordinates
-    // For now, we'll center on pickup location
-    centerOnLocation(pickupLocation);
-  };
-
-  const toggleMapType = () => {
-    const types: ('standard' | 'satellite' | 'hybrid')[] = ['standard', 'satellite', 'hybrid'];
-    const currentIndex = types.indexOf(mapType);
-    const nextIndex = (currentIndex + 1) % types.length;
-    setMapType(types[nextIndex]);
-  };
-
-  const mapStyle = isDarkMode ? [
-    {
-      "featureType": "all",
-      "elementType": "geometry",
-      "stylers": [{ "color": "#242f3e" }]
-    },
-    {
-      "featureType": "all",
-      "elementType": "labels.text.stroke",
-      "stylers": [{ "color": "#242f3e" }]
-    },
-    {
-      "featureType": "all",
-      "elementType": "labels.text.fill",
-      "stylers": [{ "color": "#746855" }]
+    const coordinates = [
+      { latitude: pickupLocation.latitude, longitude: pickupLocation.longitude }
+    ];
+    if (dropoffLocation) {
+      coordinates.push({ latitude: dropoffLocation.latitude, longitude: dropoffLocation.longitude });
     }
-  ] : undefined;
+    if (currentLocation) {
+      coordinates.push({ latitude: currentLocation.latitude, longitude: currentLocation.longitude });
+    }
+
+    mapRef.current?.fitToCoordinates(coordinates, {
+      edgePadding: { top: 100, right: 100, bottom: 100, left: 100 },
+      animated: true,
+    });
+  };
+
+  // Build initial region centered on pickup
+  const initialRegion = useMemo(() => ({
+    latitude: pickupLocation.latitude,
+    longitude: pickupLocation.longitude,
+    latitudeDelta: 0.01,
+    longitudeDelta: 0.01,
+  }), [pickupLocation.latitude, pickupLocation.longitude]);
+
+  // Build map markers
+  const mapMarkers: MapMarker[] = useMemo(() => {
+    const markers: MapMarker[] = [];
+
+    // Pickup marker
+    markers.push({
+      id: 'pickup',
+      coordinate: {
+        latitude: pickupLocation.latitude,
+        longitude: pickupLocation.longitude,
+      },
+      title: 'Pickup Location',
+      description: pickupLocation.address,
+      type: 'pickup',
+    });
+
+    // Dropoff marker
+    if (dropoffLocation) {
+      markers.push({
+        id: 'dropoff',
+        coordinate: {
+          latitude: dropoffLocation.latitude,
+          longitude: dropoffLocation.longitude,
+        },
+        title: 'Dropoff Location',
+        description: dropoffLocation.address,
+        type: 'dropoff',
+      });
+    }
+
+    // Current location marker (driver)
+    if (currentLocation) {
+      markers.push({
+        id: 'current',
+        coordinate: {
+          latitude: currentLocation.latitude,
+          longitude: currentLocation.longitude,
+        },
+        title: 'Your Location',
+        description: 'Current position',
+        type: 'driver',
+      });
+    }
+
+    return markers;
+  }, [pickupLocation, dropoffLocation, currentLocation]);
+
+  // Build route for directions
+  const mapRoute: MapRoute | undefined = useMemo(() => {
+    // Use current location as origin if available, otherwise use pickup
+    const origin = currentLocation
+      ? { latitude: currentLocation.latitude, longitude: currentLocation.longitude }
+      : { latitude: pickupLocation.latitude, longitude: pickupLocation.longitude };
+
+    // Use dropoff as destination if available, otherwise route to pickup
+    const destination = dropoffLocation
+      ? { latitude: dropoffLocation.latitude, longitude: dropoffLocation.longitude }
+      : { latitude: pickupLocation.latitude, longitude: pickupLocation.longitude };
+
+    // Only show route if we have different points
+    if (origin.latitude === destination.latitude && origin.longitude === destination.longitude) {
+      return undefined;
+    }
+
+    return {
+      origin,
+      destination,
+      strokeColor: '#3b82f6',
+      strokeWidth: 4,
+    };
+  }, [pickupLocation, dropoffLocation, currentLocation]);
 
   return (
     <View>
@@ -191,81 +246,25 @@ export function RouteMap({
       {/* Map Container */}
       <ThemedCard className="p-0 overflow-hidden">
         <View style={{ height: mapHeight }} className="relative">
-          <MapView
-            provider={PROVIDER_GOOGLE}
-            style={{ flex: 1 }}
-            region={region}
-            onRegionChangeComplete={setRegion}
-            mapType={mapType}
-            customMapStyle={mapStyle}
-            showsUserLocation={showCurrentLocation}
-            showsMyLocationButton={false}
-            showsCompass={false}
-            rotateEnabled={true}
-            pitchEnabled={false}
-          >
-            {/* Pickup Marker */}
-            <Marker
-              coordinate={{
-                latitude: pickupLocation.latitude,
-                longitude: pickupLocation.longitude,
-              }}
-              title="Pickup Location"
-              description={pickupLocation.address}
-              pinColor="#10b981"
-            >
-              <View className="w-8 h-8 bg-success rounded-full items-center justify-center border-2 border-white">
-                <Ionicons name="location" size={16} color="white" />
-              </View>
-            </Marker>
-
-            {/* Dropoff Marker */}
-            {dropoffLocation && (
-              <Marker
-                coordinate={{
-                  latitude: dropoffLocation.latitude,
-                  longitude: dropoffLocation.longitude,
-                }}
-                title="Dropoff Location"
-                description={dropoffLocation.address}
-                pinColor="#ef4444"
-              >
-                <View className="w-8 h-8 bg-danger rounded-full items-center justify-center border-2 border-white">
-                  <Ionicons name="flag" size={16} color="white" />
-                </View>
-              </Marker>
-            )}
-
-            {/* Current Location Marker */}
-            {currentLocation && (
-              <Marker
-                coordinate={{
-                  latitude: currentLocation.latitude,
-                  longitude: currentLocation.longitude,
-                }}
-                title="Current Location"
-                description="Your current position"
-                anchor={{ x: 0.5, y: 0.5 }}
-              >
-                <View className="w-6 h-6 bg-blue-500 rounded-full border-2 border-white">
-                  <View className="w-2 h-2 bg-white rounded-full self-center mt-1" />
-                </View>
-              </Marker>
-            )}
-
-            {/* Route Polyline */}
-            {route.length > 1 && (
-              <Polyline
-                coordinates={route.map(loc => ({
-                  latitude: loc.latitude,
-                  longitude: loc.longitude,
-                }))}
-                strokeColor="#3b82f6"
-                strokeWidth={4}
-                lineDashPattern={[5, 5]}
-              />
-            )}
-          </MapView>
+          <UniversalMapView
+            ref={mapRef}
+            initialRegion={initialRegion}
+            markers={mapMarkers}
+            route={mapRoute}
+            showUserLocation={showCurrentLocation}
+            googleMapsApiKey={appConfig.googleMapsApiKey}
+            onRouteReady={(result) => {
+              console.log('Route ready:', result);
+              // Auto-fit to show entire route
+              if (mapRoute) {
+                const coordinates = [mapRoute.origin, mapRoute.destination];
+                mapRef.current?.fitToCoordinates(coordinates, {
+                  edgePadding: { top: 80, right: 80, bottom: 200, left: 80 },
+                  animated: true,
+                });
+              }
+            }}
+          />
 
           {/* Map Controls */}
           {showControls && (
@@ -273,7 +272,7 @@ export function RouteMap({
               {/* Center on pickup */}
               <TouchableOpacity
                 onPress={() => centerOnLocation(pickupLocation)}
-                className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-md"
+                className="w-10 h-10 bg-white dark:bg-darkSurface rounded-full items-center justify-center shadow-md"
                 activeOpacity={0.7}
               >
                 <Ionicons name="location" size={20} color="#10b981" />
@@ -283,7 +282,7 @@ export function RouteMap({
               {currentLocation && (
                 <TouchableOpacity
                   onPress={() => centerOnLocation(currentLocation)}
-                  className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-md"
+                  className="w-10 h-10 bg-white dark:bg-darkSurface rounded-full items-center justify-center shadow-md"
                   activeOpacity={0.7}
                 >
                   <Ionicons name="navigate" size={20} color="#3b82f6" />
@@ -293,23 +292,10 @@ export function RouteMap({
               {/* Fit to route */}
               <TouchableOpacity
                 onPress={fitToCoordinates}
-                className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-md"
+                className="w-10 h-10 bg-white dark:bg-darkSurface rounded-full items-center justify-center shadow-md"
                 activeOpacity={0.7}
               >
                 <Ionicons name="resize" size={18} color="#6b7280" />
-              </TouchableOpacity>
-
-              {/* Toggle map type */}
-              <TouchableOpacity
-                onPress={toggleMapType}
-                className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-md"
-                activeOpacity={0.7}
-              >
-                <Ionicons 
-                  name={mapType === 'satellite' ? 'map' : 'globe'} 
-                  size={18} 
-                  color="#6b7280" 
-                />
               </TouchableOpacity>
             </View>
           )}

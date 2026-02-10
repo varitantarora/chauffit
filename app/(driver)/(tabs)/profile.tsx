@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { TouchableOpacity, ScrollView, View, Alert, ActivityIndicator, Image } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { TouchableOpacity, ScrollView, View, Alert, ActivityIndicator, Image, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedView } from '../../../components/common/ThemedView';
@@ -7,12 +7,15 @@ import { ThemedCard } from '../../../components/common/ThemedCard';
 import { ThemedText } from '../../../components/common/ThemedText';
 import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { DocumentsList } from '../../../components/driver/profile/DocumentUpload';
+import { JobCard } from '../../../components/driver/job/JobCard';
 import { useAuthStore } from '../../../store/authStore';
 import { useJobStore } from '../../../store/jobStore';
 import { useEarningsStore } from '../../../store/earningsStore';
 import { useRouter, useFocusEffect } from 'expo-router';
 import DriverApiService, { DriverProfile as DriverProfileType } from '../../../services/api/DriverApiService';
 import { appConfig } from '../../../config/env';
+
+type RidesTabType = 'accepted' | 'in-progress' | 'completed';
 
 export default function DriverProfile() {
   const user = useAuthStore((state) => state.user);
@@ -23,13 +26,18 @@ export default function DriverProfile() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const router = useRouter();
 
-  const { isOnline, setOnlineStatus, jobHistory, resetDemoRequests } = useJobStore();
+  const { isOnline, setOnlineStatus, jobHistory, resetDemoRequests,
+          acceptedJobs, inProgressJobs, completedJobs,
+          loadingAccepted, loadingInProgress, loadingCompleted,
+          fetchAcceptedJobs, fetchInProgressJobs, fetchCompletedJobs } = useJobStore();
   const { earnings } = useEarningsStore();
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'documents' | 'stats'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'documents' | 'stats' | 'rides'>('profile');
+  const [ridesTab, setRidesTab] = useState<RidesTabType>('accepted');
   const [driverProfile, setDriverProfile] = useState<DriverProfileType | null>(null);
   const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
   // Helper to get full image URL (handles relative URLs from backend)
@@ -47,11 +55,34 @@ export default function DriverProfile() {
     fetchDriverData();
   }, [fetchDriverData]);
 
+  // Fetch rides when rides tab is activated
+  useEffect(() => {
+    if (activeTab === 'rides') {
+      switch (ridesTab) {
+        case 'accepted':
+          fetchAcceptedJobs();
+          break;
+        case 'in-progress':
+          fetchInProgressJobs();
+          break;
+        case 'completed':
+          fetchCompletedJobs();
+          break;
+      }
+    }
+  }, [activeTab, ridesTab, fetchAcceptedJobs, fetchInProgressJobs, fetchCompletedJobs]);
+
   useFocusEffect(
     React.useCallback(() => {
       fetchDriverData();
     }, [fetchDriverData])
   );
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    await fetchDriverData();
+    setRefreshing(false);
+  }, [fetchDriverData]);
 
   const fetchDriverData = React.useCallback(async () => {
     try {
@@ -212,7 +243,17 @@ export default function DriverProfile() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#BD8C5E']}
+              tintColor="#BD8C5E"
+            />
+          }
+        >
           {/* Profile Card */}
           <View className="p-6 mb-6">
             <ThemedCard className="p-6">
@@ -347,21 +388,22 @@ export default function DriverProfile() {
 
           {/* Tab Navigation */}
           <View className="px-6 mb-6">
-            <View className="flex-row bg-surface dark:bg-darkSurface rounded-xl p-1">
+            <View className={`flex-row bg-surface dark:bg-darkSurface rounded-xl p-1`}>
               {[
                 { key: 'profile', label: 'Profile' },
                 { key: 'documents', label: 'Documents' },
+                { key: 'rides', label: 'Rides' },
                 { key: 'stats', label: 'Stats' }
               ].map((tab) => (
                 <TouchableOpacity
                   key={tab.key}
                   onPress={() => setActiveTab(tab.key as any)}
-                  className={`flex-1 py-3 rounded-lg ${
+                  className={`flex-1 py-2 px-1 rounded-lg ${
                     activeTab === tab.key ? 'bg-burgundy' : ''
                   }`}
                 >
                   <ThemedText
-                    className={`text-center ${
+                    className={`text-center text-sm ${
                       activeTab === tab.key ? 'text-white font-semibold' : ''
                     }`}
                   >
@@ -482,6 +524,127 @@ export default function DriverProfile() {
             {activeTab === 'documents' && (
               <View>
                 <DocumentsList documents={documents} onRefresh={fetchDriverData} />
+              </View>
+            )}
+
+            {activeTab === 'rides' && (
+              <View>
+                {/* Rides Sub-tabs */}
+                <View className="mb-4">
+                  <View className="flex-row bg-surface dark:bg-darkSurface rounded-xl p-1">
+                    {[
+                      { key: 'accepted' as RidesTabType, label: 'Accepted' },
+                      { key: 'in-progress' as RidesTabType, label: 'In Progress' },
+                      { key: 'completed' as RidesTabType, label: 'Completed' }
+                    ].map((tab) => (
+                      <TouchableOpacity
+                        key={tab.key}
+                        onPress={() => setRidesTab(tab.key)}
+                        className={`flex-1 py-2 rounded-lg ${
+                          ridesTab === tab.key ? 'bg-burgundy' : ''
+                        }`}
+                      >
+                        <ThemedText
+                          className={`text-center text-sm ${
+                            ridesTab === tab.key ? 'text-white font-semibold' : ''
+                          }`}
+                        >
+                          {tab.label}
+                        </ThemedText>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                {/* Fetch rides when tab changes */}
+                <View>
+                  {ridesTab === 'accepted' && (
+                    <>
+                      {loadingAccepted ? (
+                        <View className="items-center py-16">
+                          <ActivityIndicator size="large" color="#BD8C5E" />
+                          <ThemedText className="mt-4 text-textSecondary">Loading accepted rides...</ThemedText>
+                        </View>
+                      ) : acceptedJobs.length > 0 ? (
+                        acceptedJobs.map((job) => (
+                          <JobCard
+                            key={job.id}
+                            job={job}
+                            onViewDetails={(jobId) => router.push(`/(driver)/job/accept?jobId=${jobId}`)}
+                          />
+                        ))
+                      ) : (
+                        <ThemedCard className="p-8 items-center">
+                          <Ionicons name="checkmark-circle" size={48} color="#bd8c5e" />
+                          <ThemedText variant="title" className="mt-4 mb-2">
+                            No Accepted Rides
+                          </ThemedText>
+                          <ThemedText variant="secondary" className="text-center">
+                            Rides you accept will appear here
+                          </ThemedText>
+                        </ThemedCard>
+                      )}
+                    </>
+                  )}
+
+                  {ridesTab === 'in-progress' && (
+                    <>
+                      {loadingInProgress ? (
+                        <View className="items-center py-16">
+                          <ActivityIndicator size="large" color="#BD8C5E" />
+                          <ThemedText className="mt-4 text-textSecondary">Loading active rides...</ThemedText>
+                        </View>
+                      ) : inProgressJobs.length > 0 ? (
+                        inProgressJobs.map((job) => (
+                          <JobCard
+                            key={job.id}
+                            job={job}
+                            onViewDetails={(jobId) => router.push(`/(driver)/job/active?jobId=${jobId}`)}
+                          />
+                        ))
+                      ) : (
+                        <ThemedCard className="p-8 items-center">
+                          <Ionicons name="car" size={48} color="#bd8c5e" />
+                          <ThemedText variant="title" className="mt-4 mb-2">
+                            No Active Rides
+                          </ThemedText>
+                          <ThemedText variant="secondary" className="text-center">
+                            You have no rides in progress
+                          </ThemedText>
+                        </ThemedCard>
+                      )}
+                    </>
+                  )}
+
+                  {ridesTab === 'completed' && (
+                    <>
+                      {loadingCompleted ? (
+                        <View className="items-center py-16">
+                          <ActivityIndicator size="large" color="#BD8C5E" />
+                          <ThemedText className="mt-4 text-textSecondary">Loading completed rides...</ThemedText>
+                        </View>
+                      ) : completedJobs.length > 0 ? (
+                        completedJobs.map((job) => (
+                          <JobCard
+                            key={job.id}
+                            job={job}
+                            onViewDetails={(jobId) => router.push(`/(driver)/job/accept?jobId=${jobId}`)}
+                          />
+                        ))
+                      ) : (
+                        <ThemedCard className="p-8 items-center">
+                          <Ionicons name="ribbon" size={48} color="#bd8c5e" />
+                          <ThemedText variant="title" className="mt-4 mb-2">
+                            No Completed Rides
+                          </ThemedText>
+                          <ThemedText variant="secondary" className="text-center">
+                            Your completed ride history will appear here
+                          </ThemedText>
+                        </ThemedCard>
+                      )}
+                    </>
+                  )}
+                </View>
               </View>
             )}
 

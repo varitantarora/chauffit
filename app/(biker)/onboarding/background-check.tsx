@@ -255,7 +255,7 @@ export default function BackgroundCheckScreen() {
                     
                     {step.status === 'in_progress' && (
                       <View className="flex-row items-center mt-2">
-                        <View className="w-2 h-2 bg-warning rounded-full mr-2 animate-pulse" />
+                        <View className="w-2 h-2 bg-warning rounded-full mr-2" />
                         <ThemedText className="text-warning text-sm font-semibold">
                           Processing...
                         </ThemedText>

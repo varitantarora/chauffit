@@ -4,9 +4,7 @@ import {
   TextInput,
   View,
   Text,
-  FlatList,
   ActivityIndicator,
-  Modal,
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -46,7 +44,6 @@ export function GooglePlacesAutocomplete({
   const [predictions, setPredictions] = useState<GooglePlace[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout>();
 
   // Update query when value prop changes
@@ -70,8 +67,6 @@ export function GooglePlacesAutocomplete({
       );
       const data = await response.json();
 
-      console.log('Google Places API response:', data);
-
       if (data.status === 'OK' && data.predictions) {
         const places: GooglePlace[] = data.predictions.map((pred: any) => ({
           place_id: pred.place_id,
@@ -79,7 +74,8 @@ export function GooglePlacesAutocomplete({
           structured_formatting: pred.structured_formatting,
           terms: pred.terms,
         }));
-        setPredictions(places);
+        // Limit to 3 most matching places as per requirement
+        setPredictions(places.slice(0, 3));
       } else if (data.status === 'ZERO_RESULTS') {
         setPredictions([]);
       } else {
@@ -100,10 +96,14 @@ export function GooglePlacesAutocomplete({
       clearTimeout(timeoutRef.current);
     }
 
-    if (isFocused && query && query.length >= 3) {
+    if (query && query.length >= 3) {
       timeoutRef.current = setTimeout(() => {
         fetchPredictions(query);
+        setShowResults(true);
       }, 300);
+    } else {
+      setPredictions([]);
+      setShowResults(false);
     }
 
     return () => {
@@ -111,12 +111,11 @@ export function GooglePlacesAutocomplete({
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [query, isFocused, apiKey]);
+  }, [query, apiKey]);
 
   const selectPlace = (place: GooglePlace) => {
     setQuery(place.description);
     setShowResults(false);
-    setIsFocused(false);
     onPlaceSelected(place);
   };
 
@@ -126,48 +125,18 @@ export function GooglePlacesAutocomplete({
     setShowResults(false);
   };
 
-  const handleFocus = () => {
-    setIsFocused(true);
-    setShowResults(true);
-  };
-
-  const handleBlur = () => {
-    // Delay to allow selection
-    setTimeout(() => setIsFocused(false), 300);
-  };
-
   const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
   const inputClass = isDarkMode
     ? 'bg-darkSurface text-darkText border-darkBorder'
     : 'bg-white text-textPrimary border-gray-200';
-
-  const renderPredictionItem = ({ item }: { item: GooglePlace }) => (
-    <TouchableOpacity
-      onPress={() => selectPlace(item)}
-      className="p-4 border-b border-gray-200 dark:border-gray-700 active:bg-gray-100 dark:active:bg-gray-800"
-    >
-      <Text style={{ color: isDarkMode ? '#fff' : '#000', fontSize: 16 }}>
-        {item.structured_formatting?.main_text || item.description}
-      </Text>
-      {item.structured_formatting?.secondary_text && (
-        <Text style={{ color: '#666', fontSize: 14, marginTop: 4 }}>
-          {item.structured_formatting.secondary_text}
-        </Text>
-      )}
-      {!item.structured_formatting && (
-        <Text style={{ color: '#666', fontSize: 14, marginTop: 4 }}>
-          {item.description}
-        </Text>
-      )}
-    </TouchableOpacity>
-  );
+  const resultsBgClass = isDarkMode ? 'bg-darkSurface border-darkBorder' : 'bg-white border-gray-200';
 
   return (
     <View>
       {/* Input Field */}
       <View
         className={`flex-row items-center p-3 rounded-xl border ${inputClass} ${
-          isFocused ? 'border-burgundy' : ''
+          showResults ? 'border-b-0 rounded-b-none' : ''
         }`}
       >
         <Ionicons name={icon as any} size={20} color={iconColor} />
@@ -176,92 +145,68 @@ export function GooglePlacesAutocomplete({
           placeholder={placeholder}
           value={query}
           onChangeText={setQuery}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
           placeholderTextColor="#999"
-          onSubmitEditing={() => {
-            setShowResults(false);
-            setIsFocused(false);
-          }}
+          autoFocus={false}
         />
         {query.length > 0 && (
-          <TouchableOpacity onPress={handleClear} onPressIn={handleFocus}>
+          <TouchableOpacity onPress={handleClear}>
             <Ionicons name="close-circle" size={20} color="#999" />
           </TouchableOpacity>
         )}
       </View>
 
-      {/* Results Modal */}
-      <Modal
-        visible={showResults && (isLoading || predictions.length > 0)}
-        transparent={true}
-        animationType="none"
-        onRequestClose={() => {
-          setShowResults(false);
-          setIsFocused(false);
-        }}
-      >
-        <TouchableOpacity
-          activeOpacity={1}
-          className="flex-1 bg-black/50"
-          onPress={() => {
-            setShowResults(false);
-            setIsFocused(false);
-          }}
+      {/* Inline Results Dropdown - Uber style */}
+      {showResults && (isLoading || predictions.length > 0) && (
+        <View
+          className={`border-x border-b rounded-b-xl ${resultsBgClass} shadow-lg z-10`}
+          style={{ maxHeight: 200 }}
         >
-          <View className="mt-16 mx-4 bg-white dark:bg-gray-900 rounded-xl shadow-lg max-h-[70%] overflow-hidden">
-            {/* Header */}
-            <View className="p-3 border-b border-gray-200 dark:border-gray-700 flex-row justify-between items-center">
-              <Text className="text-lg font-semibold text-gray-800 dark:text-white">
-                Select a place
-              </Text>
-              <TouchableOpacity onPress={() => setShowResults(false)}>
-                <Ionicons name="close" size={24} color="#666" />
-              </TouchableOpacity>
-            </View>
-
+          <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled>
             {/* Loading State */}
             {isLoading && (
-              <View className="p-8 items-center">
-                <ActivityIndicator size="large" color="#BD8C5E" />
-                <Text className="text-gray-500 mt-3">Searching places...</Text>
+              <View className="p-4 flex-row items-center justify-center">
+                <ActivityIndicator size="small" color="#BD8C5E" />
+                <Text className="text-gray-500 ml-2">Searching...</Text>
               </View>
             )}
 
-            {/* Predictions List */}
+            {/* Predictions List - Show max 3 */}
             {!isLoading && predictions.length > 0 && (
-              <FlatList
-                data={predictions}
-                keyExtractor={(item) => item.place_id}
-                renderItem={renderPredictionItem}
-                ListEmptyComponent={<View />}
-                keyboardShouldPersistTaps="handled"
-              />
+              <>
+                {predictions.map((item) => (
+                  <TouchableOpacity
+                    key={item.place_id}
+                    onPress={() => selectPlace(item)}
+                    className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 active:bg-gray-50 dark:active:bg-gray-800"
+                  >
+                    <View className="flex-row items-start">
+                      <Ionicons name="location" size={18} color="#BD8C5E" style={{ marginTop: 1 }} />
+                      <View className="flex-1 ml-3">
+                        <Text className="text-base font-medium text-gray-900 dark:text-white">
+                          {item.structured_formatting?.main_text || item.description.split(',')[0]}
+                        </Text>
+                        {item.structured_formatting?.secondary_text && (
+                          <Text className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                            {item.structured_formatting.secondary_text}
+                          </Text>
+                        )}
+                        {!item.structured_formatting && item.description.includes(',') && (
+                          <Text className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                            {item.description.split(',').slice(1).join(',').trim()}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </>
             )}
-
-            {/* No Results */}
-            {!isLoading && predictions.length === 0 && query.length >= 3 && (
-              <View className="p-8 items-center">
-                <Ionicons name="location-outline" size={40} color="#999" />
-                <Text className="text-gray-500 mt-3">No places found</Text>
-                <Text className="text-gray-400 text-sm mt-1">Try a different search term</Text>
-              </View>
-            )}
-
-            {/* Empty State - Type to search */}
-            {!isLoading && predictions.length === 0 && query.length < 3 && (
-              <View className="p-8 items-center">
-                <Ionicons name="search" size={40} color="#999" />
-                <Text className="text-gray-500 mt-3">Type at least 3 characters</Text>
-              </View>
-            )}
-          </View>
-        </TouchableOpacity>
-      </Modal>
+          </ScrollView>
+        </View>
+      )}
     </View>
   );
 }
-
 // Get place details using Google Places API
 export async function getPlaceDetails(
   placeId: string,
@@ -276,8 +221,6 @@ export async function getPlaceDetails(
       `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry,formatted_address&key=${apiKey}`
     );
     const data = await response.json();
-
-    console.log('Google Place Details response:', data);
 
     if (data.status === 'OK' && data.result) {
       const { lat, lng } = data.result.geometry.location;
