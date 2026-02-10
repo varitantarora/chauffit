@@ -13,7 +13,13 @@ export default function DriverTabsLayout() {
         headerShown: false,
         tabBarStyle: {
           backgroundColor: colors.background,
-          borderTopColor: colors.border,
+          borderTopWidth: 0,
+          borderTopColor: 'transparent',
+          elevation: 0,
+          shadowOpacity: 0,
+          shadowOffset: { width: 0, height: 0 },
+          shadowRadius: 0,
+          shadowColor: 'transparent',
         },
         tabBarActiveTintColor: colors.burgundy,
       }}

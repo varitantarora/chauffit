@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { View } from 'react-native';
 import { useAuthStore } from '../../../store/authStore';
 import { LightColors, DarkColors } from '../../../constants/Colors';
 
@@ -13,8 +14,17 @@ export default function CustomerTabsLayout() {
         headerShown: false,
         tabBarStyle: {
           backgroundColor: colors.background,
-          borderTopColor: colors.border,
+          borderTopWidth: 0,
+          borderTopColor: 'transparent',
+          elevation: 0,
+          shadowOpacity: 0,
+          shadowOffset: { width: 0, height: 0 },
+          shadowRadius: 0,
+          shadowColor: 'transparent',
         },
+        tabBarBackground: () => (
+          <View style={{ flex: 1, backgroundColor: colors.background }} />
+        ),
         tabBarActiveTintColor: colors.secondary,
         tabBarInactiveTintColor: isDarkMode ? '#9ca3af' : '#6b7280',
       }}

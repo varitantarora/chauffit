@@ -132,7 +132,7 @@ export default function Profile() {
   };
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView className="flex-1" edges={['top', 'left', 'right']}>
       <ThemedView className="flex-1">
         <ScrollView
           showsVerticalScrollIndicator={false}

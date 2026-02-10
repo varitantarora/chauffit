@@ -1,3 +1,4 @@
+import { BookingStatus } from '../services/api/BookingApiService';
 export type UserRole = 'customer' | 'driver' | 'biker';
 
 export interface User {
@@ -38,14 +39,19 @@ export interface BookingDetails {
   id?: string;
   customerId: string;
   chauffeurId?: string;
-  carId: string;
+  chauffeurName?: string;
+  carId?: string;
   duration: string;
   startTime: Date;
   endTime?: Date;
   pickupLocation: Location;
-  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
+  dropLocation?: Location;
+  status: BookingStatus | 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
+  price?: number;
   totalAmount: number;
-  paymentStatus: 'pending' | 'paid' | 'failed';
+  paymentMethod?: string;
+  paymentStatus: 'pending' | 'paid' | 'failed' | string;
+  vehicleType?: string;
   createdAt: Date;
   updatedAt?: Date;
 }

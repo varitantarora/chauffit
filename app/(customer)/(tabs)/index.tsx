@@ -8,7 +8,7 @@ import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../store/authStore';
 import { useRouter } from 'expo-router';
-import BookingApiService, { BookingDetail } from '../../../services/api/BookingApiService';
+import BookingApiService, { CustomerRide } from '../../../services/api/BookingApiService';
 
 export default function CustomerHomeScreen() {
   const user = useAuthStore((state) => state.user);
@@ -20,7 +20,7 @@ export default function CustomerHomeScreen() {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [pickupLocation, setPickupLocation] = useState('');
   const [destinationLocation, setDestinationLocation] = useState('');
-  const [recentActivity, setRecentActivity] = useState<BookingDetail[]>([]);
+  const [recentActivity, setRecentActivity] = useState<CustomerRide[]>([]);
   const [loadingActivity, setLoadingActivity] = useState(true);
 
   const clipAnimation = useRef(new Animated.Value(0)).current;
@@ -229,7 +229,7 @@ export default function CustomerHomeScreen() {
   ];
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView className="flex-1" edges={['top', 'left', 'right']}>
       <ThemedView className="flex-1">
         <ScrollView
           showsVerticalScrollIndicator={false}

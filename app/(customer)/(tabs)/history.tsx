@@ -7,16 +7,17 @@ import { BookingCard } from '../../../components/customer/BookingCard';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../store/authStore';
 import { useRouter } from 'expo-router';
-import BookingApiService, { BookingDetail } from '../../../services/api/BookingApiService';
+import BookingApiService, { CustomerRide } from '../../../services/api/BookingApiService';
 
 type TabType = 'all' | 'active' | 'completed' | 'cancelled';
 
 interface MappedBooking {
   id: string;
-  userId: string;
+  customerId: string;
   chauffeurId: string;
   chauffeurName: string;
   duration: string;
+  carId: string;
   pickupLocation: {
     address: string;
     latitude: number;
@@ -28,10 +29,10 @@ interface MappedBooking {
     longitude: number;
   };
   startTime: Date;
-  endTime: Date | null;
+  endTime: Date | undefined;
   price: number;
   totalAmount: number;
-  status: string;
+  status: any;
   paymentMethod: string;
   paymentStatus: string;
   vehicleType: string;
@@ -40,38 +41,37 @@ interface MappedBooking {
 }
 
 // Map API booking to store booking format
-const mapApiBookingToStore = (apiBooking: BookingDetail): MappedBooking => {
+const mapApiBookingToStore = (apiBooking: CustomerRide): MappedBooking => {
   // Extract driver details from embedded data
-  const driverDetails = typeof apiBooking.driver_details === 'object'
-    ? apiBooking.driver_details
-    : null;
+  const driverDetails = apiBooking.driver ? apiBooking.driver : null;
 
   return {
     id: apiBooking.id,
-    userId: apiBooking.customer,
-    chauffeurId: apiBooking.driver || '',
-    chauffeurName: driverDetails?.name || 'Finding driver...',
+    customerId: apiBooking.id, // apiBooking doesn't have customerId, using id as placeholder
+    chauffeurId: apiBooking.driver?.id || '',
+    chauffeurName: driverDetails?.full_name || 'Finding driver...',
     duration: apiBooking.trip_type,
     pickupLocation: {
       address: apiBooking.pickup_address,
-      latitude: parseFloat(apiBooking.pickup_lat) || 0,
-      longitude: parseFloat(apiBooking.pickup_long) || 0,
+      latitude: apiBooking.pickup_lat,
+      longitude: apiBooking.pickup_long,
     },
     dropLocation: {
       address: apiBooking.dropoff_address,
-      latitude: parseFloat(apiBooking.dropoff_lat) || 0,
-      longitude: parseFloat(apiBooking.dropoff_long) || 0,
+      latitude: apiBooking.dropoff_lat,
+      longitude: apiBooking.dropoff_long,
     },
     startTime: new Date(apiBooking.created_at),
-    endTime: apiBooking.scheduled_at ? new Date(apiBooking.scheduled_at) : null,
-    price: parseFloat(apiBooking.actual_fare || apiBooking.estimated_fare || '0'),
-    totalAmount: parseFloat(apiBooking.actual_fare || apiBooking.estimated_fare || '0'),
+    endTime: apiBooking.scheduled_at ? new Date(apiBooking.scheduled_at) : undefined,
+    price: parseFloat(apiBooking.estimated_fare || '0'),
+    totalAmount: parseFloat(apiBooking.estimated_fare || '0'),
     status: apiBooking.booking_status,
-    paymentMethod: apiBooking.payment_method || 'upi',
+    paymentMethod: 'upi', // Using default since not in CustomerRide
     paymentStatus: apiBooking.payment_status,
     vehicleType: 'luxury_sedan', // Would come from car details
+    carId: apiBooking.car?.id || '',
     createdAt: new Date(apiBooking.created_at),
-    updatedAt: new Date(apiBooking.updated_at),
+    updatedAt: apiBooking.updated_at ? new Date(apiBooking.updated_at) : new Date(apiBooking.created_at),
   };
 };
 
@@ -138,11 +138,11 @@ export default function HistoryScreen() {
       } else if (statuses) {
         // For filtered tabs, we need to fetch with individual status filters
         // since API only supports one status at a time
-        const allBookings: BookingDetail[] = [];
+        const allBookings: CustomerRide[] = [];
 
         // Fetch for each status and merge results
         for (const status of statuses) {
-          const response = await BookingApiService.listRides(status);
+          const response = await BookingApiService.listRides(status as any);
           if (response.success && response.data) {
             allBookings.push(...response.data);
           }
@@ -254,7 +254,7 @@ export default function HistoryScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView className="flex-1" edges={['top', 'left', 'right']}>
       <ThemedView className="flex-1">
         {/* Header */}
         <View className="px-6 py-4 border-b border-border">

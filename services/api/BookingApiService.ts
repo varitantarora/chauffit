@@ -73,21 +73,22 @@ export interface CustomerRide {
   dropoff_long: number;
   trip_type: TripType;
   estimated_fare: string;
+  actual_fare?: string | null;
+  payment_status: PaymentStatus;
   created_at: string;
+  updated_at?: string;
+  scheduled_at?: string;
   driver?: DriverInfo;
   car?: CarInfo;
+  rating?: number;
 }
 
 /**
  * Customer Ride Detail - Full response for detail endpoint
  */
 export interface CustomerRideDetail extends CustomerRide {
-  service_type: ServiceType;
-  estimated_distance_km?: number;
-  estimated_duration_minutes?: number;
-  actual_distance_km?: number | null;
-  actual_duration_minutes?: number | null;
   actual_fare?: string | null;
+  service_type: ServiceType;
   payment_status: PaymentStatus;
   driver_assigned_at?: string | null;
   biker_assigned_at?: string | null;
@@ -115,9 +116,12 @@ export interface FareEstimateRequest {
   vehicle_id: string;
   from_lat: number;
   from_long: number;
+  from_address?: string;
   to_lat: number;
   to_long: number;
+  to_address?: string;
   type: TripType;
+  when?: 'now' | 'schedule';
   scheduled_at?: string | null;
   hours?: number | null;
 }
@@ -129,11 +133,16 @@ export interface FareEstimateResponse {
   estimated_distance_km: number;
   estimated_duration_minutes: number;
   estimated_fare: string;
+  surge_multiplier?: number;
   fare_breakdown?: {
     base_fare: string;
     distance_fare: string;
-    platform_fee: string;
-    biker_transport_fee: string;
+    time_fare?: string;
+    platform_fee?: string;
+    biker_transport_fee?: string;
+    surge_amount?: string;
+    subtotal?: string;
+    total?: string;
   };
 }
 
@@ -369,10 +378,6 @@ export interface BookingRequest extends BookRideRequest {
   payment_method?: string;
   special_requests?: string;
   notes?: string;
-  from_lat: string | number;
-  from_long: string | number;
-  to_lat: string | number;
-  to_long: string | number;
 }
 export interface FareEstimateResponseOld {
   estimated_fare: number;

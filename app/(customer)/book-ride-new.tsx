@@ -255,9 +255,9 @@ export default function BookRideScreen() {
     return `${dayName}, ${month} ${date} at ${timeStr}`;
   };
 
-  const formatCoord = (value?: number | null) => {
-    if (value === null || value === undefined) return '';
-    return Number(value.toFixed(8)).toString();
+  const formatCoord = (value?: number | null): number => {
+    if (value === null || value === undefined) return 0;
+    return Number(value.toFixed(8));
   };
 
   // Handle schedule confirmation
@@ -448,7 +448,7 @@ export default function BookRideScreen() {
       if (response.success && response.data) {
         await createBooking({
           id: response.data.id,
-          userId: user?.id || '',
+          customerId: user?.id || '',
           chauffeurId: '',
           chauffeurName: 'Finding driver...',
           duration: tripType === 'hourly_charter' ? 'Hourly' : tripType === 'round_trip' ? 'Round-trip' : 'One-way',
@@ -963,54 +963,54 @@ export default function BookRideScreen() {
                     <View className="flex-row justify-between items-center mb-2">
                       <ThemedText variant="h3">Estimated Fare</ThemedText>
                       <ThemedText variant="h2" className="text-burgundy">
-                        {formatFare(fareEstimate.estimated_fare)}
+                        {formatFare(parseFloat(fareEstimate.estimated_fare))}
                       </ThemedText>
                     </View>
-                    {fareEstimate.breakdown && (
+                    {fareEstimate.fare_breakdown && (
                       <>
                         <View className="flex-row justify-between mb-1 px-2">
                           <ThemedText variant="tiny" className="text-gray-500">Base fare</ThemedText>
                           <ThemedText variant="tiny" className="text-gray-500">
-                            {formatFare(fareEstimate.breakdown.base_fare)}
+                            {formatFare(parseFloat(fareEstimate.fare_breakdown.base_fare))}
                           </ThemedText>
                         </View>
                         <View className="flex-row justify-between mb-1 px-2">
                           <ThemedText variant="tiny" className="text-gray-500">Distance fare</ThemedText>
                           <ThemedText variant="tiny" className="text-gray-500">
-                            {formatFare(fareEstimate.breakdown.distance_fare)}
+                            {formatFare(parseFloat(fareEstimate.fare_breakdown.distance_fare))}
                           </ThemedText>
                         </View>
-                        {fareEstimate.breakdown.time_fare !== undefined && fareEstimate.breakdown.time_fare > 0 && (
+                        {fareEstimate.fare_breakdown.time_fare !== undefined && parseFloat(fareEstimate.fare_breakdown.time_fare) > 0 && (
                           <View className="flex-row justify-between mb-1 px-2">
                             <ThemedText variant="tiny" className="text-gray-500">Time fare</ThemedText>
                             <ThemedText variant="tiny" className="text-gray-500">
-                              {formatFare(fareEstimate.breakdown.time_fare)}
+                              {formatFare(parseFloat(fareEstimate.fare_breakdown.time_fare))}
                             </ThemedText>
                           </View>
                         )}
-                        {fareEstimate.breakdown.subtotal !== undefined && (
+                        {fareEstimate.fare_breakdown.subtotal !== undefined && (
                           <View className="flex-row justify-between mb-1 px-2">
                             <ThemedText variant="tiny" className="text-gray-500">Subtotal</ThemedText>
                             <ThemedText variant="tiny" className="text-gray-500">
-                              {formatFare(fareEstimate.breakdown.subtotal)}
+                              {formatFare(parseFloat(fareEstimate.fare_breakdown.subtotal))}
                             </ThemedText>
                           </View>
                         )}
-                        {fareEstimate.breakdown.surge_amount !== undefined && fareEstimate.breakdown.surge_amount > 0 && (
+                        {fareEstimate.surge_multiplier !== undefined && fareEstimate.surge_multiplier > 1 && fareEstimate.fare_breakdown.surge_amount !== undefined && (
                           <View className="flex-row justify-between mb-1 px-2">
                             <ThemedText variant="tiny" className="text-gray-500">
                               Surge x{fareEstimate.surge_multiplier.toFixed(2)}
                             </ThemedText>
                             <ThemedText variant="tiny" className="text-gray-500">
-                              {formatFare(fareEstimate.breakdown.surge_amount)}
+                              {formatFare(parseFloat(fareEstimate.fare_breakdown.surge_amount))}
                             </ThemedText>
                           </View>
                         )}
-                        {fareEstimate.breakdown.total !== undefined && (
+                        {fareEstimate.fare_breakdown.total !== undefined && (
                           <View className="flex-row justify-between mb-1 px-2">
                             <ThemedText variant="tiny" className="text-gray-500 font-semibold">Total</ThemedText>
                             <ThemedText variant="tiny" className="text-gray-500 font-semibold">
-                              {formatFare(fareEstimate.breakdown.total)}
+                              {formatFare(parseFloat(fareEstimate.fare_breakdown.total))}
                             </ThemedText>
                           </View>
                         )}
