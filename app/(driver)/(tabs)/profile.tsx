@@ -628,7 +628,7 @@ export default function DriverProfile() {
                           <JobCard
                             key={job.id}
                             job={job}
-                            onViewDetails={(jobId) => router.push(`/(driver)/job/accept?jobId=${jobId}`)}
+                            onViewDetails={(jobId) => router.push(`/(driver)/job/completed?jobId=${jobId}`)}
                           />
                         ))
                       ) : (

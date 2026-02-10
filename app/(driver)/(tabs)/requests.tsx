@@ -114,10 +114,18 @@ export default function RideRequestsScreen() {
   };
 
   const handleViewJobDetails = (jobId: string) => {
-    router.push({
-      pathname: '/(driver)/job/accept',
-      params: { jobId }
-    });
+    // For completed jobs, navigate to completed ride details page
+    if (activeTab === 'completed') {
+      router.push({
+        pathname: '/(driver)/job/completed',
+        params: { jobId }
+      });
+    } else {
+      router.push({
+        pathname: '/(driver)/job/accept',
+        params: { jobId }
+      });
+    }
   };
 
   const getTabCount = (tab: TabType): number => {
