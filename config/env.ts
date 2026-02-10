@@ -242,7 +242,20 @@ export const getApiUrl = (endpoint: string, params?: Record<string, string>): st
       url = url.replace(`:${key}`, value);
     });
   }
-  
+
+  // Append remaining params as query string
+  if (params) {
+    const queryParams = Object.entries(params).filter(
+      ([key]) => !url.includes(`:${key}`)
+    );
+    if (queryParams.length > 0) {
+      const search = queryParams
+        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+        .join('&');
+      url += url.includes('?') ? `&${search}` : `?${search}`;
+    }
+  }
+
   return url;
 };
 

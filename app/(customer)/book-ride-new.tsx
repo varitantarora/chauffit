@@ -255,6 +255,11 @@ export default function BookRideScreen() {
     return `${dayName}, ${month} ${date} at ${timeStr}`;
   };
 
+  const formatCoord = (value?: number | null) => {
+    if (value === null || value === undefined) return '';
+    return Number(value.toFixed(8)).toString();
+  };
+
   // Handle schedule confirmation
   const handleConfirmSchedule = () => {
     if (!scheduledDate || !scheduledTime) {
@@ -276,11 +281,11 @@ export default function BookRideScreen() {
 
     try {
       const estimateRequest: FareEstimateRequest = {
-        from_lat: pickupLocation.latitude.toString(),
-        from_long: pickupLocation.longitude.toString(),
+        from_lat: formatCoord(pickupLocation.latitude),
+        from_long: formatCoord(pickupLocation.longitude),
         from_address: pickupLocation.fullAddress || pickupLocation.address,
-        to_lat: dropLocation.latitude.toString(),
-        to_long: dropLocation.longitude.toString(),
+        to_lat: formatCoord(dropLocation.latitude),
+        to_long: formatCoord(dropLocation.longitude),
         to_address: dropLocation.fullAddress || dropLocation.address,
         vehicle_id: selectedCar.id,
         when: scheduleOption,
@@ -424,11 +429,11 @@ export default function BookRideScreen() {
 
     try {
       const bookingData: BookingRequest = {
-        from_lat: pickupLocation.latitude.toString(),
-        from_long: pickupLocation.longitude.toString(),
+        from_lat: formatCoord(pickupLocation.latitude),
+        from_long: formatCoord(pickupLocation.longitude),
         from_address: pickupLocation.fullAddress || pickupLocation.address,
-        to_lat: dropLocation.latitude.toString(),
-        to_long: dropLocation.longitude.toString(),
+        to_lat: formatCoord(dropLocation.latitude),
+        to_long: formatCoord(dropLocation.longitude),
         to_address: dropLocation.fullAddress || dropLocation.address,
         vehicle_id: selectedCar.id,
         when: scheduleOption,

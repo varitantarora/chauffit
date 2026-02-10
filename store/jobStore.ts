@@ -221,6 +221,15 @@ const normalizeBookings = (data: any): BookingDetail[] => {
   return [];
 };
 
+const dedupeById = <T extends { id: string }>(items: T[]): T[] => {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+};
+
 // Status constants based on rides API documentation
 const PENDING_BOOKING_STATUSES = new Set(['requested']);
 
@@ -580,7 +589,7 @@ export const useJobStore = create<JobState>((set, get) => ({
         const requests = normalizeBookings(response.data)
           .filter((ride) => PENDING_BOOKING_STATUSES.has(ride.booking_status))
           .map((booking) => mapBookingToJobRequest(booking, 'pending'));
-        set({ pendingRequests: requests, lastApiError: null });
+        set({ pendingRequests: dedupeById(requests), lastApiError: null });
       } else {
         // On error, set empty array and store error message
         set({
@@ -616,7 +625,7 @@ export const useJobStore = create<JobState>((set, get) => ({
           ACCEPTED_BOOKING_STATUSES.has(ride.booking_status)
         );
         console.log('[JobStore] Filtered accepted bookings:', accepted);
-        const jobs = accepted.map((booking) => mapBookingToJobRequest(booking, 'accepted'));
+        const jobs = dedupeById(accepted.map((booking) => mapBookingToJobRequest(booking, 'accepted')));
         console.log('[JobStore] Mapped accepted jobs:', jobs);
         set({ acceptedJobs: jobs });
       } else {
@@ -645,7 +654,7 @@ export const useJobStore = create<JobState>((set, get) => ({
           IN_PROGRESS_BOOKING_STATUSES.has(ride.booking_status)
         );
         console.log('[JobStore] Filtered in-progress bookings:', inProgress);
-        const jobs = inProgress.map((booking) => mapBookingToJobRequest(booking, 'in-progress'));
+        const jobs = dedupeById(inProgress.map((booking) => mapBookingToJobRequest(booking, 'in-progress')));
         console.log('[JobStore] Mapped in-progress jobs:', jobs);
         set({ inProgressJobs: jobs });
 
@@ -701,7 +710,7 @@ export const useJobStore = create<JobState>((set, get) => ({
           COMPLETED_BOOKING_STATUSES.has(ride.booking_status)
         );
         console.log('[JobStore] Filtered completed rides:', filtered);
-        const jobs = filtered.map(mapBookingToJobHistory);
+        const jobs = dedupeById(filtered.map(mapBookingToJobHistory));
         console.log('[JobStore] Mapped completed jobs:', jobs);
         set({ completedJobs: jobs, jobHistory: jobs });
       } else {

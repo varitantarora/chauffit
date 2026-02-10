@@ -142,7 +142,7 @@ export default function HistoryScreen() {
 
         // Fetch for each status and merge results
         for (const status of statuses) {
-          const response = await BookingApiService.listRides({ booking_status: status });
+          const response = await BookingApiService.listRides(status);
           if (response.success && response.data) {
             allBookings.push(...response.data);
           }

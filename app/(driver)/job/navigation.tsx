@@ -10,6 +10,7 @@ import { RouteMap } from '../../../components/driver/navigation/RouteMap';
 import { useJobStore } from '../../../store/jobStore';
 import { useAuthStore } from '../../../store/authStore';
 import { ActiveJob, Location } from '../../../types/navigation';
+import DriverRidesApiService from '../../../services/api/DriverRidesApiService';
 
 export default function NavigationScreen() {
   const router = useRouter();
@@ -28,6 +29,25 @@ export default function NavigationScreen() {
   const [isNavigating, setIsNavigating] = useState(false);
   const [hasArrived, setHasArrived] = useState(false);
 
+  const formatCoord = (value?: number | null) => {
+    if (value === null || value === undefined) return undefined;
+    return Number(value.toFixed(8));
+  };
+
+  const updateBackendRideStatus = async (status: 'driver_en_route' | 'driver_arrived') => {
+    if (!activeJob?.id) return false;
+    const response = await DriverRidesApiService.updateRideStatus(activeJob.id, {
+      status,
+      location_lat: formatCoord(currentLocation?.latitude),
+      location_long: formatCoord(currentLocation?.longitude),
+    });
+    if (!response.success) {
+      Alert.alert('Status Update Failed', response.error || 'Please try again.');
+      return false;
+    }
+    return true;
+  };
+
   useEffect(() => {
     // Check if we have an activeJob, if not redirect back
     const currentActiveJob = useJobStore.getState().activeJob;
@@ -39,6 +59,8 @@ export default function NavigationScreen() {
     // Only update status if it's not already en_route_pickup or arrived_pickup
     if (currentActiveJob.status !== 'en_route_pickup' && currentActiveJob.status !== 'arrived_pickup') {
       updateJobStatus('en_route_pickup');
+      // Keep backend in sync with driver status transitions
+      updateBackendRideStatus('driver_en_route');
     }
     setIsNavigating(true);
     
@@ -75,7 +97,10 @@ export default function NavigationScreen() {
         { text: 'Not Yet', style: 'cancel' },
         {
           text: 'Yes, I\'ve Arrived',
-          onPress: () => {
+          onPress: async () => {
+            const updated = await updateBackendRideStatus('driver_arrived');
+            if (!updated) return;
+
             updateJobStatus('arrived_pickup');
             setHasArrived(true);
             Alert.alert(
@@ -91,7 +116,7 @@ export default function NavigationScreen() {
                 }
               ]
             );
-          }
+          },
         }
       ]
     );
