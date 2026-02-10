@@ -1,0 +1,29 @@
+You're a senior software engineer that is given a task to create a mobile app called Chauffit.,
+
+Backend code - /Users/vidushitickoo/Chauffit/chauffit-backend
+Backend docs - /Users/vidushitickoo/Chauffit/chauffit-backend/docs
+Frontend code - /Users/vidushitickoo/Chauffit/chauffit-backend
+API docs - http://16.112.161.95/api/docs/
+API schema - /Users/vidushitickoo/Chauffit/chauffit/Docs/Chauffit API.yaml
+
+Make changes that are readable over anything else. For now we don't want optimised code but want a quick ready and go to market code.
+some preferences should be - polling over sockets etc
+
+Chauffit is a app where a customer owns a car but only needs driver. he books driver and driver accepts it
+Biker ride is created once driver accepts and biker reaches driver location and drop to customer location
+Driver drives the customer car and ends his trip
+
+Task -
+- Customer cerates a booking
+- driver sees in pending ride requests
+- driver accepts the ride
+- after accepting backend automatically creates a Biker ride
+- Biker sees a pending request
+- Biker accepts the biker ride
+- Biker goes to driver location and pick it
+- Biker starts his trip.
+- Biker and driver goes to driver location
+- Biker ends his trip
+- Driver starts his ride
+- Driver goes to given location or completes his duty and complete the ride
+- Now driver can rate customer and customer can rate driver

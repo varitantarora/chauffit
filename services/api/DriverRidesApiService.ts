@@ -441,6 +441,34 @@ class DriverRidesApiService {
       };
     }
   }
+
+  /**
+   * Rate Customer
+   * POST /api/v1/rides/driver/{id}/rate-customer/
+   *
+   * Submit a rating for the customer after a completed trip.
+   *
+   * @param rideId - The booking ID
+   * @param rating - Rating from 1 to 5
+   * @param comment - Optional comment about the customer
+   */
+  async rateCustomer(
+    rideId: string,
+    rating: number,
+    comment?: string
+  ): Promise<ApiResponse<{ message: string; rating: number }>> {
+    try {
+      return await BaseApiService.post<{ message: string; rating: number }>(
+        `${this.basePath}/${rideId}/rate-customer/`,
+        { rating, comment }
+      );
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to submit rating',
+      };
+    }
+  }
 }
 
 export default new DriverRidesApiService();

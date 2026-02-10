@@ -70,7 +70,7 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails, processing = 
     });
   };
 
-  const getTimeFromNow = (date: Date | null | undefined) => {
+  const getTimeFromNow = (date: Date | null | undefined, isCompleted: boolean = false) => {
     if (!date) return 'now';
 
     const now = new Date();
@@ -78,6 +78,24 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails, processing = 
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
+    // For completed jobs, show past time relative
+    if (isCompleted) {
+      const pastHours = Math.floor(Math.abs(diff) / (1000 * 60 * 60));
+      const pastMinutes = Math.floor((Math.abs(diff) % (1000 * 60 * 60)) / (1000 * 60));
+      const days = Math.floor(pastHours / 24);
+
+      if (days > 0) {
+        return `${days}d ago`;
+      } else if (pastHours > 0) {
+        return `${pastHours}h ago`;
+      } else if (pastMinutes > 0) {
+        return `${pastMinutes}m ago`;
+      } else {
+        return 'just now';
+      }
+    }
+
+    // For future jobs
     if (hours > 0) {
       return `in ${hours}h ${minutes}m`;
     } else if (minutes > 0) {
@@ -129,6 +147,8 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails, processing = 
   // For completed jobs
   const tips = isCompletedJob ? job.tips : 0;
   const rating = isCompletedJob ? job.rating : undefined;
+  const hasAcceptActions = !!onAccept || !!onDecline;
+  const canNavigate = !isCompletedJob && !hasAcceptActions && job.status === 'accepted';
 
   return (
     <ThemedCard className="mb-4 p-0">
@@ -151,10 +171,17 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails, processing = 
                  serviceType === 'outstation' ? 'Outstation Trip' :
                  serviceType === 'hourly' ? 'Hourly Service' : 'Point to Point'}
               </ThemedText>
+              {isCompletedJob && (
+                <View className="bg-success/20 px-2 py-0.5 rounded ml-2">
+                  <ThemedText variant="caption" className="text-success font-semibold">
+                    Completed
+                  </ThemedText>
+                </View>
+              )}
             </View>
             <View className="flex-row items-center">
               <ThemedText variant="caption" className="text-secondary">
-                {formatTime(scheduledTime)} • {getTimeFromNow(scheduledTime)}
+                {formatTime(scheduledTime)} • {getTimeFromNow(scheduledTime, isCompletedJob)}
               </ThemedText>
               <ThemedText variant="caption" className="text-secondary ml-2">
                 • {estimatedDistance} km
@@ -287,33 +314,49 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails, processing = 
         )}
 
         {/* Actions */}
-        {!isCompletedJob && (
+        {hasAcceptActions && !isCompletedJob && (
           <View className="flex-row space-x-3">
-            <TouchableOpacity
-              style={{ opacity: processing ? 0.5 : 1 }}
-              onPress={() => timeLeft > 0 && !processing && onDecline(job.id)}
-              disabled={timeLeft <= 0 || processing}
-              className="flex-1 py-3 items-center border border-secondary rounded-lg"
-            >
-              {processing && timeLeft <= 0 ? (
-                <ActivityIndicator size="small" color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
-              ) : (
-                <ThemedText className="text-secondary font-semibold">Decline</ThemedText>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{ opacity: processing ? 0.5 : 1 }}
-              onPress={() => timeLeft > 0 && !processing && onAccept(job.id)}
-              disabled={timeLeft <= 0 || processing}
-              className="flex-1 py-3 items-center bg-burgundy rounded-lg"
-            >
-              {processing && timeLeft <= 0 ? (
-                <ActivityIndicator size="small" color="#ffffff" />
-              ) : (
-                <ThemedText className="text-white font-semibold">Accept</ThemedText>
-              )}
-            </TouchableOpacity>
+            {onDecline && (
+              <TouchableOpacity
+                style={{ opacity: processing ? 0.5 : 1 }}
+                onPress={() => timeLeft > 0 && !processing && onDecline(job.id)}
+                disabled={timeLeft <= 0 || processing}
+                className="flex-1 py-3 items-center border border-secondary rounded-lg"
+              >
+                {processing && timeLeft <= 0 ? (
+                  <ActivityIndicator size="small" color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
+                ) : (
+                  <ThemedText className="text-secondary font-semibold">Decline</ThemedText>
+                )}
+              </TouchableOpacity>
+            )}
+            {onAccept && (
+              <TouchableOpacity
+                style={{ opacity: processing ? 0.5 : 1 }}
+                onPress={() => timeLeft > 0 && !processing && onAccept(job.id)}
+                disabled={timeLeft <= 0 || processing}
+                className="flex-1 py-3 items-center bg-burgundy rounded-lg"
+              >
+                {processing && timeLeft <= 0 ? (
+                  <ActivityIndicator size="small" color="#ffffff" />
+                ) : (
+                  <ThemedText className="text-white font-semibold">Accept</ThemedText>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
+        )}
+
+        {canNavigate && onViewDetails && (
+          <TouchableOpacity
+            onPress={() => onViewDetails(job.id)}
+            className="w-full py-3 items-center bg-burgundy rounded-lg"
+          >
+            <View className="flex-row items-center">
+              <Ionicons name="navigate" size={16} color="#ffffff" />
+              <ThemedText className="text-white font-semibold ml-2">Navigate</ThemedText>
+            </View>
+          </TouchableOpacity>
         )}
       </TouchableOpacity>
     </ThemedCard>
