@@ -25,7 +25,12 @@
         "foregroundImage": "./assets/chauffit-logo.png",
         "backgroundColor": "#D9D1C6"
       },
-      "package": "com.chauffit.app"
+      "package": "com.chauffit.app",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyA0dNRCH-TIfCIg59fl6fEmhfLTNRAFCS8"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/chauffit-logo.png",

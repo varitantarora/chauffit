@@ -81,6 +81,12 @@ const UniversalMapView = forwardRef<MapViewRef, UniversalMapViewProps>(({
   const [currentLocation, setCurrentLocation] = useState<LatLng | null>(null);
   const [region, setRegion] = useState<Region>(initialRegion);
 
+  useEffect(() => {
+    if (initialRegion) {
+      setRegion(initialRegion);
+    }
+  }, [initialRegion]);
+
   // Log API key for debugging
   useEffect(() => {
     if (!googleMapsApiKey) {
@@ -201,11 +207,11 @@ const UniversalMapView = forwardRef<MapViewRef, UniversalMapViewProps>(({
   };
 
   return (
-    <View className={`flex-1 ${className}`} style={style}>
+    <View className={`flex-1 ${className}`} style={[{ flex: 1 }, style]}>
       <MapView
         ref={mapRef}
         provider={PROVIDER_GOOGLE}
-        className="flex-1"
+        style={{ flex: 1 }}
         region={region}
         showsUserLocation={showUserLocation}
         showsMyLocationButton={false}
@@ -221,6 +227,7 @@ const UniversalMapView = forwardRef<MapViewRef, UniversalMapViewProps>(({
           onMapPress?.(coordinate);
         }}
         onRegionChangeComplete={setRegion}
+        onMapReady={() => console.log('✓ Native Map is ready')}
         mapType="standard"
       >
         {/* Render custom markers */}

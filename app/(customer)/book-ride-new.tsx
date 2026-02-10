@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   ScrollView,
   TouchableOpacity,
@@ -30,6 +30,7 @@ import {
   GooglePlacesAutocomplete,
   getPlaceDetails,
 } from '../../components/customer/GooglePlacesAutocomplete';
+import UniversalMapView, { MapMarker, MapRoute } from '../../components/shared/MapView';
 import { appConfig } from '../../config/env';
 
 interface BookingLocation {
@@ -456,16 +457,15 @@ export default function BookRideScreen() {
             latitude: dropLocation.latitude,
             longitude: dropLocation.longitude,
           },
-          startTime: scheduleOption === 'schedule' && scheduledDate
+          startTime: (scheduleOption === 'schedule' && scheduledDate)
             ? scheduledDate
             : new Date(),
-          endTime: null,
-          price: fareEstimate.estimated_fare,
-          totalAmount: fareEstimate.estimated_fare,
+          price: Number(fareEstimate.estimated_fare),
+          totalAmount: Number(fareEstimate.estimated_fare),
           status: 'pending' as const,
           paymentMethod: 'upi',
           paymentStatus: 'pending' as const,
-          vehicleType: selectedCar.vehicleType || 'luxury_sedan',
+          vehicleType: (selectedCar as any).vehicleType || 'luxury_sedan',
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -479,6 +479,10 @@ export default function BookRideScreen() {
             pickup: pickupLocation.address,
             destination: dropLocation.address,
             fare: String(fareEstimate.estimated_fare),
+            pickupLat: pickupLocation.latitude.toString(),
+            pickupLng: pickupLocation.longitude.toString(),
+            dropLat: dropLocation.latitude.toString(),
+            dropLng: dropLocation.longitude.toString(),
           },
         });
       } else {
@@ -526,6 +530,34 @@ export default function BookRideScreen() {
         return type;
     }
   };
+
+  const mapMarkers = useMemo((): MapMarker[] => {
+    if (!pickupLocation || !dropLocation) return [];
+    return [
+      {
+        id: 'pickup',
+        coordinate: { latitude: pickupLocation.latitude, longitude: pickupLocation.longitude },
+        title: 'Pickup',
+        type: 'pickup',
+      },
+      {
+        id: 'dropoff',
+        coordinate: { latitude: dropLocation.latitude, longitude: dropLocation.longitude },
+        title: 'Destination',
+        type: 'dropoff',
+      },
+    ];
+  }, [pickupLocation, dropLocation]);
+
+  const mapRoute = useMemo((): MapRoute | undefined => {
+    if (!pickupLocation || !dropLocation) return undefined;
+    return {
+      origin: { latitude: pickupLocation.latitude, longitude: pickupLocation.longitude },
+      destination: { latitude: dropLocation.latitude, longitude: dropLocation.longitude },
+      strokeColor: '#BD8C5E',
+      strokeWidth: 4,
+    };
+  }, [pickupLocation, dropLocation]);
 
   return (
     <SafeAreaView className="flex-1">
@@ -843,7 +875,22 @@ export default function BookRideScreen() {
               </View>
 
               {fareEstimate && (
-                <View>
+                <ScrollView showsVerticalScrollIndicator={false} className="max-h-[80%]">
+                  <View className="mb-4 h-48 rounded-2xl overflow-hidden border border-gray-200 dark:border-darkBorder">
+                    <UniversalMapView
+                      initialRegion={{
+                        latitude: (pickupLocation.latitude + (dropLocation?.latitude || pickupLocation.latitude)) / 2,
+                        longitude: (pickupLocation.longitude + (dropLocation?.longitude || pickupLocation.longitude)) / 2,
+                        latitudeDelta: Math.abs(pickupLocation.latitude - (dropLocation?.latitude || pickupLocation.latitude)) * 1.5 + 0.05,
+                        longitudeDelta: Math.abs(pickupLocation.longitude - (dropLocation?.longitude || pickupLocation.longitude)) * 1.5 + 0.05,
+                      }}
+                      markers={mapMarkers}
+                      route={mapRoute}
+                      googleMapsApiKey={appConfig.googleMapsApiKey}
+                      showUserLocation={false}
+                    />
+                  </View>
+                  <View>
                   {/* Trip Summary */}
                   <View className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                     <View className="flex-row items-center mb-2">
@@ -977,7 +1024,8 @@ export default function BookRideScreen() {
                     className="w-full"
                   />
                 </View>
-              )}
+              </ScrollView>
+            )}
             </View>
           </View>
         </Modal>

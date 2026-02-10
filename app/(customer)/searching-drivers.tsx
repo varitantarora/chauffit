@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { View, Animated, Dimensions, Image, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Animated, Dimensions, Image, RefreshControl, ActivityIndicator, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../components/common/ThemedView';
 import { ThemedText } from '../../components/common/ThemedText';
@@ -163,27 +163,43 @@ export default function SearchingDriversScreen() {
   };
 
   const tripDetails = {
-    pickup: params.pickup || 'Current Location',
-    destination: params.destination || 'Destination',
-    bookingId: params.bookingId,
-    fare: params.fare,
+    pickup: (Array.isArray(params.pickup) ? params.pickup[0] : params.pickup) || 'Current Location',
+    destination: (Array.isArray(params.destination) ? params.destination[0] : params.destination) || 'Destination',
+    bookingId: Array.isArray(params.bookingId) ? params.bookingId[0] : params.bookingId,
+    fare: Array.isArray(params.fare) ? params.fare[0] : params.fare,
   };
 
   const pickupCoordinate = useMemo(() => {
-    if (!rideDetails?.pickup_lat || !rideDetails?.pickup_long) return null;
-    const latitude = Number(rideDetails.pickup_lat);
-    const longitude = Number(rideDetails.pickup_long);
-    if (Number.isNaN(latitude) || Number.isNaN(longitude)) return null;
-    return { latitude, longitude };
-  }, [rideDetails?.pickup_lat, rideDetails?.pickup_long]);
+    if (rideDetails?.pickup_lat && rideDetails?.pickup_long) {
+      const latitude = Number(rideDetails.pickup_lat);
+      const longitude = Number(rideDetails.pickup_long);
+      if (!Number.isNaN(latitude) && !Number.isNaN(longitude)) return { latitude, longitude };
+    }
+    
+    if (params.pickupLat && params.pickupLng) {
+      const latitude = Number(Array.isArray(params.pickupLat) ? params.pickupLat[0] : params.pickupLat);
+      const longitude = Number(Array.isArray(params.pickupLng) ? params.pickupLng[0] : params.pickupLng);
+      if (!Number.isNaN(latitude) && !Number.isNaN(longitude)) return { latitude, longitude };
+    }
+    
+    return null;
+  }, [rideDetails?.pickup_lat, rideDetails?.pickup_long, params.pickupLat, params.pickupLng]);
 
   const dropoffCoordinate = useMemo(() => {
-    if (!rideDetails?.dropoff_lat || !rideDetails?.dropoff_long) return null;
-    const latitude = Number(rideDetails.dropoff_lat);
-    const longitude = Number(rideDetails.dropoff_long);
-    if (Number.isNaN(latitude) || Number.isNaN(longitude)) return null;
-    return { latitude, longitude };
-  }, [rideDetails?.dropoff_lat, rideDetails?.dropoff_long]);
+    if (rideDetails?.dropoff_lat && rideDetails?.dropoff_long) {
+      const latitude = Number(rideDetails.dropoff_lat);
+      const longitude = Number(rideDetails.dropoff_long);
+      if (!Number.isNaN(latitude) && !Number.isNaN(longitude)) return { latitude, longitude };
+    }
+
+    if (params.dropLat && params.dropLng) {
+      const latitude = Number(Array.isArray(params.dropLat) ? params.dropLat[0] : params.dropLat);
+      const longitude = Number(Array.isArray(params.dropLng) ? params.dropLng[0] : params.dropLng);
+      if (!Number.isNaN(latitude) && !Number.isNaN(longitude)) return { latitude, longitude };
+    }
+
+    return null;
+  }, [rideDetails?.dropoff_lat, rideDetails?.dropoff_long, params.dropLat, params.dropLng]);
 
   const mapMarkers: MapMarker[] = useMemo(() => {
     const markers: MapMarker[] = [];
@@ -239,182 +255,185 @@ export default function SearchingDriversScreen() {
   return (
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
-        <View className="flex-1" refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={['#BD8C5E']}
-            tintColor="#BD8C5E"
-          />
-        }>
-        {/* Map Background - Top Half */}
-        <View className="flex-1 relative">
-          <UniversalMapView
-            initialRegion={initialRegion}
-            markers={mapMarkers}
-            route={mapRoute}
-            googleMapsApiKey={appConfig.googleMapsApiKey}
-            showUserLocation={false}
-            className="absolute inset-0"
-          />
-
-          {/* Driver Search Animation - Center of Map */}
-          <View className="absolute inset-0 items-center justify-center">
-            <Animated.View
-              className="absolute w-40 h-40 rounded-full border-2 border-burgundy"
-              style={{
-                opacity: searchRipple1.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.7, 0],
-                }),
-                transform: [{
-                  scale: searchRipple1.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.5, 2],
-                  }),
-                }],
-              }}
-            />
-            <Animated.View
-              className="absolute w-40 h-40 rounded-full border-2 border-secondary"
-              style={{
-                opacity: searchRipple2.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.5, 0],
-                }),
-                transform: [{
-                  scale: searchRipple2.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.5, 2.5],
-                  }),
-                }],
-              }}
-            />
-            <Animated.View
-              className="absolute w-40 h-40 rounded-full border-2 border-burgundy opacity-30"
-              style={{
-                opacity: searchRipple3.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.3, 0],
-                }),
-                transform: [{
-                  scale: searchRipple3.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.5, 3],
-                  }),
-                }],
-              }}
+        <View className="flex-1">
+          {/* Map Background - Top Partial */}
+          <View style={{ height: height * 0.45 }}>
+            <UniversalMapView
+              initialRegion={initialRegion}
+              markers={mapMarkers}
+              route={mapRoute}
+              googleMapsApiKey={appConfig.googleMapsApiKey}
+              showUserLocation={false}
+              style={{ flex: 1 }}
             />
 
-            <Animated.View
-              className="w-16 h-16 bg-white dark:bg-gray-800 rounded-full items-center justify-center shadow-lg border-2 border-burgundy"
-              style={{
-                transform: [{
-                  scale: pulseAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [1, 1.2],
-                  }),
-                }],
-              }}
-            >
-              <Image
-                source={require('../../assets/chauffit-logo.png')}
-                style={{
-                  width: 32,
-                  height: 32,
-                }}
-                resizeMode="contain"
-              />
-            </Animated.View>
-          </View>
-        </View>
-
-        {/* Bottom Half - Search Status */}
-        <View className="h-1/2 px-6 pt-8 pb-6">
-          <Animated.View
-            className="flex-1 items-center justify-center"
-            style={{ opacity: textOpacity }}
-          >
-            {/* Status Icon */}
-            <View className="w-20 h-20 bg-secondary/10 rounded-full items-center justify-center mb-6">
+            {/* Driver Search Animation - Overlay on Map */}
+            <View className="absolute inset-0 items-center justify-center" pointerEvents="none">
               <Animated.View
+                className="absolute w-40 h-40 rounded-full border-2 border-burgundy"
+                style={{
+                  opacity: searchRipple1.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.7, 0],
+                  }),
+                  transform: [{
+                    scale: searchRipple1.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.5, 2],
+                    }),
+                  }],
+                }}
+              />
+              <Animated.View
+                className="absolute w-40 h-40 rounded-full border-2 border-secondary"
+                style={{
+                  opacity: searchRipple2.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.5, 0],
+                  }),
+                  transform: [{
+                    scale: searchRipple2.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.5, 2.5],
+                    }),
+                  }],
+                }}
+              />
+              <Animated.View
+                className="absolute w-40 h-40 rounded-full border-2 border-burgundy opacity-30"
+                style={{
+                  opacity: searchRipple3.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.3, 0],
+                  }),
+                  transform: [{
+                    scale: searchRipple3.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.5, 3],
+                    }),
+                  }],
+                }}
+              />
+
+              <Animated.View
+                className="w-16 h-16 bg-white dark:bg-gray-800 rounded-full items-center justify-center shadow-lg border-2 border-burgundy"
                 style={{
                   transform: [{
-                    rotate: pulseAnim.interpolate({
+                    scale: pulseAnim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: ['0deg', '360deg'],
+                      outputRange: [1, 1.2],
                     }),
                   }],
                 }}
               >
-                <Ionicons name="search" size={32} color="#BD8C5E" />
+                <Image
+                  source={require('../../assets/chauffit-logo.png')}
+                  style={{
+                    width: 32,
+                    height: 32,
+                  }}
+                  resizeMode="contain"
+                />
               </Animated.View>
             </View>
+          </View>
 
-            {/* Search Text with Animated Dots */}
-            <View className="flex-row items-center mb-4">
-              <ThemedText variant="h3" className="text-center">
-                {searchText}
-              </ThemedText>
-              <Animated.View
-                className="ml-2 flex-row"
-                style={{
-                  opacity: dotAnimation.interpolate({
-                    inputRange: [0, 0.3, 0.6, 1],
-                    outputRange: [0, 1, 1, 0],
-                  }),
-                }}
-              >
-                <ThemedText variant="h3">...</ThemedText>
-              </Animated.View>
-            </View>
-
-            <ThemedText variant="small" className="text-center text-gray-600 px-4">
-              We're connecting you with the best chauffeur in your area. This usually takes 10-30 seconds.
-            </ThemedText>
-
-            {/* Trip Details Preview */}
-            <View className="mt-8 w-full">
-              <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
-                <View className="flex-row items-center mb-2">
-                  <Ionicons name="location" size={16} color="#10B981" />
-                  <ThemedText variant="small" className="ml-2 text-gray-600">From</ThemedText>
-                </View>
-                <ThemedText className="mb-3 pl-6">{tripDetails.pickup}</ThemedText>
-
-                <View className="flex-row items-center mb-2">
-                  <Ionicons name="navigate" size={16} color="#EF4444" />
-                  <ThemedText variant="small" className="ml-2 text-gray-600">To</ThemedText>
-                </View>
-                <ThemedText className="pl-6">{tripDetails.destination}</ThemedText>
-              </View>
-            </View>
-          </Animated.View>
-        </View>
-
-        {/* Curtain Animation Overlay */}
-        {showCurtain && (
-          <Animated.View
-            className="absolute inset-0 bg-white dark:bg-gray-900 items-center justify-center"
-            style={{
-              transform: [{
-                translateY: curtainAnim,
-              }],
-            }}
+          {/* Bottom - Search Status */}
+          <ScrollView 
+            className="flex-1 px-6 pt-8 pb-6"
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={['#BD8C5E']}
+                tintColor="#BD8C5E"
+              />
+            }
           >
-            <View className="items-center">
-              <View className="w-16 h-16 bg-green-100 rounded-full items-center justify-center mb-4">
-                <Ionicons name="checkmark-circle" size={32} color="#10B981" />
+            <Animated.View
+              className="items-center justify-center"
+              style={{ opacity: textOpacity }}
+            >
+              {/* Status Icon */}
+              <View className="w-20 h-20 bg-secondary/10 rounded-full items-center justify-center mb-6">
+                <Animated.View
+                  style={{
+                    transform: [{
+                      rotate: pulseAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['0deg', '360deg'],
+                      }),
+                    }],
+                  }}
+                >
+                  <Ionicons name="search" size={32} color="#BD8C5E" />
+                </Animated.View>
               </View>
-              <ThemedText variant="h3" className="text-center mb-2">
-                Driver Found!
+
+              {/* Search Text with Animated Dots */}
+              <View className="flex-row items-center mb-4">
+                <ThemedText variant="h3" className="text-center">
+                  {searchText}
+                </ThemedText>
+                <Animated.View
+                  className="ml-2 flex-row"
+                  style={{
+                    opacity: dotAnimation.interpolate({
+                      inputRange: [0, 0.3, 0.6, 1],
+                      outputRange: [0, 1, 1, 0],
+                    }),
+                  }}
+                >
+                  <ThemedText variant="h3">...</ThemedText>
+                </Animated.View>
+              </View>
+
+              <ThemedText variant="small" className="text-center text-gray-600 px-4">
+                We're connecting you with the best chauffeur in your area. This usually takes 10-30 seconds.
               </ThemedText>
-              <ThemedText variant="small" className="text-center text-gray-600">
-                Rajesh Kumar is on the way
-              </ThemedText>
-            </View>
-          </Animated.View>
-        )}
+
+              {/* Trip Details Preview */}
+              <View className="mt-8 w-full">
+                <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+                  <View className="flex-row items-center mb-2">
+                    <Ionicons name="location" size={16} color="#10B981" />
+                    <ThemedText variant="small" className="ml-2 text-gray-600">From</ThemedText>
+                  </View>
+                  <ThemedText className="mb-3 pl-6">{tripDetails.pickup}</ThemedText>
+
+                  <View className="flex-row items-center mb-2">
+                    <Ionicons name="navigate" size={16} color="#EF4444" />
+                    <ThemedText variant="small" className="ml-2 text-gray-600">To</ThemedText>
+                  </View>
+                  <ThemedText className="pl-6">{tripDetails.destination}</ThemedText>
+                </View>
+              </View>
+            </Animated.View>
+          </ScrollView>
+
+          {/* Curtain Animation Overlay */}
+          {showCurtain && (
+            <Animated.View
+              className="absolute inset-0 bg-white dark:bg-gray-900 items-center justify-center"
+              style={{
+                transform: [{
+                  translateY: curtainAnim,
+                }],
+              }}
+            >
+              <View className="items-center">
+                <View className="w-16 h-16 bg-green-100 rounded-full items-center justify-center mb-4">
+                  <Ionicons name="checkmark-circle" size={32} color="#10B981" />
+                </View>
+                <ThemedText variant="h3" className="text-center mb-2">
+                  Driver Found!
+                </ThemedText>
+                <ThemedText variant="small" className="text-center text-gray-600">
+                  {rideDetails?.driver?.full_name || 'Your driver'} is on the way
+                </ThemedText>
+              </View>
+            </Animated.View>
+          )}
         </View>
       </ThemedView>
     </SafeAreaView>
