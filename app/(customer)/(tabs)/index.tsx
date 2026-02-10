@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ScrollView, TouchableOpacity, View, TextInput, RefreshControl, Animated, Image } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { ScrollView, TouchableOpacity, View, TextInput, RefreshControl, Animated, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../../components/common/ThemedView';
 import { ThemedCard } from '../../../components/common/ThemedCard';
@@ -8,6 +8,7 @@ import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../store/authStore';
 import { useRouter } from 'expo-router';
+import BookingApiService, { BookingDetail } from '../../../services/api/BookingApiService';
 
 export default function CustomerHomeScreen() {
   const user = useAuthStore((state) => state.user);
@@ -19,6 +20,8 @@ export default function CustomerHomeScreen() {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [pickupLocation, setPickupLocation] = useState('');
   const [destinationLocation, setDestinationLocation] = useState('');
+  const [recentActivity, setRecentActivity] = useState<BookingDetail[]>([]);
+  const [loadingActivity, setLoadingActivity] = useState(true);
 
   const clipAnimation = useRef(new Animated.Value(0)).current;
   const searchAnimation = useRef(new Animated.Value(0)).current;
@@ -28,8 +31,35 @@ export default function CustomerHomeScreen() {
 
   const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
 
+  // Fetch recent activity from API
+  const fetchRecentActivity = useCallback(async () => {
+    try {
+      setLoadingActivity(true);
+      const response = await BookingApiService.listRides();
+      if (response.success && response.data) {
+        // Sort by created_at descending and take top 3
+        const sorted = response.data
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          .slice(0, 3);
+        setRecentActivity(sorted);
+      } else {
+        setRecentActivity([]);
+      }
+    } catch (error) {
+      console.error('Error fetching recent activity:', error);
+      setRecentActivity([]);
+    } finally {
+      setLoadingActivity(false);
+    }
+  }, []);
+
+  // Load recent activity on mount
   useEffect(() => {
-    // Start the reveal animation when component mounts
+    fetchRecentActivity();
+  }, [fetchRecentActivity]);
+
+  // Start the reveal animation when component mounts
+  useEffect(() => {
     const timer = setTimeout(() => {
       Animated.timing(clipAnimation, {
         toValue: 1,
@@ -51,10 +81,52 @@ export default function CustomerHomeScreen() {
     return 'Good evening';
   };
 
-  const onRefresh = React.useCallback(() => {
+  const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 2000);
-  }, []);
+    await fetchRecentActivity();
+    setRefreshing(false);
+  }, [fetchRecentActivity]);
+
+  // Format fare for display
+  const formatFare = (fare: string | number | null | undefined): string => {
+    if (!fare) return '₹0';
+    const numFare = typeof fare === 'string' ? parseFloat(fare) : fare;
+    return `₹${numFare.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+  };
+
+  // Format booking status for display
+  const formatBookingStatus = (status: string): string => {
+    const statusMap: Record<string, string> = {
+      'requested': 'Pending',
+      'driver_assigned': 'Driver Assigned',
+      'biker_assigned': 'Driver Assigned',
+      'driver_en_route': 'Driver En Route',
+      'driver_arrived': 'Driver Arrived',
+      'trip_started': 'In Progress',
+      'trip_completed': 'Completed',
+      'cancelled_by_customer': 'Cancelled',
+      'cancelled_by_driver': 'Cancelled',
+      'cancelled_by_system': 'Cancelled',
+    };
+    return statusMap[status] || status;
+  };
+
+  // Format date for display
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+  };
 
   const handleSearch = () => {
     if (searchText.trim()) {
@@ -356,47 +428,117 @@ export default function CustomerHomeScreen() {
           
           {/* Recent Activity */}
           <View className="px-3 mb-6">
-            <ThemedText variant="title" className="text-lg mb-4">
-              Recent Activity
-            </ThemedText>
+            <View className="flex-row justify-between items-center mb-4">
+              <ThemedText variant="title" className="text-lg">
+                Recent Activity
+              </ThemedText>
+              {recentActivity.length > 0 && (
+                <TouchableOpacity onPress={() => router.push('/(customer)/(tabs)/history')}>
+                  <ThemedText className="text-secondary">View All</ThemedText>
+                </TouchableOpacity>
+              )}
+            </View>
 
-            <ThemedCard className="mb-3">
-              <View className="flex-row items-center">
-                <View className="bg-green-500/10 p-2 rounded-full">
-                  <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-                </View>
-                <View className="ml-3 flex-1">
-                  <ThemedText className="font-semibold">Airport Transfer</ThemedText>
-                  <ThemedText variant="caption">Completed • Yesterday 9:00 AM</ThemedText>
-                  <ThemedText variant="caption">Cyber Hub → IGI Airport T3</ThemedText>
-                </View>
-                <View className="items-end">
-                  <ThemedText className="font-bold">₹2,850</ThemedText>
-                  <View className="flex-row items-center mt-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Ionicons key={star} name="star" size={12} color="#fbbf24" />
-                    ))}
-                  </View>
-                </View>
+            {loadingActivity ? (
+              <View className="items-center py-8">
+                <ActivityIndicator size="small" color="#BD8C5E" />
+                <ThemedText variant="caption" className="mt-2 text-gray-500">Loading activity...</ThemedText>
               </View>
-            </ThemedCard>
-
-            <ThemedCard className="mb-3 px-3">
-              <View className="flex-row items-center">
-                <View className="bg-blue-500/10 p-2 rounded-full">
-                  <Ionicons name="time" size={20} color="#3b82f6" />
-                </View>
-                <View className="ml-3 flex-1">
-                  <ThemedText className="font-semibold">City Tour</ThemedText>
-                  <ThemedText variant="caption">Scheduled • Tomorrow 2:00 PM</ThemedText>
-                  <ThemedText variant="caption">4 hour service</ThemedText>
-                </View>
-                <View className="items-end">
-                  <ThemedText className="font-bold">₹8,000</ThemedText>
-                  <ThemedText variant="caption" className="text-secondary">Upcoming</ThemedText>
-                </View>
-              </View>
-            </ThemedCard>
+            ) : recentActivity.length > 0 ? (
+              recentActivity.map((activity) => (
+                <ThemedCard key={activity.id} className="mb-3">
+                  <TouchableOpacity
+                    onPress={() => router.push({
+                      pathname: '/(customer)/ride-details',
+                      params: { bookingId: activity.id }
+                    })}
+                    activeOpacity={0.7}
+                  >
+                    <View className="flex-row items-center">
+                      <View className={`p-2 rounded-full ${
+                        activity.booking_status === 'trip_completed'
+                          ? 'bg-green-500/10'
+                          : activity.booking_status === 'trip_started'
+                          ? 'bg-blue-500/10'
+                          : activity.booking_status === 'cancelled_by_customer' || activity.booking_status === 'cancelled_by_driver' || activity.booking_status === 'cancelled_by_system'
+                          ? 'bg-red-500/10'
+                          : 'bg-yellow-500/10'
+                      }`}>
+                        <Ionicons
+                          name={
+                            activity.booking_status === 'trip_completed'
+                              ? 'checkmark-circle'
+                              : activity.booking_status === 'trip_started'
+                              ? 'car'
+                              : activity.booking_status === 'cancelled_by_customer' || activity.booking_status === 'cancelled_by_driver' || activity.booking_status === 'cancelled_by_system'
+                              ? 'close-circle'
+                              : 'time'
+                          }
+                          size={20}
+                          color={
+                            activity.booking_status === 'trip_completed'
+                              ? '#10b981'
+                              : activity.booking_status === 'trip_started'
+                              ? '#3b82f6'
+                              : activity.booking_status === 'cancelled_by_customer' || activity.booking_status === 'cancelled_by_driver' || activity.booking_status === 'cancelled_by_system'
+                              ? '#ef4444'
+                              : '#f59e0b'
+                          }
+                        />
+                      </View>
+                      <View className="ml-3 flex-1">
+                        <ThemedText className="font-semibold">
+                          {activity.trip_type === 'one_way'
+                            ? 'One-way Trip'
+                            : activity.trip_type === 'round_trip'
+                            ? 'Round-trip'
+                            : 'Hourly Charter'}
+                        </ThemedText>
+                        <ThemedText variant="caption">
+                          {formatBookingStatus(activity.booking_status)} • {formatDate(activity.created_at)}
+                        </ThemedText>
+                        <ThemedText variant="caption" numberOfLines={1}>
+                          {activity.pickup_address?.substring(0, 30)}... → {activity.dropoff_address?.substring(0, 20)}...
+                        </ThemedText>
+                      </View>
+                      <View className="items-end">
+                        <ThemedText className="font-bold">
+                          {formatFare(activity.actual_fare || activity.estimated_fare)}
+                        </ThemedText>
+                        {activity.rating && (
+                          <View className="flex-row items-center mt-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Ionicons
+                                key={star}
+                                name={star <= (activity.rating || 0) ? 'star' : 'star-outline'}
+                                size={12}
+                                color="#fbbf24"
+                              />
+                            ))}
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                </ThemedCard>
+              ))
+            ) : (
+              <ThemedCard className="items-center py-8">
+                <Ionicons name="car-outline" size={40} color={iconColor} />
+                <ThemedText variant="body" className="font-semibold mt-3">
+                  No Recent Activity
+                </ThemedText>
+                <ThemedText variant="small" className="text-textSecondary mt-1">
+                  Book your first ride to see activity here
+                </ThemedText>
+                <TouchableOpacity
+                  onPress={() => router.push('/(customer)/book-ride-new')}
+                  className="mt-4 bg-secondary px-4 py-2 rounded-lg"
+                >
+                  <ThemedText className="text-white font-semibold">Book a Ride</ThemedText>
+                </TouchableOpacity>
+              </ThemedCard>
+            )}
           </View>
 
           {/* More Ways to Use Chauffit */}

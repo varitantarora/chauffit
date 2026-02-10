@@ -19,7 +19,13 @@ export default function OTPVerification() {
 
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const router = useRouter();
-  const { phoneNumber, email } = useLocalSearchParams<{ phoneNumber?: string; email?: string }>();
+  const { phoneNumber, email, isLogin, name, role } = useLocalSearchParams<{
+    phoneNumber?: string;
+    email?: string;
+    isLogin?: string;
+    name?: string;
+    role?: string;
+  }>();
 
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
@@ -101,16 +107,39 @@ export default function OTPVerification() {
         return;
       }
 
-      const response = await AuthApiService.verifyOTP({
-        phone_number: phoneNumber.startsWith('+91') ? phoneNumber : `+91${phoneNumber}`,
-        otp: otpValue,
-        otp_type: 'login', // Use 'login' type for OTP-based login
-      });
+      const normalizedPhone = phoneNumber.startsWith('+91') ? phoneNumber : `+91${phoneNumber}`;
+      const isLoginFlow = isLogin === 'true';
+
+      let response;
+
+      if (isLoginFlow) {
+        // Login flow - use OTP login verify endpoint
+        response = await AuthApiService.otpLoginVerify({
+          phone_number: normalizedPhone,
+          otp: otpValue,
+        });
+      } else if (name && role) {
+        // Signup flow - use register with OTP endpoint
+        response = await AuthApiService.registerWithOTP({
+          phone_number: normalizedPhone,
+          otp: otpValue,
+          full_name: name,
+          user_type: role as 'customer' | 'driver' | 'biker',
+        });
+      } else {
+        // Fallback - use regular verify OTP
+        response = await AuthApiService.verifyOTP({
+          phone_number: normalizedPhone,
+          otp: otpValue,
+          otp_type: 'phone_verification',
+        });
+      }
 
       if (response.success) {
         // OTP verified successfully
         // If user data is in response, set it in auth store
         if (response.data?.user) {
+          console.log('[Auth] OTP verify user_type:', response.data.user.user_type);
           const appUser = {
             id: response.data.user.id,
             email: response.data.user.email,
@@ -118,15 +147,15 @@ export default function OTPVerification() {
             phone: response.data.user.phone_number,
             avatar: response.data.user.profile_picture,
           };
-          
+
           const userRole = response.data.user.user_type as 'customer' | 'driver' | 'biker';
-          
+
           // Set user and role in auth store
           const authStore = useAuthStore.getState();
           authStore.setUser(appUser);
           authStore.addRole(userRole);
           authStore.setActiveRole(userRole);
-          
+
           // Set user metadata if available in response
           if (response.data.user.user_type) {
             useAuthStore.setState({ userType: response.data.user.user_type as UserRole });
@@ -137,11 +166,11 @@ export default function OTPVerification() {
           if (response.data.user.is_verified !== undefined) {
             useAuthStore.setState({ userIsVerified: response.data.user.is_verified });
           }
-          
+
           // Set is_online status based on status field (active = true, otherwise false)
           if (response.data.user.status !== undefined) {
             const isOnline = response.data.user.status === 'active';
-            
+
             // Set online status based on user type
             if (userRole === 'biker') {
               useAuthStore.setState({ bikerIsOnline: isOnline });
@@ -152,7 +181,7 @@ export default function OTPVerification() {
               useJobStore.getState().setOnlineStatus(isOnline);
             }
           }
-          
+
           // Redirect will happen automatically via app/index.tsx based on activeRole
           router.replace('/');
         } else {
@@ -162,15 +191,23 @@ export default function OTPVerification() {
             // Redirect will happen automatically via app/index.tsx based on activeRole
             router.replace('/');
           } else {
-            // New user, redirect to registration
-            Alert.alert('Success', 'Phone number verified successfully!', [
-              {
-                text: 'OK',
-                onPress: () => {
-                  router.replace('/(auth)/car-details');
+            // New user - redirect based on role
+            const userRole = role as 'customer' | 'driver' | 'biker';
+            if (userRole === 'customer') {
+              // Customer needs to add car details
+              Alert.alert('Success', 'Phone number verified successfully!', [
+                {
+                  text: 'OK',
+                  onPress: () => {
+                    router.replace('/(auth)/car-details');
+                  }
                 }
-              }
-            ]);
+              ]);
+            } else {
+              // Driver and biker go directly to their respective app tabs
+              // They will complete onboarding from there
+              router.replace(userRole === 'driver' ? '/(driver)/(tabs)' : '/(biker)/(tabs)');
+            }
           }
         }
       } else {
@@ -196,10 +233,18 @@ export default function OTPVerification() {
     setResendLoading(true);
 
     try {
-      const response = await AuthApiService.sendOTP({
-        phone_number: phoneNumber.startsWith('+91') ? phoneNumber : `+91${phoneNumber}`,
-        otp_type: 'phone_verification',
-      });
+      const normalizedPhone = phoneNumber.startsWith('+91') ? phoneNumber : `+91${phoneNumber}`;
+      const isLoginFlow = isLogin === 'true';
+
+      // Use appropriate endpoint based on flow
+      const response = isLoginFlow
+        ? await AuthApiService.otpLoginSend({
+            phone_number: normalizedPhone,
+          })
+        : await AuthApiService.sendOTP({
+            phone_number: normalizedPhone,
+            otp_type: 'phone_verification',
+          });
 
       if (response.success) {
         setResendLoading(false);

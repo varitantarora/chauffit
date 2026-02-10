@@ -11,6 +11,7 @@ import { RouteMap } from '../../../components/driver/navigation/RouteMap';
 import { useJobStore } from '../../../store/jobStore';
 import { useAuthStore } from '../../../store/authStore';
 import { JobRequest } from '../../../types/navigation';
+import DriverRidesApiService, { BookingDetail } from '../../../services/api/DriverRidesApiService';
 
 export default function JobAcceptScreen() {
   const router = useRouter();
@@ -18,25 +19,92 @@ export default function JobAcceptScreen() {
   const jobId = params.jobId as string;
   
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
-  const { pendingRequests, acceptJob, declineJob } = useJobStore();
+  const { pendingRequests, acceptedJobs, activeJob, acceptRideFromAPI, declineJob, lastAcceptError } = useJobStore();
   
   const [isAccepting, setIsAccepting] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [job, setJob] = useState<JobRequest | null>(null);
+  const [loadingJob, setLoadingJob] = useState(false);
+
+  const resolveJobStatus = (bookingStatus?: string): JobRequest['status'] => {
+    switch (bookingStatus) {
+      case 'requested':
+        return 'pending';
+      case 'trip_completed':
+        return 'accepted';
+      default:
+        return 'accepted';
+    }
+  };
+
+  const mapBookingToJobRequest = (booking: BookingDetail, status: JobRequest['status']): JobRequest => ({
+    id: booking.id,
+    customerId: booking.customer,
+    customerName: 'Customer',
+    customerPhone: '',
+    customerRating: 4.5,
+    pickupLocation: {
+      latitude: parseFloat(booking.pickup_lat) || 0,
+      longitude: parseFloat(booking.pickup_long) || 0,
+      address: booking.pickup_address,
+      name: booking.pickup_address.split(',')[0]
+    },
+    dropoffLocation: {
+      latitude: parseFloat(booking.dropoff_lat) || 0,
+      longitude: parseFloat(booking.dropoff_long) || 0,
+      address: booking.dropoff_address,
+      name: booking.dropoff_address.split(',')[0]
+    },
+    scheduledTime: booking.scheduled_at ? new Date(booking.scheduled_at) : new Date(booking.created_at),
+    estimatedDuration: booking.estimated_duration_minutes || 30,
+    estimatedDistance: parseFloat(booking.estimated_distance_km || '0') || 10,
+    serviceType: booking.trip_type === 'hourly_charter' ? 'hourly' : 'trip',
+    fare: parseFloat(booking.estimated_fare) || 0,
+    vehicleType: 'sedan',
+    status,
+    expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000),
+    createdAt: new Date(booking.created_at)
+  });
 
   useEffect(() => {
-    const foundJob = pendingRequests.find(req => req.id === jobId);
+    const foundJob =
+      pendingRequests.find(req => req.id === jobId) ||
+      acceptedJobs.find(req => req.id === jobId);
+
     if (foundJob) {
       setJob(foundJob);
-      updateTimeLeft(foundJob);
-    } else {
-      // Job not found, redirect back
-      router.back();
+      if (foundJob.status === 'pending') {
+        updateTimeLeft(foundJob);
+      }
+      return;
     }
-  }, [jobId, pendingRequests]);
+
+    const fetchJob = async () => {
+      setLoadingJob(true);
+      try {
+        const response = await DriverRidesApiService.getRideDetails(jobId);
+        if (response.success && response.data) {
+          const status = resolveJobStatus(response.data.booking_status);
+          const mappedJob = mapBookingToJobRequest(response.data, status);
+          setJob(mappedJob);
+          if (mappedJob.status === 'pending') {
+            updateTimeLeft(mappedJob);
+          }
+        } else {
+          router.back();
+        }
+      } catch (error) {
+        router.back();
+      } finally {
+        setLoadingJob(false);
+      }
+    };
+
+    fetchJob();
+  }, [jobId, pendingRequests, acceptedJobs, router]);
 
   useEffect(() => {
-    if (!job) return;
+    if (!job || job.status !== 'pending') return;
 
     const interval = setInterval(() => {
       updateTimeLeft(job);
@@ -67,26 +135,28 @@ export default function JobAcceptScreen() {
     setIsAccepting(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      acceptJob(job.id);
-      
-      Alert.alert(
-        'Ride Accepted!',
-        'You have successfully accepted this ride. Navigate to the customer pickup location.',
-        [
-          {
-            text: 'Start Navigation',
-            onPress: () => router.push({
-              pathname: '/(driver)/job/navigation',
-              params: { jobId: job.id }
-            })
-          }
-        ]
-      );
+      const success = await acceptRideFromAPI(job.id);
+      if (success) {
+        Alert.alert(
+          'Ride Accepted!',
+          'You have successfully accepted this ride. Navigate to the customer pickup location.',
+          [
+            {
+              text: 'Start Navigation',
+              onPress: () => router.push({
+                pathname: '/(driver)/job/navigation',
+                params: { jobId: job.id }
+              })
+            }
+          ]
+        );
+        setJob({ ...job, status: 'accepted' });
+      } else {
+        Alert.alert('Error', lastAcceptError || 'Failed to accept the ride. Please try again.');
+      }
     } catch (error) {
       Alert.alert('Error', 'Failed to accept the ride. Please try again.');
+    } finally {
       setIsAccepting(false);
     }
   };
@@ -406,36 +476,52 @@ export default function JobAcceptScreen() {
           </View>
         </ScrollView>
 
-        {/* Bottom Actions */}
-        <View className="p-4 border-t border-border dark:border-darkBorder bg-surface dark:bg-darkSurface">
-          <View className="flex-row space-x-3">
-            <TouchableOpacity
-              onPress={handleDecline}
-              className="flex-1 py-4 items-center border border-danger/30 rounded-lg"
-              activeOpacity={0.7}
-            >
-              <ThemedText className="font-semibold text-danger">
-                Decline
-              </ThemedText>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              onPress={handleAccept}
-              disabled={isAccepting || timeLeft === 0}
-              className={`flex-2 py-4 items-center rounded-lg ${
-                isAccepting || timeLeft === 0 
-                  ? 'bg-gray-400' 
-                  : 'bg-burgundy'
-              }`}
-              style={{ flex: 2 }}
-              activeOpacity={0.7}
-            >
-              <ThemedText className="font-semibold text-white">
-                {isAccepting ? 'Accepting...' : 'Accept Ride'}
-              </ThemedText>
-            </TouchableOpacity>
+        {!loadingJob && (
+          <View className="p-4 border-t border-border dark:border-darkBorder bg-surface dark:bg-darkSurface">
+            {job?.status === 'pending' ? (
+              <View className="flex-row space-x-3">
+                <TouchableOpacity
+                  onPress={handleDecline}
+                  className="flex-1 py-4 items-center border border-danger/30 rounded-lg"
+                  activeOpacity={0.7}
+                >
+                  <ThemedText className="font-semibold text-danger">
+                    Decline
+                  </ThemedText>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  onPress={handleAccept}
+                  disabled={isAccepting || timeLeft === 0}
+                  className={`flex-2 py-4 items-center rounded-lg ${
+                    isAccepting || timeLeft === 0 
+                      ? 'bg-gray-400' 
+                      : 'bg-burgundy'
+                  }`}
+                  style={{ flex: 2 }}
+                  activeOpacity={0.7}
+                >
+                  <ThemedText className="font-semibold text-white">
+                    {isAccepting ? 'Accepting...' : 'Accept Ride'}
+                  </ThemedText>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                onPress={() => router.push({
+                  pathname: '/(driver)/job/navigation',
+                  params: { jobId: job?.id }
+                })}
+                className="w-full py-4 items-center bg-burgundy rounded-lg"
+                activeOpacity={0.7}
+              >
+                <ThemedText className="font-semibold text-white">
+                  Start Navigation
+                </ThemedText>
+              </TouchableOpacity>
+            )}
           </View>
-        </View>
+        )}
       </ThemedView>
     </SafeAreaView>
   );

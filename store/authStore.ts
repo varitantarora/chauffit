@@ -242,7 +242,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   fetchProfile: async () => {
     try {
+      console.log('[Auth] Fetch profile start');
       const response = await AuthApiService.getProfile();
+      console.log('[Auth] Fetch profile response:', {
+        success: response.success,
+        userType: response.data?.user_type,
+        status: response.data?.status,
+        userId: response.data?.id,
+      });
       if (response.success && response.data) {
         const appUser = mapApiUserToAppUser(response.data);
         const userRole = response.data.user_type as UserRole;

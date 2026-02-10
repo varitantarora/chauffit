@@ -72,7 +72,7 @@ export function OnlineToggle({ isOnline, onToggle, disabled = false }: OnlineTog
               
               {/* Pulse animation for online state */}
               {isOnline && (
-                <View className="absolute inset-0 rounded-full border-4 border-success opacity-30 animate-pulse" />
+                <View className="absolute inset-0 rounded-full border-4 border-success opacity-30" />
               )}
             </View>
           </TouchableOpacity>

@@ -10,25 +10,51 @@ interface BookingCardProps {
   onPress?: () => void;
   onCancel?: () => void;
   onTrack?: () => void;
+  onViewDetails?: () => void;
   showActions?: boolean;
 }
+
+// Map API booking status to card display status
+const mapApiStatusToCardStatus = (apiStatus: string): string => {
+  // Active statuses
+  if (['requested', 'driver_assigned', 'biker_assigned', 'driver_en_route', 'driver_arrived', 'trip_started'].includes(apiStatus)) {
+    if (apiStatus === 'requested') return 'pending';
+    if (apiStatus === 'trip_started') return 'in_progress';
+    return 'confirmed';
+  }
+  // Completed status
+  if (apiStatus === 'trip_completed') return 'completed';
+  // Cancelled statuses
+  if (['cancelled_by_customer', 'cancelled_by_driver', 'cancelled_by_system'].includes(apiStatus)) return 'cancelled';
+  return apiStatus;
+};
 
 export const BookingCard: React.FC<BookingCardProps> = ({
   booking,
   onPress,
   onCancel,
   onTrack,
+  onViewDetails,
   showActions = true,
 }) => {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+
+  const formatDate = (dateValue: Date | string): string => {
+    const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return 'Date unavailable';
+    return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
 
   // Guard against undefined booking
   if (!booking) {
     return null;
   }
 
+  // Convert API status to card status
+  const cardStatus = mapApiStatusToCardStatus(booking.status);
+
   const getStatusColor = () => {
-    switch (booking?.status) {
+    switch (cardStatus) {
       case 'pending':
         return '#F59E0B';
       case 'confirmed':
@@ -45,24 +71,24 @@ export const BookingCard: React.FC<BookingCardProps> = ({
   };
 
   const getStatusText = () => {
-    switch (booking?.status) {
-      case 'pending':
-        return 'Pending Confirmation';
-      case 'confirmed':
-        return 'Confirmed';
-      case 'in_progress':
-        return 'In Progress';
-      case 'completed':
-        return 'Completed';
-      case 'cancelled':
-        return 'Cancelled';
-      default:
-        return booking.status;
-    }
+    // Use original API status text for more specific display
+    const statusMap: Record<string, string> = {
+      'requested': 'Finding Chauffeur',
+      'driver_assigned': 'Chauffeur Assigned',
+      'biker_assigned': 'Biker Assigned',
+      'driver_en_route': 'Chauffeur En Route',
+      'driver_arrived': 'Chauffeur Arrived',
+      'trip_started': 'Trip In Progress',
+      'trip_completed': 'Completed',
+      'cancelled_by_customer': 'Cancelled',
+      'cancelled_by_driver': 'Cancelled by Driver',
+      'cancelled_by_system': 'Cancelled by System',
+    };
+    return statusMap[booking.status] || booking.status;
   };
 
   const getStatusIcon = () => {
-    switch (booking?.status) {
+    switch (cardStatus) {
       case 'pending':
         return 'time';
       case 'confirmed':
@@ -78,18 +104,22 @@ export const BookingCard: React.FC<BookingCardProps> = ({
     }
   };
 
-  const formatDate = (date: Date | string | undefined) => {
-    if (!date) return 'Date not available';
-    try {
-      return new Date(date).toLocaleDateString('en-IN', {
-        day: 'numeric',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch {
-      return 'Date not available';
-    }
+  const canCancel = () => {
+    // Can cancel if ride is in requested status only
+    return booking.status === 'requested';
+  };
+
+  const canTrack = () => {
+    // Can track if ride has driver assigned but not completed
+    return ['driver_assigned', 'biker_assigned', 'driver_en_route', 'driver_arrived', 'trip_started'].includes(booking.status);
+  };
+
+  const isCompleted = () => {
+    return booking.status === 'trip_completed';
+  };
+
+  const isCancelled = () => {
+    return ['cancelled_by_customer', 'cancelled_by_driver', 'cancelled_by_system'].includes(booking.status);
   };
 
   return (
@@ -189,32 +219,45 @@ export const BookingCard: React.FC<BookingCardProps> = ({
         </View>
       </View>
 
-      {/* Actions for confirmed/in_progress - show Track and Cancel toggle */}
-      {showActions && (booking?.status === 'confirmed' || booking?.status === 'in_progress') && onTrack && onCancel && (
+      {/* Actions for active rides - show Track (and Cancel only for requested status) */}
+      {showActions && canTrack() && (
         <View className={`flex-row rounded-xl p-1 ${isDarkMode ? 'bg-darkSurface' : 'bg-surface'}`}>
           <TouchableOpacity
             onPress={onTrack}
             className="flex-1 py-3 px-4 rounded-lg bg-primary"
           >
             <ThemedText className="text-center font-semibold text-burgundy">
-              {booking?.status === 'in_progress' ? 'View Live' : 'Track Ride'}
+              {booking.status === 'trip_started' ? 'View Live' : 'Track Ride'}
             </ThemedText>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={onCancel}
-            className="flex-1 py-3 px-4 rounded-lg"
-          >
-            <ThemedText className="text-center font-semibold text-textSecondary">
-              Cancel
-            </ThemedText>
-          </TouchableOpacity>
+          {onViewDetails && (
+            <TouchableOpacity
+              onPress={onViewDetails}
+              className="flex-1 py-3 px-4 rounded-lg"
+            >
+              <ThemedText className="text-center font-semibold text-textSecondary">
+                Details
+              </ThemedText>
+            </TouchableOpacity>
+          )}
         </View>
       )}
 
-      {/* Actions for pending - only show Cancel */}
-      {showActions && booking?.status === 'pending' && onCancel && (
+      {/* Actions for requested - show Cancel */}
+      {showActions && canCancel() && (
         <View className={`flex-row rounded-xl p-1 ${isDarkMode ? 'bg-darkSurface' : 'bg-surface'}`}>
+          {onViewDetails && (
+            <TouchableOpacity
+              onPress={onViewDetails}
+              className="flex-1 py-3 px-4 rounded-lg"
+            >
+              <ThemedText className="text-center font-semibold text-textSecondary">
+                Details
+              </ThemedText>
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity
             onPress={onCancel}
             className="flex-1 py-3 px-4 rounded-lg bg-primary"
@@ -226,12 +269,37 @@ export const BookingCard: React.FC<BookingCardProps> = ({
         </View>
       )}
 
-      {/* Actions for completed - show Book Again */}
-      {showActions && booking?.status === 'completed' && (
+      {/* Actions for completed - show Details and Book Again */}
+      {showActions && isCompleted() && (
         <View className={`flex-row rounded-xl p-1 ${isDarkMode ? 'bg-darkSurface' : 'bg-surface'}`}>
+          {onViewDetails && (
+            <TouchableOpacity
+              onPress={onViewDetails}
+              className="flex-1 py-3 px-4 rounded-lg"
+            >
+              <ThemedText className="text-center font-semibold text-textSecondary">
+                View Details
+              </ThemedText>
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity className="flex-1 py-3 px-4 rounded-lg bg-primary">
             <ThemedText className="text-center font-semibold text-burgundy">
               Book Again
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Actions for cancelled - show View Details */}
+      {showActions && isCancelled() && onViewDetails && (
+        <View className={`flex-row rounded-xl p-1 ${isDarkMode ? 'bg-darkSurface' : 'bg-surface'}`}>
+          <TouchableOpacity
+            onPress={onViewDetails}
+            className="flex-1 py-3 px-4 rounded-lg bg-primary"
+          >
+            <ThemedText className="text-center font-semibold text-burgundy">
+              View Details
             </ThemedText>
           </TouchableOpacity>
         </View>

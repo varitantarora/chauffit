@@ -85,6 +85,46 @@ export interface VerifyOTPResponse {
   };
 }
 
+// OTP Login specific interfaces
+export interface OTPLoginSendRequest {
+  phone_number: string;
+}
+
+export interface OTPLoginSendResponse {
+  phone_number: string;
+}
+
+export interface OTPLoginVerifyRequest {
+  phone_number: string;
+  otp: string;
+}
+
+export interface OTPLoginVerifyResponse {
+  user: User;
+  tokens: {
+    access: string;
+    refresh: string;
+  };
+  is_first_login?: boolean;
+}
+
+// OTP Registration specific interfaces
+export interface OTPRegistrationRequest {
+  phone_number: string;
+  otp: string;
+  full_name: string;
+  user_type: 'customer' | 'driver' | 'biker';
+}
+
+export interface OTPRegistrationResponse {
+  user: User;
+  tokens: {
+    access: string;
+    refresh: string;
+  };
+  is_first_login?: boolean;
+}
+
 export interface ChangePasswordRequest {
   old_password: string;
   new_password: string;
@@ -112,22 +152,17 @@ class AuthApiService {
       }>(`${this.basePath}/register/`, data, false);
 
       if (response.success && response.data) {
-        // Backend returns { success: true, message: '...', data: {...} }
-        // BaseApiService wraps it as { success: true, data: { success: true, message: '...', data: {...} } }
         const serverResponse = response.data as any;
+        const tokens = serverResponse.tokens || serverResponse.data?.tokens;
         
-        // Store tokens automatically
-        if (serverResponse.data?.tokens) {
-          await BaseApiService.setTokens(
-            serverResponse.data.tokens.access,
-            serverResponse.data.tokens.refresh
-          );
+        if (tokens) {
+          await BaseApiService.setTokens(tokens.access, tokens.refresh);
         }
 
         return {
           success: true,
-          data: serverResponse.data,
-          message: serverResponse.message,
+          data: serverResponse.data ?? serverResponse,
+          message: response.message,
         };
       }
 
@@ -153,22 +188,17 @@ class AuthApiService {
       }>(`${this.basePath}/login/`, data, false);
 
       if (response.success && response.data) {
-        // Backend returns { success: true, message: '...', data: {...} }
-        // BaseApiService wraps it as { success: true, data: { success: true, message: '...', data: {...} } }
         const serverResponse = response.data as any;
+        const tokens = serverResponse.tokens || serverResponse.data?.tokens;
         
-        // Store tokens automatically
-        if (serverResponse.data?.tokens) {
-          await BaseApiService.setTokens(
-            serverResponse.data.tokens.access,
-            serverResponse.data.tokens.refresh
-          );
+        if (tokens) {
+          await BaseApiService.setTokens(tokens.access, tokens.refresh);
         }
 
         return {
           success: true,
-          data: serverResponse.data,
-          message: serverResponse.message,
+          data: serverResponse.data ?? serverResponse,
+          message: response.message,
         };
       }
 
@@ -438,6 +468,118 @@ class AuthApiService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to change password',
+      };
+    }
+  }
+
+  // OTP Login - Send OTP
+  async otpLoginSend(data: OTPLoginSendRequest): Promise<ApiResponse<OTPLoginSendResponse>> {
+    try {
+      const response = await BaseApiService.post<{
+        success: boolean;
+        message: string;
+        data: OTPLoginSendResponse;
+      }>(`${this.basePath}/otp-login/send/`, {
+        phone_number: data.phone_number,
+      }, false);
+
+      if (response.success && response.data) {
+        const serverResponse = response.data as any;
+        return {
+          success: true,
+          data: serverResponse.data,
+          message: serverResponse.message,
+        };
+      }
+
+      return {
+        success: false,
+        error: response.error || 'Failed to send OTP',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to send OTP',
+      };
+    }
+  }
+
+  // OTP Login - Verify OTP
+  async otpLoginVerify(data: OTPLoginVerifyRequest): Promise<ApiResponse<OTPLoginVerifyResponse>> {
+    try {
+      const response = await BaseApiService.post<{
+        success: boolean;
+        message: string;
+        data: OTPLoginVerifyResponse;
+      }>(`${this.basePath}/otp-login/verify/`, {
+        phone_number: data.phone_number,
+        otp: data.otp,
+      }, false);
+
+      if (response.success && response.data) {
+        const serverResponse = response.data as any;
+        const tokens = serverResponse.tokens || serverResponse.data?.tokens;
+
+        if (tokens) {
+          await BaseApiService.setTokens(tokens.access, tokens.refresh);
+        }
+
+        return {
+          success: true,
+          data: serverResponse.data ?? serverResponse,
+          message: response.message,
+        };
+      }
+
+      return {
+        success: false,
+        error: response.error || 'OTP verification failed',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to verify OTP',
+      };
+    }
+  }
+
+  // Register with OTP - Verify OTP and create new user
+  async registerWithOTP(data: OTPRegistrationRequest): Promise<ApiResponse<OTPRegistrationResponse>> {
+    try {
+      const response = await BaseApiService.post<{
+        success: boolean;
+        message: string;
+        data: OTPRegistrationResponse;
+      }>(`${this.basePath}/register-with-otp/`, {
+        phone_number: data.phone_number,
+        otp: data.otp,
+        full_name: data.full_name,
+        user_type: data.user_type,
+      }, false);
+
+      if (response.success && response.data) {
+        const serverResponse = response.data as any;
+        const tokens = serverResponse.tokens || serverResponse.data?.tokens;
+
+        if (tokens) {
+          await BaseApiService.setTokens(tokens.access, tokens.refresh);
+        }
+
+        return {
+          success: true,
+          data: serverResponse.data ?? serverResponse,
+          message: response.message,
+        };
+      }
+
+      return {
+        success: false,
+        error: response.error || 'OTP registration failed',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to register with OTP',
       };
     }
   }

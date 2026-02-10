@@ -1,15 +1,16 @@
 import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
-import { View, Dimensions, Alert } from 'react-native';
-import MapView, { 
-  Marker, 
-  Polyline, 
-  Region, 
-  LatLng, 
+import { View, Dimensions, Alert, Text } from 'react-native';
+import MapView, {
+  Marker,
+  Polyline,
+  Region,
+  LatLng,
   MarkerPressEvent,
-  PROVIDER_GOOGLE 
+  PROVIDER_GOOGLE
 } from 'react-native-maps';
 import MapViewDirections from 'react-native-maps-directions';
 import * as Location from 'expo-location';
+import { Ionicons } from '@expo/vector-icons';
 import { LightColors } from '../../constants/Colors';
 
 const { width, height } = Dimensions.get('window');
@@ -79,6 +80,15 @@ const UniversalMapView = forwardRef<MapViewRef, UniversalMapViewProps>(({
   const mapRef = useRef<MapView>(null);
   const [currentLocation, setCurrentLocation] = useState<LatLng | null>(null);
   const [region, setRegion] = useState<Region>(initialRegion);
+
+  // Log API key for debugging
+  useEffect(() => {
+    if (!googleMapsApiKey) {
+      console.warn('⚠️ Google Maps API key not set. Please set EXPO_PUBLIC_GOOGLE_MAPS_API_KEY in your .env file');
+    } else {
+      console.log('✓ Google Maps API key is set');
+    }
+  }, [googleMapsApiKey]);
 
   useImperativeHandle(ref, () => ({
     animateToRegion: (newRegion: Region, duration = 1000) => {
@@ -196,7 +206,7 @@ const UniversalMapView = forwardRef<MapViewRef, UniversalMapViewProps>(({
         ref={mapRef}
         provider={PROVIDER_GOOGLE}
         className="flex-1"
-        initialRegion={region}
+        region={region}
         showsUserLocation={showUserLocation}
         showsMyLocationButton={false}
         showsCompass={true}
@@ -243,7 +253,7 @@ const UniversalMapView = forwardRef<MapViewRef, UniversalMapViewProps>(({
             onReady={(result) => {
               console.log('Route ready:', result);
               onRouteReady?.(result);
-              
+
               // Auto-fit to show entire route
               if (mapRef.current) {
                 const coordinates = [route.origin, route.destination];
@@ -264,6 +274,28 @@ const UniversalMapView = forwardRef<MapViewRef, UniversalMapViewProps>(({
 
         {children}
       </MapView>
+
+      {/* Show API key warning if not set */}
+      {!googleMapsApiKey && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 16,
+            left: 16,
+            right: 16,
+            backgroundColor: 'rgba(255, 59, 48, 0.9)',
+            padding: 12,
+            borderRadius: 8,
+            flexDirection: 'row',
+            alignItems: 'center',
+          }}
+        >
+          <Ionicons name="warning" size={20} color="white" />
+          <Text style={{ color: 'white', fontSize: 12, fontWeight: '600', marginLeft: 8 }}>
+            Google Maps API key not set - Please add EXPO_PUBLIC_GOOGLE_MAPS_API_KEY to .env
+          </Text>
+        </View>
+      )}
     </View>
   );
 });

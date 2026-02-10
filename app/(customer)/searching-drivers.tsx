@@ -1,11 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Animated, Dimensions, Image } from 'react-native';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { View, Animated, Dimensions, Image, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../components/common/ThemedView';
 import { ThemedText } from '../../components/common/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import BookingApiService, { BookingDetail } from '../../services/api/BookingApiService';
+import UniversalMapView, { MapMarker, MapRoute } from '../../components/shared/MapView';
+import { appConfig } from '../../config/env';
 
 const { width, height } = Dimensions.get('window');
 
@@ -13,8 +16,7 @@ export default function SearchingDriversScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const router = useRouter();
   const params = useLocalSearchParams();
-  
-  // Animation values
+
   const pulseAnim = useRef(new Animated.Value(0)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
   const curtainAnim = useRef(new Animated.Value(height)).current;
@@ -22,26 +24,65 @@ export default function SearchingDriversScreen() {
   const searchRipple2 = useRef(new Animated.Value(0)).current;
   const searchRipple3 = useRef(new Animated.Value(0)).current;
   const dotAnimation = useRef(new Animated.Value(0)).current;
-  
+
   const [searchText, setSearchText] = useState('Searching for a chauffeur near you');
   const [showCurtain, setShowCurtain] = useState(false);
+  const [rideDetails, setRideDetails] = useState<BookingDetail | null>(null);
+  const [rideError, setRideError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Function to fetch ride details from API
+  const fetchRideDetails = useCallback(async () => {
+    const bookingId = String(params.bookingId || '');
+    if (!bookingId) {
+      setRideError('Missing booking ID');
+      return;
+    }
+
+    try {
+      const response = await BookingApiService.getRideDetails(bookingId);
+      if (response.success && response.data) {
+        setRideDetails(response.data);
+        if (response.data.driver) {
+          setShowCurtain(true);
+          startCurtainAnimation();
+        }
+      } else if (response.error) {
+        setRideError(response.error);
+      }
+    } catch (error) {
+      console.error('Error fetching ride details:', error);
+      setRideError('Failed to fetch ride details');
+    }
+  }, [params.bookingId]);
 
   useEffect(() => {
-    // Start all animations
     startSearchAnimations();
     startTextAnimations();
-    
-    // After 3 seconds, start curtain animation and navigate
-    const timer = setTimeout(() => {
-      setShowCurtain(true);
-      startCurtainAnimation();
-    }, 3000);
-
-    return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    // Initial fetch
+    fetchRideDetails();
+
+    // Poll for driver assignment every 2 seconds
+    const interval = setInterval(() => {
+      fetchRideDetails();
+    }, 2000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [fetchRideDetails]);
+
+  // Pull to refresh handler
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchRideDetails();
+    setRefreshing(false);
+  }, [fetchRideDetails]);
+
   const startSearchAnimations = () => {
-    // Continuous pulse for main search indicator
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
@@ -57,7 +98,6 @@ export default function SearchingDriversScreen() {
       ])
     ).start();
 
-    // Staggered ripple effects
     const createRippleAnimation = (animValue: Animated.Value, delay: number) => {
       return Animated.loop(
         Animated.sequence([
@@ -82,14 +122,12 @@ export default function SearchingDriversScreen() {
   };
 
   const startTextAnimations = () => {
-    // Text fade in
     Animated.timing(textOpacity, {
       toValue: 1,
       duration: 800,
       useNativeDriver: true,
     }).start();
 
-    // Animated dots
     Animated.loop(
       Animated.sequence([
         Animated.timing(dotAnimation, {
@@ -112,72 +150,116 @@ export default function SearchingDriversScreen() {
       duration: 800,
       useNativeDriver: true,
     }).start(() => {
-      // Navigate to ride tracking after curtain animation completes
-      router.replace('/(customer)/ride-tracking');
+      router.replace({
+        pathname: '/(customer)/ride-tracking',
+        params: {
+          bookingId: tripDetails.bookingId || '',
+          pickup: tripDetails.pickup || '',
+          destination: tripDetails.destination || '',
+          fare: tripDetails.fare || '',
+        },
+      });
     });
   };
 
   const tripDetails = {
     pickup: params.pickup || 'Current Location',
-    destination: params.destination || 'Downtown Office - 456 Market St, SF',
+    destination: params.destination || 'Destination',
+    bookingId: params.bookingId,
+    fare: params.fare,
   };
+
+  const pickupCoordinate = useMemo(() => {
+    if (!rideDetails?.pickup_lat || !rideDetails?.pickup_long) return null;
+    const latitude = Number(rideDetails.pickup_lat);
+    const longitude = Number(rideDetails.pickup_long);
+    if (Number.isNaN(latitude) || Number.isNaN(longitude)) return null;
+    return { latitude, longitude };
+  }, [rideDetails?.pickup_lat, rideDetails?.pickup_long]);
+
+  const dropoffCoordinate = useMemo(() => {
+    if (!rideDetails?.dropoff_lat || !rideDetails?.dropoff_long) return null;
+    const latitude = Number(rideDetails.dropoff_lat);
+    const longitude = Number(rideDetails.dropoff_long);
+    if (Number.isNaN(latitude) || Number.isNaN(longitude)) return null;
+    return { latitude, longitude };
+  }, [rideDetails?.dropoff_lat, rideDetails?.dropoff_long]);
+
+  const mapMarkers: MapMarker[] = useMemo(() => {
+    const markers: MapMarker[] = [];
+    if (pickupCoordinate) {
+      markers.push({
+        id: 'pickup',
+        coordinate: pickupCoordinate,
+        title: 'Pickup',
+        description: rideDetails?.pickup_address || tripDetails.pickup,
+        type: 'pickup',
+      });
+    }
+    if (dropoffCoordinate) {
+      markers.push({
+        id: 'dropoff',
+        coordinate: dropoffCoordinate,
+        title: 'Destination',
+        description: rideDetails?.dropoff_address || tripDetails.destination,
+        type: 'dropoff',
+      });
+    }
+    return markers;
+  }, [pickupCoordinate, dropoffCoordinate, rideDetails?.pickup_address, rideDetails?.dropoff_address, tripDetails.pickup, tripDetails.destination]);
+
+  const mapRoute: MapRoute | undefined = useMemo(() => {
+    if (!pickupCoordinate || !dropoffCoordinate) return undefined;
+    return {
+      origin: pickupCoordinate,
+      destination: dropoffCoordinate,
+      strokeColor: '#BD8C5E',
+      strokeWidth: 4,
+    };
+  }, [pickupCoordinate, dropoffCoordinate]);
+
+  // Initial map region - use pickup coordinate if available, otherwise default to Delhi
+  const initialRegion = useMemo(() => {
+    if (pickupCoordinate) {
+      return {
+        ...pickupCoordinate,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      };
+    }
+    // Default to Delhi region
+    return {
+      latitude: 28.6139,
+      longitude: 77.2090,
+      latitudeDelta: 0.0922,
+      longitudeDelta: 0.0922,
+    };
+  }, [pickupCoordinate]);
 
   return (
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
+        <View className="flex-1" refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#BD8C5E']}
+            tintColor="#BD8C5E"
+          />
+        }>
         {/* Map Background - Top Half */}
         <View className="flex-1 relative">
-          {/* Simulated Map Background */}
-          <View className="absolute inset-0 bg-gray-100 dark:bg-gray-800">
-            {/* Map Grid Pattern */}
-            <View className="absolute inset-0 opacity-20">
-              {Array.from({ length: 20 }).map((_, i) => (
-                <View
-                  key={i}
-                  className="absolute border-gray-300 dark:border-gray-600"
-                  style={{
-                    top: (i * height) / 20,
-                    left: 0,
-                    right: 0,
-                    height: 1,
-                    borderTopWidth: 1,
-                  }}
-                />
-              ))}
-              {Array.from({ length: 15 }).map((_, i) => (
-                <View
-                  key={i}
-                  className="absolute border-gray-300 dark:border-gray-600"
-                  style={{
-                    left: (i * width) / 15,
-                    top: 0,
-                    bottom: 0,
-                    width: 1,
-                    borderLeftWidth: 1,
-                  }}
-                />
-              ))}
-            </View>
-          </View>
-
-          {/* Location Markers */}
-          <View className="absolute top-20 left-8">
-            <View className="bg-green-500 w-4 h-4 rounded-full border-2 border-white shadow-lg" />
-            <ThemedText variant="tiny" className="mt-1 bg-white dark:bg-gray-800 px-2 py-1 rounded shadow">
-              Pickup
-            </ThemedText>
-          </View>
-
-          <View className="absolute top-32 right-8">
-            <View className="bg-red-500 w-4 h-4 rounded-full border-2 border-white shadow-lg" />
-            <ThemedText variant="tiny" className="mt-1 bg-white dark:bg-gray-800 px-2 py-1 rounded shadow">
-              Destination
-            </ThemedText>
-          </View>
+          <UniversalMapView
+            initialRegion={initialRegion}
+            markers={mapMarkers}
+            route={mapRoute}
+            googleMapsApiKey={appConfig.googleMapsApiKey}
+            showUserLocation={false}
+            className="absolute inset-0"
+          />
 
           {/* Driver Search Animation - Center of Map */}
           <View className="absolute inset-0 items-center justify-center">
-            {/* Ripple Effects */}
             <Animated.View
               className="absolute w-40 h-40 rounded-full border-2 border-burgundy"
               style={{
@@ -224,7 +306,6 @@ export default function SearchingDriversScreen() {
               }}
             />
 
-            {/* Central Search Icon */}
             <Animated.View
               className="w-16 h-16 bg-white dark:bg-gray-800 rounded-full items-center justify-center shadow-lg border-2 border-burgundy"
               style={{
@@ -236,10 +317,10 @@ export default function SearchingDriversScreen() {
                 }],
               }}
             >
-              <Image 
+              <Image
                 source={require('../../assets/chauffit-logo.png')}
-                style={{ 
-                  width: 32, 
+                style={{
+                  width: 32,
                   height: 32,
                 }}
                 resizeMode="contain"
@@ -300,7 +381,7 @@ export default function SearchingDriversScreen() {
                   <ThemedText variant="small" className="ml-2 text-gray-600">From</ThemedText>
                 </View>
                 <ThemedText className="mb-3 pl-6">{tripDetails.pickup}</ThemedText>
-                
+
                 <View className="flex-row items-center mb-2">
                   <Ionicons name="navigate" size={16} color="#EF4444" />
                   <ThemedText variant="small" className="ml-2 text-gray-600">To</ThemedText>
@@ -334,6 +415,7 @@ export default function SearchingDriversScreen() {
             </View>
           </Animated.View>
         )}
+        </View>
       </ThemedView>
     </SafeAreaView>
   );

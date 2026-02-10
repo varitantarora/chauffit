@@ -17,6 +17,7 @@ export default function DriverLayout() {
       <Stack.Screen name="earnings/advance" />
       <Stack.Screen name="emergency" />
       <Stack.Screen name="banking-details" />
+      <Stack.Screen name="edit-profile" />
       <Stack.Screen name="notifications" />
       <Stack.Screen name="support" />
       <Stack.Screen name="faq" />

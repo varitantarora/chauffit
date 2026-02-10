@@ -110,15 +110,15 @@ export function PriorityBadge({
   return (
     <View className="relative">
       {isEmergency && (
-        <View className="absolute -inset-1 animate-ping">
+        <View className="absolute -inset-1">
           <View className={`
-            ${priorityConfig.pulseColor} 
-            ${sizeConfig.pulseSize} 
+            ${priorityConfig.pulseColor}
+            ${sizeConfig.pulseSize}
             rounded-full opacity-75
           `} />
         </View>
       )}
-      
+
       <View className={`
         ${priorityConfig.bgColor}
         ${priorityConfig.borderColor}
@@ -128,7 +128,6 @@ export function PriorityBadge({
         flex-row
         items-center
         justify-center
-        ${isEmergency ? 'animate-pulse' : ''}
       `}>
         {showIcon && (
           <Ionicons 

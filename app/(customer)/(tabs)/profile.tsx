@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { TouchableOpacity, ScrollView, View, Alert } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { TouchableOpacity, ScrollView, View, Alert, RefreshControl, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../../components/common/ThemedView';
 import { ThemedCard } from '../../../components/common/ThemedCard';
@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../store/authStore';
 import { useCarStore } from '../../../store/carStore';
 import { useRouter } from 'expo-router';
+import { appConfig } from '../../../config/env';
 
 export default function Profile() {
   const user = useAuthStore((state) => state.user);
@@ -21,6 +22,29 @@ export default function Profile() {
   const { cars, defaultCar, loadUserCars, deleteCar, setDefaultCar } = useCarStore();
   const router = useRouter();
   const [showAddCarForm, setShowAddCarForm] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Helper to get full image URL (handles relative URLs from backend)
+  const getImageUrl = (url: string | null | undefined): string | null => {
+    if (!url) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    const baseUrl = appConfig.apiBaseUrl.replace('/api/v1', '');
+    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
+  const fetchProfile = useCallback(async () => {
+    if (user?.id) {
+      await loadUserCars(user.id);
+    }
+  }, [user?.id, loadUserCars]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchProfile();
+    setRefreshing(false);
+  }, [fetchProfile]);
 
   useEffect(() => {
     if (user?.id) {
@@ -108,29 +132,49 @@ export default function Profile() {
   return (
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#BD8C5E']}
+              tintColor="#BD8C5E"
+            />
+          }
+        >
           {/* Header */}
-          <View className="px-6 py-4 border-b border-border dark:border-darkBorder">
+          <View className="flex-row items-center justify-between px-6 py-4 border-b border-border dark:border-darkBorder">
             <ThemedText variant="h1">Profile</ThemedText>
-            <ThemedText variant="small" className="mt-1">
-              Manage your account and preferences
-            </ThemedText>
+            <TouchableOpacity onPress={() => router.push('/(customer)/edit-profile')}>
+              <Ionicons name="create" size={24} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
+            </TouchableOpacity>
           </View>
-          
+
           {/* User Info Card */}
           <View className="px-6 py-6">
             <ThemedCard variant="premium" className="items-center py-6">
-              <View className="w-24 h-24 bg-secondary rounded-full items-center justify-center mb-4">
-                <ThemedText className="text-white text-3xl font-bold">
-                  {user?.name?.charAt(0).toUpperCase()}
-                </ThemedText>
-              </View>
-              <ThemedText variant="h2">{user?.name}</ThemedText>
+              {/* Profile Picture */}
+              {user?.avatar ? (
+                <Image
+                  source={{ uri: getImageUrl(user.avatar) || undefined }}
+                  className="w-24 h-24 rounded-full mb-4"
+                  style={{ backgroundColor: '#BD8C5E' }}
+                />
+              ) : (
+                <View className="w-24 h-24 bg-secondary rounded-full items-center justify-center mb-4">
+                  <ThemedText className="text-white text-3xl font-bold">
+                    {user?.name?.charAt(0).toUpperCase() || '?'}
+                  </ThemedText>
+                </View>
+              )}
+
+              <ThemedText variant="h2">{user?.name || 'Guest'}</ThemedText>
               <ThemedText variant="small" className="mt-1">{user?.email}</ThemedText>
               {user?.phone && (
                 <ThemedText variant="tiny" className="mt-1">{user.phone}</ThemedText>
               )}
-              
+
               <View className="bg-secondary/10 px-3 py-1 rounded-full mt-3">
                 <ThemedText variant="tiny" className="text-secondary font-semibold">CUSTOMER</ThemedText>
               </View>

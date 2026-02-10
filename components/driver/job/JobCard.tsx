@@ -1,56 +1,67 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedCard } from '../../common/ThemedCard';
 import { ThemedText } from '../../common/ThemedText';
-import { JobRequest } from '../../../types/navigation';
+import { JobRequest, JobHistory } from '../../../types/navigation';
 import { useAuthStore } from '../../../store/authStore';
 
-interface JobCardProps {
-  job: JobRequest;
-  onAccept: (jobId: string) => void;
-  onDecline: (jobId: string) => void;
-  onViewDetails?: (jobId: string) => void;
+type JobCardJob = JobRequest | JobHistory;
+
+// Helper to check if job is JobHistory
+function isJobHistory(job: JobCardJob): job is JobHistory {
+  return 'status' in job && (job.status === 'completed' || job.status === 'cancelled');
 }
 
-export function JobCard({ job, onAccept, onDecline, onViewDetails }: JobCardProps) {
+interface JobCardProps {
+  job: JobCardJob;
+  onAccept?: (jobId: string) => void;
+  onDecline?: (jobId: string) => void;
+  onViewDetails?: (jobId: string) => void;
+  processing?: boolean;
+}
+
+export function JobCard({ job, onAccept, onDecline, onViewDetails, processing = false }: JobCardProps) {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const [timeLeft, setTimeLeft] = useState(0);
 
   useEffect(() => {
-    const updateTimer = () => {
-      const now = Date.now();
-      const expiryTime = job.expiresAt.getTime();
-      const remaining = Math.max(0, Math.floor((expiryTime - now) / 1000));
-      setTimeLeft(remaining);
-      
-      // Auto-remove expired requests would be handled by the store cleanup
-      if (remaining <= 0) {
-        return;
-      }
-    };
+    // Only set up timer for jobs with expiresAt (JobRequest, not JobHistory)
+    if ('expiresAt' in job && job.expiresAt) {
+      const updateTimer = () => {
+        const now = Date.now();
+        const expiryTime = job.expiresAt.getTime();
+        const remaining = Math.max(0, Math.floor((expiryTime - now) / 1000));
+        setTimeLeft(remaining);
 
-    // Initial calculation
-    updateTimer();
-    
-    // Update every second
-    const interval = setInterval(updateTimer, 1000);
-    
-    return () => clearInterval(interval);
-  }, [job.expiresAt]);
+        // Auto-remove expired requests would be handled by the store cleanup
+        if (remaining <= 0) {
+          return;
+        }
+      };
+
+      // Initial calculation
+      updateTimer();
+
+      // Update every second
+      const interval = setInterval(updateTimer, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, ['expiresAt' in job ? (job as JobRequest).expiresAt : undefined]);
 
   const formatTimeLeft = (seconds: number) => {
     if (seconds <= 0) return "Expired";
-    
+
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    
+
     if (minutes > 0) {
       return `${minutes}m ${remainingSeconds}s`;
     }
     return `${remainingSeconds}s`;
   };
-  
+
   const formatTime = (date: Date) => {
     return new Date(date).toLocaleTimeString('en-IN', {
       hour: '2-digit',
@@ -59,12 +70,14 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails }: JobCardProp
     });
   };
 
-  const getTimeFromNow = (date: Date) => {
+  const getTimeFromNow = (date: Date | null | undefined) => {
+    if (!date) return 'now';
+
     const now = new Date();
     const diff = date.getTime() - now.getTime();
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
+
     if (hours > 0) {
       return `in ${hours}h ${minutes}m`;
     } else if (minutes > 0) {
@@ -100,6 +113,23 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails }: JobCardProp
     }
   };
 
+  // Common properties for both JobRequest and JobHistory
+  const customerName = job.customerName;
+  const customerRating = 'customerRating' in job ? job.customerRating : (job as JobRequest)?.customerRating;
+  const fare = job.fare;
+  const pickupLocation = job.pickupLocation;
+  const dropoffLocation = job.dropoffLocation;
+  const isCompletedJob = isJobHistory(job);
+  const serviceType = isCompletedJob ? 'trip' : (job as JobRequest).serviceType;
+  const scheduledTime = isCompletedJob ? job.date : (job as JobRequest).scheduledTime;
+  const estimatedDuration = isCompletedJob ? job.duration : (job as JobRequest).estimatedDuration;
+  const estimatedDistance = isCompletedJob ? job.distance : (job as JobRequest).estimatedDistance;
+  const specialRequests = isCompletedJob ? undefined : (job as JobRequest).specialRequests;
+
+  // For completed jobs
+  const tips = isCompletedJob ? job.tips : 0;
+  const rating = isCompletedJob ? job.rating : undefined;
+
   return (
     <ThemedCard className="mb-4 p-0">
       <TouchableOpacity
@@ -111,58 +141,62 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails }: JobCardProp
         <View className="flex-row justify-between items-start mb-3">
           <View className="flex-1">
             <View className="flex-row items-center mb-1">
-              <Ionicons 
-                name={getServiceTypeIcon(job.serviceType) as any} 
-                size={16} 
-                color={getServiceTypeColor(job.serviceType)} 
+              <Ionicons
+                name={getServiceTypeIcon(serviceType) as any}
+                size={16}
+                color={getServiceTypeColor(serviceType)}
               />
               <ThemedText variant="title" className="text-lg font-bold ml-2 capitalize">
-                {job.serviceType === 'airport' ? 'Airport Transfer' : 
-                 job.serviceType === 'outstation' ? 'Outstation Trip' :
-                 job.serviceType === 'hourly' ? 'Hourly Service' : 'Point to Point'}
+                {serviceType === 'airport' ? 'Airport Transfer' :
+                 serviceType === 'outstation' ? 'Outstation Trip' :
+                 serviceType === 'hourly' ? 'Hourly Service' : 'Point to Point'}
               </ThemedText>
             </View>
             <View className="flex-row items-center">
               <ThemedText variant="caption" className="text-secondary">
-                {formatTime(job.scheduledTime)} • {getTimeFromNow(job.scheduledTime)}
+                {formatTime(scheduledTime)} • {getTimeFromNow(scheduledTime)}
               </ThemedText>
               <ThemedText variant="caption" className="text-secondary ml-2">
-                • {job.estimatedDistance} km
+                • {estimatedDistance} km
               </ThemedText>
             </View>
           </View>
           <View className="items-end">
             <ThemedText className="text-burgundy font-bold text-xl">
-              ₹{job.fare.toLocaleString('en-IN')}
+              ₹{(fare + tips).toLocaleString('en-IN')}
             </ThemedText>
-            <ThemedText variant="caption" className="text-secondary">
-              {job.estimatedDuration} min
-            </ThemedText>
+            {!isCompletedJob && timeLeft > 0 && (
+              <ThemedText variant="caption" className="text-secondary">
+                {formatTimeLeft(timeLeft)}
+              </ThemedText>
+            )}
           </View>
         </View>
 
         {/* Customer Info */}
-        <View className="flex-row items-center mb-3 p-3 bg-surface dark:bg-darkSurface rounded-lg">
-          <View className="w-10 h-10 bg-burgundy/10 rounded-full items-center justify-center mr-3">
-            <ThemedText className="font-bold text-burgundy">
-              {job.customerName.charAt(0).toUpperCase()}
+        <View className="flex-row items-center mb-3">
+          <View className="w-10 h-10 bg-secondary/20 rounded-full items-center justify-center mr-3">
+            <ThemedText className="font-bold text-secondary">
+              {customerName.charAt(0).toUpperCase()}
             </ThemedText>
           </View>
           <View className="flex-1">
-            <ThemedText className="font-semibold">{job.customerName}</ThemedText>
+            <ThemedText className="font-semibold">{customerName}</ThemedText>
             <View className="flex-row items-center">
               <View className="flex-row items-center mr-3">
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <Ionicons 
-                    key={star} 
-                    name={star <= job.customerRating ? "star" : "star-outline"} 
-                    size={12} 
-                    color="#fbbf24" 
+                  <Ionicons
+                    key={star}
+                    name={star <= (customerRating || 0) ? "star" : "star-outline"}
+                    size={12}
+                    color="#fbbf24"
                   />
                 ))}
-                <ThemedText variant="caption" className="ml-1">
-                  {job.customerRating.toFixed(1)}
-                </ThemedText>
+                {customerRating !== undefined && (
+                  <ThemedText variant="caption" className="ml-1">
+                    {customerRating.toFixed(1)}
+                  </ThemedText>
+                )}
               </View>
               <TouchableOpacity className="flex-row items-center">
                 <Ionicons name="call" size={14} color="#BD8C5E" />
@@ -183,17 +217,17 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails }: JobCardProp
                 PICKUP
               </ThemedText>
               <ThemedText className="font-medium">
-                {job.pickupLocation.name || job.pickupLocation.address}
+                {pickupLocation.name || pickupLocation.address}
               </ThemedText>
-              {job.pickupLocation.name && (
+              {pickupLocation.name && (
                 <ThemedText variant="caption" className="text-secondary">
-                  {job.pickupLocation.address}
+                  {pickupLocation.address}
                 </ThemedText>
               )}
             </View>
           </View>
-          
-          {job.dropoffLocation && (
+
+          {dropoffLocation && (
             <View className="flex-row items-start">
               <View className="w-4 h-4 border-2 border-burgundy rounded-full mt-1 mr-3" />
               <View className="flex-1">
@@ -201,11 +235,11 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails }: JobCardProp
                   DROPOFF
                 </ThemedText>
                 <ThemedText className="font-medium">
-                  {job.dropoffLocation.name || job.dropoffLocation.address}
+                  {dropoffLocation.name || dropoffLocation.address}
                 </ThemedText>
-                {job.dropoffLocation.name && (
+                {dropoffLocation.name && (
                   <ThemedText variant="caption" className="text-secondary">
-                    {job.dropoffLocation.address}
+                    {dropoffLocation.address}
                   </ThemedText>
                 )}
               </View>
@@ -213,52 +247,75 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails }: JobCardProp
           )}
         </View>
 
+        {/* Details */}
+        <View className="flex-row justify-between items-center mb-3">
+          <View className="flex-row items-center">
+            <Ionicons name="time-outline" size={16} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
+            <ThemedText variant="caption" className="text-secondary ml-2">
+              {estimatedDuration} min
+            </ThemedText>
+          </View>
+          <View className="flex-row items-center">
+            <Ionicons name="cash-outline" size={16} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
+            <ThemedText variant="caption" className="text-secondary ml-2">
+              Cash/UPI
+            </ThemedText>
+          </View>
+        </View>
+
         {/* Special Requests */}
-        {job.specialRequests && (
-          <View className="bg-warning/10 border border-warning/20 rounded-lg p-3 mb-3">
-            <View className="flex-row items-center">
-              <Ionicons name="information-circle" size={16} color="#f59e0b" />
-              <ThemedText variant="caption" className="text-warning font-semibold ml-2">
-                Special Request
-              </ThemedText>
-            </View>
-            <ThemedText variant="caption" className="mt-1">
-              {job.specialRequests}
+        {specialRequests && (
+          <View className="bg-warning/10 p-3 rounded-lg mb-3">
+            <ThemedText variant="caption" className="text-warning">
+              {specialRequests}
             </ThemedText>
           </View>
         )}
 
-        {/* Expires Timer */}
-        <View className={`${timeLeft <= 60 ? 'bg-danger/20 border-danger/40' : timeLeft <= 300 ? 'bg-warning/20 border-warning/40' : 'bg-success/20 border-success/40'} border rounded-lg p-2 mb-3`}>
-          <ThemedText variant="caption" className={`text-center font-semibold ${timeLeft <= 60 ? 'text-danger' : timeLeft <= 300 ? 'text-warning' : 'text-success'}`}>
-            {timeLeft <= 0 ? 'Request Expired' : `Expires in ${formatTimeLeft(timeLeft)}`}
-          </ThemedText>
-        </View>
-      </TouchableOpacity>
+        {/* Rating for completed jobs */}
+        {rating !== undefined && (
+          <View className="flex-row items-center justify-end mb-3">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Ionicons
+                key={star}
+                name={star <= rating ? "star" : "star-outline"}
+                size={16}
+                color="#fbbf24"
+              />
+            ))}
+          </View>
+        )}
 
-      {/* Action Buttons */}
-      <View className="flex-row border-t border-border dark:border-darkBorder">
-        <TouchableOpacity 
-          onPress={() => timeLeft > 0 && onDecline(job.id)}
-          className={`flex-1 py-4 items-center border-r border-border dark:border-darkBorder ${timeLeft <= 0 ? 'opacity-50' : ''}`}
-          activeOpacity={timeLeft <= 0 ? 1 : 0.7}
-          disabled={timeLeft <= 0}
-        >
-          <ThemedText className="font-semibold text-danger">
-            Decline
-          </ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          onPress={() => timeLeft > 0 && onAccept(job.id)}
-          className={`flex-1 py-4 items-center bg-burgundy ${timeLeft <= 0 ? 'opacity-50' : ''}`}
-          activeOpacity={timeLeft <= 0 ? 1 : 0.7}
-          disabled={timeLeft <= 0}
-        >
-          <ThemedText className="font-semibold text-white">
-            {timeLeft <= 0 ? 'Expired' : 'Accept Ride'}
-          </ThemedText>
-        </TouchableOpacity>
-      </View>
+        {/* Actions */}
+        {!isCompletedJob && (
+          <View className="flex-row space-x-3">
+            <TouchableOpacity
+              style={{ opacity: processing ? 0.5 : 1 }}
+              onPress={() => timeLeft > 0 && !processing && onDecline(job.id)}
+              disabled={timeLeft <= 0 || processing}
+              className="flex-1 py-3 items-center border border-secondary rounded-lg"
+            >
+              {processing && timeLeft <= 0 ? (
+                <ActivityIndicator size="small" color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
+              ) : (
+                <ThemedText className="text-secondary font-semibold">Decline</ThemedText>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{ opacity: processing ? 0.5 : 1 }}
+              onPress={() => timeLeft > 0 && !processing && onAccept(job.id)}
+              disabled={timeLeft <= 0 || processing}
+              className="flex-1 py-3 items-center bg-burgundy rounded-lg"
+            >
+              {processing && timeLeft <= 0 ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <ThemedText className="text-white font-semibold">Accept</ThemedText>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+      </TouchableOpacity>
     </ThemedCard>
   );
 }

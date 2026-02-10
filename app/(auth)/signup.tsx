@@ -1,72 +1,59 @@
 import React, { useState } from 'react';
-import { TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { TextInput, TouchableOpacity, Alert, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { ThemedView } from '../../components/common/ThemedView';
 import { ThemedText } from '../../components/common/ThemedText';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
 import { UserRole } from '../../types/navigation';
+import AuthApiService from '../../services/api/AuthApiService';
 
 export default function Signup() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole>('customer');
   const [loading, setLoading] = useState(false);
-  
+  const [otpSent, setOtpSent] = useState(false);
+
   const register = useAuthStore((state) => state.register);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const router = useRouter();
 
-  const handleSignup = async () => {
-    if (!email || !password || !name || !phone) {
-      Alert.alert('Error', 'Please fill all fields');
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+  const handleSendOTP = async () => {
+    if (!name || !phone) {
+      Alert.alert('Error', 'Please fill name and phone number');
       return;
     }
 
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
-      return;
-    }
-
-    // Basic phone validation (should be 10 digits)
-    const phoneRegex = /^\d{10}$/;
-    if (!phoneRegex.test(phone)) {
+    if (phone.length !== 10) {
       Alert.alert('Error', 'Please enter a valid 10-digit phone number');
       return;
     }
-    
-    setLoading(true);
-    
-    try {
-      // Split name into first and last name
-      const nameParts = name.trim().split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
 
-      const result = await register({
-        email,
-        phone_number: `+91${phone}`, // Add country code
-        password,
-        first_name: firstName,
-        last_name: lastName,
-        user_type: selectedRole,
+    setLoading(true);
+
+    try {
+      // Send OTP for phone verification
+      const response = await AuthApiService.sendOTP({
+        phone_number: `+91${phone}`,
+        otp_type: 'phone_verification',
       });
 
-      if (result.success) {
-        router.replace('/');
+      if (response.success) {
+        setOtpSent(true);
+        // Navigate to OTP verification with role and name info
+        router.push({
+          pathname: '/(auth)/otp-verification',
+          params: {
+            phoneNumber: `+91${phone}`,
+            name: name.trim(),
+            role: selectedRole,
+          }
+        });
       } else {
-        Alert.alert('Error', result.error || 'Registration failed. Please try again.');
+        Alert.alert('Error', response.error || 'Failed to send OTP. Please try again.');
       }
     } catch (error) {
       Alert.alert('Error', 'An unexpected error occurred. Please try again.');
@@ -75,19 +62,34 @@ export default function Signup() {
     }
   };
 
-  const inputClass = isDarkMode 
-    ? 'bg-darkSurface text-darkText border-darkBorder' 
+  const inputClass = isDarkMode
+    ? 'bg-darkSurface text-darkText border-darkBorder'
     : 'bg-white text-textPrimary border-border';
 
+  // Role button styles - using proper color theme
   const roleButtonClass = (role: UserRole) => {
     const isSelected = selectedRole === role;
-    return `p-4 rounded-xl border ${
-      isSelected 
-        ? 'bg-primary border-primary' 
-        : isDarkMode 
-          ? 'bg-darkSurface border-darkBorder' 
-          : 'bg-white border-border'
-    }`;
+    // Using secondary color (#BD8C5E) for selected state with proper contrast
+    if (isSelected) {
+      return 'bg-secondary border-secondary';
+    }
+    // Unselected state - neutral colors
+    return isDarkMode
+      ? 'bg-darkSurface border-darkBorder'
+      : 'bg-white border-border';
+  };
+
+  const roleTextClass = (role: UserRole) => {
+    const isSelected = selectedRole === role;
+    // Selected: white text for better contrast on secondary background
+    // Unselected: dark/light text based on theme
+    return isSelected ? 'text-white' : (isDarkMode ? 'text-darkText' : 'text-textPrimary');
+  };
+
+  const roleIconColor = (role: UserRole) => {
+    const isSelected = selectedRole === role;
+    // Selected: white icon, Unselected: based on theme
+    return isSelected ? '#FFFFFF' : (isDarkMode ? '#d9d1c6' : '#314b4c');
   };
 
   return (
@@ -100,9 +102,12 @@ export default function Signup() {
           <ThemedText variant="secondary" className="text-center mb-8">
             Create your account
           </ThemedText>
-          
-          <ThemedText variant="secondary" className="mb-2">Select your role:</ThemedText>
-          <ThemedView className="flex-row justify-between mb-6">
+
+          {/* Role Selection */}
+          <ThemedText variant="secondary" className="mb-3 font-semibold">
+            Select your role:
+          </ThemedText>
+          <View className="flex-row justify-between mb-6">
             {(['customer', 'driver', 'biker'] as UserRole[]).map((role) => (
               <TouchableOpacity
                 key={role}
@@ -110,76 +115,118 @@ export default function Signup() {
                 className={roleButtonClass(role)}
                 style={{ flex: 1, marginHorizontal: 4 }}
               >
-                <ThemedText 
-                  className={`text-center capitalize ${
-                    selectedRole === role ? 'text-white' : ''
-                  }`}
-                >
-                  {role}
-                </ThemedText>
+                <View className="items-center py-3">
+                  <Ionicons
+                    name={
+                      role === 'customer' ? 'car' :
+                      role === 'driver' ? 'bicycle' : 'motorcycle'
+                    }
+                    size={28}
+                    color={roleIconColor(role)}
+                    className="mb-2"
+                  />
+                  <ThemedText
+                    className={`text-center capitalize font-semibold text-sm ${
+                      roleTextClass(role)
+                    }`}
+                  >
+                    {role}
+                  </ThemedText>
+                </View>
               </TouchableOpacity>
             ))}
-          </ThemedView>
-          
-          <TextInput
-            className={`p-4 rounded-xl border mb-4 ${inputClass}`}
-            placeholder="Full Name"
-            placeholderTextColor={isDarkMode ? '#d9d1c6' : '#314b4c'}
-            value={name}
-            onChangeText={setName}
-          />
-          
-          <TextInput
-            className={`p-4 rounded-xl border mb-4 ${inputClass}`}
-            placeholder="Email"
-            placeholderTextColor={isDarkMode ? '#d9d1c6' : '#314b4c'}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          
-          <TextInput
-            className={`p-4 rounded-xl border mb-4 ${inputClass}`}
-            placeholder="Phone Number"
-            placeholderTextColor={isDarkMode ? '#d9d1c6' : '#314b4c'}
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-          />
-          
-          <TextInput
-            className={`p-4 rounded-xl border mb-4 ${inputClass}`}
-            placeholder="Password"
-            placeholderTextColor={isDarkMode ? '#d9d1c6' : '#314b4c'}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-          
-          <TextInput
-            className={`p-4 rounded-xl border mb-6 ${inputClass}`}
-            placeholder="Confirm Password"
-            placeholderTextColor={isDarkMode ? '#d9d1c6' : '#314b4c'}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-          />
-          
+          </View>
+
+          {/* Name Input */}
+          <View className="mb-4">
+            <TextInput
+              className={`p-4 rounded-xl border ${inputClass}`}
+              placeholder="Full Name"
+              placeholderTextColor={isDarkMode ? '#d9d1c6' : '#314b4c'}
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="words"
+            />
+          </View>
+
+          {/* Phone Number Input with Fixed +91 */}
+          <View className={`flex-row items-center p-4 rounded-xl border mb-6 ${inputClass}`}>
+            {/* Fixed Country Code */}
+            <View className="flex-row items-center bg-secondary/10 px-3 py-2 rounded-lg mr-3">
+              <Ionicons
+                name="flag"
+                size={16}
+                color="#BD8C5E"
+                className="mr-1"
+              />
+              <ThemedText className="text-secondary font-bold text-base">
+                +91
+              </ThemedText>
+            </View>
+            <TextInput
+              className="flex-1 text-base"
+              style={{
+                paddingVertical: 0,
+              }}
+              placeholder="Phone Number"
+              placeholderTextColor={isDarkMode ? '#d9d1c6' : '#314b4c'}
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+              maxLength={10}
+            />
+            <Ionicons
+              name="phone-portrait"
+              size={20}
+              color={isDarkMode ? '#d9d1c6' : '#314b4c'}
+              className="ml-2"
+            />
+          </View>
+
+          {/* Info Section */}
+          <View className="mb-6 p-4 bg-surface dark:bg-darkSurface rounded-lg">
+            <View className="flex-row items-start">
+              <Ionicons
+                name="information-circle"
+                size={20}
+                color="#3b82f6"
+                className="mr-3 mt-0.5"
+              />
+              <View className="flex-1">
+                <ThemedText className="text-info font-semibold text-sm mb-1">
+                  OTP Verification
+                </ThemedText>
+                <ThemedText className="text-secondary text-xs leading-5">
+                  You will receive a 6-digit OTP on your phone to verify your number.
+                </ThemedText>
+              </View>
+            </View>
+          </View>
+
+          {/* Send OTP Button */}
           <PrimaryButton
-            title="Sign Up"
-            onPress={handleSignup}
+            title="Send OTP"
+            onPress={handleSendOTP}
             loading={loading}
+            disabled={!name || phone.length !== 10}
           />
-          
+
+          {/* Already have account link */}
           <TouchableOpacity
-            onPress={() => router.push('/(auth)/login')}
-            className="mt-4"
+            onPress={() => router.push('/(auth)/phone-login')}
+            className="mt-6"
           >
             <ThemedText variant="secondary" className="text-center">
               Already have an account? Login
             </ThemedText>
           </TouchableOpacity>
+
+          {/* Terms Text */}
+          <View className="mt-6 px-4">
+            <ThemedText variant="tiny" className="text-center text-textSecondary leading-5">
+              By continuing, you agree to our Terms of Service and Privacy Policy
+            </ThemedText>
+          </View>
         </ThemedView>
       </ScrollView>
     </SafeAreaView>
