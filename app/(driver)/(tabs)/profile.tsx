@@ -29,7 +29,8 @@ export default function DriverProfile() {
   const { isOnline, setOnlineStatus, jobHistory, resetDemoRequests,
           acceptedJobs, inProgressJobs, completedJobs,
           loadingAccepted, loadingInProgress, loadingCompleted,
-          fetchAcceptedJobs, fetchInProgressJobs, fetchCompletedJobs } = useJobStore();
+          fetchAcceptedJobs, fetchInProgressJobs, fetchCompletedJobs,
+          fetchRideDetailsAndSync } = useJobStore();
   const { earnings } = useEarningsStore();
 
   const [activeTab, setActiveTab] = useState<'profile' | 'documents' | 'stats' | 'rides'>('profile');
@@ -83,6 +84,17 @@ export default function DriverProfile() {
     await fetchDriverData();
     setRefreshing(false);
   }, [fetchDriverData]);
+
+  const handleViewRideDetails = React.useCallback(async (
+    jobId: string,
+    targetPath: '/(driver)/job/accept' | '/(driver)/job/active' | '/(driver)/job/completed'
+  ) => {
+    await fetchRideDetailsAndSync(jobId);
+    router.push({
+      pathname: targetPath,
+      params: { jobId }
+    });
+  }, [fetchRideDetailsAndSync, router]);
 
   const fetchDriverData = React.useCallback(async () => {
     try {
@@ -570,7 +582,7 @@ export default function DriverProfile() {
                           <JobCard
                             key={job.id}
                             job={job}
-                            onViewDetails={(jobId) => router.push(`/(driver)/job/accept?jobId=${jobId}`)}
+                            onViewDetails={(jobId) => handleViewRideDetails(jobId, '/(driver)/job/accept')}
                           />
                         ))
                       ) : (
@@ -599,7 +611,7 @@ export default function DriverProfile() {
                           <JobCard
                             key={job.id}
                             job={job}
-                            onViewDetails={(jobId) => router.push(`/(driver)/job/active?jobId=${jobId}`)}
+                            onViewDetails={(jobId) => handleViewRideDetails(jobId, '/(driver)/job/active')}
                           />
                         ))
                       ) : (
@@ -628,7 +640,7 @@ export default function DriverProfile() {
                           <JobCard
                             key={job.id}
                             job={job}
-                            onViewDetails={(jobId) => router.push(`/(driver)/job/completed?jobId=${jobId}`)}
+                            onViewDetails={(jobId) => handleViewRideDetails(jobId, '/(driver)/job/completed')}
                           />
                         ))
                       ) : (

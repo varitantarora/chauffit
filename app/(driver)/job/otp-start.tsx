@@ -10,7 +10,7 @@ import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { useJobStore } from '../../../store/jobStore';
 import { useAuthStore } from '../../../store/authStore';
 import * as Location from 'expo-location';
-import DriverRidesApiService from '../../../services/api/DriverRidesApiService';
+import DriverRidesApiService, { BookingDetail } from '../../../services/api/DriverRidesApiService';
 
 export default function OTPStartRideScreen() {
   const router = useRouter();
@@ -18,7 +18,7 @@ export default function OTPStartRideScreen() {
   const jobId = params.jobId as string;
 
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
-  const { activeJob, updateJobStatus } = useJobStore();
+  const { activeJob, updateJobStatus, syncActiveJobFromBooking } = useJobStore();
 
   const [otp, setOtp] = useState(['', '', '', '']);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
@@ -159,6 +159,7 @@ export default function OTPStartRideScreen() {
 
       if (response.success && response.data) {
         // Update local job status
+        syncActiveJobFromBooking(response.data as BookingDetail);
         updateJobStatus('started');
 
         Alert.alert(

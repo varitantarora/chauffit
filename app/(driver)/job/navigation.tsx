@@ -10,7 +10,7 @@ import { RouteMap } from '../../../components/driver/navigation/RouteMap';
 import { useJobStore } from '../../../store/jobStore';
 import { useAuthStore } from '../../../store/authStore';
 import { ActiveJob, Location } from '../../../types/navigation';
-import DriverRidesApiService from '../../../services/api/DriverRidesApiService';
+import DriverRidesApiService, { BookingDetail } from '../../../services/api/DriverRidesApiService';
 
 // Map backend booking status to frontend ActiveJob status
 const mapBackendStatusToFrontend = (bookingStatus: string): ActiveJob['status'] => {
@@ -43,7 +43,8 @@ export default function NavigationScreen() {
     activeJob,
     updateJobStatus,
     updateCurrentLocation,
-    updateETA
+    updateETA,
+    syncActiveJobFromBooking
   } = useJobStore();
 
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
@@ -62,10 +63,11 @@ export default function NavigationScreen() {
       location_lat: formatCoord(currentLocation?.latitude),
       location_long: formatCoord(currentLocation?.longitude),
     });
-    if (!response.success) {
+    if (!response.success || !response.data) {
       Alert.alert('Status Update Failed', response.error || 'Please try again.');
       return false;
     }
+    syncActiveJobFromBooking(response.data as BookingDetail);
     return true;
   };
 
@@ -81,7 +83,8 @@ export default function NavigationScreen() {
         return;
       }
 
-      const bookingStatus = response.data.booking_status;
+      let rideDetails = response.data;
+      let bookingStatus = rideDetails.booking_status;
       console.log('[Navigation] Current booking status:', bookingStatus);
 
       // If ride is still requested, try to accept it first
@@ -97,7 +100,14 @@ export default function NavigationScreen() {
           );
           return;
         }
+        if (acceptResponse.data) {
+          rideDetails = acceptResponse.data as BookingDetail;
+          bookingStatus = rideDetails.booking_status;
+        }
       }
+
+      // Keep local store synchronized with latest backend details
+      syncActiveJobFromBooking(rideDetails as BookingDetail);
 
       // If trip has already started, redirect to active trip page
       if (bookingStatus === 'trip_started') {
@@ -128,7 +138,10 @@ export default function NavigationScreen() {
 
       // Start backend sync if status is still early
       if (bookingStatus === 'driver_assigned' || bookingStatus === 'biker_assigned') {
-        updateBackendRideStatus('driver_en_route');
+        const movedEnRoute = await updateBackendRideStatus('driver_en_route');
+        if (movedEnRoute) {
+          updateJobStatus('en_route_pickup');
+        }
       }
 
       setIsNavigating(true);

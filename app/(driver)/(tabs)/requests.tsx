@@ -39,6 +39,7 @@ export default function RideRequestsScreen() {
     fetchAcceptedJobs,
     fetchInProgressJobs,
     fetchCompletedJobs,
+    fetchRideDetailsAndSync,
     acceptRideFromAPI,
     declineJob,
     getPendingCount,
@@ -113,18 +114,30 @@ export default function RideRequestsScreen() {
     declineJob(jobId);
   };
 
-  const handleViewJobDetails = (jobId: string) => {
-    // For completed jobs, navigate to completed ride details page
-    if (activeTab === 'completed') {
-      router.push({
-        pathname: '/(driver)/job/completed',
-        params: { jobId }
-      });
-    } else {
-      router.push({
-        pathname: '/(driver)/job/accept',
-        params: { jobId }
-      });
+  const handleViewJobDetails = async (jobId: string) => {
+    setProcessing(jobId);
+    try {
+      await fetchRideDetailsAndSync(jobId);
+
+      // For completed jobs, navigate to completed ride details page
+      if (activeTab === 'completed') {
+        router.push({
+          pathname: '/(driver)/job/completed',
+          params: { jobId }
+        });
+      } else if (activeTab === 'in-progress') {
+        router.push({
+          pathname: '/(driver)/job/active',
+          params: { jobId }
+        });
+      } else {
+        router.push({
+          pathname: '/(driver)/job/accept',
+          params: { jobId }
+        });
+      }
+    } finally {
+      setProcessing(null);
     }
   };
 
