@@ -27,6 +27,13 @@ android/local.properties
 *.key
 *.mobileprovision
 
+# Build Artifacts
+*.apk
+*.aab
+*.dm
+android/app/release/
+clean_output.txt
+
 # Metro
 .metro-health-check*
 
