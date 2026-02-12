@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, Alert, TextInput, Keyboard, ActivityIndicator } from 'react-native';
+import { View, TouchableOpacity, Alert, TextInput, Keyboard, ActivityIndicator, Platform, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -101,68 +101,27 @@ export default function OTPStartRideScreen() {
     }
   };
 
-  const focusOtpInput = (index: number) => {
-    setTimeout(() => {
-      otpRefs.current[index]?.focus();
-    }, 10);
-  };
-
-  const handleOtpChange = (value: string, index: number) => {
-    const numericValue = value.replace(/\D/g, '');
-
-    if (!numericValue) {
-      setOtp((prev) => {
-        const next = [...prev];
-        next[index] = '';
-        return next;
-      });
-      return;
+  const handleOtpChange = (value: string) => {
+    // Only allow numbers
+    const numericValue = value.replace(/\D/g, '').slice(0, OTP_LENGTH);
+    
+    // Create new array with characters from numericValue
+    const newOtp = Array(OTP_LENGTH).fill('');
+    for (let i = 0; i < numericValue.length; i++) {
+      newOtp[i] = numericValue[i];
     }
+    setOtp(newOtp);
 
-    setOtp((prev) => {
-      const next = [...prev];
-      let nextIndex = index;
-      const chars = numericValue.slice(0, OTP_LENGTH - index).split('');
-
-      chars.forEach((char) => {
-        if (nextIndex < OTP_LENGTH) {
-          next[nextIndex] = char;
-          nextIndex += 1;
-        }
-      });
-
-      if (nextIndex >= OTP_LENGTH) {
-        Keyboard.dismiss();
-      } else {
-        focusOtpInput(nextIndex);
-      }
-
-      return next;
-    });
+    // We removed Keyboard.dismiss() to allow users to backspace
+    // and correct digits easily even after the code is full.
   };
 
-  const handleOtpKeyPress = ({ nativeEvent }: any, index: number) => {
-    if (nativeEvent.key !== 'Backspace') return;
-
-    setOtp((prev) => {
-      const next = [...prev];
-      if (next[index]) {
-        next[index] = '';
-        return next;
-      }
-      if (index > 0) {
-        next[index - 1] = '';
-        focusOtpInput(index - 1);
-      }
-      return next;
-    });
+  const focusOtpInput = () => {
+    otpRefs.current[0]?.focus();
   };
 
-  const handleOtpFocus = (index: number) => {
-    const firstEmptyIndex = otp.findIndex((digit) => digit === '');
-    if (firstEmptyIndex !== -1 && index > firstEmptyIndex) {
-      focusOtpInput(firstEmptyIndex);
-    }
+  const handleOtpFocus = () => {
+    // Hidden real input takes focus
   };
 
   const handleStartRide = async () => {
@@ -203,7 +162,7 @@ export default function OTPStartRideScreen() {
 
       if (response.success && response.data) {
         // Update local job status
-        syncActiveJobFromBooking(response.data as BookingDetail);
+        syncActiveJobFromBooking(response.data as unknown as BookingDetail);
         updateJobStatus('started');
 
         Alert.alert(
@@ -231,7 +190,7 @@ export default function OTPStartRideScreen() {
               onPress: () => {
                 // Clear OTP on error
                 setOtp(['', '', '', '']);
-                focusOtpInput(0);
+                focusOtpInput();
               }
             }
           ]
@@ -336,28 +295,51 @@ export default function OTPStartRideScreen() {
                 Customer will provide 4-digit OTP{'\n'}to confirm ride start
               </ThemedText>
 
-              {/* OTP Input */}
-              <View className="flex-row justify-center space-x-4 mb-6">
-                {otp.map((digit, index) => (
-                  <View key={index} className="w-14 h-14 border-2 border-burgundy rounded-lg bg-surface dark:bg-darkSurface">
-                    <TextInput
-                      ref={(ref) => {
-                        if (ref) otpRefs.current[index] = ref;
+              {/* OTP Input Container */}
+              <Pressable onPress={focusOtpInput} className="flex-row justify-center space-x-4 mb-6 relative">
+                {/* Hidden Real Input */}
+                <TextInput
+                  ref={(ref) => { if (ref) otpRefs.current[0] = ref; }}
+                  style={{
+                    position: 'absolute',
+                    width: 1,
+                    height: 1,
+                    opacity: 0,
+                  }}
+                  value={otp.join('')}
+                  onChangeText={handleOtpChange}
+                  keyboardType="number-pad"
+                  maxLength={OTP_LENGTH}
+                  textContentType="oneTimeCode"
+                  autoFocus
+                />
+
+                {/* Visual Boxes */}
+                {otp.map((digit, index) => {
+                  const isFocused = otp.join('').length === index;
+                  return (
+                    <View 
+                      key={index} 
+                      className={`w-14 h-16 border-2 rounded-lg bg-surface dark:bg-darkSurface items-center justify-center`}
+                      style={{
+                        borderColor: isFocused ? '#BD8C5E' : (digit ? '#BD8C5E' : (isDarkMode ? '#3A3A3A' : '#720C17')),
                       }}
-                      value={digit}
-                      onChangeText={(value) => handleOtpChange(value, index)}
-                      onKeyPress={(e) => handleOtpKeyPress(e, index)}
-                      onFocus={() => handleOtpFocus(index)}
-                      maxLength={OTP_LENGTH}
-                      keyboardType="numeric"
-                      selectTextOnFocus
-                      className="flex-1 text-center text-2xl font-bold text-burgundy"
-                      style={{ color: isDarkMode ? '#d9d1c6' : '#720C17' }}
-                      editable={!isLoading}
-                    />
-                  </View>
-                ))}
-              </View>
+                    >
+                      <ThemedText
+                        className="text-3xl font-bold"
+                        style={{ color: isDarkMode ? '#d9d1c6' : '#720C17' }}
+                      >
+                        {digit}
+                      </ThemedText>
+
+                      {/* Cursor Indicator */}
+                      {isFocused && (
+                        <View className="absolute bottom-2 w-4 h-0.5 bg-burgundy" />
+                      )}
+                    </View>
+                  );
+                })}
+              </Pressable>
 
               <PrimaryButton
                 title={

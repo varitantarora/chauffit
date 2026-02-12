@@ -119,7 +119,7 @@ export default function Signup() {
                   <Ionicons
                     name={
                       role === 'customer' ? 'car' :
-                      role === 'driver' ? 'bicycle' : 'motorcycle'
+                      role === 'driver' ? 'car-sport' : 'bicycle'
                     }
                     size={28}
                     color={roleIconColor(role)}

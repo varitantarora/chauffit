@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { TextInput, TouchableOpacity, Alert, View, Pressable, Keyboard } from 'react-native';
+import { TextInput, TouchableOpacity, Alert, View, Pressable, Keyboard, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedView } from '../../components/common/ThemedView';
@@ -52,71 +52,23 @@ export default function OTPVerification() {
     }, 300);
   }, []);
 
-  const focusInput = (index: number) => {
-    setTimeout(() => {
-      inputRefs.current[index]?.focus();
-    }, 10);
-  };
-
-  const handleOtpChange = (value: string, index: number) => {
-    const numericValue = value.replace(/\D/g, '');
-
-    if (!numericValue) {
-      setOtp((prev) => {
-        const next = [...prev];
-        next[index] = '';
-        return next;
-      });
-      return;
+  const handleOtpChange = (value: string) => {
+    // Only allow numbers
+    const numericValue = value.replace(/\D/g, '').slice(0, OTP_LENGTH);
+    
+    // Create new array with characters from numericValue
+    const newOtp = Array(OTP_LENGTH).fill('');
+    for (let i = 0; i < numericValue.length; i++) {
+      newOtp[i] = numericValue[i];
     }
-
-    setOtp((prev) => {
-      const next = [...prev];
-      let nextIndex = index;
-      const chars = numericValue.slice(0, OTP_LENGTH - index).split('');
-
-      chars.forEach((char) => {
-        if (nextIndex < OTP_LENGTH) {
-          next[nextIndex] = char;
-          nextIndex += 1;
-        }
-      });
-
-      if (nextIndex >= OTP_LENGTH) {
-        Keyboard.dismiss();
-      } else {
-        focusInput(nextIndex);
-      }
-
-      return next;
-    });
+    setOtp(newOtp);
+    
+    // We removed Keyboard.dismiss() here to allow users to backspace 
+    // and correct the last digit without the keyboard closing.
   };
 
-  const handleKeyPress = (e: any, index: number) => {
-    if (e.nativeEvent.key !== 'Backspace') return;
-
-    setOtp((prev) => {
-      const next = [...prev];
-
-      if (next[index]) {
-        next[index] = '';
-        return next;
-      }
-
-      if (index > 0) {
-        next[index - 1] = '';
-        focusInput(index - 1);
-      }
-
-      return next;
-    });
-  };
-
-  const handleInputFocus = (index: number) => {
-    const firstEmptyIndex = otp.findIndex((digit) => digit === '');
-    if (firstEmptyIndex !== -1 && index > firstEmptyIndex) {
-      focusInput(firstEmptyIndex);
-    }
+  const focusInput = () => {
+    inputRefs.current[0]?.focus();
   };
 
   const handleVerifyOTP = async () => {
@@ -341,28 +293,55 @@ export default function OTPVerification() {
             </ThemedText>
           </View>
 
-          {/* OTP Input */}
-          <View className="flex-row justify-between mb-8 px-4">
-            {otp.map((digit, index) => (
-              <TextInput
-                key={index}
-                ref={(ref) => (inputRefs.current[index] = ref)}
-                className="w-12 h-12 text-center text-xl font-bold rounded-xl border-2"
-                style={{
-                  borderColor: digit ? '#BD8C5E' : (isDarkMode ? '#3A3A3A' : '#E5E5E5'),
-                  backgroundColor: digit ? 'rgba(189, 140, 94, 0.1)' : (isDarkMode ? '#1C1C1C' : '#FFFFFF'),
-                  color: isDarkMode ? '#d9d1c6' : '#314b4c',
-                }}
-                value={digit}
-                onChangeText={(value) => handleOtpChange(value, index)}
-                onKeyPress={(e) => handleKeyPress(e, index)}
-                onFocus={() => handleInputFocus(index)}
-                keyboardType="number-pad"
-                maxLength={OTP_LENGTH}
-                selectTextOnFocus
-              />
-            ))}
-          </View>
+          {/* OTP Input Container */}
+          <Pressable onPress={focusInput} className="flex-row justify-between mb-8 px-4 relative">
+            {/* Hidden Real Input */}
+            <TextInput
+              ref={(ref) => { inputRefs.current[0] = ref; }}
+              style={{
+                position: 'absolute',
+                width: 1,
+                height: 1,
+                opacity: 0,
+              }}
+              value={otp.join('')}
+              onChangeText={handleOtpChange}
+              keyboardType="number-pad"
+              maxLength={OTP_LENGTH}
+              textContentType="oneTimeCode"
+              autoFocus
+            />
+
+            {/* Visual Boxes */}
+            {otp.map((digit, index) => {
+              const isFocused = otp.join('').length === index;
+              return (
+                <View
+                  key={index}
+                  className="w-12 h-16 items-center justify-center rounded-xl border-2"
+                  style={{
+                    borderColor: isFocused ? '#BD8C5E' : (digit ? '#BD8C5E' : (isDarkMode ? '#3A3A3A' : '#E5E5E5')),
+                    backgroundColor: digit ? 'rgba(189, 140, 94, 0.1)' : (isDarkMode ? '#1C1C1C' : '#FFFFFF'),
+                    borderWidth: isFocused ? 2 : 2,
+                  }}
+                >
+                  <ThemedText 
+                    className="text-2xl font-bold"
+                    style={{
+                      color: isDarkMode ? '#d9d1c6' : '#314b4c',
+                    }}
+                  >
+                    {digit}
+                  </ThemedText>
+                  
+                  {/* Cursor Indicator for focused empty box */}
+                  {isFocused && (
+                    <View className="absolute bottom-3 w-4 h-0.5 bg-secondary" />
+                  )}
+                </View>
+              );
+            })}
+          </Pressable>
 
           {/* Timer and Resend */}
           <View className="items-center mb-8">
