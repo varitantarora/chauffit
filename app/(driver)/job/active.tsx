@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, TouchableOpacity, Alert, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -10,8 +10,8 @@ import { RouteMap } from '../../../components/driver/navigation/RouteMap';
 import { useJobStore } from '../../../store/jobStore';
 import { useEarningsStore } from '../../../store/earningsStore';
 import { useAuthStore } from '../../../store/authStore';
-import { ActiveJob, Location } from '../../../types/navigation';
-import DriverRidesApiService from '../../../services/api/DriverRidesApiService';
+import { Location } from '../../../types/navigation';
+import DriverRidesApiService, { DriverRideDetail } from '../../../services/api/DriverRidesApiService';
 
 export default function ActiveJobScreen() {
   const router = useRouter();
@@ -23,6 +23,7 @@ export default function ActiveJobScreen() {
     activeJob,
     updateJobStatus,
     updateCurrentLocation,
+    fetchRideDetailsAndSync,
     completeJob,
     cancelJob,
     completeRideFromAPI
@@ -31,36 +32,85 @@ export default function ActiveJobScreen() {
   const { addJobEarnings } = useEarningsStore();
   
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
-  const [rideStartTime, setRideStartTime] = useState<Date | null>(null);
+  const rideStartTimeRef = useRef<Date | null>(null);
   const [rideDuration, setRideDuration] = useState(0);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [rideDetails, setRideDetails] = useState<DriverRideDetail | null>(null);
 
   useEffect(() => {
-    // Check if we have an activeJob, if not redirect back
-    const currentActiveJob = useJobStore.getState().activeJob;
-    if (!currentActiveJob) {
-      router.back();
-      return;
-    }
-    
-    // Only update status if it's not already started
-    if (currentActiveJob.status !== 'started') {
-      updateJobStatus('started');
-    }
-    
-    setRideStartTime(new Date());
+    let mounted = true;
+
+    const syncRideDetails = async () => {
+      try {
+        const response = await DriverRidesApiService.getRideDetails(jobId);
+        if (mounted && response.success && response.data) {
+          setRideDetails(response.data);
+          useJobStore.getState().syncActiveJobFromBooking(response.data as any);
+          if (response.data.trip_started_at) {
+            const startedAt = new Date(response.data.trip_started_at);
+            if (!Number.isNaN(startedAt.getTime())) {
+              rideStartTimeRef.current = startedAt;
+              setRideDuration(getDurationSeconds(startedAt));
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching active ride details:', error);
+      }
+    };
+
+    const init = async () => {
+      let currentActiveJob = useJobStore.getState().activeJob;
+      if (!currentActiveJob && jobId) {
+        await fetchRideDetailsAndSync(jobId);
+        currentActiveJob = useJobStore.getState().activeJob;
+      }
+
+      if (!currentActiveJob) {
+        if (mounted) router.back();
+        return;
+      }
+
+      if (currentActiveJob.status !== 'started') {
+        updateJobStatus('started');
+      }
+
+      if (currentActiveJob.startTime) {
+        const startedAt = new Date(currentActiveJob.startTime);
+        if (!Number.isNaN(startedAt.getTime())) {
+          rideStartTimeRef.current = startedAt;
+          setRideDuration(getDurationSeconds(startedAt));
+        }
+      }
+
+      await syncRideDetails();
+    };
+
+    init();
+
     const timer = startRideTimer();
     const tracking = startLocationTracking();
+    const detailsRefresh = setInterval(() => {
+      syncRideDetails();
+    }, 15000);
     
     return () => {
+      mounted = false;
       if (timer) clearInterval(timer);
       if (tracking) clearInterval(tracking);
+      clearInterval(detailsRefresh);
     };
-  }, []); // Empty dependency array to run only once
+  }, [fetchRideDetailsAndSync, jobId, router, updateJobStatus]);
+
+  const getDurationSeconds = (startedAt: Date) =>
+    Math.max(0, Math.floor((Date.now() - startedAt.getTime()) / 1000));
 
   const startRideTimer = () => {
     const interval = setInterval(() => {
-      setRideDuration(prev => prev + 1);
+      setRideDuration((prev) => {
+        if (!rideStartTimeRef.current) return prev + 1;
+        return getDurationSeconds(rideStartTimeRef.current);
+      });
     }, 1000);
 
     return interval;
@@ -139,10 +189,20 @@ export default function ActiveJobScreen() {
     setIsCompleting(true);
 
     try {
+      const toNumber = (value: any): number | null => {
+        if (value === null || value === undefined || value === '') return null;
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+      };
+
       // Calculate trip details
       const actualDuration = Math.floor(rideDuration / 60); // Convert to minutes
-      const actualDistance = Math.round(Math.random() * 5 + activeJob.estimatedDistance || 10);
-      const tips = Math.floor(Math.random() * 200); // Random tips
+      const actualDistance = toNumber(
+        (rideDetails as any)?.actual_distance_km ??
+        (rideDetails as any)?.estimated_distance_km ??
+        (activeJob as any)?.distance
+      ) || 0;
+      const tips = toNumber((rideDetails as any)?.tip_amount) || 0;
 
       // Call backend API to complete the ride
       const success = await completeRideFromAPI(activeJob.id, {
@@ -166,7 +226,11 @@ export default function ActiveJobScreen() {
 
       Alert.alert(
         'Ride Completed!',
-        `Great job! You earned ₹${(activeJob.fare + tips).toLocaleString('en-IN')} for this trip.`,
+        `Great job! You earned ₹${(
+          toNumber((rideDetails as any)?.net_earnings) ??
+          toNumber((rideDetails as any)?.driver_earnings_breakdown?.net_earnings) ??
+          activeJob.fare
+        ).toLocaleString('en-IN')} for this trip.`,
         [
           {
             text: 'View Earnings',
@@ -250,6 +314,47 @@ export default function ActiveJobScreen() {
     );
   }
 
+  const backendData = (rideDetails || activeJob) as any;
+  const breakdown = backendData.driver_earnings_breakdown || backendData.earnings || {};
+  const toNumber = (value: any): number | null => {
+    if (value === null || value === undefined || value === '') return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+  const formatMoney = (value: number | null) => value === null ? 'NA' : `₹${value.toLocaleString('en-IN')}`;
+  const formatMoneyWithSign = (value: number | null, sign: '+' | '-') =>
+    value === null ? 'NA' : `${sign} ₹${value.toLocaleString('en-IN')}`;
+
+  const totalFare = toNumber(
+    breakdown.total_fare ??
+    backendData.actual_fare ??
+    backendData.estimated_fare ??
+    backendData.fare
+  );
+  const platformFee = toNumber(
+    breakdown.platform_fee ??
+    backendData.platform_fee
+  );
+  const tipAmount = toNumber(
+    breakdown.tip_amount ??
+    backendData.tip_amount
+  );
+  const bonusAmount = toNumber(
+    breakdown.bonus_amount ??
+    backendData.bonus_amount
+  );
+  const yourEarnings = toNumber(
+    breakdown.net_earnings ??
+    backendData.net_earnings ??
+    backendData.driver_earnings
+  );
+  const otherFees = Array.isArray(breakdown.other_fees) ? breakdown.other_fees : [];
+  const displayDistance = toNumber(
+    backendData.actual_distance_km ??
+    backendData.estimated_distance_km ??
+    backendData.distance
+  );
+
   return (
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
@@ -320,13 +425,61 @@ export default function ActiveJobScreen() {
               </TouchableOpacity>
             </View>
             
-            <View className="flex-row justify-between items-center">
-              <ThemedText className="text-burgundy font-bold text-xl">
-                ₹{activeJob.fare.toLocaleString('en-IN')}
-              </ThemedText>
-              <ThemedText variant="caption" className="text-secondary">
-                Trip fare
-              </ThemedText>
+            <View className="border-t border-border dark:border-darkBorder pt-3">
+              <View className="flex-row justify-between items-center mb-1">
+                <ThemedText variant="caption" className="text-secondary">
+                  Total Fare
+                </ThemedText>
+                <ThemedText className="font-semibold">
+                  {formatMoney(totalFare)}
+                </ThemedText>
+              </View>
+              <View className="flex-row justify-between items-center mb-1">
+                <ThemedText variant="caption" className="text-secondary">
+                  Platform Fee
+                </ThemedText>
+                <ThemedText variant="caption">
+                  {formatMoneyWithSign(platformFee, '-')}
+                </ThemedText>
+              </View>
+              <View className="flex-row justify-between items-center mb-1">
+                <ThemedText variant="caption" className="text-secondary">
+                  Tips
+                </ThemedText>
+                <ThemedText variant="caption">
+                  {formatMoneyWithSign(tipAmount, '+')}
+                </ThemedText>
+              </View>
+              <View className="flex-row justify-between items-center mb-1">
+                <ThemedText variant="caption" className="text-secondary">
+                  Bonus
+                </ThemedText>
+                <ThemedText variant="caption">
+                  {formatMoneyWithSign(bonusAmount, '+')}
+                </ThemedText>
+              </View>
+              {otherFees.map((fee: any, index: number) => {
+                const feeAmount = toNumber(fee?.amount);
+                const sign: '+' | '-' = fee?.direction === 'plus' ? '+' : '-';
+                return (
+                  <View className="flex-row justify-between items-center mb-1" key={`active-other-fee-${index}`}>
+                    <ThemedText variant="caption" className="text-secondary">
+                      {fee?.label || 'Other Fee'}
+                    </ThemedText>
+                    <ThemedText variant="caption">
+                      {formatMoneyWithSign(feeAmount, sign)}
+                    </ThemedText>
+                  </View>
+                );
+              })}
+              <View className="flex-row justify-between items-center">
+                <ThemedText variant="caption" className="text-secondary">
+                  Your Earnings
+                </ThemedText>
+                <ThemedText className="text-burgundy font-bold text-lg">
+                  {formatMoney(yourEarnings)}
+                </ThemedText>
+              </View>
             </View>
           </ThemedCard>
 
@@ -361,15 +514,15 @@ export default function ActiveJobScreen() {
               </View>
               <View className="items-center">
                 <ThemedText className="font-bold text-lg">
-                  {Math.round(Math.random() * 10 + 5)} km
+                  {displayDistance === null ? 'NA' : `${displayDistance} km`}
                 </ThemedText>
                 <ThemedText variant="caption">Distance</ThemedText>
               </View>
               <View className="items-center">
                 <ThemedText className="font-bold text-lg text-burgundy">
-                  ₹{activeJob.fare.toLocaleString('en-IN')}
+                  {formatMoney(yourEarnings)}
                 </ThemedText>
-                <ThemedText variant="caption">Fare</ThemedText>
+                <ThemedText variant="caption">Your Earnings</ThemedText>
               </View>
             </View>
           </ThemedCard>

@@ -208,13 +208,17 @@ export default function BikerProfile() {
       });
       
       if (response.success) {
-        setIsOnline(newStatus);
-        if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-          setBikerProfile(response.data[0]);
+        const returnedIsOnline =
+          typeof (response.data as any)?.is_online === 'boolean'
+            ? (response.data as any).is_online
+            : newStatus;
+        setIsOnline(returnedIsOnline);
+        if (bikerProfile) {
+          setBikerProfile({ ...bikerProfile, is_online: returnedIsOnline });
         }
         Alert.alert(
           'Status Updated',
-          `You are now ${newStatus ? 'online and available' : 'offline'} for pickup requests.`
+          `You are now ${returnedIsOnline ? 'online and available' : 'offline'} for pickup requests.`
         );
       } else {
         Alert.alert('Error', response.error || 'Failed to update status');

@@ -13,6 +13,7 @@ import * as Location from 'expo-location';
 import DriverRidesApiService, { BookingDetail } from '../../../services/api/DriverRidesApiService';
 
 export default function OTPStartRideScreen() {
+  const OTP_LENGTH = 4;
   const router = useRouter();
   const params = useLocalSearchParams();
   const jobId = params.jobId as string;
@@ -100,30 +101,73 @@ export default function OTPStartRideScreen() {
     }
   };
 
-  const handleOtpChange = (value: string, index: number) => {
-    const newOtp = [...otp];
-    // Only allow numeric input
-    const numericValue = value.replace(/[^0-9]/g, '');
-    newOtp[index] = numericValue;
-    setOtp(newOtp);
+  const focusOtpInput = (index: number) => {
+    setTimeout(() => {
+      otpRefs.current[index]?.focus();
+    }, 10);
+  };
 
-    // Auto-focus next input
-    if (numericValue && index < 3) {
-      otpRefs.current[index + 1]?.focus();
+  const handleOtpChange = (value: string, index: number) => {
+    const numericValue = value.replace(/\D/g, '');
+
+    if (!numericValue) {
+      setOtp((prev) => {
+        const next = [...prev];
+        next[index] = '';
+        return next;
+      });
+      return;
     }
 
-    // Auto-dismiss keyboard when all 4 digits are entered
-    if (numericValue && index === 3) {
-      const allFilled = newOtp.every(digit => digit !== '');
-      if (allFilled) {
+    setOtp((prev) => {
+      const next = [...prev];
+      let nextIndex = index;
+      const chars = numericValue.slice(0, OTP_LENGTH - index).split('');
+
+      chars.forEach((char) => {
+        if (nextIndex < OTP_LENGTH) {
+          next[nextIndex] = char;
+          nextIndex += 1;
+        }
+      });
+
+      if (nextIndex >= OTP_LENGTH) {
         Keyboard.dismiss();
+      } else {
+        focusOtpInput(nextIndex);
       }
+
+      return next;
+    });
+  };
+
+  const handleOtpKeyPress = ({ nativeEvent }: any, index: number) => {
+    if (nativeEvent.key !== 'Backspace') return;
+
+    setOtp((prev) => {
+      const next = [...prev];
+      if (next[index]) {
+        next[index] = '';
+        return next;
+      }
+      if (index > 0) {
+        next[index - 1] = '';
+        focusOtpInput(index - 1);
+      }
+      return next;
+    });
+  };
+
+  const handleOtpFocus = (index: number) => {
+    const firstEmptyIndex = otp.findIndex((digit) => digit === '');
+    if (firstEmptyIndex !== -1 && index > firstEmptyIndex) {
+      focusOtpInput(firstEmptyIndex);
     }
   };
 
   const handleStartRide = async () => {
     const otpString = otp.join('');
-    if (otpString.length !== 4) {
+    if (otpString.length !== OTP_LENGTH) {
       Alert.alert('Invalid OTP', 'Please enter a 4-digit OTP.');
       return;
     }
@@ -187,7 +231,7 @@ export default function OTPStartRideScreen() {
               onPress: () => {
                 // Clear OTP on error
                 setOtp(['', '', '', '']);
-                otpRefs.current[0]?.focus();
+                focusOtpInput(0);
               }
             }
           ]
@@ -302,12 +346,9 @@ export default function OTPStartRideScreen() {
                       }}
                       value={digit}
                       onChangeText={(value) => handleOtpChange(value, index)}
-                      onKeyPress={({ nativeEvent }) => {
-                        if (nativeEvent.key === 'Backspace' && !digit && index > 0) {
-                          otpRefs.current[index - 1]?.focus();
-                        }
-                      }}
-                      maxLength={1}
+                      onKeyPress={(e) => handleOtpKeyPress(e, index)}
+                      onFocus={() => handleOtpFocus(index)}
+                      maxLength={OTP_LENGTH}
                       keyboardType="numeric"
                       selectTextOnFocus
                       className="flex-1 text-center text-2xl font-bold text-burgundy"
@@ -325,7 +366,7 @@ export default function OTPStartRideScreen() {
                   "START RIDE"
                 }
                 onPress={otpSent ? handleStartRide : handleSendOtp}
-                disabled={isLoading || (otpSent && otp.join('').length < 4)}
+                disabled={isLoading || (otpSent && otp.join('').length < OTP_LENGTH)}
                 className="w-full"
               />
 

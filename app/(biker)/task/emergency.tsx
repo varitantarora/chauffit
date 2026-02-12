@@ -196,32 +196,29 @@ export default function EmergencyResponseScreen() {
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
         {/* Header */}
-        <View className="bg-red-500 px-4 py-3">
-          <View className="flex-row items-center justify-between">
-            <TouchableOpacity onPress={() => router.back()} className="p-1">
-              <Ionicons name="arrow-back" size={24} color="white" />
-            </TouchableOpacity>
-            
-            <View className="flex-1 items-center">
-              <ThemedText className="font-bold text-lg text-white">EMERGENCY RESPONSE</ThemedText>
-              <ThemedText className="text-red-100 text-sm">Priority Task</ThemedText>
-            </View>
-            
-            {/* SOS Button */}
-            <TouchableOpacity
-              onPress={handleSOS}
-              className={`p-3 rounded-full border-2 ${
-                sosPressed ? 'bg-white border-white' : 'border-white'
-              }`}
-              disabled={sosPressed}
-            >
-              <Ionicons 
-                name="warning" 
-                size={20} 
-                color={sosPressed ? '#ef4444' : 'white'} 
-              />
-            </TouchableOpacity>
+        <View className="flex-row items-center justify-between p-4 border-b border-border dark:border-darkBorder">
+          <TouchableOpacity onPress={() => router.back()} className="p-1">
+            <Ionicons name="arrow-back" size={24} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
+          </TouchableOpacity>
+          
+          <View className="flex-1 items-center">
+            <ThemedText className="font-bold text-lg">Emergency Response</ThemedText>
+            <ThemedText variant="caption" className="text-danger">Priority Task</ThemedText>
           </View>
+          
+          <TouchableOpacity
+            onPress={handleSOS}
+            className={`p-3 rounded-full border ${
+              sosPressed ? 'bg-danger/10 border-danger' : 'border-danger'
+            }`}
+            disabled={sosPressed}
+          >
+            <Ionicons
+              name="warning"
+              size={20}
+              color="#EF4444"
+            />
+          </TouchableOpacity>
         </View>
 
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
@@ -244,13 +241,13 @@ export default function EmergencyResponseScreen() {
             <ThemedCard className="p-4">
               <View className="flex-row items-center justify-between mb-3">
                 <PriorityBadge priority={task.priority} />
-                <ThemedText className="font-bold text-red-500 text-xl">
+                <ThemedText className="font-bold text-danger text-xl">
                   URGENT
                 </ThemedText>
               </View>
               
               <ThemedText className="font-bold text-xl mb-2">{task.title}</ThemedText>
-              <ThemedText className="text-gray-600 dark:text-gray-400 mb-3">
+              <ThemedText variant="secondary" className="mb-3">
                 {task.description}
               </ThemedText>
               
@@ -343,9 +340,9 @@ export default function EmergencyResponseScreen() {
                 
                 return (
                   <View key={step} className="flex-row items-center mb-4 last:mb-0">
-                    <View className={`w-8 h-8 rounded-full items-center justify-center mr-3 ${
-                      status === 'completed' ? 'bg-green-500' :
-                      status === 'active' ? 'bg-red-500' : 'bg-gray-300'
+                  <View className={`w-8 h-8 rounded-full items-center justify-center mr-3 ${
+                      status === 'completed' ? 'bg-success' :
+                      status === 'active' ? 'bg-danger' : 'bg-border'
                     }`}>
                       <Ionicons 
                         name={status === 'completed' ? 'checkmark' : config.icon as any} 
@@ -356,17 +353,17 @@ export default function EmergencyResponseScreen() {
                     
                     <View className="flex-1">
                       <ThemedText className={`font-semibold ${
-                        status === 'active' ? 'text-red-600' : 
-                        status === 'completed' ? 'text-green-600' : 'text-gray-500'
+                        status === 'active' ? 'text-danger' : 
+                        status === 'completed' ? 'text-success' : 'text-textSecondary'
                       }`}>
                         {config.title}
                       </ThemedText>
-                      <ThemedText variant="caption" className="text-gray-500">
+                      <ThemedText variant="caption" className="text-textSecondary">
                         {config.description}
                       </ThemedText>
                     </View>
                     
-                    <ThemedText variant="caption" className="text-gray-400">
+                    <ThemedText variant="caption" className="text-textSecondary">
                       {index + 1}
                     </ThemedText>
                   </View>
@@ -396,21 +393,21 @@ export default function EmergencyResponseScreen() {
 
           {/* Safety Tips */}
           <View className="px-4 mb-6">
-            <ThemedCard className="p-4 bg-blue-50 dark:bg-blue-900/20">
-              <ThemedText className="font-bold text-blue-700 dark:text-blue-300 mb-2">
+            <ThemedCard className="p-4 bg-secondary/10 border border-secondary/20">
+              <ThemedText className="font-bold text-secondary mb-2">
                 Safety First!
               </ThemedText>
               <View className="space-y-1">
-                <ThemedText className="text-blue-600 dark:text-blue-400 text-sm">
+                <ThemedText className="text-secondary text-sm">
                   • Assess the situation before taking action
                 </ThemedText>
-                <ThemedText className="text-blue-600 dark:text-blue-400 text-sm">
+                <ThemedText className="text-secondary text-sm">
                   • Contact emergency services if needed (100)
                 </ThemedText>
-                <ThemedText className="text-blue-600 dark:text-blue-400 text-sm">
+                <ThemedText className="text-secondary text-sm">
                   • Keep yourself and others safe at all times
                 </ThemedText>
-                <ThemedText className="text-blue-600 dark:text-blue-400 text-sm">
+                <ThemedText className="text-secondary text-sm">
                   • Use SOS button if you need immediate help
                 </ThemedText>
               </View>
@@ -425,7 +422,7 @@ export default function EmergencyResponseScreen() {
               title={stepConfig.action}
               onPress={() => handleStepComplete(stepConfig.nextStep)}
               loading={isLoading}
-              className="bg-red-500"
+              className="bg-danger"
             />
           </View>
         )}

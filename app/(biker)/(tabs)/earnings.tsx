@@ -10,6 +10,15 @@ import { useBikerEarningsStore } from '../../../store/bikerEarningsStore';
 import { IncentiveTracker } from '../../../components/biker/earnings/IncentiveTracker';
 import BikerApiService from '../../../services/api/BikerApiService';
 
+const toAmount = (value: unknown): number => {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  if (typeof value === 'string') {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+};
+
 export default function BikerEarningsScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
@@ -61,16 +70,16 @@ export default function BikerEarningsScreen() {
         
         // Map API response (snake_case) to store format (camelCase)
         const mappedEarnings = {
-          totalEarnings: earningsData.total_earnings ?? 0,
-          weeklyEarnings: earningsData.week_earnings ?? 0,
-          monthlyEarnings: earningsData.month_earnings ?? 0,
-          todayEarnings: earningsData.today_earnings ?? 0,
-          pendingAmount: earningsData.pending_amount ?? 0,
-          baseTaskEarnings: earningsData.base_task_earnings ?? 0,
-          emergencyBonuses: earningsData.emergency_bonuses ?? 0,
-          peakTimeBonuses: earningsData.peak_time_bonuses ?? 0,
-          distanceBonuses: earningsData.distance_bonuses ?? 0,
-          incentives: earningsData.incentives ?? 0,
+          totalEarnings: toAmount(earningsData.total_earnings),
+          weeklyEarnings: toAmount(earningsData.week_earnings),
+          monthlyEarnings: toAmount(earningsData.month_earnings),
+          todayEarnings: toAmount(earningsData.today_earnings),
+          pendingAmount: toAmount(earningsData.pending_amount),
+          baseTaskEarnings: toAmount(earningsData.base_task_earnings),
+          emergencyBonuses: toAmount(earningsData.emergency_bonuses),
+          peakTimeBonuses: toAmount(earningsData.peak_time_bonuses),
+          distanceBonuses: toAmount(earningsData.distance_bonuses),
+          incentives: toAmount(earningsData.incentives),
           lastPayout: earningsData.last_payout ? new Date(earningsData.last_payout) : undefined,
         };
         console.log('Mapped earnings:', mappedEarnings);
@@ -98,6 +107,9 @@ export default function BikerEarningsScreen() {
       if (response.success && response.data) {
         const statsData = response.data as any;
         const lifetime = statsData.lifetime || statsData;
+        const today = statsData.today || {};
+        const week = statsData.week || {};
+        const month = statsData.month || {};
         
         setStats({
           averageRating: lifetime.average_rating || 0,
@@ -105,6 +117,33 @@ export default function BikerEarningsScreen() {
           completionRate: lifetime.completion_rate || 0,
           distanceCovered: lifetime.distance_covered_km || 0,
         });
+
+        // Fallback: if earnings summary endpoint is still zero but stats has completed pickup earnings,
+        // use stats-derived values to keep earnings UI accurate.
+        const currentEarnings = useBikerEarningsStore.getState().earnings;
+        const fallbackFromStats: Partial<typeof currentEarnings> = {};
+        const lifetimeEarned = toAmount(lifetime.earned);
+        const todayEarned = toAmount(today.earned);
+        const weekEarned = toAmount(week.earned);
+        const monthEarned = toAmount(month.earned);
+
+        if (currentEarnings.totalEarnings <= 0 && lifetimeEarned > 0) {
+          fallbackFromStats.totalEarnings = lifetimeEarned;
+        }
+        if (currentEarnings.todayEarnings <= 0 && todayEarned > 0) {
+          fallbackFromStats.todayEarnings = todayEarned;
+        }
+        if (currentEarnings.weeklyEarnings <= 0 && weekEarned > 0) {
+          fallbackFromStats.weeklyEarnings = weekEarned;
+        }
+        if (currentEarnings.monthlyEarnings <= 0 && monthEarned > 0) {
+          fallbackFromStats.monthlyEarnings = monthEarned;
+        }
+
+        if (Object.keys(fallbackFromStats).length > 0) {
+          setEarnings(fallbackFromStats);
+        }
+
         console.log('Stats fetched:', statsData);
       } else {
         console.error('Failed to fetch stats:', response.error);

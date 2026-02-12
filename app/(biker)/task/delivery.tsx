@@ -18,6 +18,56 @@ import * as ImagePicker from 'expo-image-picker';
 
 type DeliveryStep = 'pickup' | 'in_transit' | 'delivery' | 'completed';
 
+const STEP_STYLES: Record<
+  DeliveryStep,
+  {
+    cardClass: string;
+    iconBgClass: string;
+    titleClass: string;
+    descriptionClass: string;
+    actionButtonClass: string;
+    progressDotClass: string;
+    progressTextClass: string;
+  }
+> = {
+  pickup: {
+    cardClass: 'bg-secondary/10 border border-secondary/20',
+    iconBgClass: 'bg-secondary',
+    titleClass: 'text-secondary',
+    descriptionClass: 'text-secondary/80',
+    actionButtonClass: 'bg-burgundy',
+    progressDotClass: 'bg-secondary',
+    progressTextClass: 'text-secondary',
+  },
+  in_transit: {
+    cardClass: 'bg-burgundy/10 border border-burgundy/20',
+    iconBgClass: 'bg-burgundy',
+    titleClass: 'text-burgundy',
+    descriptionClass: 'text-burgundy/80',
+    actionButtonClass: 'bg-burgundy',
+    progressDotClass: 'bg-burgundy',
+    progressTextClass: 'text-burgundy',
+  },
+  delivery: {
+    cardClass: 'bg-success/10 border border-success/20',
+    iconBgClass: 'bg-success',
+    titleClass: 'text-success',
+    descriptionClass: 'text-success/80',
+    actionButtonClass: 'bg-success',
+    progressDotClass: 'bg-success',
+    progressTextClass: 'text-success',
+  },
+  completed: {
+    cardClass: 'bg-success/10 border border-success/20',
+    iconBgClass: 'bg-success',
+    titleClass: 'text-success',
+    descriptionClass: 'text-success/80',
+    actionButtonClass: 'bg-success',
+    progressDotClass: 'bg-success',
+    progressTextClass: 'text-success',
+  },
+};
+
 export default function DeliveryTaskScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
@@ -168,7 +218,6 @@ export default function DeliveryTaskScreen() {
           title: 'Pickup Items',
           description: 'Navigate to pickup location and collect items',
           icon: 'cube',
-          color: 'blue',
           action: 'Confirm Pickup',
           nextStep: 'in_transit' as DeliveryStep,
         };
@@ -177,7 +226,6 @@ export default function DeliveryTaskScreen() {
           title: 'In Transit',
           description: 'Navigate to delivery destination',
           icon: 'bicycle',
-          color: 'orange',
           action: 'Arrived at Destination',
           nextStep: 'delivery' as DeliveryStep,
         };
@@ -186,7 +234,6 @@ export default function DeliveryTaskScreen() {
           title: 'Deliver Items',
           description: 'Hand over items to recipient',
           icon: 'hand-left',
-          color: 'green',
           action: 'Confirm Delivery',
           nextStep: 'completed' as DeliveryStep,
         };
@@ -195,7 +242,6 @@ export default function DeliveryTaskScreen() {
           title: 'Completed',
           description: 'Delivery task finished',
           icon: 'checkmark-circle',
-          color: 'green',
           action: 'Finish',
           nextStep: 'completed' as DeliveryStep,
         };
@@ -223,7 +269,7 @@ export default function DeliveryTaskScreen() {
         {/* Header */}
         <View className="flex-row items-center justify-between p-4 border-b border-border dark:border-darkBorder">
           <TouchableOpacity onPress={() => router.back()} className="p-2">
-            <Ionicons name="arrow-back" size={24} color={isDarkMode ? '#d9d1c6' : '#374151'} />
+            <Ionicons name="arrow-back" size={24} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
           </TouchableOpacity>
           
           <View className="flex-1 items-center">
@@ -239,16 +285,16 @@ export default function DeliveryTaskScreen() {
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           {/* Current Step Header */}
           <View className="p-4">
-            <ThemedCard className={`p-4 bg-${stepConfig.color}-50 dark:bg-${stepConfig.color}-900/20 border border-${stepConfig.color}-200 dark:border-${stepConfig.color}-800`}>
+            <ThemedCard className={`p-4 ${STEP_STYLES[currentStep].cardClass}`}>
               <View className="flex-row items-center">
-                <View className={`bg-${stepConfig.color}-500 p-3 rounded-full mr-4`}>
+                <View className={`${STEP_STYLES[currentStep].iconBgClass} p-3 rounded-full mr-4`}>
                   <Ionicons name={stepConfig.icon as any} size={24} color="white" />
                 </View>
                 <View className="flex-1">
-                  <ThemedText className={`font-bold text-lg text-${stepConfig.color}-700 dark:text-${stepConfig.color}-300`}>
+                  <ThemedText className={`font-bold text-lg ${STEP_STYLES[currentStep].titleClass}`}>
                     {stepConfig.title}
                   </ThemedText>
-                  <ThemedText className={`text-${stepConfig.color}-600 dark:text-${stepConfig.color}-400`}>
+                  <ThemedText className={STEP_STYLES[currentStep].descriptionClass}>
                     {stepConfig.description}
                   </ThemedText>
                 </View>
@@ -261,7 +307,7 @@ export default function DeliveryTaskScreen() {
             <ThemedCard className="p-4">
               <ThemedText className="font-bold text-xl mb-2">{task.title}</ThemedText>
               {task.description && (
-                <ThemedText className="text-gray-600 dark:text-gray-400 mb-3">
+                <ThemedText variant="secondary" className="mb-3">
                   {task.description}
                 </ThemedText>
               )}
@@ -300,7 +346,7 @@ export default function DeliveryTaskScreen() {
                     <ThemedText className="font-semibold">
                       {currentStep === 'pickup' || currentStep === 'in_transit' ? 'Pickup Location' : 'Delivery Location'}
                     </ThemedText>
-                    <ThemedText variant="caption" className="text-gray-500">
+                    <ThemedText variant="caption" className="text-textSecondary">
                       {currentLocation.address}
                     </ThemedText>
                   </View>
@@ -322,12 +368,12 @@ export default function DeliveryTaskScreen() {
                 <ThemedText className="font-bold mb-3">Contact Information</ThemedText>
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center flex-1">
-                    <View className="bg-blue-500/10 p-2 rounded-full mr-3">
-                      <Ionicons name="person" size={20} color="#3b82f6" />
+                    <View className="bg-secondary/10 p-2 rounded-full mr-3">
+                      <Ionicons name="person" size={20} color="#BD8C5E" />
                     </View>
                     <View>
                       <ThemedText className="font-semibold">{task.customerName}</ThemedText>
-                      <ThemedText variant="caption" className="text-gray-500">
+                      <ThemedText variant="caption" className="text-textSecondary">
                         {currentStep === 'pickup' ? 'Pickup Contact' : 'Delivery Contact'}
                       </ThemedText>
                     </View>
@@ -335,7 +381,7 @@ export default function DeliveryTaskScreen() {
                   {task.customerPhone && (
                     <TouchableOpacity
                       onPress={() => makePhoneCall(task.customerPhone!)}
-                      className="bg-blue-500 p-3 rounded-full"
+                      className="bg-secondary p-3 rounded-full"
                     >
                       <Ionicons name="call" size={16} color="white" />
                     </TouchableOpacity>
@@ -379,19 +425,19 @@ export default function DeliveryTaskScreen() {
                 
                 <TouchableOpacity
                   onPress={() => takePhoto(currentStep)}
-                  className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 items-center"
+                  className="border-2 border-dashed border-border dark:border-darkBorder rounded-lg p-6 items-center"
                 >
                   {(currentStep === 'pickup' ? pickupPhoto : deliveryPhoto) ? (
                     <View className="items-center">
                       <Ionicons name="checkmark-circle" size={32} color="#10b981" />
-                      <ThemedText className="text-green-600 font-semibold mt-2">
+                      <ThemedText className="text-success font-semibold mt-2">
                         Photo Taken
                       </ThemedText>
                     </View>
                   ) : (
                     <View className="items-center">
-                      <Ionicons name="camera" size={32} color="#6b7280" />
-                      <ThemedText className="text-gray-500 font-semibold mt-2">
+                      <Ionicons name="camera" size={32} color="#6B7280" />
+                      <ThemedText className="text-textSecondary font-semibold mt-2">
                         Take Photo
                       </ThemedText>
                       <ThemedText variant="caption" className="text-center mt-1">
@@ -418,8 +464,8 @@ export default function DeliveryTaskScreen() {
                 return (
                   <View key={step} className="flex-row items-center mb-3 last:mb-0">
                     <View className={`w-8 h-8 rounded-full items-center justify-center mr-3 ${
-                      isCompleted ? `bg-${config.color}-500` :
-                      isActive ? `bg-${config.color}-500` : 'bg-gray-300'
+                      isCompleted ? STEP_STYLES[step].progressDotClass :
+                      isActive ? STEP_STYLES[step].progressDotClass : 'bg-border'
                     }`}>
                       <Ionicons 
                         name={isCompleted ? 'checkmark' : config.icon as any} 
@@ -430,20 +476,20 @@ export default function DeliveryTaskScreen() {
                     
                     <View className="flex-1">
                       <ThemedText className={`font-semibold ${
-                        isActive ? `text-${config.color}-600` : 
-                        isCompleted ? 'text-green-600' : 'text-gray-500'
+                        isActive ? STEP_STYLES[step].progressTextClass :
+                        isCompleted ? 'text-success' : 'text-textSecondary'
                       }`}>
                         {config.title}
                       </ThemedText>
                       {isActive && (
-                        <ThemedText variant="caption" className="text-gray-500">
+                        <ThemedText variant="caption" className="text-textSecondary">
                           Current step
                         </ThemedText>
                       )}
                     </View>
                     
                     {isCompleted && step !== 'completed' && (
-                      <ThemedText variant="caption" className="text-green-600">
+                      <ThemedText variant="caption" className="text-success">
                         ✓ Done
                       </ThemedText>
                     )}
@@ -461,7 +507,7 @@ export default function DeliveryTaskScreen() {
               title={stepConfig.action}
               onPress={() => handleStepComplete(stepConfig.nextStep)}
               loading={isLoading}
-              className={`bg-${stepConfig.color}-500`}
+              className={STEP_STYLES[currentStep].actionButtonClass}
             />
           </View>
         )}
@@ -492,7 +538,7 @@ function DeliveryItem({
   const isCompleted = currentStep === 'completed' || (currentStep === 'delivery' && isPickedUp);
 
   return (
-    <View className="flex-row items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg mb-2">
+    <View className="flex-row items-center justify-between p-3 bg-surface dark:bg-darkSurface rounded-lg mb-2">
       <View className="flex-1">
         <View className="flex-row items-center">
           <ThemedText className="font-semibold flex-1">
@@ -501,20 +547,20 @@ function DeliveryItem({
           
           <View className="flex-row space-x-1">
             {item.fragile && (
-              <View className="bg-orange-100 dark:bg-orange-900/20 px-2 py-1 rounded-full">
-                <ThemedText className="text-orange-600 text-xs">Fragile</ThemedText>
+              <View className="bg-warning/10 px-2 py-1 rounded-full">
+                <ThemedText className="text-warning text-xs">Fragile</ThemedText>
               </View>
             )}
             {item.confidential && (
-              <View className="bg-red-100 dark:bg-red-900/20 px-2 py-1 rounded-full">
-                <ThemedText className="text-red-600 text-xs">Confidential</ThemedText>
+              <View className="bg-danger/10 px-2 py-1 rounded-full">
+                <ThemedText className="text-danger text-xs">Confidential</ThemedText>
               </View>
             )}
           </View>
         </View>
         
         {item.description && (
-          <ThemedText variant="caption" className="text-gray-500 mt-1">
+          <ThemedText variant="caption" className="text-textSecondary mt-1">
             {item.description}
           </ThemedText>
         )}
@@ -524,7 +570,7 @@ function DeliveryItem({
         <TouchableOpacity
           onPress={onTogglePickup}
           className={`ml-3 p-2 rounded-full ${
-            isPickedUp ? 'bg-green-500' : 'bg-gray-300'
+            isPickedUp ? 'bg-success' : 'bg-border'
           }`}
         >
           <Ionicons name="checkmark" size={16} color="white" />
@@ -535,7 +581,7 @@ function DeliveryItem({
         <TouchableOpacity
           onPress={onToggleDelivery}
           className={`ml-3 p-2 rounded-full ${
-            isDelivered ? 'bg-green-500' : 'bg-gray-300'
+            isDelivered ? 'bg-success' : 'bg-border'
           }`}
         >
           <Ionicons name="checkmark" size={16} color="white" />

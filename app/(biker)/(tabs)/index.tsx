@@ -65,12 +65,10 @@ export default function BikerHomeScreen() {
   const fetchRequestedTasks = async () => {
     try {
       setLoadingTasks(true);
-      const response = await BikerTaskApiService.getTasks({
-        task_status: 'requested',
-      });
+      const response = await BikerTaskApiService.getPendingTasks();
 
       if (response.success && response.data) {
-        const tasks = response.data.results || [];
+        const tasks = response.data || [];
         setRequestedTasks(tasks);
         
         // Convert API tasks to BikerTask format for TaskCard component
@@ -79,10 +77,10 @@ export default function BikerHomeScreen() {
           type: 'driver_pickup' as TaskType,
           priority: task.priority === 'urgent' ? 'emergency' : task.priority === 'high' ? 'high' : 'normal' as TaskPriority,
           title: `Driver Pickup ${task.task_reference}`,
-          description: task.special_instructions || `Pick up driver ${task.driver_name}`,
+          description: task.special_instructions || `Pick up driver ${task.driver_name || task.driver_details?.name || 'Driver'}`,
           driverId: task.driver,
-          driverName: task.driver_name,
-          driverPhone: task.driver_phone,
+          driverName: task.driver_name || task.driver_details?.name || 'Driver',
+          driverPhone: task.driver_phone || task.driver_details?.mobile || '',
           pickupLocation: {
             latitude: parseFloat(task.pickup_location_lat),
             longitude: parseFloat(task.pickup_location_long),

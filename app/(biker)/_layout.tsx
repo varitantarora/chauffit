@@ -26,6 +26,7 @@ export default function BikerLayout() {
       
       {/* Analytics screens */}
       <Stack.Screen name="analytics/performance" />
+      <Stack.Screen name="edit-profile" />
       
       {/* Legacy task screens */}
       <Stack.Screen name="task/[id]" />

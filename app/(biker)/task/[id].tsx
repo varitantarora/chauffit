@@ -20,9 +20,9 @@ import BikerTaskApiService, { BikerTaskDetail } from '../../../services/api/Bike
 const mapApiTaskToUITask = (apiTask: BikerTaskDetail): BikerTask => {
   // Map API priority to UI priority
   const mapPriority = (priority: string): TaskPriority => {
+    if (priority === 'emergency') return 'emergency';
     if (priority === 'urgent') return 'urgent';
     if (priority === 'high') return 'high';
-    if (priority === 'emergency') return 'emergency';
     return 'normal';
   };
 
@@ -41,11 +41,13 @@ const mapApiTaskToUITask = (apiTask: BikerTaskDetail): BikerTask => {
     id: apiTask.id,
     type: 'driver_rescue' as TaskType, // API only has 'driver_transport'
     priority: mapPriority(apiTask.priority),
-    title: `Pickup for ${apiTask.driver_name}`,
+    title: `Pickup for ${apiTask.driver_name || apiTask.driver_details?.name || 'Driver'}`,
     description: apiTask.special_instructions || `Pickup driver from ${apiTask.pickup_address} to ${apiTask.dropoff_address}`,
     driverId: apiTask.driver,
-    driverName: apiTask.driver_name,
-    driverPhone: apiTask.driver_phone,
+    driverName: apiTask.driver_name || apiTask.driver_details?.name || undefined,
+    driverPhone: apiTask.driver_phone || apiTask.driver_details?.mobile || undefined,
+    customerName: apiTask.customer_details?.name || undefined,
+    customerPhone: apiTask.customer_details?.mobile || undefined,
     pickupLocation: {
       latitude: parseFloat(apiTask.pickup_location_lat),
       longitude: parseFloat(apiTask.pickup_location_long),
@@ -139,8 +141,8 @@ export default function TaskDetailsScreen() {
     return (
       <SafeAreaView className="flex-1">
         <ThemedView className="flex-1 items-center justify-center p-6">
-          <View className="bg-gray-100 dark:bg-gray-800 p-4 rounded-full mb-4">
-            <Ionicons name="document-text-outline" size={48} color="#6b7280" />
+          <View className="bg-surface dark:bg-darkSurface p-4 rounded-full mb-4">
+            <Ionicons name="document-text-outline" size={48} color="#6B7280" />
           </View>
           <ThemedText className="font-bold text-xl mb-2">Task Not Found</ThemedText>
           <ThemedText variant="caption" className="text-center mb-6">
@@ -375,12 +377,12 @@ export default function TaskDetailsScreen() {
         {/* Header */}
         <View className="flex-row items-center justify-between p-4 border-b border-border dark:border-darkBorder">
           <TouchableOpacity onPress={() => router.back()} className="p-2">
-            <Ionicons name="arrow-back" size={24} color={isDarkMode ? '#d9d1c6' : '#374151'} />
+            <Ionicons name="arrow-back" size={24} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
           </TouchableOpacity>
           
           <View className="flex-1 items-center">
             <ThemedText className="font-bold text-lg">Task Details</ThemedText>
-            <ThemedText variant="caption" className="text-gray-500">
+            <ThemedText variant="caption" className="text-textSecondary">
               ID: {task.id.slice(-6)}
             </ThemedText>
           </View>
@@ -410,8 +412,8 @@ export default function TaskDetailsScreen() {
                 <View className="flex-row items-center">
                   <PriorityBadge priority={task.priority} />
                   {task.emergencyBonus && (
-                    <View className="bg-green-500/10 px-3 py-1 rounded-full ml-2">
-                      <ThemedText className="text-green-600 text-xs font-semibold">
+                    <View className="bg-success/10 px-3 py-1 rounded-full ml-2">
+                      <ThemedText className="text-success text-xs font-semibold">
                         BONUS TASK
                       </ThemedText>
                     </View>
@@ -424,7 +426,7 @@ export default function TaskDetailsScreen() {
 
               <View className="flex-row items-center mb-3">
                 <View className="bg-primary/10 p-3 rounded-full mr-3">
-                  <Ionicons name={getTaskIcon(task.type) as any} size={24} color="#bd8c5e" />
+                  <Ionicons name={getTaskIcon(task.type) as any} size={24} color="#BD8C5E" />
                 </View>
                 <View className="flex-1">
                   <ThemedText className="font-bold text-xl">{task.title}</ThemedText>
@@ -435,7 +437,7 @@ export default function TaskDetailsScreen() {
               </View>
 
               {task.description && (
-                <View className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg mb-3">
+                <View className="bg-surface dark:bg-darkSurface p-3 rounded-lg mb-3">
                   <ThemedText className="text-sm">{task.description}</ThemedText>
                 </View>
               )}
@@ -451,7 +453,7 @@ export default function TaskDetailsScreen() {
                 {task.customerName && (
                   <View className="flex-row items-center justify-between mb-3">
                     <View className="flex-row items-center flex-1">
-                      <Ionicons name="person" size={20} color="#bd8c5e" />
+                      <Ionicons name="person" size={20} color="#BD8C5E" />
                       <View className="ml-3">
                         <ThemedText className="font-semibold">Customer</ThemedText>
                         <ThemedText variant="caption">{task.customerName}</ThemedText>
@@ -471,7 +473,7 @@ export default function TaskDetailsScreen() {
                 {task.driverName && (
                   <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center flex-1">
-                      <Ionicons name="car" size={20} color="#bd8c5e" />
+                      <Ionicons name="car" size={20} color="#BD8C5E" />
                       <View className="ml-3">
                         <ThemedText className="font-semibold">Driver</ThemedText>
                         <ThemedText variant="caption">{task.driverName}</ThemedText>
@@ -505,7 +507,7 @@ export default function TaskDetailsScreen() {
               <View className="p-4">
                 <View className="space-y-2">
                   <View className="flex-row items-start">
-                    <Ionicons name="location" size={16} color="#bd8c5e" />
+                    <Ionicons name="location" size={16} color="#BD8C5E" />
                     <View className="ml-2 flex-1">
                       <ThemedText variant="caption">PICKUP LOCATION</ThemedText>
                       <ThemedText className="text-sm">{task.pickupLocation.address}</ThemedText>
@@ -514,7 +516,7 @@ export default function TaskDetailsScreen() {
                   
                   {task.dropoffLocation && (
                     <View className="flex-row items-start">
-                      <Ionicons name="flag" size={16} color="#bd8c5e" />
+                      <Ionicons name="flag" size={16} color="#BD8C5E" />
                       <View className="ml-2 flex-1">
                         <ThemedText variant="caption">DROP-OFF LOCATION</ThemedText>
                         <ThemedText className="text-sm">{task.dropoffLocation.address}</ThemedText>
@@ -528,7 +530,7 @@ export default function TaskDetailsScreen() {
                   className="bg-primary/10 py-3 rounded-lg mt-3"
                 >
                   <View className="flex-row items-center justify-center">
-                    <Ionicons name="navigate" size={16} color="#bd8c5e" />
+                    <Ionicons name="navigate" size={16} color="#BD8C5E" />
                     <ThemedText className="ml-2 text-primary font-semibold">
                       Open in Maps
                     </ThemedText>
@@ -551,20 +553,20 @@ export default function TaskDetailsScreen() {
                         {item.quantity && `${item.quantity}x `}{item.name}
                       </ThemedText>
                       {item.description && (
-                        <ThemedText variant="caption" className="text-gray-500">
+                        <ThemedText variant="caption" className="text-textSecondary">
                           {item.description}
                         </ThemedText>
                       )}
                     </View>
                     <View className="flex-row space-x-1">
                       {item.fragile && (
-                        <View className="bg-orange-100 dark:bg-orange-900/20 px-2 py-1 rounded-full">
-                          <ThemedText className="text-orange-600 text-xs">Fragile</ThemedText>
+                        <View className="bg-warning/10 px-2 py-1 rounded-full">
+                          <ThemedText className="text-warning text-xs">Fragile</ThemedText>
                         </View>
                       )}
                       {item.confidential && (
-                        <View className="bg-red-100 dark:bg-red-900/20 px-2 py-1 rounded-full">
-                          <ThemedText className="text-red-600 text-xs">Confidential</ThemedText>
+                        <View className="bg-danger/10 px-2 py-1 rounded-full">
+                          <ThemedText className="text-danger text-xs">Confidential</ThemedText>
                         </View>
                       )}
                     </View>
@@ -586,7 +588,7 @@ export default function TaskDetailsScreen() {
                   <DetailRow 
                     label="Emergency Bonus" 
                     value={`₹${task.emergencyBonus}`}
-                    valueColor="text-green-600" 
+                    valueColor="text-success" 
                   />
                 )}
                 <DetailRow 
@@ -603,10 +605,10 @@ export default function TaskDetailsScreen() {
             <View className="px-4 mb-4">
               <ThemedCard className="p-4">
                 <ThemedText className="font-bold mb-3">Special Instructions</ThemedText>
-                <View className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg">
+                <View className="bg-warning/10 border border-warning/20 p-3 rounded-lg">
                   <View className="flex-row items-start">
                     <Ionicons name="information-circle" size={16} color="#f59e0b" />
-                    <ThemedText className="ml-2 flex-1 text-yellow-700 dark:text-yellow-300">
+                    <ThemedText className="ml-2 flex-1 text-warning">
                       {task.specialInstructions}
                     </ThemedText>
                   </View>
@@ -627,7 +629,7 @@ export default function TaskDetailsScreen() {
               />
               <TouchableOpacity
                 onPress={() => router.back()}
-                className="bg-gray-100 dark:bg-gray-800 py-3 rounded-lg"
+                className="bg-surface dark:bg-darkSurface border border-border dark:border-darkBorder py-3 rounded-lg"
               >
                 <ThemedText className="text-center font-semibold">Decline</ThemedText>
               </TouchableOpacity>
@@ -643,9 +645,9 @@ export default function TaskDetailsScreen() {
               />
               <TouchableOpacity
                 onPress={handleCancelTask}
-                className="bg-red-100 dark:bg-red-900/20 py-3 rounded-lg"
+                className="bg-danger/10 py-3 rounded-lg"
               >
-                <ThemedText className="text-center font-semibold text-red-600">Cancel Task</ThemedText>
+                <ThemedText className="text-center font-semibold text-danger">Cancel Task</ThemedText>
               </TouchableOpacity>
             </View>
           )}
@@ -659,9 +661,9 @@ export default function TaskDetailsScreen() {
               />
               <TouchableOpacity
                 onPress={handleCancelTask}
-                className="bg-red-100 dark:bg-red-900/20 py-3 rounded-lg"
+                className="bg-danger/10 py-3 rounded-lg"
               >
-                <ThemedText className="text-center font-semibold text-red-600">Cancel Task</ThemedText>
+                <ThemedText className="text-center font-semibold text-danger">Cancel Task</ThemedText>
               </TouchableOpacity>
             </View>
           )}
@@ -681,7 +683,7 @@ export default function TaskDetailsScreen() {
 function DetailRow({ 
   label, 
   value, 
-  valueColor = "text-foreground" 
+  valueColor = "text-textPrimary dark:text-darkText" 
 }: { 
   label: string; 
   value: string; 
@@ -689,7 +691,7 @@ function DetailRow({
 }) {
   return (
     <View className="flex-row justify-between items-center">
-      <ThemedText variant="caption" className="text-gray-500">{label}</ThemedText>
+      <ThemedText variant="caption" className="text-textSecondary">{label}</ThemedText>
       <ThemedText className={`font-semibold ${valueColor}`}>{value}</ThemedText>
     </View>
   );

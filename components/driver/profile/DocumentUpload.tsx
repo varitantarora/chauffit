@@ -6,6 +6,9 @@ import { ThemedText } from '../../common/ThemedText';
 import { PrimaryButton } from '../../common/PrimaryButton';
 import { DriverDocument } from '../../../types/navigation';
 import { useAuthStore } from '../../../store/authStore';
+import * as ImagePicker from 'expo-image-picker';
+import DriverApiService, { DriverDocumentRequest } from '../../../services/api/DriverApiService';
+import { appConfig } from '../../../config/env';
 
 interface DocumentUploadProps {
   document?: DriverDocument;
@@ -324,10 +327,13 @@ export function DocumentUpload({
           {/* Document Image Preview */}
           {document?.imageUrl && (
             <View className="mb-3">
+              <ThemedText variant="caption" className="mb-1 text-secondary">
+                Preview
+              </ThemedText>
               <TouchableOpacity activeOpacity={0.8}>
                 <Image 
                   source={{ uri: document.imageUrl }}
-                  className="w-full h-24 rounded-lg"
+                  className="w-full h-16 rounded-lg"
                   resizeMode="cover"
                 />
               </TouchableOpacity>
@@ -394,6 +400,29 @@ interface DocumentsListProps {
 
 export function DocumentsList({ documents: apiDocuments = [], onRefresh }: DocumentsListProps) {
   const [localDocuments, setLocalDocuments] = useState<DriverDocument[]>([]);
+
+  const getDocumentImageUrl = (url?: string | null): string => {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('file://')) {
+      return url;
+    }
+    const baseUrl = appConfig.apiBaseUrl.replace('/api/v1', '');
+    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
+  const mapApiDocumentTypeToLocal = (apiType: string): DriverDocument['type'] => {
+    switch (apiType) {
+      case 'police_verification':
+      case 'address_proof':
+        return 'permit';
+      case 'insurance':
+        return 'insurance';
+      case 'passport':
+        return 'passport';
+      default:
+        return 'license';
+    }
+  };
   
   // Map API documents to local format
   const mappedDocuments = React.useMemo(() => {
@@ -402,7 +431,7 @@ export function DocumentsList({ documents: apiDocuments = [], onRefresh }: Docum
         id: doc.id,
         type: mapApiDocumentTypeToLocal(doc.document_type),
         number: doc.document_number || '',
-        imageUrl: doc.document_file || '',
+        imageUrl: getDocumentImageUrl(doc.document_file),
         isVerified: doc.verification_status === 'approved',
         uploadedAt: new Date(doc.created_at),
         expiryDate: doc.expiry_date ? new Date(doc.expiry_date) : undefined,
@@ -412,7 +441,8 @@ export function DocumentsList({ documents: apiDocuments = [], onRefresh }: Docum
     return [];
   }, [apiDocuments]);
 
-  const allDocuments = [...mappedDocuments, ...localDocuments];
+  // Prefer freshly uploaded local document for preview until backend refresh catches up.
+  const allDocuments = [...localDocuments, ...mappedDocuments];
   
   const requiredDocuments = [
     {
@@ -440,20 +470,6 @@ export function DocumentsList({ documents: apiDocuments = [], onRefresh }: Docum
       required: false
     }
   ];
-
-  const mapApiDocumentTypeToLocal = (apiType: string): DriverDocument['type'] => {
-    switch (apiType) {
-      case 'police_verification':
-      case 'address_proof':
-        return 'permit';
-      case 'insurance':
-        return 'insurance';
-      case 'passport':
-        return 'passport';
-      default:
-        return 'license';
-    }
-  };
 
   const handleUpload = (documentData: Partial<DriverDocument>) => {
     const newDocument: DriverDocument = {

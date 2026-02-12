@@ -4,6 +4,8 @@ export const LightColors = {
   burgundy: "#720C17",       // Icons and app bar
   success: "#10B981",        // Green confirmations
   danger: "#EF4444",         // Red SOS/emergency
+  info: "#BD8C5E",           // Informational accents aligned to brand
+  warning: "#F59E0B",        // Caution states
   textPrimary: "#000000",    // Black primary text
   textSecondary: "#314B4C",  // Dark slate gray
   background: "#FFFFFF",     // Pure white
@@ -17,6 +19,8 @@ export const DarkColors = {
   burgundy: "#720C17",       // Maintained brand color
   success: "#10B981",        // Green confirmations
   danger: "#EF4444",         // Red SOS/emergency
+  info: "#BD8C5E",           // Informational accents aligned to brand
+  warning: "#F59E0B",        // Caution states
   textPrimary: "#D9D1C6",    // Pastel gray text
   textSecondary: "#999999",  // Mid-gray secondary
   background: "#1A1A1A",     // Deep near-black

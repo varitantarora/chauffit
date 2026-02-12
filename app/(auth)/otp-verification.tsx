@@ -11,6 +11,7 @@ import { UserRole } from '../../types/navigation';
 import AuthApiService from '../../services/api/AuthApiService';
 
 export default function OTPVerification() {
+  const OTP_LENGTH = 6;
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
@@ -51,49 +52,77 @@ export default function OTPVerification() {
     }, 300);
   }, []);
 
-  // Auto-focus next empty input after OTP changes
-  useEffect(() => {
-    const firstEmptyIndex = otp.findIndex((digit) => digit === '');
-
-    if (firstEmptyIndex > 0 && firstEmptyIndex < 6) {
-      // Focus next empty input
-      setTimeout(() => {
-        inputRefs.current[firstEmptyIndex]?.focus();
-      }, 50);
-    } else if (firstEmptyIndex === -1) {
-      // All filled, dismiss keyboard
-      setTimeout(() => {
-        Keyboard.dismiss();
-      }, 100);
-    }
-  }, [otp]);
+  const focusInput = (index: number) => {
+    setTimeout(() => {
+      inputRefs.current[index]?.focus();
+    }, 10);
+  };
 
   const handleOtpChange = (value: string, index: number) => {
-    // Only accept numeric values
-    if (value && !/^\d+$/.test(value)) {
+    const numericValue = value.replace(/\D/g, '');
+
+    if (!numericValue) {
+      setOtp((prev) => {
+        const next = [...prev];
+        next[index] = '';
+        return next;
+      });
       return;
     }
 
-    // Get single digit
-    const digit = value.slice(-1);
+    setOtp((prev) => {
+      const next = [...prev];
+      let nextIndex = index;
+      const chars = numericValue.slice(0, OTP_LENGTH - index).split('');
 
-    // Update OTP array - useEffect will handle focus
-    const newOtp = [...otp];
-    newOtp[index] = digit;
-    setOtp(newOtp);
+      chars.forEach((char) => {
+        if (nextIndex < OTP_LENGTH) {
+          next[nextIndex] = char;
+          nextIndex += 1;
+        }
+      });
+
+      if (nextIndex >= OTP_LENGTH) {
+        Keyboard.dismiss();
+      } else {
+        focusInput(nextIndex);
+      }
+
+      return next;
+    });
   };
 
   const handleKeyPress = (e: any, index: number) => {
-    if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
-      // Move to previous input on backspace
-      inputRefs.current[index - 1]?.focus();
+    if (e.nativeEvent.key !== 'Backspace') return;
+
+    setOtp((prev) => {
+      const next = [...prev];
+
+      if (next[index]) {
+        next[index] = '';
+        return next;
+      }
+
+      if (index > 0) {
+        next[index - 1] = '';
+        focusInput(index - 1);
+      }
+
+      return next;
+    });
+  };
+
+  const handleInputFocus = (index: number) => {
+    const firstEmptyIndex = otp.findIndex((digit) => digit === '');
+    if (firstEmptyIndex !== -1 && index > firstEmptyIndex) {
+      focusInput(firstEmptyIndex);
     }
   };
 
   const handleVerifyOTP = async () => {
     const otpValue = otp.join('');
 
-    if (otpValue.length !== 6) {
+    if (otpValue.length !== OTP_LENGTH) {
       Alert.alert('Error', 'Please enter complete OTP');
       return;
     }
@@ -327,8 +356,9 @@ export default function OTPVerification() {
                 value={digit}
                 onChangeText={(value) => handleOtpChange(value, index)}
                 onKeyPress={(e) => handleKeyPress(e, index)}
+                onFocus={() => handleInputFocus(index)}
                 keyboardType="number-pad"
-                maxLength={1}
+                maxLength={OTP_LENGTH}
                 selectTextOnFocus
               />
             ))}
@@ -357,7 +387,7 @@ export default function OTPVerification() {
             title="Verify & Continue"
             onPress={handleVerifyOTP}
             loading={loading}
-            disabled={otp.join('').length !== 6}
+            disabled={otp.join('').length !== OTP_LENGTH}
           />
 
           {/* Help Text */}

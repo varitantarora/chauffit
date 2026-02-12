@@ -49,6 +49,8 @@ module.exports = {
         },
         success: '#10B981',
         danger: '#EF4444',
+        info: '#BD8C5E',
+        warning: '#F59E0B',
         textPrimary: '#000000',
         textSecondary: '#314B4C',
         background: '#FDF8F3',

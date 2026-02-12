@@ -99,6 +99,35 @@ export interface DriverRideDetail extends DriverRide {
   actual_distance_km?: number | null;
   actual_duration_minutes?: number | null;
   actual_fare?: string | null;
+  tip_amount?: string | number | null;
+  bonus_amount?: string | number | null;
+  platform_fee?: string | number | null;
+  platform_fee_percent?: number | null;
+  net_earnings?: string | number | null;
+  driver_earnings_breakdown?: {
+    total_fare?: string | number;
+    platform_fee?: string | number;
+    platform_fee_percent?: number;
+    tip_amount?: string | number;
+    bonus_amount?: string | number;
+    other_fees?: Array<{
+      code?: string;
+      label?: string;
+      amount?: string | number;
+      direction?: 'plus' | 'minus' | string;
+    }>;
+    net_earnings?: string | number;
+    currency?: string;
+    is_estimated?: boolean;
+  } | null;
+  earnings?: {
+    total_fare?: number;
+    platform_fee?: number;
+    net_earnings?: number;
+    platform_fee_percent?: number;
+    payment_status?: string;
+    calculated_at?: string;
+  } | null;
   payment_status?: PaymentStatus;
   driver_assigned_at?: string | null;
   biker_assigned_at?: string | null;

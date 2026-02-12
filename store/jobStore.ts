@@ -277,6 +277,13 @@ const CANCELLED_BOOKING_STATUSES = new Set([
   'cancelled_by_system',
 ]);
 
+const DRIVER_ACTIVE_STATUSES = new Set<ActiveJob['status']>([
+  'en_route_pickup',
+  'arrived_pickup',
+  'started',
+  'en_route_destination',
+]);
+
 const mapBookingStatusToActiveStatus = (bookingStatus?: string): ActiveJob['status'] => {
   switch (bookingStatus) {
     case 'driver_en_route':
@@ -319,12 +326,20 @@ const mapBookingToActiveJob = (
     };
     customer?: string;
     booking_status?: string;
+    trip_started_at?: string | null;
   };
 
   const customerDetails = typeof bookingWithExtras.customer_details === 'object'
     ? bookingWithExtras.customer_details
     : null;
   const vehicleInfo = bookingWithExtras.vehicle_info;
+  const parsedStartTime = bookingWithExtras.trip_started_at
+    ? new Date(bookingWithExtras.trip_started_at)
+    : undefined;
+  const resolvedStartTime =
+    parsedStartTime && !Number.isNaN(parsedStartTime.getTime())
+      ? parsedStartTime
+      : existingActiveJob?.startTime;
 
   return {
     id: booking.id,
@@ -346,6 +361,15 @@ const mapBookingToActiveJob = (
     },
     currentLocation: currentLocation || existingActiveJob?.currentLocation,
     status: mapBookingStatusToActiveStatus(bookingWithExtras.booking_status),
+    startTime: resolvedStartTime,
+    actualDistance:
+      booking.actual_distance_km !== undefined && booking.actual_distance_km !== null
+        ? Number(booking.actual_distance_km)
+        : existingActiveJob?.actualDistance,
+    actualDuration:
+      booking.actual_duration_minutes !== undefined && booking.actual_duration_minutes !== null
+        ? Number(booking.actual_duration_minutes)
+        : existingActiveJob?.actualDuration,
     fare: parseFloat(String(booking.actual_fare || booking.estimated_fare)) || 0,
     route: existingActiveJob?.route || [],
     eta: existingActiveJob?.eta || '15 min',
@@ -354,6 +378,13 @@ const mapBookingToActiveJob = (
     vehicleMake: vehicleInfo?.make || existingActiveJob?.vehicleMake,
     vehicleModel: vehicleInfo?.model || existingActiveJob?.vehicleModel,
     vehiclePlate: vehicleInfo?.plate || existingActiveJob?.vehiclePlate,
+    ...(bookingWithExtras as any).tip_amount !== undefined ? { tip_amount: (bookingWithExtras as any).tip_amount } : {},
+    ...(bookingWithExtras as any).bonus_amount !== undefined ? { bonus_amount: (bookingWithExtras as any).bonus_amount } : {},
+    ...(bookingWithExtras as any).platform_fee !== undefined ? { platform_fee: (bookingWithExtras as any).platform_fee } : {},
+    ...(bookingWithExtras as any).platform_fee_percent !== undefined ? { platform_fee_percent: (bookingWithExtras as any).platform_fee_percent } : {},
+    ...(bookingWithExtras as any).net_earnings !== undefined ? { net_earnings: (bookingWithExtras as any).net_earnings } : {},
+    ...(bookingWithExtras as any).driver_earnings_breakdown !== undefined ? { driver_earnings_breakdown: (bookingWithExtras as any).driver_earnings_breakdown } : {},
+    ...(bookingWithExtras as any).earnings !== undefined ? { earnings: (bookingWithExtras as any).earnings } : {},
   };
 };
 
@@ -390,7 +421,15 @@ const mapBookingToJobRequest = (booking: BookingDetail, status: JobRequest['stat
     vehicleType: 'sedan',
     status,
     expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
-    createdAt: new Date(booking.created_at)
+    createdAt: new Date(booking.created_at),
+    // Earnings breakdown fields for ride detail UI.
+    ...(booking as any).tip_amount !== undefined ? { tip_amount: (booking as any).tip_amount } : {},
+    ...(booking as any).bonus_amount !== undefined ? { bonus_amount: (booking as any).bonus_amount } : {},
+    ...(booking as any).platform_fee !== undefined ? { platform_fee: (booking as any).platform_fee } : {},
+    ...(booking as any).platform_fee_percent !== undefined ? { platform_fee_percent: (booking as any).platform_fee_percent } : {},
+    ...(booking as any).net_earnings !== undefined ? { net_earnings: (booking as any).net_earnings } : {},
+    ...(booking as any).driver_earnings_breakdown !== undefined ? { driver_earnings_breakdown: (booking as any).driver_earnings_breakdown } : {},
+    ...(booking as any).earnings !== undefined ? { earnings: (booking as any).earnings } : {},
   };
 };
 
@@ -423,7 +462,14 @@ const mapBookingToJobHistory = (booking: BookingDetail): JobHistory => {
     fare: parseFloat(String(booking.actual_fare || booking.estimated_fare)) || 0,
     tips: 0,
     rating: undefined,
-    status: 'completed'
+    status: 'completed',
+    ...(booking as any).tip_amount !== undefined ? { tip_amount: (booking as any).tip_amount } : {},
+    ...(booking as any).bonus_amount !== undefined ? { bonus_amount: (booking as any).bonus_amount } : {},
+    ...(booking as any).platform_fee !== undefined ? { platform_fee: (booking as any).platform_fee } : {},
+    ...(booking as any).platform_fee_percent !== undefined ? { platform_fee_percent: (booking as any).platform_fee_percent } : {},
+    ...(booking as any).net_earnings !== undefined ? { net_earnings: (booking as any).net_earnings } : {},
+    ...(booking as any).driver_earnings_breakdown !== undefined ? { driver_earnings_breakdown: (booking as any).driver_earnings_breakdown } : {},
+    ...(booking as any).earnings !== undefined ? { earnings: (booking as any).earnings } : {},
   };
 };
 
@@ -763,6 +809,14 @@ export const useJobStore = create<JobState>((set, get) => ({
             get().activeJob
           );
           set({ activeJob: mappedActive });
+        } else {
+          // Clear stale active ride when backend confirms no in-progress rides.
+          set((state) => ({
+            activeJob:
+              state.activeJob && DRIVER_ACTIVE_STATUSES.has(state.activeJob.status)
+                ? null
+                : state.activeJob,
+          }));
         }
       } else {
         set({ inProgressJobs: [] });

@@ -58,7 +58,7 @@ export default function CompletedRideScreen() {
             ? rated.overall_rating
             : undefined;
         // Map the booking to JobHistory
-        const mappedJob: JobHistory = {
+        const mappedJob: JobHistory & Record<string, any> = {
           id: response.data.id,
           customerId: response.data.customer,
           customerName: response.data.customer_details?.full_name || 'Customer',
@@ -82,7 +82,12 @@ export default function CompletedRideScreen() {
           rating: normalizedRating,
           customerRating: response.data.customer_details?.average_rating || 0,
           customerComment: rated?.review || undefined,
-          status: 'completed'
+          status: 'completed',
+          tip_amount: (response.data as any)?.tip_amount ?? (response.data as any)?.driver_earnings_breakdown?.tip_amount,
+          bonus_amount: (response.data as any)?.bonus_amount ?? (response.data as any)?.driver_earnings_breakdown?.bonus_amount,
+          platform_fee: (response.data as any)?.platform_fee ?? (response.data as any)?.driver_earnings_breakdown?.platform_fee,
+          net_earnings: (response.data as any)?.net_earnings ?? (response.data as any)?.driver_earnings_breakdown?.net_earnings,
+          driver_earnings_breakdown: (response.data as any)?.driver_earnings_breakdown ?? (response.data as any)?.earnings,
         };
         setJob(mappedJob);
       } else {
@@ -116,6 +121,11 @@ export default function CompletedRideScreen() {
             customerRating: response.data?.customer_details?.average_rating || current.customerRating,
             rating: normalizedRating ?? current.rating,
             customerComment: rated?.review ?? current.customerComment,
+            tip_amount: (response.data as any)?.tip_amount ?? (response.data as any)?.driver_earnings_breakdown?.tip_amount ?? (current as any)?.tip_amount,
+            bonus_amount: (response.data as any)?.bonus_amount ?? (response.data as any)?.driver_earnings_breakdown?.bonus_amount ?? (current as any)?.bonus_amount,
+            platform_fee: (response.data as any)?.platform_fee ?? (response.data as any)?.driver_earnings_breakdown?.platform_fee ?? (current as any)?.platform_fee,
+            net_earnings: (response.data as any)?.net_earnings ?? (response.data as any)?.driver_earnings_breakdown?.net_earnings ?? (current as any)?.net_earnings,
+            driver_earnings_breakdown: (response.data as any)?.driver_earnings_breakdown ?? (response.data as any)?.earnings ?? (current as any)?.driver_earnings_breakdown,
           };
         });
       }
@@ -237,7 +247,42 @@ export default function CompletedRideScreen() {
   }
 
   const serviceDetails = getServiceTypeDetails('trip');
-  const totalEarnings = job.fare + job.tips;
+  const backendData = job as any;
+  const breakdown = backendData.driver_earnings_breakdown || backendData.earnings || {};
+  const toNumber = (value: any): number | null => {
+    if (value === null || value === undefined || value === '') return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+  const formatMoney = (value: number | null) => value === null ? 'NA' : `₹${value.toLocaleString('en-IN')}`;
+  const formatMoneyWithSign = (value: number | null, sign: '+' | '-') =>
+    value === null ? 'NA' : `${sign} ₹${value.toLocaleString('en-IN')}`;
+
+  const totalFare = toNumber(
+    breakdown.total_fare ??
+    backendData.actual_fare ??
+    backendData.estimated_fare ??
+    backendData.fare
+  );
+  const platformFee = toNumber(
+    breakdown.platform_fee ??
+    backendData.platform_fee
+  );
+  const tipAmount = toNumber(
+    breakdown.tip_amount ??
+    backendData.tip_amount ??
+    job.tips
+  );
+  const bonusAmount = toNumber(
+    breakdown.bonus_amount ??
+    backendData.bonus_amount
+  );
+  const yourEarnings = toNumber(
+    breakdown.net_earnings ??
+    backendData.net_earnings ??
+    backendData.driver_earnings
+  );
+  const otherFees = Array.isArray(breakdown.other_fees) ? breakdown.other_fees : [];
   const isAlreadyRated = typeof job.rating === 'number' && job.rating > 0;
 
   return (
@@ -272,15 +317,15 @@ export default function CompletedRideScreen() {
           <View className="px-4 pt-4">
             <ThemedCard className="p-4 mb-4 bg-gradient-to-r from-success/5 to-success/10">
               <View className="flex-row items-center justify-between mb-4">
-                <ThemedText variant="title" className="font-bold">
-                  Earnings Breakdown
-                </ThemedText>
-                <View className="bg-success/20 px-3 py-1 rounded-full">
-                  <ThemedText className="text-success font-bold text-sm">
-                    + ₹{totalEarnings.toLocaleString('en-IN')}
+                  <ThemedText variant="title" className="font-bold">
+                    Earnings Details
                   </ThemedText>
+                  <View className="bg-success/20 px-3 py-1 rounded-full">
+                    <ThemedText className="text-success font-bold text-sm">
+                      {formatMoney(yourEarnings)}
+                    </ThemedText>
+                  </View>
                 </View>
-              </View>
 
               <View className="space-y-3">
                 <View className="flex-row justify-between items-center">
@@ -288,33 +333,67 @@ export default function CompletedRideScreen() {
                     <View className="w-8 h-8 bg-burgundy/10 rounded-full items-center justify-center mr-3">
                       <Ionicons name="car" size={16} color="#BD8C5E" />
                     </View>
-                    <ThemedText>Base Fare</ThemedText>
+                    <ThemedText>Total Fare</ThemedText>
                   </View>
                   <ThemedText className="font-semibold">
-                    ₹{job.fare.toLocaleString('en-IN')}
+                    {formatMoney(totalFare)}
                   </ThemedText>
                 </View>
 
-                {job.tips > 0 && (
-                  <View className="flex-row justify-between items-center">
-                    <View className="flex-row items-center">
-                      <View className="w-8 h-8 bg-warning/10 rounded-full items-center justify-center mr-3">
-                        <Ionicons name="heart" size={16} color="#f59e0b" />
-                      </View>
-                      <ThemedText>Tips</ThemedText>
+                <View className="flex-row justify-between items-center">
+                  <View className="flex-row items-center">
+                    <View className="w-8 h-8 bg-danger/10 rounded-full items-center justify-center mr-3">
+                      <Ionicons name="remove-circle" size={16} color="#ef4444" />
                     </View>
-                    <ThemedText className="font-semibold text-warning">
-                      + ₹{job.tips.toLocaleString('en-IN')}
-                    </ThemedText>
+                    <ThemedText>Platform Fee</ThemedText>
                   </View>
-                )}
+                  <ThemedText className="font-semibold text-danger">
+                    {formatMoneyWithSign(platformFee, '-')}
+                  </ThemedText>
+                </View>
+
+                <View className="flex-row justify-between items-center">
+                  <View className="flex-row items-center">
+                    <View className="w-8 h-8 bg-warning/10 rounded-full items-center justify-center mr-3">
+                      <Ionicons name="heart" size={16} color="#f59e0b" />
+                    </View>
+                    <ThemedText>Tips</ThemedText>
+                  </View>
+                  <ThemedText className="font-semibold text-warning">
+                    {formatMoneyWithSign(tipAmount, '+')}
+                  </ThemedText>
+                </View>
+
+                <View className="flex-row justify-between items-center">
+                  <View className="flex-row items-center">
+                    <View className="w-8 h-8 bg-secondary/10 rounded-full items-center justify-center mr-3">
+                      <Ionicons name="gift" size={16} color="#3b82f6" />
+                    </View>
+                    <ThemedText>Bonus</ThemedText>
+                  </View>
+                  <ThemedText className="font-semibold" style={{ color: '#3b82f6' }}>
+                    {formatMoneyWithSign(bonusAmount, '+')}
+                  </ThemedText>
+                </View>
+                {otherFees.map((fee: any, index: number) => {
+                  const feeAmount = toNumber(fee?.amount);
+                  const sign: '+' | '-' = fee?.direction === 'plus' ? '+' : '-';
+                  return (
+                    <View className="flex-row justify-between items-center" key={`completed-other-fee-${index}`}>
+                      <ThemedText>{fee?.label || 'Other Fee'}</ThemedText>
+                      <ThemedText className="font-semibold">
+                        {formatMoneyWithSign(feeAmount, sign)}
+                      </ThemedText>
+                    </View>
+                  );
+                })}
 
                 <View className="border-t border-border dark:border-darkBorder my-2" />
 
                 <View className="flex-row justify-between items-center">
-                  <ThemedText className="font-bold text-lg">Total Earnings</ThemedText>
+                  <ThemedText className="font-bold text-lg">Your Earnings</ThemedText>
                   <ThemedText className="font-bold text-lg text-success">
-                    ₹{totalEarnings.toLocaleString('en-IN')}
+                    {formatMoney(yourEarnings)}
                   </ThemedText>
                 </View>
               </View>

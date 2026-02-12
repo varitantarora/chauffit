@@ -63,7 +63,14 @@ export default function JobAcceptScreen() {
     vehicleType: 'sedan',
     status,
     expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000),
-    createdAt: new Date(booking.created_at)
+    createdAt: new Date(booking.created_at),
+    ...(booking as any).tip_amount !== undefined ? { tip_amount: (booking as any).tip_amount } : {},
+    ...(booking as any).bonus_amount !== undefined ? { bonus_amount: (booking as any).bonus_amount } : {},
+    ...(booking as any).platform_fee !== undefined ? { platform_fee: (booking as any).platform_fee } : {},
+    ...(booking as any).platform_fee_percent !== undefined ? { platform_fee_percent: (booking as any).platform_fee_percent } : {},
+    ...(booking as any).net_earnings !== undefined ? { net_earnings: (booking as any).net_earnings } : {},
+    ...(booking as any).driver_earnings_breakdown !== undefined ? { driver_earnings_breakdown: (booking as any).driver_earnings_breakdown } : {},
+    ...(booking as any).earnings !== undefined ? { earnings: (booking as any).earnings } : {},
   });
 
   useEffect(() => {
@@ -238,6 +245,41 @@ export default function JobAcceptScreen() {
   }
 
   const serviceDetails = getServiceTypeDetails(job.serviceType);
+  const backendData = job as any;
+  const breakdown = backendData.driver_earnings_breakdown || backendData.earnings || {};
+  const toNumber = (value: any): number | null => {
+    if (value === null || value === undefined || value === '') return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+  const formatMoney = (value: number | null) => value === null ? 'NA' : `₹${value.toLocaleString('en-IN')}`;
+  const formatMoneyWithSign = (value: number | null, sign: '+' | '-') =>
+    value === null ? 'NA' : `${sign} ₹${value.toLocaleString('en-IN')}`;
+
+  const totalFare = toNumber(
+    breakdown.total_fare ??
+    backendData.actual_fare ??
+    backendData.estimated_fare ??
+    backendData.fare
+  );
+  const platformFee = toNumber(
+    breakdown.platform_fee ??
+    backendData.platform_fee
+  );
+  const tipAmount = toNumber(
+    breakdown.tip_amount ??
+    backendData.tip_amount
+  );
+  const bonusAmount = toNumber(
+    breakdown.bonus_amount ??
+    backendData.bonus_amount
+  );
+  const yourEarnings = toNumber(
+    breakdown.net_earnings ??
+    backendData.net_earnings ??
+    backendData.driver_earnings
+  );
+  const otherFees = Array.isArray(breakdown.other_fees) ? breakdown.other_fees : [];
 
   return (
     <SafeAreaView className="flex-1">
@@ -285,7 +327,7 @@ export default function JobAcceptScreen() {
                 </View>
                 <View className="items-end">
                   <ThemedText className="text-burgundy font-bold text-2xl">
-                    ₹{job.fare.toLocaleString('en-IN')}
+                    {formatMoney(totalFare)}
                   </ThemedText>
                   <ThemedText variant="caption">
                     {job.estimatedDuration} min • {job.estimatedDistance} km
@@ -464,10 +506,46 @@ export default function JobAcceptScreen() {
                   </ThemedText>
                 </View>
                 <View className="border-t border-border dark:border-darkBorder pt-2 mt-2">
+                  <View className="flex-row justify-between mb-2">
+                    <ThemedText className="font-bold">Total Fare:</ThemedText>
+                    <ThemedText className="font-bold">
+                      {formatMoney(totalFare)}
+                    </ThemedText>
+                  </View>
+                  <View className="flex-row justify-between mb-2">
+                    <ThemedText>Platform Fee:</ThemedText>
+                    <ThemedText>
+                      {formatMoneyWithSign(platformFee, '-')}
+                    </ThemedText>
+                  </View>
+                  <View className="flex-row justify-between mb-2">
+                    <ThemedText>Tips:</ThemedText>
+                    <ThemedText>
+                      {formatMoneyWithSign(tipAmount, '+')}
+                    </ThemedText>
+                  </View>
+                  <View className="flex-row justify-between mb-2">
+                    <ThemedText>Bonus:</ThemedText>
+                    <ThemedText>
+                      {formatMoneyWithSign(bonusAmount, '+')}
+                    </ThemedText>
+                  </View>
+                  {otherFees.map((fee: any, index: number) => {
+                    const feeAmount = toNumber(fee?.amount);
+                    const sign: '+' | '-' = fee?.direction === 'plus' ? '+' : '-';
+                    return (
+                      <View className="flex-row justify-between mb-2" key={`other-fee-${index}`}>
+                        <ThemedText>{fee?.label || 'Other Fee'}:</ThemedText>
+                        <ThemedText>
+                          {formatMoneyWithSign(feeAmount, sign)}
+                        </ThemedText>
+                      </View>
+                    );
+                  })}
                   <View className="flex-row justify-between">
-                    <ThemedText className="font-bold text-lg">Total Fare:</ThemedText>
+                    <ThemedText className="font-bold text-lg">Your Earnings:</ThemedText>
                     <ThemedText className="font-bold text-lg text-burgundy">
-                      ₹{job.fare.toLocaleString('en-IN')}
+                      {formatMoney(yourEarnings)}
                     </ThemedText>
                   </View>
                 </View>

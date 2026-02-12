@@ -1,15 +1,27 @@
 import BaseApiService, { ApiResponse } from './BaseApiService';
 
 // Types based on API YAML schema
+export interface BikerTaskUserDetails {
+  id: string;
+  name: string;
+  mobile: string;
+  profile_picture: string | null;
+  overall_rating: number | null;
+}
+
 export interface BikerTaskDetail {
   id: string;
   task_reference: string;
   booking: string;
   biker: string;
   driver: string;
-  driver_name: string;
-  driver_phone: string;
-  driver_profile_picture: string;
+  driver_details: BikerTaskUserDetails | null;
+  biker_details: BikerTaskUserDetails | null;
+  customer_details: BikerTaskUserDetails | null;
+  // Backward-compatible flattened fields used by some UI screens
+  driver_name?: string;
+  driver_phone?: string;
+  driver_profile_picture?: string | null;
   vehicle: string | null;
   pickup_location_lat: string;
   pickup_location_long: string;
@@ -107,12 +119,14 @@ export interface BikerTaskRatingRequest {
 }
 
 export interface BikerTaskRating {
+  task?: string;
+  rating_id?: string;
   overall_rating: number;
-  driving_safety: number;
-  professionalism: number;
-  punctuality: number;
-  communication: number;
-  review: string | null;
+  driving_safety?: number;
+  professionalism?: number;
+  punctuality?: number;
+  communication?: number;
+  review?: string | null;
 }
 
 export interface BikerTaskStatusRequest {
@@ -123,27 +137,40 @@ export interface BikerTaskStatus {
   task_status: 'requested' | 'assigned' | 'accepted' | 'en_route_to_driver' | 'arrived_at_driver' | 'driver_picked_up' | 'en_route_to_customer' | 'arrived_at_customer' | 'completed' | 'cancelled_by_biker' | 'cancelled_by_driver' | 'cancelled_by_system';
 }
 
-export interface PaginatedBikerTaskDetailList {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: BikerTaskDetail[];
-}
-
 class BikerTaskApiService {
   private basePath = '/biker-tasks';
 
+  private normalizeTask(task: BikerTaskDetail): BikerTaskDetail {
+    return {
+      ...task,
+      driver_name: task.driver_name ?? task.driver_details?.name ?? '',
+      driver_phone: task.driver_phone ?? task.driver_details?.mobile ?? '',
+      driver_profile_picture: task.driver_profile_picture ?? task.driver_details?.profile_picture ?? null,
+    };
+  }
+
+  private extractTaskList(data: any): BikerTaskDetail[] {
+    const rawTasks = Array.isArray(data)
+      ? data
+      : (Array.isArray(data?.results) ? data.results : []);
+
+    return rawTasks.map((task) => this.normalizeTask(task));
+  }
+
   // List biker tasks
   async getTasks(params?: {
+    filter?: 'all' | 'available' | 'ongoing' | 'completed';
     ordering?: string;
     page?: number;
     search?: string;
-    task_status?: 'requested' | 'active' | 'completed';
-  }): Promise<ApiResponse<PaginatedBikerTaskDetailList>> {
+  }): Promise<ApiResponse<BikerTaskDetail[]>> {
     try {
       let url = `${this.basePath}/`;
       const queryParams: string[] = [];
-      
+
+      if (params?.filter) {
+        queryParams.push(`filter=${encodeURIComponent(params.filter)}`);
+      }
       if (params?.ordering) {
         queryParams.push(`ordering=${encodeURIComponent(params.ordering)}`);
       }
@@ -153,15 +180,20 @@ class BikerTaskApiService {
       if (params?.search) {
         queryParams.push(`search=${encodeURIComponent(params.search)}`);
       }
-      if (params?.task_status) {
-        queryParams.push(`task_status=${encodeURIComponent(params.task_status)}`);
-      }
-      
+
       if (queryParams.length > 0) {
         url += `?${queryParams.join('&')}`;
       }
-      
-      return await BaseApiService.get<PaginatedBikerTaskDetailList>(url);
+
+      const response = await BaseApiService.get<any>(url);
+      if (response.success) {
+        return {
+          success: true,
+          data: this.extractTaskList(response.data),
+          message: response.message,
+        };
+      }
+      return response as ApiResponse<BikerTaskDetail[]>;
     } catch (error) {
       return {
         success: false,
@@ -173,7 +205,15 @@ class BikerTaskApiService {
   // Get biker task by ID
   async getTaskById(id: string): Promise<ApiResponse<BikerTaskDetail>> {
     try {
-      return await BaseApiService.get<BikerTaskDetail>(`${this.basePath}/${id}/`);
+      const response = await BaseApiService.get<BikerTaskDetail>(`${this.basePath}/${id}/`);
+      if (response.success && response.data) {
+        return {
+          success: true,
+          data: this.normalizeTask(response.data),
+          message: response.message,
+        };
+      }
+      return response;
     } catch (error) {
       return {
         success: false,
@@ -197,7 +237,15 @@ class BikerTaskApiService {
   // Accept task
   async acceptTask(id: string): Promise<ApiResponse<BikerTaskDetail>> {
     try {
-      return await BaseApiService.post<BikerTaskDetail>(`${this.basePath}/${id}/accept/`, {});
+      const response = await BaseApiService.post<BikerTaskDetail>(`${this.basePath}/${id}/accept/`, {});
+      if (response.success && response.data) {
+        return {
+          success: true,
+          data: this.normalizeTask(response.data),
+          message: response.message,
+        };
+      }
+      return response;
     } catch (error) {
       return {
         success: false,
@@ -207,9 +255,17 @@ class BikerTaskApiService {
   }
 
   // Cancel task
-  async cancelTask(id: string, data: BikerTaskCancelRequest): Promise<ApiResponse<BikerTaskCancel>> {
+  async cancelTask(id: string, data: BikerTaskCancelRequest): Promise<ApiResponse<BikerTaskDetail>> {
     try {
-      return await BaseApiService.post<BikerTaskCancel>(`${this.basePath}/${id}/cancel/`, data);
+      const response = await BaseApiService.post<BikerTaskDetail>(`${this.basePath}/${id}/cancel/`, data);
+      if (response.success && response.data) {
+        return {
+          success: true,
+          data: this.normalizeTask(response.data),
+          message: response.message,
+        };
+      }
+      return response as ApiResponse<BikerTaskDetail>;
     } catch (error) {
       return {
         success: false,
@@ -231,13 +287,41 @@ class BikerTaskApiService {
   }
 
   // Update task status
-  async updateTaskStatus(id: string, data: BikerTaskStatusRequest): Promise<ApiResponse<BikerTaskStatus>> {
+  async updateTaskStatus(id: string, data: BikerTaskStatusRequest): Promise<ApiResponse<BikerTaskDetail>> {
     try {
-      return await BaseApiService.post<BikerTaskStatus>(`${this.basePath}/${id}/status/`, data);
+      const response = await BaseApiService.post<BikerTaskDetail>(`${this.basePath}/${id}/status/`, data);
+      if (response.success && response.data) {
+        return {
+          success: true,
+          data: this.normalizeTask(response.data),
+          message: response.message,
+        };
+      }
+      return response as ApiResponse<BikerTaskDetail>;
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to update task status',
+      };
+    }
+  }
+
+  // List pending biker tasks (assigned and awaiting acceptance)
+  async getPendingTasks(): Promise<ApiResponse<BikerTaskDetail[]>> {
+    try {
+      const response = await BaseApiService.get<any>(`${this.basePath}/pending/`);
+      if (response.success) {
+        return {
+          success: true,
+          data: this.extractTaskList(response.data),
+          message: response.message,
+        };
+      }
+      return response as ApiResponse<BikerTaskDetail[]>;
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch pending biker tasks',
       };
     }
   }

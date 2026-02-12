@@ -6,21 +6,14 @@ import { ThemedCard } from '../../../components/common/ThemedCard';
 import { ThemedText } from '../../../components/common/ThemedText';
 import { EarningsCard, EarningsSummaryCard, WeeklyProgressCard } from '../../../components/driver/earnings/EarningsCard';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '../../../store/authStore';
 import { useEarningsStore } from '../../../store/earningsStore';
 import DriverApiService, { DriverStats, DailyEarningsResponse, BonusesIncentivesResponse, BonusTipEntry } from '../../../services/api/DriverApiService';
 import { useEffect } from 'react';
 
 export default function EarningsScreen() {
-  const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const {
     earnings,
     dailyBreakdown,
-    activeIncentives,
-    getWeeklyEarnings,
-    getMonthlyEarnings,
-    getAveragePerRide,
-    getAveragePerHour,
     setEarnings,
     weeklyTarget
   } = useEarningsStore();
@@ -45,7 +38,68 @@ export default function EarningsScreen() {
   }[]>([]);
   const [loadingBonuses, setLoadingBonuses] = useState(false);
   
-  const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
+  const getPeriodStart = (period: 'daily' | 'weekly' | 'monthly') => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    if (period === 'weekly') {
+      start.setDate(start.getDate() - 6);
+    } else if (period === 'monthly') {
+      start.setDate(start.getDate() - 29);
+    }
+    return start;
+  };
+
+  const periodLabel = selectedPeriod === 'daily' ? 'Today' : selectedPeriod === 'weekly' ? 'This Week' : 'This Month';
+
+  const periodRows = React.useMemo(() => {
+    const start = getPeriodStart(selectedPeriod);
+    return dailyEarnings
+      .map((item) => ({
+        ...item,
+        dateObj: new Date(item.date),
+        earningsValue: parseFloat(item.earnings) || 0,
+      }))
+      .filter((item) => item.dateObj >= start)
+      .sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
+  }, [dailyEarnings, selectedPeriod]);
+
+  const periodDataFromRows = React.useMemo(() => {
+    return periodRows.reduce(
+      (acc, row) => {
+        acc.earnings += row.earningsValue;
+        acc.trips += row.trips || 0;
+        return acc;
+      },
+      { earnings: 0, trips: 0 }
+    );
+  }, [periodRows]);
+
+  const selectedStats = selectedPeriod === 'daily'
+    ? stats?.today
+    : selectedPeriod === 'weekly'
+      ? stats?.week
+      : stats?.month;
+
+  const periodEarnings = selectedStats?.earned
+    ? parseFloat(selectedStats.earned) || 0
+    : selectedPeriod === 'daily'
+      ? earnings.todayEarnings
+      : selectedPeriod === 'weekly'
+        ? earnings.weeklyEarnings
+        : earnings.monthlyEarnings;
+
+  const periodTrips = selectedStats?.trips ?? periodDataFromRows.trips;
+  const periodPendingAmount = Math.min(earnings.pendingAmount || 0, Math.max(0, periodEarnings));
+  const periodAvgPerRide = periodTrips > 0 ? periodEarnings / periodTrips : 0;
+
+  const periodHours = React.useMemo(() => {
+    const start = getPeriodStart(selectedPeriod);
+    return dailyBreakdown
+      .filter((day) => day.date >= start)
+      .reduce((sum, day) => sum + (day.onlineHours || 0), 0);
+  }, [dailyBreakdown, selectedPeriod]);
+
+  const periodAvgPerHour = periodHours > 0 ? periodEarnings / periodHours : 0;
 
   const fetchEarnings = async () => {
     try {
@@ -240,11 +294,11 @@ export default function EarningsScreen() {
             <View className="flex-row flex-wrap -mx-2">
               <View className="w-1/2 px-2 mb-4">
                 <EarningsCard
-                  title="Today's Earnings"
-                  amount={earnings.todayEarnings}
+                  title={`${periodLabel} Earnings`}
+                  amount={periodEarnings}
                   icon="today"
                   iconColor="#10b981"
-                  showTrend
+                  showTrend={selectedPeriod === 'daily'}
                   trendValue={12}
                   trendDirection="up"
                 />
@@ -252,8 +306,8 @@ export default function EarningsScreen() {
               <View className="w-1/2 px-2 mb-4">
                 <EarningsCard
                   title="Pending Amount"
-                  amount={earnings.pendingAmount}
-                  subtitle="Ready for payout"
+                  amount={periodPendingAmount}
+                  subtitle={`${selectedPeriod.charAt(0).toUpperCase() + selectedPeriod.slice(1)} pending`}
                   icon="time"
                   iconColor="#f59e0b"
                 />
@@ -261,7 +315,7 @@ export default function EarningsScreen() {
               <View className="w-1/2 px-2 mb-4">
                 <EarningsCard
                   title="Avg per Ride"
-                  amount={Math.round(getAveragePerRide())}
+                  amount={Math.round(periodAvgPerRide)}
                   icon="car"
                   iconColor="#3b82f6"
                 />
@@ -269,7 +323,8 @@ export default function EarningsScreen() {
               <View className="w-1/2 px-2 mb-4">
                 <EarningsCard
                   title="Avg per Hour"
-                  amount={Math.round(getAveragePerHour())}
+                  amount={Math.round(periodAvgPerHour)}
+                  subtitle={periodHours > 0 ? undefined : 'Insufficient hourly data'}
                   icon="speedometer"
                   iconColor="#8b5cf6"
                 />
@@ -277,11 +332,11 @@ export default function EarningsScreen() {
             </View>
           </View>
           
-          {/* Daily Breakdown */}
+          {/* Period Breakdown */}
           <View className="px-6 mb-6">
             <View className="flex-row justify-between items-center mb-4">
               <ThemedText variant="title" className="text-lg font-bold">
-                Daily Breakdown
+                {selectedPeriod.charAt(0).toUpperCase() + selectedPeriod.slice(1)} Breakdown
               </ThemedText>
             </View>
             
@@ -294,9 +349,9 @@ export default function EarningsScreen() {
                   </ThemedText>
                 </View>
               </ThemedCard>
-            ) : dailyEarnings.length > 0 ? (
-              dailyEarnings.slice(0, 7).map((day, index) => {
-                const date = new Date(day.date);
+            ) : periodRows.length > 0 ? (
+              periodRows.map((day, index) => {
+                const date = day.dateObj;
                 const isToday = date.toDateString() === new Date().toDateString();
                 const isYesterday = date.toDateString() === new Date(Date.now() - 86400000).toDateString();
                 
@@ -323,7 +378,7 @@ export default function EarningsScreen() {
                         </ThemedText>
                       </View>
                       <ThemedText className={`font-bold text-lg ${isToday ? 'text-burgundy' : ''}`}>
-                        ₹{parseFloat(day.earnings).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                        ₹{day.earningsValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                       </ThemedText>
                     </View>
                   </ThemedCard>

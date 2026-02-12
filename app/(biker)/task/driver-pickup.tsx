@@ -16,6 +16,53 @@ import { BikerTask } from '../../../types/navigation';
 
 type PickupStep = 'navigate' | 'locate_driver' | 'assist_driver' | 'transport' | 'completed';
 
+const STEP_STYLES: Record<
+  PickupStep,
+  {
+    cardClass: string;
+    iconBgClass: string;
+    titleClass: string;
+    descriptionClass: string;
+    actionButtonClass: string;
+  }
+> = {
+  navigate: {
+    cardClass: 'bg-secondary/10 border border-secondary/20',
+    iconBgClass: 'bg-secondary',
+    titleClass: 'text-secondary',
+    descriptionClass: 'text-secondary/80',
+    actionButtonClass: 'bg-burgundy',
+  },
+  locate_driver: {
+    cardClass: 'bg-burgundy/10 border border-burgundy/20',
+    iconBgClass: 'bg-burgundy',
+    titleClass: 'text-burgundy',
+    descriptionClass: 'text-burgundy/80',
+    actionButtonClass: 'bg-burgundy',
+  },
+  assist_driver: {
+    cardClass: 'bg-success/10 border border-success/20',
+    iconBgClass: 'bg-success',
+    titleClass: 'text-success',
+    descriptionClass: 'text-success/80',
+    actionButtonClass: 'bg-success',
+  },
+  transport: {
+    cardClass: 'bg-secondary/10 border border-secondary/20',
+    iconBgClass: 'bg-secondary',
+    titleClass: 'text-secondary',
+    descriptionClass: 'text-secondary/80',
+    actionButtonClass: 'bg-burgundy',
+  },
+  completed: {
+    cardClass: 'bg-success/10 border border-success/20',
+    iconBgClass: 'bg-success',
+    titleClass: 'text-success',
+    descriptionClass: 'text-success/80',
+    actionButtonClass: 'bg-success',
+  },
+};
+
 export default function DriverPickupScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
@@ -82,7 +129,6 @@ export default function DriverPickupScreen() {
           title: 'Navigate to Driver',
           description: 'Reach the stranded driver location',
           icon: 'navigation',
-          color: 'blue',
           action: 'Arrived at Location'
         };
       case 'locate_driver':
@@ -90,7 +136,6 @@ export default function DriverPickupScreen() {
           title: 'Locate Driver',
           description: 'Find and contact the stranded driver',
           icon: 'search',
-          color: 'orange',
           action: 'Driver Located'
         };
       case 'assist_driver':
@@ -98,7 +143,6 @@ export default function DriverPickupScreen() {
           title: 'Assess Situation',
           description: 'Help with immediate needs',
           icon: 'hand-left',
-          color: 'green',
           action: 'Ready for Transport'
         };
       case 'transport':
@@ -106,7 +150,6 @@ export default function DriverPickupScreen() {
           title: 'Transport Driver',
           description: 'Take driver to destination',
           icon: 'bicycle',
-          color: 'purple',
           action: 'Reached Destination'
         };
       case 'completed':
@@ -114,7 +157,6 @@ export default function DriverPickupScreen() {
           title: 'Task Completed',
           description: 'Driver assistance finished',
           icon: 'checkmark-circle',
-          color: 'green',
           action: 'Finish'
         };
     }
@@ -138,7 +180,7 @@ export default function DriverPickupScreen() {
         {/* Header */}
         <View className="flex-row items-center justify-between p-4 border-b border-border dark:border-darkBorder">
           <TouchableOpacity onPress={() => router.back()} className="p-2">
-            <Ionicons name="arrow-back" size={24} color={isDarkMode ? '#d9d1c6' : '#374151'} />
+            <Ionicons name="arrow-back" size={24} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
           </TouchableOpacity>
           
           <View className="flex-1 items-center">
@@ -152,16 +194,16 @@ export default function DriverPickupScreen() {
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           {/* Current Step */}
           <View className="p-4">
-            <ThemedCard className={`p-4 bg-${stepConfig.color}-50 dark:bg-${stepConfig.color}-900/20`}>
+            <ThemedCard className={`p-4 ${STEP_STYLES[currentStep].cardClass}`}>
               <View className="flex-row items-center">
-                <View className={`bg-${stepConfig.color}-500 p-3 rounded-full mr-4`}>
+                <View className={`${STEP_STYLES[currentStep].iconBgClass} p-3 rounded-full mr-4`}>
                   <Ionicons name={stepConfig.icon as any} size={24} color="white" />
                 </View>
                 <View className="flex-1">
-                  <ThemedText className={`font-bold text-lg text-${stepConfig.color}-700 dark:text-${stepConfig.color}-300`}>
+                  <ThemedText className={`font-bold text-lg ${STEP_STYLES[currentStep].titleClass}`}>
                     {stepConfig.title}
                   </ThemedText>
-                  <ThemedText className={`text-${stepConfig.color}-600 dark:text-${stepConfig.color}-400`}>
+                  <ThemedText className={STEP_STYLES[currentStep].descriptionClass}>
                     {stepConfig.description}
                   </ThemedText>
                 </View>
@@ -176,12 +218,12 @@ export default function DriverPickupScreen() {
                 <ThemedText className="font-bold mb-3">Stranded Driver</ThemedText>
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center flex-1">
-                    <View className="bg-red-500/10 p-3 rounded-full mr-3">
-                      <Ionicons name="car" size={24} color="#ef4444" />
+                    <View className="bg-danger/10 p-3 rounded-full mr-3">
+                      <Ionicons name="car" size={24} color="#EF4444" />
                     </View>
                     <View>
                       <ThemedText className="font-bold text-lg">{task.driverName}</ThemedText>
-                      <ThemedText variant="caption" className="text-red-600">
+                      <ThemedText variant="caption" className="text-danger">
                         Needs Emergency Assistance
                       </ThemedText>
                     </View>
@@ -189,7 +231,7 @@ export default function DriverPickupScreen() {
                   {task.driverPhone && (
                     <TouchableOpacity
                       onPress={() => makePhoneCall(task.driverPhone!)}
-                      className="bg-red-500 p-3 rounded-full"
+                      className="bg-danger p-3 rounded-full"
                     >
                       <Ionicons name="call" size={18} color="white" />
                     </TouchableOpacity>
@@ -216,7 +258,7 @@ export default function DriverPickupScreen() {
             <ThemedCard className="p-4">
               <ThemedText className="font-bold text-xl mb-2">{task.title}</ThemedText>
               {task.description && (
-                <ThemedText className="text-gray-600 dark:text-gray-400 mb-3">
+                <ThemedText variant="secondary" className="mb-3">
                   {task.description}
                 </ThemedText>
               )}
@@ -230,7 +272,7 @@ export default function DriverPickupScreen() {
                 </View>
                 <View className="items-end">
                   <ThemedText variant="caption">Emergency Reward</ThemedText>
-                  <ThemedText className="font-bold text-red-500 text-xl">
+                  <ThemedText className="font-bold text-burgundy text-xl">
                     ₹{task.fare + (task.emergencyBonus || 0)}
                   </ThemedText>
                 </View>
@@ -240,21 +282,21 @@ export default function DriverPickupScreen() {
 
           {/* Safety Guidelines */}
           <View className="px-4 mb-4">
-            <ThemedCard className="p-4 bg-blue-50 dark:bg-blue-900/20">
-              <ThemedText className="font-bold text-blue-700 dark:text-blue-300 mb-2">
+            <ThemedCard className="p-4 bg-secondary/10 border border-secondary/20">
+              <ThemedText className="font-bold text-secondary mb-2">
                 Driver Assistance Guidelines
               </ThemedText>
               <View className="space-y-2">
-                <ThemedText className="text-blue-600 dark:text-blue-400 text-sm">
+                <ThemedText className="text-secondary text-sm">
                   • Ensure your safety first before helping
                 </ThemedText>
-                <ThemedText className="text-blue-600 dark:text-blue-400 text-sm">
+                <ThemedText className="text-secondary text-sm">
                   • Contact driver before arriving
                 </ThemedText>
-                <ThemedText className="text-blue-600 dark:text-blue-400 text-sm">
+                <ThemedText className="text-secondary text-sm">
                   • Assess if professional help is needed
                 </ThemedText>
-                <ThemedText className="text-blue-600 dark:text-blue-400 text-sm">
+                <ThemedText className="text-secondary text-sm">
                   • Be courteous and professional
                 </ThemedText>
               </View>
@@ -264,14 +306,14 @@ export default function DriverPickupScreen() {
           {/* Special Instructions */}
           {task.specialInstructions && (
             <View className="px-4 mb-6">
-              <ThemedCard className="p-4 bg-yellow-50 dark:bg-yellow-900/20">
+              <ThemedCard className="p-4 bg-warning/10 border border-warning/20">
                 <View className="flex-row items-start">
                   <Ionicons name="information-circle" size={20} color="#f59e0b" />
                   <View className="ml-3 flex-1">
-                    <ThemedText className="font-semibold text-yellow-700 dark:text-yellow-300 mb-1">
+                    <ThemedText className="font-semibold text-warning mb-1">
                       Special Instructions
                     </ThemedText>
-                    <ThemedText className="text-yellow-700 dark:text-yellow-300">
+                    <ThemedText className="text-warning">
                       {task.specialInstructions}
                     </ThemedText>
                   </View>
@@ -288,7 +330,7 @@ export default function DriverPickupScreen() {
               title={stepConfig.action}
               onPress={() => handleStepComplete(currentStep)}
               loading={isLoading}
-              className={`bg-${stepConfig.color}-500`}
+              className={STEP_STYLES[currentStep].actionButtonClass}
             />
           </View>
         )}

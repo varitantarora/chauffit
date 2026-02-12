@@ -23,7 +23,7 @@ export interface BikerProfile {
   background_check_date?: string;
   bio?: string;
   years_of_experience?: number;
-  languages_spoken?: Record<string, any>;
+  languages_spoken?: string[] | Record<string, any>;
   is_online: boolean;
   current_location_lat?: string;
   current_location_long?: string;
@@ -84,7 +84,7 @@ export interface BikerProfileRequest {
   background_check_status?: 'pending' | 'in_progress' | 'verified' | 'failed';
   bio?: string;
   years_of_experience?: number;
-  languages_spoken?: Record<string, any>;
+  languages_spoken?: string[] | Record<string, any>;
   is_online?: boolean;
   current_location_lat?: string;
   current_location_long?: string;
@@ -123,6 +123,17 @@ export interface UpdateStatusRequest {
   is_online: boolean;
   latitude?: string;
   longitude?: string;
+}
+
+export interface BikerEarningsSummary {
+  total_earnings: number | string;
+  total_tasks: number;
+  today_earnings: number | string;
+  today_tasks: number;
+  week_earnings: number | string;
+  week_tasks: number;
+  month_earnings: number | string;
+  month_tasks: number;
 }
 
 class BikerApiService {
@@ -361,9 +372,9 @@ class BikerApiService {
   }
 
   // Get earnings
-  async getEarnings(): Promise<ApiResponse<BikerProfile>> {
+  async getEarnings(): Promise<ApiResponse<BikerEarningsSummary>> {
     try {
-      return await BaseApiService.get<BikerProfile>(`${this.basePath}/earnings/`);
+      return await BaseApiService.get<BikerEarningsSummary>(`${this.basePath}/earnings/`);
     } catch (error) {
       return {
         success: false,
@@ -584,11 +595,10 @@ class BikerApiService {
   async getDailyEarnings(): Promise<ApiResponse<BikerDailyEarning[]>> {
     try {
       const response = await BaseApiService.get<any>(`/earnings/biker/daily/`);
-      // API might return array directly or nested in data property
       if (response.success && response.data) {
-        const dailyEarnings = Array.isArray(response.data) 
-          ? response.data 
-          : (response.data.results || response.data.daily || []);
+        const dailyEarnings = Array.isArray(response.data)
+          ? response.data
+          : (response.data.daily_breakdown || response.data.results || response.data.daily || []);
         return {
           success: true,
           data: dailyEarnings,
@@ -607,11 +617,10 @@ class BikerApiService {
   async getBonuses(): Promise<ApiResponse<BikerBonus[]>> {
     try {
       const response = await BaseApiService.get<any>(`/earnings/biker/bonuses/`);
-      // API might return array directly or nested in data property
       if (response.success && response.data) {
-        const bonuses = Array.isArray(response.data) 
-          ? response.data 
-          : (response.data.results || response.data.bonuses || []);
+        const bonuses = Array.isArray(response.data)
+          ? response.data
+          : (response.data.bonuses || response.data.results || []);
         return {
           success: true,
           data: bonuses,
@@ -648,14 +657,18 @@ export interface BikerStats {
 
 export interface BikerDailyEarning {
   date: string; // ISO date string
-  pickups: number; // or pickups_completed
-  earnings: string; // or total_earnings
+  pickups?: number;
+  earnings?: string;
   pickups_completed?: number;
+  net_earnings?: string;
+  total_pickups?: number;
   total_earnings?: string;
 }
 
 export interface BikerBonus {
   id?: string;
+  earning_type?: string;
+  payment_status?: string;
   title?: string;
   name?: string;
   description?: string;

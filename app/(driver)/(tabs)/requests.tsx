@@ -55,6 +55,9 @@ export default function RideRequestsScreen() {
   const [processing, setProcessing] = useState<string | null>(null);
 
   const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
+  const showActiveRideBanner =
+    !!activeJob &&
+    ['en_route_pickup', 'arrived_pickup', 'started', 'en_route_destination'].includes(activeJob.status);
 
   // Check if current tab has an error
   const hasError = () => {
@@ -263,7 +266,7 @@ export default function RideRequestsScreen() {
           </View>
 
           {/* Active Job Alert */}
-          {activeJob && (
+          {showActiveRideBanner && (
             <View className="px-6 mb-4">
               <ThemedCard className="p-4 border border-success">
                 <View className="flex-row items-center justify-between">
