@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Animated, Vibration, Alert } from 'react-native';
+import { View, Animated, Vibration, Alert, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Circle } from 'react-native-svg';
 import { ThemedText } from '../../common/ThemedText';
 import { ThemedCard } from '../../common/ThemedCard';
 import { useAuthStore } from '../../../store/authStore';
@@ -239,12 +240,12 @@ export function ResponseTimer({
       <ThemedCard className="p-6 items-center">
         <View style={{ width: circleSize, height: circleSize }} className="relative">
           {/* Background circle */}
-          <svg
+          <Svg
             width={circleSize}
             height={circleSize}
-            style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}
+            style={{ position: 'absolute' }}
           >
-            <circle
+            <Circle
               cx={circleSize / 2}
               cy={circleSize / 2}
               r={radius}
@@ -252,8 +253,22 @@ export function ResponseTimer({
               strokeWidth={strokeWidth}
               fill="transparent"
             />
-            <Animated.View>
-              <circle
+          </Svg>
+
+          {/* Progress circle */}
+          <Animated.View
+            style={{
+              position: 'absolute',
+              width: circleSize,
+              height: circleSize,
+            }}
+          >
+            <Svg
+              width={circleSize}
+              height={circleSize}
+              style={{ transform: [{ rotate: '-90deg' }] }}
+            >
+              <Circle
                 cx={circleSize / 2}
                 cy={circleSize / 2}
                 r={radius}
@@ -268,8 +283,8 @@ export function ResponseTimer({
                   extrapolate: 'clamp',
                 })}
               />
-            </Animated.View>
-          </svg>
+            </Svg>
+          </Animated.View>
           
           {/* Center content */}
           <View className="absolute inset-0 items-center justify-center">

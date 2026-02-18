@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../store/authStore';
 import { useRouter } from 'expo-router';
 import BookingApiService, { CustomerRide } from '../../../services/api/BookingApiService';
+import BlogApiService, { BlogListItem } from '../../../services/api/BlogApiService';
 
 export default function CustomerHomeScreen() {
   const user = useAuthStore((state) => state.user);
@@ -22,6 +23,8 @@ export default function CustomerHomeScreen() {
   const [destinationLocation, setDestinationLocation] = useState('');
   const [recentActivity, setRecentActivity] = useState<CustomerRide[]>([]);
   const [loadingActivity, setLoadingActivity] = useState(true);
+  const [blogs, setBlogs] = useState<BlogListItem[]>([]);
+  const [blogsLoading, setBlogsLoading] = useState(true);
 
   const clipAnimation = useRef(new Animated.Value(0)).current;
   const searchAnimation = useRef(new Animated.Value(0)).current;
@@ -53,10 +56,30 @@ export default function CustomerHomeScreen() {
     }
   }, []);
 
-  // Load recent activity on mount
+  // Fetch blogs from API
+  const fetchBlogs = useCallback(async () => {
+    try {
+      setBlogsLoading(true);
+      const response = await BlogApiService.listBlogs(1);
+      if (response.success && response.data) {
+        // Take first 5 blogs
+        setBlogs(response.data.results?.slice(0, 5) || []);
+      } else {
+        setBlogs([]);
+      }
+    } catch (error) {
+      console.error('Error fetching blogs:', error);
+      setBlogs([]);
+    } finally {
+      setBlogsLoading(false);
+    }
+  }, []);
+
+  // Load recent activity and blogs on mount
   useEffect(() => {
     fetchRecentActivity();
-  }, [fetchRecentActivity]);
+    fetchBlogs();
+  }, [fetchRecentActivity, fetchBlogs]);
 
   // Start the reveal animation when component mounts
   useEffect(() => {
@@ -83,9 +106,9 @@ export default function CustomerHomeScreen() {
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    await fetchRecentActivity();
+    await Promise.all([fetchRecentActivity(), fetchBlogs()]);
     setRefreshing(false);
-  }, [fetchRecentActivity]);
+  }, [fetchRecentActivity, fetchBlogs]);
 
   // Format fare for display
   const formatFare = (fare: string | number | null | undefined): string => {
@@ -541,84 +564,63 @@ export default function CustomerHomeScreen() {
             )}
           </View>
 
-          {/* More Ways to Use Chauffit */}
+          {/* Blogs - More Ways to Use Chauffit */}
           <View className="px-3 mb-6">
             <View className="flex-row justify-between items-center mb-4">
               <ThemedText variant="title" className="text-lg">
                 More Ways to Use Chauffit
               </ThemedText>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={() => router.push('/(customer)/blog-list')}>
                 <ThemedText className="text-secondary">Explore All</ThemedText>
               </TouchableOpacity>
             </View>
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {[
-                {
-                  id: 1,
-                  title: 'Business Meetings',
-                  description: 'Professional rides for work',
-                  image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&q=80',
-                },
-                {
-                  id: 2,
-                  title: 'Wedding Events',
-                  description: 'Special occasions made memorable',
-                  image: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400&q=80',
-                },
-                {
-                  id: 3,
-                  title: 'Shopping Tours',
-                  description: 'Comfortable shopping trips',
-                  image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400&q=80',
-                },
-                {
-                  id: 4,
-                  title: 'Date Nights',
-                  description: 'Romantic evenings out',
-                  image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&q=80',
-                },
-                {
-                  id: 5,
-                  title: 'Medical Visits',
-                  description: 'Reliable healthcare transport',
-                  image: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=400&q=80',
-                },
-                {
-                  id: 6,
-                  title: 'Party Nights',
-                  description: 'Safe rides for celebrations',
-                  image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=80',
-                }
-              ].map((useCase) => (
-                <TouchableOpacity
-                  key={useCase.id}
-                  className="mr-4"
-                  activeOpacity={0.8}
-                  onPress={() => router.push('/(customer)/book-ride-new')}
-                >
-                  <ThemedCard className="w-48 px-3 pt-3 pb-1 my-2 h-[175px]">
-                    <Image
-                      source={{ uri: useCase.image }}
-                      className="w-full h-24 rounded-lg mb-2"
-                      resizeMode="cover"
-                    />
-                    <View className="h-5 justify-center">
-                      <ThemedText className="font-semibold text-center" numberOfLines={1}>
-                        {useCase.title}
-                      </ThemedText>
-                    </View>
-                    <View className="h-10 mt-1 justify-start">
-                      <ThemedText variant="caption" className="text-center text-gray-600" numberOfLines={2}>
-                        {useCase.description}
-                      </ThemedText>
-                    </View>
-                  </ThemedCard>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+            {blogsLoading ? (
+              <View className="items-center py-4">
+                <ActivityIndicator size="small" color="#BD8C5E" />
+              </View>
+            ) : blogs.length > 0 ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {blogs.map((blog) => (
+                  <TouchableOpacity
+                    key={blog.id}
+                    className="mr-4"
+                    activeOpacity={0.8}
+                    onPress={() => router.push({ pathname: '/(customer)/blog-detail', params: { slug: blog.slug } })}
+                  >
+                    <ThemedCard className="w-48 px-3 pt-3 pb-1 my-2 h-[175px]">
+                      {blog.image ? (
+                        <Image
+                          source={{ uri: blog.image }}
+                          className="w-full h-24 rounded-lg mb-2"
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View className="w-full h-24 rounded-lg mb-2 bg-gray-200 items-center justify-center">
+                          <ThemedText className="text-gray-400 text-xs">No Image</ThemedText>
+                        </View>
+                      )}
+                      <View className="h-5 justify-center">
+                        <ThemedText className="font-semibold text-center" numberOfLines={1}>
+                          {blog.title}
+                        </ThemedText>
+                      </View>
+                      <View className="h-10 mt-1 justify-start">
+                        <ThemedText variant="caption" className="text-center text-gray-600" numberOfLines={2}>
+                          {blog.author_name}
+                        </ThemedText>
+                      </View>
+                    </ThemedCard>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            ) : (
+              <ThemedCard className="items-center py-4">
+                <ThemedText variant="small" className="text-textSecondary">No content available</ThemedText>
+              </ThemedCard>
+            )}
           </View>
-          
+
           {/* Bottom Spacing */}
           <View className="h-6" />
         </ScrollView>

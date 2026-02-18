@@ -18,7 +18,8 @@
       "Bash(head:*)",
       "Bash(find:*)",
       "Bash(ls:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npx expo start:*)"
     ],
     "deny": [],
     "ask": []

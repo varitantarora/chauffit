@@ -21,7 +21,7 @@ export default function Profile() {
   const addRole = useAuthStore((state) => state.addRole);
   const setActiveRole = useAuthStore((state) => state.setActiveRole);
   const switchRole = useAuthStore((state) => state.switchRole);
-  const { cars, defaultCar, loadUserCars, deleteCar, setDefaultCar } = useCarStore();
+  const { cars, loadUserCars, deleteCar } = useCarStore();
   const router = useRouter();
   const [showAddCarForm, setShowAddCarForm] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -99,10 +99,6 @@ export default function Profile() {
     );
   };
 
-  const handleSetDefaultCar = (carId: string) => {
-    setDefaultCar(carId);
-  };
-  
   const handleRoleSwitch = (role: 'driver' | 'biker') => {
     Alert.alert(
       'Switch to ' + (role === 'driver' ? 'Driver' : 'Biker') + ' App',
@@ -223,15 +219,6 @@ export default function Profile() {
                     </View>
 
                     <View className="flex-row items-center">
-                      {!car.isDefault && (
-                        <TouchableOpacity
-                          onPress={() => handleSetDefaultCar(car.id)}
-                          className="p-2 mr-1"
-                        >
-                          <Ionicons name="checkmark-circle-outline" size={20} color="#BD8C5E" />
-                        </TouchableOpacity>
-                      )}
-                      
                       <TouchableOpacity
                         onPress={() => handleDeleteCar(car.id)}
                         className="p-2"
