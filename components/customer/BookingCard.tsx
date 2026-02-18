@@ -11,6 +11,7 @@ interface BookingCardProps {
   onCancel?: () => void;
   onTrack?: () => void;
   onViewDetails?: () => void;
+  onPayNow?: () => void;
   showActions?: boolean;
 }
 
@@ -35,6 +36,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
   onCancel,
   onTrack,
   onViewDetails,
+  onPayNow,
   showActions = true,
 }) => {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
@@ -120,6 +122,12 @@ export const BookingCard: React.FC<BookingCardProps> = ({
 
   const isCancelled = () => {
     return ['cancelled_by_customer', 'cancelled_by_driver', 'cancelled_by_system'].includes(booking.status);
+  };
+
+  const needsPayment = () => {
+    return booking.status === 'trip_completed' &&
+      booking.paymentStatus !== 'paid' &&
+      booking.paymentStatus !== 'completed';
   };
 
   return (
@@ -269,7 +277,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
         </View>
       )}
 
-      {/* Actions for completed - show Details and Book Again */}
+      {/* Actions for completed - show Pay Now (if unpaid), Details and Book Again */}
       {showActions && isCompleted() && (
         <View className={`flex-row rounded-xl p-1 ${isDarkMode ? 'bg-darkSurface' : 'bg-surface'}`}>
           {onViewDetails && (
@@ -283,11 +291,22 @@ export const BookingCard: React.FC<BookingCardProps> = ({
             </TouchableOpacity>
           )}
 
-          <TouchableOpacity className="flex-1 py-3 px-4 rounded-lg bg-primary">
-            <ThemedText className="text-center font-semibold text-burgundy">
-              Book Again
-            </ThemedText>
-          </TouchableOpacity>
+          {needsPayment() && onPayNow ? (
+            <TouchableOpacity
+              onPress={onPayNow}
+              className="flex-1 py-3 px-4 rounded-lg bg-burgundy"
+            >
+              <ThemedText className="text-center font-semibold text-white">
+                Pay Now
+              </ThemedText>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity className="flex-1 py-3 px-4 rounded-lg bg-primary">
+              <ThemedText className="text-center font-semibold text-burgundy">
+                Book Again
+              </ThemedText>
+            </TouchableOpacity>
+          )}
         </View>
       )}
 

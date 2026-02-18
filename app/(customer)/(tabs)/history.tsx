@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../store/authStore';
 import { useRouter } from 'expo-router';
 import BookingApiService, { CustomerRide } from '../../../services/api/BookingApiService';
+import RazorpayService from '../../../services/RazorpayService';
 
 type TabType = 'all' | 'active' | 'completed' | 'cancelled';
 
@@ -196,6 +197,32 @@ export default function HistoryScreen() {
     });
   };
 
+  const handlePayNow = async (booking: MappedBooking) => {
+    const user = useAuthStore.getState().user;
+    try {
+      const result = await RazorpayService.processPayment(
+        booking.id,
+        booking.totalAmount,
+        {
+          name: user?.name || '',
+          email: user?.email || '',
+          phone: user?.phone || '',
+        }
+      );
+
+      if (result.success) {
+        Alert.alert('Payment Successful', 'Your payment has been processed successfully.');
+        await fetchBookings(activeTab);
+      } else {
+        if (result.error !== 'Payment was cancelled') {
+          Alert.alert('Payment Failed', result.error || 'Something went wrong. Please try again.');
+        }
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to process payment. Please try again.');
+    }
+  };
+
   const handleCancelBooking = async (booking: MappedBooking) => {
     Alert.alert(
       'Cancel Booking',
@@ -304,6 +331,7 @@ export default function HistoryScreen() {
                     onTrack={() => handleTrackRide(booking)}
                     onViewDetails={() => handleViewDetails(booking)}
                     onCancel={() => handleCancelBooking(booking)}
+                    onPayNow={() => handlePayNow(booking)}
                   />
                 ))
             ) : (

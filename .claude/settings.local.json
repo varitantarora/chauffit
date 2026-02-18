@@ -14,7 +14,11 @@
       "Read(D:\\client_work\\chauffit_dev\\mobile\\src\\components\\common/**)",
       "Read(D:\\client_work\\chauffit_dev\\mobile\\src\\components\\common/**)",
       "Bash(npx tsc:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(head:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []

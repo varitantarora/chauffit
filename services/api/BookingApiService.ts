@@ -110,6 +110,20 @@ export interface TimelineEvent {
 }
 
 /**
+ * Schedule Availability Request
+ */
+export interface BookingAvailabilityRequest {
+  scheduled_at: string;
+}
+
+/**
+ * Schedule Availability Response
+ */
+export interface BookingAvailabilityResponse {
+  scheduled_at: string;
+}
+
+/**
  * Fare Estimate Request
  */
 export interface FareEstimateRequest {
@@ -325,6 +339,28 @@ class BookingApiService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to get fare estimate',
+      };
+    }
+  }
+
+  /**
+   * Check Schedule Availability
+   * POST /api/v1/rides/schedule/check-availability/
+   *
+   * Check if a scheduled datetime is available for booking.
+   *
+   * @param data - Availability check data with scheduled_at datetime
+   */
+  async checkScheduleAvailability(data: BookingAvailabilityRequest): Promise<ApiResponse<BookingAvailabilityResponse>> {
+    try {
+      return await BaseApiService.post<BookingAvailabilityResponse>(
+        `${this.basePath}/schedule/check-availability/`,
+        data
+      );
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to check schedule availability',
       };
     }
   }

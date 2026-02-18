@@ -13,6 +13,9 @@ export interface AppConfig {
   // Stripe Payment Configuration
   stripePublishableKey: string;
   stripeSecretKey: string; // Only for server-side operations
+
+  // Razorpay Payment Configuration
+  razorpayKeyId: string;
   
   // OneSignal Push Notifications
   oneSignalAppId: string;
@@ -63,6 +66,9 @@ const defaultConfig: AppConfig = {
   // Stripe Payment Configuration
   stripePublishableKey: process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
   stripeSecretKey: process.env.STRIPE_SECRET_KEY || '',
+
+  // Razorpay Payment Configuration
+  razorpayKeyId: process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || '',
   
   // OneSignal Push Notifications
   oneSignalAppId: process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID || '',
