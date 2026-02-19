@@ -19,7 +19,12 @@
       "Bash(find:*)",
       "Bash(ls:*)",
       "Bash(npm install:*)",
-      "Bash(npx expo start:*)"
+      "Bash(npx expo start:*)",
+      "Bash(npx expo config:*)",
+      "Bash(python3:*)",
+      "Bash(npx expo-modules-autolinking:*)",
+      "Bash(npx react-native config:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

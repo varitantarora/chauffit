@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { BookingDetails, Chauffeur, Location, RideTracking, PaymentMethod } from '../types/navigation';
+import { InsurancePlan } from '../services/api/InsuranceApiService';
 
 interface BookingState {
   // Current booking flow data
@@ -7,28 +8,31 @@ interface BookingState {
   selectedDuration: string;
   selectedChauffeur: Chauffeur | null;
   selectedPaymentMethod: PaymentMethod | null;
-  
+  selectedInsurancePlan: InsurancePlan | null;
+
   // Booking history and active bookings
   activeBookings: BookingDetails[];
   bookingHistory: BookingDetails[];
-  
+
   // Available chauffeurs
   availableChauffeurs: Chauffeur[];
   loadingChauffeurs: boolean;
-  
+
   // Ride tracking
   activeRideTracking: RideTracking | null;
-  
+
   // Location data
   currentLocation: Location | null;
   pickupLocation: Location | null;
-  
+
   // Actions
   setCurrentBooking: (booking: Partial<BookingDetails>) => void;
   updateBookingDetails: (updates: Partial<BookingDetails>) => void;
   setSelectedDuration: (duration: string) => void;
   setSelectedChauffeur: (chauffeur: Chauffeur | null) => void;
   setSelectedPaymentMethod: (method: PaymentMethod | null) => void;
+  setSelectedInsurancePlan: (plan: InsurancePlan | null) => void;
+  clearSelectedInsurancePlan: () => void;
   
   // Chauffeur actions
   loadAvailableChauffeurs: () => Promise<void>;
@@ -295,6 +299,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   selectedDuration: '',
   selectedChauffeur: null,
   selectedPaymentMethod: null,
+  selectedInsurancePlan: null,
   activeBookings: demoActiveBookings,
   bookingHistory: demoBookings,
   availableChauffeurs: [],
@@ -315,6 +320,10 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   setSelectedChauffeur: (chauffeur) => set({ selectedChauffeur: chauffeur }),
   
   setSelectedPaymentMethod: (method) => set({ selectedPaymentMethod: method }),
+
+  setSelectedInsurancePlan: (plan) => set({ selectedInsurancePlan: plan }),
+
+  clearSelectedInsurancePlan: () => set({ selectedInsurancePlan: null }),
 
   // Chauffeur actions
   loadAvailableChauffeurs: async () => {
@@ -426,12 +435,13 @@ export const useBookingStore = create<BookingState>((set, get) => ({
 
   // Reset actions
   clearCurrentBooking: () => set({ currentBooking: null }),
-  
+
   resetBookingFlow: () => set({
     currentBooking: null,
     selectedDuration: '',
     selectedChauffeur: null,
     selectedPaymentMethod: null,
+    selectedInsurancePlan: null,
     pickupLocation: null,
   }),
 }));

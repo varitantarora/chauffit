@@ -81,6 +81,7 @@ export interface CustomerRide {
   driver?: DriverInfo;
   car?: CarInfo;
   rating?: number;
+  insurance?: InsuranceInfo;
 }
 
 /**
@@ -138,6 +139,7 @@ export interface FareEstimateRequest {
   when?: 'now' | 'schedule';
   scheduled_at?: string | null;
   hours?: number | null;
+  insurance_plan_id?: string | null;
 }
 
 /**
@@ -148,6 +150,7 @@ export interface FareEstimateResponse {
   estimated_duration_minutes: number;
   estimated_fare: string;
   surge_multiplier?: number;
+  insurance_plan?: InsuranceInfo;
   fare_breakdown?: {
     base_fare: string;
     distance_fare: string;
@@ -155,9 +158,23 @@ export interface FareEstimateResponse {
     platform_fee?: string;
     biker_transport_fee?: string;
     surge_amount?: string;
+    insurance_premium?: string;
     subtotal?: string;
     total?: string;
   };
+}
+
+/**
+ * Insurance Info (included in booking response when insurance is selected)
+ */
+export interface InsuranceInfo {
+  id: string;
+  plan_name: string;
+  plan_tier: string;
+  premium_amount: string;
+  max_coverage_amount: string;
+  status: 'active' | 'expired' | 'cancelled';
+  created_at: string;
 }
 
 /**
@@ -174,6 +191,7 @@ export interface BookRideRequest {
   type: TripType;
   scheduled_at?: string | null;
   hours?: number | null;
+  insurance_plan_id?: string | null;
 }
 
 /**

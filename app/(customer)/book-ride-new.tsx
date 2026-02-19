@@ -24,6 +24,7 @@ import BookingApiService, {
   FareEstimateRequest,
   FareEstimateResponse,
   BookingRequest,
+  InsuranceInfo,
 } from '../../services/api/BookingApiService';
 import { formatFare } from '../../utils/fareCalculator';
 import {
@@ -46,6 +47,8 @@ type ScheduleOption = 'now' | 'schedule';
 interface BookRideParams {
   destination?: string;
   vehicleId?: string;
+  insurancePlanId?: string;
+  insurancePremium?: string;
 }
 
 export default function BookRideScreen() {
@@ -80,6 +83,8 @@ export default function BookRideScreen() {
   const [isFetchingCurrentLocation, setIsFetchingCurrentLocation] = useState(false);
 
   const [fareEstimate, setFareEstimate] = useState<FareEstimateResponse | null>(null);
+  const [selectedInsurancePlanId, setSelectedInsurancePlanId] = useState<string | null>(null);
+  const [selectedInsurancePremium, setSelectedInsurancePremium] = useState<number>(0);
 
   useEffect(() => {
     if (params.vehicleId) {
@@ -105,6 +110,26 @@ export default function BookRideScreen() {
       });
     }
   }, [params.destination]);
+
+  // Handle insurance params from navigation
+  useEffect(() => {
+    if (params.insurancePlanId) {
+      setSelectedInsurancePlanId(params.insurancePlanId);
+    }
+    if (params.insurancePremium) {
+      setSelectedInsurancePremium(parseFloat(params.insurancePremium) || 0);
+    }
+  }, [params.insurancePlanId, params.insurancePremium]);
+
+  // Handle insurance info from fare estimate response
+  useEffect(() => {
+    if (fareEstimate?.insurance_plan) {
+      setSelectedInsurancePlanId(fareEstimate.insurance_plan.id);
+      setSelectedInsurancePremium(
+        parseFloat(fareEstimate.insurance_plan.premium_amount) || 0
+      );
+    }
+  }, [fareEstimate?.insurance_plan]);
 
   const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
   const inputClass = isDarkMode
@@ -293,6 +318,7 @@ export default function BookRideScreen() {
         ...(scheduleOption === 'schedule' && scheduledDate
           ? { scheduled_at: scheduledDate.toISOString() }
           : {}),
+        ...(selectedInsurancePlanId ? { insurance_plan_id: selectedInsurancePlanId } : {}),
       };
 
       const response = await BookingApiService.getFareEstimate(estimateRequest);
@@ -420,6 +446,48 @@ export default function BookRideScreen() {
     calculateFare();
   };
 
+  // Recalculate fare when insurance is selected (for future use with dynamic fare updates)
+  const recalculateFareWithInsurance = async (insuranceId: string | null) => {
+    if (!fareEstimate || !dropLocation || !selectedCar) return;
+
+    // Update local state
+    setSelectedInsurancePlanId(insuranceId);
+
+    // Recalculate fare with new insurance
+    try {
+      const estimateRequest: FareEstimateRequest = {
+        from_lat: formatCoord(pickupLocation.latitude),
+        from_long: formatCoord(pickupLocation.longitude),
+        from_address: pickupLocation.fullAddress || pickupLocation.address,
+        to_lat: formatCoord(dropLocation.latitude),
+        to_long: formatCoord(dropLocation.longitude),
+        to_address: dropLocation.fullAddress || dropLocation.address,
+        vehicle_id: selectedCar.id,
+        when: scheduleOption,
+        type: tripType,
+        ...(scheduleOption === 'schedule' && scheduledDate
+          ? { scheduled_at: scheduledDate.toISOString() }
+          : {}),
+        ...(insuranceId ? { insurance_plan_id: insuranceId } : {}),
+      };
+
+      const response = await BookingApiService.getFareEstimate(estimateRequest);
+
+      if (response.success && response.data) {
+        setFareEstimate(response.data);
+        if (response.data.insurance_plan) {
+          setSelectedInsurancePremium(
+            parseFloat(response.data.insurance_plan.premium_amount) || 0
+          );
+        } else {
+          setSelectedInsurancePremium(0);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to recalculate fare with insurance:', error);
+    }
+  };
+
   const confirmBooking = async () => {
     if (!fareEstimate || !dropLocation || !selectedCar) {
       return;
@@ -441,6 +509,7 @@ export default function BookRideScreen() {
         ...(scheduleOption === 'schedule' && scheduledDate
           ? { scheduled_at: scheduledDate.toISOString() }
           : {}),
+        ...(selectedInsurancePlanId ? { insurance_plan_id: selectedInsurancePlanId } : {}),
       };
 
       const response = await BookingApiService.bookRide(bookingData);
@@ -1006,6 +1075,14 @@ export default function BookRideScreen() {
                             </ThemedText>
                           </View>
                         )}
+                        {fareEstimate.fare_breakdown.insurance_premium !== undefined && parseFloat(fareEstimate.fare_breakdown.insurance_premium) > 0 && (
+                          <View className="flex-row justify-between mb-1 px-2">
+                            <ThemedText variant="tiny" className="text-green-600">Insurance Premium</ThemedText>
+                            <ThemedText variant="tiny" className="text-green-600">
+                              {formatFare(parseFloat(fareEstimate.fare_breakdown.insurance_premium))}
+                            </ThemedText>
+                          </View>
+                        )}
                         {fareEstimate.fare_breakdown.total !== undefined && (
                           <View className="flex-row justify-between mb-1 px-2">
                             <ThemedText variant="tiny" className="text-gray-500 font-semibold">Total</ThemedText>
@@ -1020,6 +1097,41 @@ export default function BookRideScreen() {
                       *Final fare may vary based on actual route and traffic
                     </ThemedText>
                   </View>
+
+                  {/* Insurance Selection */}
+                  <TouchableOpacity
+                    onPress={() => {
+                      setShowFareModal(false);
+                      router.push({
+                        pathname: '/(customer)/trip-insurance',
+                        params: { returnTo: '/(customer)/book-ride-new' },
+                      });
+                    }}
+                    className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800"
+                  >
+                    <View className="flex-row items-center justify-between">
+                      <View className="flex-row items-center">
+                        <View className="w-10 h-10 bg-blue-100 rounded-full items-center justify-center mr-3">
+                          <Ionicons name="shield-checkmark" size={20} color="#3B82F6" />
+                        </View>
+                        <View>
+                          <ThemedText variant="small" className="font-semibold">
+                            {selectedInsurancePlanId ? 'Insurance Added' : 'Add Trip Insurance'}
+                          </ThemedText>
+                          <ThemedText variant="tiny" className="text-gray-500">
+                            {selectedInsurancePlanId
+                              ? `₹${selectedInsurancePremium} for trip coverage`
+                              : 'Protect your journey from unexpected damages'}
+                          </ThemedText>
+                        </View>
+                      </View>
+                      <Ionicons
+                        name={selectedInsurancePlanId ? "checkmark-circle" : "chevron-forward"}
+                        size={24}
+                        color={selectedInsurancePlanId ? "#10B981" : "#3B82F6"}
+                      />
+                    </View>
+                  </TouchableOpacity>
 
                   {/* Confirm Button */}
                   <PrimaryButton
