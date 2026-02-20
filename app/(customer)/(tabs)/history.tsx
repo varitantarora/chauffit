@@ -200,9 +200,10 @@ export default function HistoryScreen() {
   const handlePayNow = async (booking: MappedBooking) => {
     const user = useAuthStore.getState().user;
     try {
+      const totalWithGst = booking.totalAmount * 1.18;
       const result = await RazorpayService.processPayment(
         booking.id,
-        booking.totalAmount,
+        totalWithGst,
         {
           name: user?.name || '',
           email: user?.email || '',

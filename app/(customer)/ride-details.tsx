@@ -460,6 +460,73 @@ export default function RideDetailsScreen() {
             </ThemedCard>
           </View>
 
+          {/* Insurance Card */}
+          <View className="px-4">
+            <ThemedCard className="p-4 mb-4">
+              <View className="flex-row items-center mb-3">
+                <Ionicons
+                  name={ride.insurance ? 'shield-checkmark' : 'shield-outline'}
+                  size={20}
+                  color={ride.insurance ? '#3B82F6' : '#9CA3AF'}
+                />
+                <ThemedText variant="title" className="font-bold ml-2">
+                  Insurance
+                </ThemedText>
+              </View>
+
+              {ride.insurance ? (
+                <View>
+                  <View className="flex-row items-center justify-between mb-3">
+                    <View className="flex-row items-center">
+                      <View className="bg-blue-100 dark:bg-blue-900/30 px-3 py-1 rounded-full mr-2">
+                        <ThemedText variant="caption" className="text-blue-700 dark:text-blue-400 font-semibold">
+                          Insured
+                        </ThemedText>
+                      </View>
+                      <View
+                        className="px-2 py-1 rounded-full"
+                        style={{
+                          backgroundColor:
+                            ride.insurance.status === 'active' ? '#10B98120' :
+                            ride.insurance.status === 'cancelled' ? '#EF444420' : '#6B728020',
+                        }}
+                      >
+                        <ThemedText
+                          variant="caption"
+                          className="font-semibold capitalize"
+                          style={{
+                            color:
+                              ride.insurance.status === 'active' ? '#10B981' :
+                              ride.insurance.status === 'cancelled' ? '#EF4444' : '#6B7280',
+                          }}
+                        >
+                          {ride.insurance.status}
+                        </ThemedText>
+                      </View>
+                    </View>
+                    <ThemedText className="font-bold text-blue-600 dark:text-blue-400">
+                      ₹{parseFloat(ride.insurance.premium_amount).toLocaleString('en-IN')}
+                    </ThemedText>
+                  </View>
+
+                  <View className="bg-surface dark:bg-darkSurface p-3 rounded-lg space-y-1">
+                    <DetailRow label="Plan" value={ride.insurance.plan_name} />
+                    <DetailRow
+                      label="Max Coverage"
+                      value={`₹${parseFloat(ride.insurance.max_coverage_amount).toLocaleString('en-IN')}`}
+                    />
+                  </View>
+                </View>
+              ) : (
+                <View className="flex-row items-center">
+                  <ThemedText variant="caption" className="text-textSecondary">
+                    No insurance was added for this trip.
+                  </ThemedText>
+                </View>
+              )}
+            </ThemedCard>
+          </View>
+
           {/* Timeline Card */}
           {ride.timeline && ride.timeline.length > 0 && (
             <View className="px-4">

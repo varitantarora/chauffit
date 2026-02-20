@@ -26,6 +26,7 @@ import BookingApiService, {
   BookingRequest,
   InsuranceInfo,
 } from '../../services/api/BookingApiService';
+import InsuranceApiService, { InsurancePlan } from '../../services/api/InsuranceApiService';
 import { formatFare } from '../../utils/fareCalculator';
 import {
   GooglePlacesAutocomplete,
@@ -86,6 +87,12 @@ export default function BookRideScreen() {
   const [selectedInsurancePlanId, setSelectedInsurancePlanId] = useState<string | null>(null);
   const [selectedInsurancePremium, setSelectedInsurancePremium] = useState<number>(0);
 
+  const [showInsuranceModal, setShowInsuranceModal] = useState(false);
+  const [insurancePlans, setInsurancePlans] = useState<InsurancePlan[]>([]);
+  const [isLoadingInsurance, setIsLoadingInsurance] = useState(false);
+  const [tempSelectedPlanId, setTempSelectedPlanId] = useState<string | null>(null);
+  const [selectedInsuranceName, setSelectedInsuranceName] = useState<string>('');
+
   useEffect(() => {
     if (params.vehicleId) {
       const car = cars.find((c) => c.id === params.vehicleId);
@@ -123,13 +130,21 @@ export default function BookRideScreen() {
 
   // Handle insurance info from fare estimate response
   useEffect(() => {
-    if (fareEstimate?.insurance_plan) {
-      setSelectedInsurancePlanId(fareEstimate.insurance_plan.id);
-      setSelectedInsurancePremium(
-        parseFloat(fareEstimate.insurance_plan.premium_amount) || 0
-      );
+    if (fareEstimate?.insurance) {
+      setSelectedInsurancePlanId(fareEstimate.insurance.plan_id);
+      setSelectedInsurancePremium(fareEstimate.insurance.premium_amount);
     }
-  }, [fareEstimate?.insurance_plan]);
+  }, [fareEstimate?.insurance]);
+
+  // Fetch insurance plans on mount
+  useEffect(() => {
+    (async () => {
+      setIsLoadingInsurance(true);
+      const res = await InsuranceApiService.listPlans();
+      if (res.success && res.data) setInsurancePlans(res.data);
+      setIsLoadingInsurance(false);
+    })();
+  }, []);
 
   const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
   const inputClass = isDarkMode
@@ -446,6 +461,35 @@ export default function BookRideScreen() {
     calculateFare();
   };
 
+  const openInsuranceModal = () => {
+    setTempSelectedPlanId(selectedInsurancePlanId);
+    setShowInsuranceModal(true);
+  };
+
+  const confirmInsuranceSelection = () => {
+    if (tempSelectedPlanId) {
+      const plan = insurancePlans.find(p => p.id === tempSelectedPlanId);
+      if (plan) {
+        setSelectedInsurancePlanId(plan.id);
+        setSelectedInsurancePremium(InsuranceApiService.parseAmount(plan.premium_amount));
+        setSelectedInsuranceName(plan.name);
+      }
+    } else {
+      setSelectedInsurancePlanId(null);
+      setSelectedInsurancePremium(0);
+      setSelectedInsuranceName('');
+    }
+    setShowInsuranceModal(false);
+  };
+
+  const clearInsurance = () => {
+    setTempSelectedPlanId(null);
+    setSelectedInsurancePlanId(null);
+    setSelectedInsurancePremium(0);
+    setSelectedInsuranceName('');
+    setShowInsuranceModal(false);
+  };
+
   // Recalculate fare when insurance is selected (for future use with dynamic fare updates)
   const recalculateFareWithInsurance = async (insuranceId: string | null) => {
     if (!fareEstimate || !dropLocation || !selectedCar) return;
@@ -475,10 +519,8 @@ export default function BookRideScreen() {
 
       if (response.success && response.data) {
         setFareEstimate(response.data);
-        if (response.data.insurance_plan) {
-          setSelectedInsurancePremium(
-            parseFloat(response.data.insurance_plan.premium_amount) || 0
-          );
+        if (response.data.insurance) {
+          setSelectedInsurancePremium(response.data.insurance.premium_amount);
         } else {
           setSelectedInsurancePremium(0);
         }
@@ -807,6 +849,40 @@ export default function BookRideScreen() {
                 </View>
               </View>
 
+              {/* Trip Insurance Banner */}
+              <TouchableOpacity
+                onPress={openInsuranceModal}
+                className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-700"
+                activeOpacity={0.8}
+              >
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center flex-1">
+                    <View className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 rounded-full items-center justify-center mr-3">
+                      <Ionicons
+                        name={selectedInsurancePlanId ? 'shield-checkmark' : 'shield-outline'}
+                        size={20}
+                        color="#3B82F6"
+                      />
+                    </View>
+                    <View className="flex-1">
+                      <ThemedText variant="small" className="font-semibold">
+                        {selectedInsurancePlanId ? selectedInsuranceName : 'Add Trip Insurance'}
+                      </ThemedText>
+                      <ThemedText variant="tiny" className="text-gray-500">
+                        {selectedInsurancePlanId
+                          ? `₹${selectedInsurancePremium} · Tap to change`
+                          : 'Protect your car during the trip'}
+                      </ThemedText>
+                    </View>
+                  </View>
+                  <Ionicons
+                    name={selectedInsurancePlanId ? 'checkmark-circle' : 'chevron-forward'}
+                    size={22}
+                    color={selectedInsurancePlanId ? '#10B981' : '#3B82F6'}
+                  />
+                </View>
+              </TouchableOpacity>
+
               {/* Book Button */}
               <PrimaryButton
                 title="BOOK NOW"
@@ -1102,10 +1178,7 @@ export default function BookRideScreen() {
                   <TouchableOpacity
                     onPress={() => {
                       setShowFareModal(false);
-                      router.push({
-                        pathname: '/(customer)/trip-insurance',
-                        params: { returnTo: '/(customer)/book-ride-new' },
-                      });
+                      openInsuranceModal();
                     }}
                     className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800"
                   >
@@ -1143,6 +1216,100 @@ export default function BookRideScreen() {
                 </View>
               </ScrollView>
             )}
+            </View>
+          </View>
+        </Modal>
+
+        {/* Insurance Selection Modal */}
+        <Modal
+          visible={showInsuranceModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowInsuranceModal(false)}
+        >
+          <View className="flex-1 justify-end bg-black/50">
+            <View className={`${isDarkMode ? 'bg-darkSurface' : 'bg-white'} rounded-t-3xl p-6 max-h-[85%]`}>
+              {/* Header */}
+              <View className="flex-row justify-between items-center mb-4">
+                <ThemedText variant="h2">Trip Insurance</ThemedText>
+                <TouchableOpacity onPress={() => setShowInsuranceModal(false)}>
+                  <Ionicons name="close" size={24} color={isDarkMode ? '#fff' : '#000'} />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {/* Loading */}
+                {isLoadingInsurance && (
+                  <View className="py-8 items-center">
+                    <ActivityIndicator size="large" color="#BD8C5E" />
+                    <ThemedText className="mt-3 text-gray-500">Loading plans...</ThemedText>
+                  </View>
+                )}
+
+                {/* Plan Cards */}
+                {!isLoadingInsurance && insurancePlans.map((plan) => {
+                  const isSelected = tempSelectedPlanId === plan.id;
+                  const premium = InsuranceApiService.parseAmount(plan.premium_amount);
+                  const coverage = InsuranceApiService.formatCoverageAmount(plan.max_coverage_amount);
+                  return (
+                    <TouchableOpacity
+                      key={plan.id}
+                      onPress={() => setTempSelectedPlanId(isSelected ? null : plan.id)}
+                      className={`mb-3 p-4 rounded-xl border-2 ${
+                        isSelected
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-gray-200 dark:border-gray-700'
+                      }`}
+                      activeOpacity={0.8}
+                    >
+                      <View className="flex-row items-start justify-between mb-2">
+                        <View className="flex-1">
+                          <ThemedText variant="h3">{plan.name}</ThemedText>
+                          <ThemedText variant="tiny" className="text-gray-500 mt-1">{plan.description}</ThemedText>
+                        </View>
+                        <View className="items-end ml-3">
+                          <ThemedText variant="h3" className="text-blue-600 font-bold">₹{premium}</ThemedText>
+                          <View className={`w-6 h-6 rounded-full border-2 mt-1 items-center justify-center ${
+                            isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
+                          }`}>
+                            {isSelected && <Ionicons name="checkmark" size={14} color="white" />}
+                          </View>
+                        </View>
+                      </View>
+                      {/* Coverage pill */}
+                      <View className="flex-row items-center bg-blue-50 dark:bg-blue-900/10 rounded-lg px-2 py-1 mb-2 self-start">
+                        <Ionicons name="cash-outline" size={13} color="#3B82F6" />
+                        <ThemedText variant="tiny" className="ml-1 text-blue-700 dark:text-blue-400">
+                          Coverage up to {coverage}
+                        </ThemedText>
+                      </View>
+                      {/* Features */}
+                      {plan.coverage_details?.map((feat, i) => (
+                        <View key={i} className="flex-row items-center mt-1">
+                          <Ionicons name="checkmark-circle" size={14} color="#720C17" />
+                          <ThemedText variant="tiny" className="ml-1 text-gray-600 dark:text-gray-400">{feat}</ThemedText>
+                        </View>
+                      ))}
+                    </TouchableOpacity>
+                  );
+                })}
+
+                {/* Confirm button */}
+                {!isLoadingInsurance && (
+                  <PrimaryButton
+                    title={tempSelectedPlanId ? `Add ${insurancePlans.find(p => p.id === tempSelectedPlanId)?.name || 'Insurance'}` : 'Continue Without Insurance'}
+                    onPress={confirmInsuranceSelection}
+                    className="mt-2 mb-2"
+                  />
+                )}
+
+                {/* Clear link */}
+                {tempSelectedPlanId && (
+                  <TouchableOpacity onPress={clearInsurance} className="py-3 items-center">
+                    <ThemedText className="text-gray-500 text-center">Remove Insurance</ThemedText>
+                  </TouchableOpacity>
+                )}
+              </ScrollView>
             </View>
           </View>
         </Modal>

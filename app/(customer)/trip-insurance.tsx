@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, TouchableOpacity, View, Alert, ActivityIndicator } from 'react-native';
+import { ScrollView, TouchableOpacity, View, Alert, ActivityIndicator, LayoutAnimation } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../components/common/ThemedView';
 import { ThemedCard } from '../../components/common/ThemedCard';
@@ -32,6 +32,7 @@ export default function TripInsuranceScreen() {
   const [insurancePlans, setInsurancePlans] = useState<InsurancePlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showExclusions, setShowExclusions] = useState(false);
 
   const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
   const returnTo = (params.returnTo as string) || '/(customer)/book-ride-new';
@@ -128,7 +129,7 @@ export default function TripInsuranceScreen() {
   const handleTermsAndConditions = () => {
     Alert.alert(
       'Terms & Conditions',
-      'Trip Insurance Terms:\n\n• Coverage valid only during the booked trip duration\n• Claims must be reported within 24 hours\n• Valid ID and trip booking required for claims\n• Coverage excludes pre-existing damage\n• Emergency support available 24/7\n• Coverage amount as specified in the selected plan\n\nFor detailed terms, visit our website or contact support.'
+      'Trip Insurance Terms:\n\n• Coverage valid only during the active Chauffit trip\n• Must notify Chauffit within 3 days of trip completion\n• Must upload repair invoices within 7 days\n• Repairs must be done at GST-authorized service centers\n• Claims subject to deductibles, sub-limits, and coverage availability\n\nEXCLUSIONS:\n• Normal wear & tear (brake pads, spark plugs, tires, etc.)\n• Mechanical or electrical failure\n• Rust, aging, or weather damage\n• Third-party liabilities\n• Vehicles without valid motor insurance\n• Fraud, intentional overloading, war-like operations\n• Manufacturing defects\n\nChauffit complies with IRDAI regulations. Governed under Indian law with arbitration in Delhi NCR.'
     );
   };
 
@@ -302,6 +303,121 @@ export default function TripInsuranceScreen() {
                   );
                 })}
               </>
+            )}
+
+            {/* How It Works */}
+            {!isLoading && (
+              <View className="mt-6">
+                <ThemedText variant="h3" className="mb-3">How It Works</ThemedText>
+                <ThemedCard className="p-4">
+                  {[
+                    { step: '1', text: 'Book a chauffeur in the app' },
+                    { step: '2', text: 'Select your preferred insurance coverage' },
+                    { step: '3', text: 'Insurance fee is added to your booking total' },
+                    { step: '4', text: 'Coverage starts when the chauffeur boards your car' },
+                    { step: '5', text: 'Coverage ends when the trip is completed' },
+                  ].map(({ step, text }) => (
+                    <View key={step} className="flex-row items-start mb-3 last:mb-0">
+                      <View className="w-7 h-7 rounded-full items-center justify-center mr-3 flex-shrink-0" style={{ backgroundColor: '#720C17' }}>
+                        <ThemedText variant="tiny" className="text-white font-bold">{step}</ThemedText>
+                      </View>
+                      <ThemedText variant="small" className="text-gray-700 dark:text-gray-300 flex-1 pt-1">{text}</ThemedText>
+                    </View>
+                  ))}
+                </ThemedCard>
+              </View>
+            )}
+
+            {/* Claims Process */}
+            {!isLoading && (
+              <View className="mt-5">
+                <ThemedText variant="h3" className="mb-3">Claims Process</ThemedText>
+                <ThemedCard className="p-4">
+                  {[
+                    { icon: 'time-outline' as const, text: 'Notify Chauffit within 3 days of trip completion' },
+                    { icon: 'document-attach-outline' as const, text: 'Upload repair invoices within 7 days' },
+                    { icon: 'business-outline' as const, text: 'Repairs at GST-authorized service centers only' },
+                    { icon: 'information-circle-outline' as const, text: 'Claims subject to deductibles and sub-limits' },
+                  ].map(({ icon, text }, i) => (
+                    <View key={i} className="flex-row items-start mb-3 last:mb-0">
+                      <Ionicons name={icon} size={18} color={iconColor} className="mr-3 mt-0.5 flex-shrink-0" />
+                      <ThemedText variant="small" className="text-gray-700 dark:text-gray-300 flex-1 ml-2">{text}</ThemedText>
+                    </View>
+                  ))}
+                </ThemedCard>
+              </View>
+            )}
+
+            {/* Benefits */}
+            {!isLoading && (
+              <View className="mt-5">
+                <ThemedText variant="h3" className="mb-3">Benefits</ThemedText>
+                <ThemedCard className="p-4">
+                  {[
+                    'Affordable add-on to your booking',
+                    'Flexible protection levels to choose from',
+                    'Peace of mind during every trip',
+                    'Simple claims process',
+                  ].map((benefit, i) => (
+                    <View key={i} className="flex-row items-center mb-2 last:mb-0">
+                      <Ionicons name="checkmark-circle" size={18} color="#16A34A" />
+                      <ThemedText variant="small" className="ml-2 text-gray-700 dark:text-gray-300">{benefit}</ThemedText>
+                    </View>
+                  ))}
+                </ThemedCard>
+              </View>
+            )}
+
+            {/* Coverage Exclusions */}
+            {!isLoading && (
+              <View className="mt-5">
+                <TouchableOpacity
+                  onPress={() => {
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    setShowExclusions(prev => !prev);
+                  }}
+                  className="flex-row items-center justify-between mb-3"
+                  activeOpacity={0.7}
+                >
+                  <ThemedText variant="h3">What's Not Covered</ThemedText>
+                  <Ionicons name={showExclusions ? 'chevron-up' : 'chevron-down'} size={20} color={iconColor} />
+                </TouchableOpacity>
+
+                {showExclusions && (
+                  <ThemedCard className="p-4">
+                    <ThemedText variant="small" className="text-gray-500 dark:text-gray-400 mb-3 font-semibold uppercase tracking-wide">Exclusions</ThemedText>
+                    {[
+                      'Normal wear & tear (brake pads, spark plugs, tires)',
+                      'Mechanical or electrical failure',
+                      'Rust, aging, or weather damage',
+                      'Accessories & electrical equipment',
+                      'Third-party liabilities',
+                      'Vehicles without valid motor insurance',
+                      'Commercial / yellow-board vehicles',
+                    ].map((item, i) => (
+                      <View key={i} className="flex-row items-start mb-2">
+                        <Ionicons name="close-circle" size={16} color="#EF4444" />
+                        <ThemedText variant="small" className="ml-2 text-gray-700 dark:text-gray-300 flex-1">{item}</ThemedText>
+                      </View>
+                    ))}
+
+                    <ThemedText variant="small" className="text-gray-500 dark:text-gray-400 mt-4 mb-3 font-semibold uppercase tracking-wide">Excluded Incidents</ThemedText>
+                    {[
+                      'Fraud or unlawful activity',
+                      'Intentional overloading',
+                      'Damage caused by third parties',
+                      'War-like operations',
+                      'Manufacturing defects',
+                      'Dealer warranty-covered damages',
+                    ].map((item, i) => (
+                      <View key={i} className="flex-row items-start mb-2">
+                        <Ionicons name="close-circle" size={16} color="#EF4444" />
+                        <ThemedText variant="small" className="ml-2 text-gray-700 dark:text-gray-300 flex-1">{item}</ThemedText>
+                      </View>
+                    ))}
+                  </ThemedCard>
+                )}
+              </View>
             )}
 
             {/* Terms & Conditions */}

@@ -210,19 +210,24 @@ export const BookingCard: React.FC<BookingCardProps> = ({
             Payment
           </ThemedText>
           <View className="flex-row items-center">
-            <Ionicons
-              name={booking.paymentStatus === 'paid' ? 'checkmark-circle' : 'time'}
-              size={14}
-              color={booking.paymentStatus === 'paid' ? '#10B981' : '#F59E0B'}
-            />
-            <ThemedText
-              variant="small"
-              className={`ml-1 font-semibold ${
-                booking.paymentStatus === 'paid' ? 'text-success' : 'text-orange-500'
-              }`}
-            >
-              {booking.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
-            </ThemedText>
+            {(() => {
+              const isPaid = booking.paymentStatus === 'paid' || booking.paymentStatus === 'completed';
+              return (
+                <>
+                  <Ionicons
+                    name={isPaid ? 'checkmark-circle' : 'time'}
+                    size={14}
+                    color={isPaid ? '#10B981' : '#F59E0B'}
+                  />
+                  <ThemedText
+                    variant="small"
+                    className={`ml-1 font-semibold ${isPaid ? 'text-success' : 'text-orange-500'}`}
+                  >
+                    {isPaid ? 'Paid' : 'Pending'}
+                  </ThemedText>
+                </>
+              );
+            })()}
           </View>
         </View>
       </View>

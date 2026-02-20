@@ -121,7 +121,7 @@ class InsuranceApiService {
     const tierDescriptions: Record<InsuranceTier, string> = {
       scratch: 'Basic protection for minor scratches and paint touch-ups',
       scratch_and_dent: 'Enhanced protection for common scratches and dents',
-      full: 'Complete protection including theft, vandalism, and roadside assistance',
+      full: 'Comprehensive coverage for scratches, dents, and all minor damage during your trip',
     };
     return tierDescriptions[tier] || 'Trip insurance coverage';
   }

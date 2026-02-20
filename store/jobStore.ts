@@ -1047,8 +1047,10 @@ setInterval(() => {
 
 const PENDING_POLL_INTERVAL_MS = isProduction() ? 2000 : 120000;
 
-// Poll pending ride requests on interval (silent in background)
+// Poll pending ride requests on interval (silent in background, drivers only)
 setInterval(() => {
+  const activeRole = useAuthStore.getState().activeRole;
+  if (activeRole !== 'driver') return;
   const state = useJobStore.getState();
   if (!state.loadingPending) {
     state.fetchPendingRequests({ silent: true });

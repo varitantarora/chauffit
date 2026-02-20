@@ -143,6 +143,18 @@ export interface FareEstimateRequest {
 }
 
 /**
+ * Insurance object returned inside a fare estimate response.
+ * Note: field names differ from InsuranceInfo (which comes from booking/detail responses).
+ */
+export interface FareEstimateInsurance {
+  plan_id: string;
+  plan_name: string;
+  tier: string;
+  premium_amount: number;
+  max_coverage_amount: number;
+}
+
+/**
  * Fare Estimate Response
  */
 export interface FareEstimateResponse {
@@ -150,7 +162,7 @@ export interface FareEstimateResponse {
   estimated_duration_minutes: number;
   estimated_fare: string;
   surge_multiplier?: number;
-  insurance_plan?: InsuranceInfo;
+  insurance?: FareEstimateInsurance;
   fare_breakdown?: {
     base_fare: string;
     distance_fare: string;
@@ -202,6 +214,7 @@ export interface BookRideResponse {
   booking_reference: string;
   booking_status: BookingStatus;
   estimated_fare: string;
+  insurance?: InsuranceInfo | null;
   created_at: string;
 }
 
