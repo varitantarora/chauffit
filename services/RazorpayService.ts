@@ -1,4 +1,8 @@
+import { NativeModules } from 'react-native';
 import RazorpayCheckout from 'react-native-razorpay';
+
+// Defensive check for RazorpayCheckout which can be null in some environments (like New Architecture without interop)
+const Razorpay = RazorpayCheckout || NativeModules.RazorpayCheckout;
 import { appConfig } from '../config/env';
 import PaymentApiService from './api/PaymentApiService';
 
@@ -54,7 +58,14 @@ class RazorpayService {
         },
       };
 
-      const paymentData = await RazorpayCheckout.open(checkoutOptions);
+      if (!Razorpay) {
+        return {
+          success: false,
+          error: 'Razorpay native module not found. If you are using Expo, please ensure you are using a Development Client and have rebuilt the app.',
+        };
+      }
+
+      const paymentData = await Razorpay.open(checkoutOptions);
 
       // Step 3: Verify payment on backend
       const verifyResponse = await PaymentApiService.verifyRazorpayPayment({

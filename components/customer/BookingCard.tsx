@@ -201,7 +201,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
             Total Amount
           </ThemedText>
           <ThemedText variant="h3" className="font-bold text-burgundy dark:text-secondary">
-            ₹{((booking.totalAmount || 0) * 1.18).toLocaleString()}
+            ₹{((booking.totalAmount || 0) * 1.18).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </ThemedText>
         </View>
 

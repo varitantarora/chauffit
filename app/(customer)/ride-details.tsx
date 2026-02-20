@@ -32,7 +32,7 @@ const formatMoney = (value: string | number | null | undefined): string => {
   if (value === null || value === undefined || value === '') return 'NA';
   const num = typeof value === 'string' ? parseFloat(value) : value;
   if (!Number.isFinite(num)) return 'NA';
-  return `₹${num.toLocaleString('en-IN')}`;
+  return `₹${num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 const getStatusConfig = (status: BookingStatus) => {
