@@ -468,7 +468,6 @@ export default function RideTrackingScreen() {
               🎵 For Flexi-Hire rides only
             </ThemedText>
           )}
-        </View>
 
         {/* Bottom Spacing */}
         <View className="px-6">

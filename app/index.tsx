@@ -35,6 +35,10 @@ export default function Index() {
     return <Redirect href="/(auth)/login" />;
   }
   
+  if (activeRole === 'admin' || activeRole === 'super_admin') {
+    return <Redirect href="/(admin)/(tabs)" />;
+  }
+
   if (activeRole === 'driver') {
     return <Redirect href="/(driver)/(tabs)" />;
   }

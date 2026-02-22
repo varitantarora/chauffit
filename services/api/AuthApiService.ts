@@ -12,7 +12,7 @@ export interface User {
   profile_picture?: string;
   date_of_birth?: string;
   language?: string;
-  user_type: 'customer' | 'driver' | 'biker';
+  user_type: string;
   is_verified: boolean;
   status: 'active' | 'inactive';
   created_at: string;
@@ -38,7 +38,7 @@ export interface RegistrationRequest {
   password: string;
   first_name: string;
   last_name: string;
-  user_type: 'customer' | 'driver' | 'biker';
+  user_type: string;
   date_of_birth?: string;
 }
 
@@ -113,7 +113,7 @@ export interface OTPRegistrationRequest {
   phone_number: string;
   otp: string;
   full_name: string;
-  user_type: 'customer' | 'driver' | 'biker';
+  user_type: string;
 }
 
 export interface OTPRegistrationResponse {

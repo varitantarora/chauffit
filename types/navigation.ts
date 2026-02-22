@@ -1,5 +1,5 @@
 import { BookingStatus } from '../services/api/BookingApiService';
-export type UserRole = 'customer' | 'driver' | 'biker';
+export type UserRole = 'customer' | 'driver' | 'biker' | 'admin' | 'super_admin';
 
 export interface User {
   id: string;

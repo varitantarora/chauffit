@@ -23,6 +23,7 @@ export default function RootLayout() {
           <Stack.Screen name="(customer)" />
           <Stack.Screen name="(driver)" />
           <Stack.Screen name="(biker)" />
+          <Stack.Screen name="(admin)" />
         </Stack>
       </SafeAreaProvider>
     </GestureHandlerRootView>

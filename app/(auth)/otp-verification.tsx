@@ -129,13 +129,12 @@ export default function OTPVerification() {
             avatar: response.data.user.profile_picture,
           };
 
-          const userRole = response.data.user.user_type as 'customer' | 'driver' | 'biker';
+          const userRole = response.data.user.user_type as UserRole;
 
           // Set user and role in auth store
           const authStore = useAuthStore.getState();
           authStore.setUser(appUser);
-          authStore.addRole(userRole);
-          authStore.setActiveRole(userRole);
+          authStore.switchRole(userRole);
 
           // Set user metadata if available in response
           if (response.data.user.user_type) {
