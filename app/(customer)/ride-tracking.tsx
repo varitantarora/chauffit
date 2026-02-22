@@ -11,6 +11,8 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import BookingApiService, { BookingDetail } from '../../services/api/BookingApiService';
 import UniversalMapView, { MapMarker, MapRoute } from '../../components/shared/MapView';
 import { appConfig } from '../../config/env';
+import SlideToCancel from '../../components/customer/SlideToCancel';
+import CancelReasonModal from '../../components/customer/CancelReasonModal';
 
 // Helper to get full image URL
 const getImageUrl = (url: string | null | undefined): string | null => {
@@ -34,6 +36,7 @@ export default function RideTrackingScreen() {
   const [isSharing, setIsSharing] = useState(false);
   const [showSOS, setShowSOS] = useState(false);
   const [rideDetails, setRideDetails] = useState<BookingDetail | null>(null);
+  const [showCancelReasonModal, setShowCancelReasonModal] = useState(false);
 
   const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
 
@@ -187,19 +190,26 @@ export default function RideTrackingScreen() {
     setShowSOS(true);
   };
 
-  const handleCancelRide = () => {
-    Alert.alert(
-      'Cancel Ride',
-      'Are you sure you want to cancel this ride? Cancellation charges may apply.',
-      [
-        { text: 'No', style: 'cancel' },
-        { 
-          text: 'Yes, Cancel',
-          style: 'destructive',
-          onPress: () => router.back()
-        }
-      ]
-    );
+  const handleSlideComplete = () => {
+    setShowCancelReasonModal(true);
+  };
+
+  const handleCancelConfirmed = async (reason: string) => {
+    const bookingId = String(params.bookingId || '');
+    if (!bookingId) {
+      Alert.alert('Error', 'Missing booking ID');
+      setShowCancelReasonModal(false);
+      return;
+    }
+    const response = await BookingApiService.cancelRide(bookingId, reason);
+    setShowCancelReasonModal(false);
+    if (response.success) {
+      Alert.alert('Ride Cancelled', 'Your ride has been cancelled successfully.', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } else {
+      Alert.alert('Error', response.error || 'Failed to cancel ride. Please try again.');
+    }
   };
 
   const handleEndTrip = () => {
@@ -432,29 +442,25 @@ export default function RideTrackingScreen() {
           </TouchableOpacity>
 
           {/* Action Buttons */}
-          <View className="flex-row justify-between">
-            <TouchableOpacity 
+          <View className="flex-row justify-between mb-3">
+            <TouchableOpacity
               onPress={() => Alert.alert('Report Issue', 'This would open issue reporting')}
-              className="flex-1 py-3 mr-2 border border-gray-300 rounded-xl"
+              className="flex-1 py-3 border border-gray-300 rounded-xl"
             >
               <ThemedText className="text-center text-gray-600">Report Issue</ThemedText>
             </TouchableOpacity>
-            
-            {rideStatus === 'driver_coming' || rideStatus === 'driver_arrived' ? (
-              <TouchableOpacity 
-                onPress={handleCancelRide}
-                className="flex-1 py-3 ml-2 bg-burgundy rounded-xl"
-              >
-                <ThemedText className="text-center text-white">Cancel Ride</ThemedText>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity 
-                onPress={handleEndTrip}
-                className="flex-1 py-3 ml-2 bg-burgundy rounded-xl"
-              >
-                <ThemedText className="text-center text-white">End Trip</ThemedText>
-              </TouchableOpacity>
-            )}
+          </View>
+
+          {rideStatus === 'driver_coming' || rideStatus === 'driver_arrived' ? (
+            <SlideToCancel onSlideComplete={handleSlideComplete} />
+          ) : (
+            <TouchableOpacity
+              onPress={handleEndTrip}
+              className="py-3 bg-burgundy rounded-xl"
+            >
+              <ThemedText className="text-center text-white">End Trip</ThemedText>
+            </TouchableOpacity>
+          )}
           </View>
 
           {rideStatus === 'in_progress' && (
@@ -469,6 +475,13 @@ export default function RideTrackingScreen() {
           <View className="h-6" />
         </View>
       </ScrollView>
+
+      <CancelReasonModal
+        visible={showCancelReasonModal}
+        bookingId={String(params.bookingId || '')}
+        onCancel={handleCancelConfirmed}
+        onDismiss={() => setShowCancelReasonModal(false)}
+      />
       </ThemedView>
     </SafeAreaView>
   );

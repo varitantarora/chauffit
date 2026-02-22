@@ -4,7 +4,7 @@
  */
 
 export type VehicleSegment = 'HATCHBACK' | 'MICRO_SUV' | 'MID_SUV' | 'SEDAN' | 'FULL_SUV' | 'LUXURY';
-export type TripType = 'one_way' | 'round_trip' | 'hourly_charter';
+export type TripType = 'one_way' | 'round_trip' | 'hourly';
 export type FareMode = 'PER_KM' | 'PER_MIN' | 'HOURLY_HIRE';
 
 // Pricing configuration (seeded from backend)
@@ -129,8 +129,8 @@ export function calculateFare(
   let distanceFare = distanceKm * rates.per_km;
   let timeFare = 0;
 
-  // For hourly_charter, use hourly rates
-  if (tripType === 'hourly_charter') {
+  // For hourly, use hourly rates
+  if (tripType === 'hourly') {
     const hourlyRates = PRICING.HOURLY_HIRE[segment];
     const hours = Math.max(1, Math.ceil(durationMinutes / 60));
 

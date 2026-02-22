@@ -12,6 +12,7 @@ const apiCarToAppCar = (apiCar: CustomerCarApi): CustomerCar => ({
   registrationNumber: apiCar.plate,
   isDefault: false, // Default handling can be added later if needed
   vehicleType: apiCar.vehicle_type,
+  transmission: apiCar.transmission,
 });
 
 // Helper to convert app car to API car request
@@ -22,6 +23,7 @@ const appCarToApiRequest = (car: Omit<CustomerCar, 'id'>) => ({
   plate: car.registrationNumber,
   color: car.color,
   vehicle_type: car.vehicleType || 'luxury_sedan',
+  ...(car.transmission ? { transmission: car.transmission } : {}),
   is_active: true,
 });
 

@@ -96,6 +96,7 @@ export default function CarDetailsScreen({ postSaveRoute, allowSkip = false }: C
     color: '',
     registrationNumber: '',
     vehicleType: 'luxury_sedan' as CustomerVehicleType,
+    transmission: 'automatic' as 'manual' | 'automatic',
   });
 
   useEffect(() => {
@@ -108,6 +109,7 @@ export default function CarDetailsScreen({ postSaveRoute, allowSkip = false }: C
         color: existingCar.color,
         registrationNumber: existingCar.registrationNumber,
         vehicleType: (existingCar.vehicleType || 'luxury_sedan') as CustomerVehicleType,
+        transmission: existingCar.transmission || 'automatic',
       });
       return;
     }
@@ -133,7 +135,7 @@ export default function CarDetailsScreen({ postSaveRoute, allowSkip = false }: C
   };
 
   const handleSaveCar = async () => {
-    const { make, model, year, color, registrationNumber, vehicleType } = carForm;
+    const { make, model, year, color, registrationNumber, vehicleType, transmission } = carForm;
 
     if (!make || !model || !year || !color || !registrationNumber || !vehicleType) {
       Alert.alert('Error', 'Please fill in all car details');
@@ -157,6 +159,7 @@ export default function CarDetailsScreen({ postSaveRoute, allowSkip = false }: C
           year: yearValue,
           color,
           registrationNumber: registrationNumber.toUpperCase(),
+          transmission,
         });
       } else {
         await addCar({
@@ -166,6 +169,7 @@ export default function CarDetailsScreen({ postSaveRoute, allowSkip = false }: C
           color,
           registrationNumber: registrationNumber.toUpperCase(),
           vehicleType,
+          transmission,
         });
       }
 
@@ -324,6 +328,38 @@ export default function CarDetailsScreen({ postSaveRoute, allowSkip = false }: C
                   onChangeText={(value) => handleInputChange('registrationNumber', value)}
                   autoCapitalize="characters"
                 />
+              </View>
+            </View>
+
+            <View className="mb-4">
+              <ThemedText variant="small" className="mb-2 font-semibold">
+                Transmission
+              </ThemedText>
+              <View className="flex-row">
+                {(['automatic', 'manual'] as const).map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    onPress={() => handleInputChange('transmission', option)}
+                    className={`flex-1 py-3 rounded-xl border items-center ${
+                      option === 'automatic' ? 'mr-2' : 'ml-2'
+                    } ${
+                      carForm.transmission === option
+                        ? 'bg-burgundy border-burgundy'
+                        : 'border-border dark:border-darkBorder'
+                    }`}
+                  >
+                    <Ionicons
+                      name={option === 'automatic' ? 'settings' : 'cog'}
+                      size={20}
+                      color={carForm.transmission === option ? '#FFFFFF' : iconColor}
+                    />
+                    <ThemedText
+                      className={`mt-1 ${carForm.transmission === option ? 'text-white' : ''}`}
+                    >
+                      {option === 'automatic' ? 'Automatic' : 'Manual'}
+                    </ThemedText>
+                  </TouchableOpacity>
+                ))}
               </View>
             </View>
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ScrollView, TouchableOpacity, View, TextInput, RefreshControl, Animated, Image, ActivityIndicator } from 'react-native';
+import { ScrollView, TouchableOpacity, View, TextInput, RefreshControl, Animated, Image, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../../components/common/ThemedView';
 import { ThemedCard } from '../../../components/common/ThemedCard';
@@ -10,6 +10,9 @@ import { useAuthStore } from '../../../store/authStore';
 import { useRouter } from 'expo-router';
 import BookingApiService, { CustomerRide } from '../../../services/api/BookingApiService';
 import BlogApiService, { BlogListItem } from '../../../services/api/BlogApiService';
+import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
+import * as Location from 'expo-location';
+import { BlurView } from 'expo-blur';
 
 export default function CustomerHomeScreen() {
   const user = useAuthStore((state) => state.user);
@@ -25,6 +28,7 @@ export default function CustomerHomeScreen() {
   const [loadingActivity, setLoadingActivity] = useState(true);
   const [blogs, setBlogs] = useState<BlogListItem[]>([]);
   const [blogsLoading, setBlogsLoading] = useState(true);
+  const [userLocation, setUserLocation] = useState<{latitude: number; longitude: number} | null>(null);
 
   const clipAnimation = useRef(new Animated.Value(0)).current;
   const searchAnimation = useRef(new Animated.Value(0)).current;
@@ -80,6 +84,17 @@ export default function CustomerHomeScreen() {
     fetchRecentActivity();
     fetchBlogs();
   }, [fetchRecentActivity, fetchBlogs]);
+
+  // Fetch user location for map hero
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+      }
+    })();
+  }, []);
 
   // Start the reveal animation when component mounts
   useEffect(() => {
@@ -260,168 +275,263 @@ export default function CustomerHomeScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          {/* Header */}
-          <View className="px-6 pt-4 pb-6">
-            <ThemedText variant="h1">
-              {getGreeting()}, {user?.name?.split(' ')[0] || 'Guest'}
-            </ThemedText>
-            <ThemedText variant="small" className="mt-1">
-              Where would you like to go today?
-            </ThemedText>
-          </View>
-
-          {/* Search Bar */}
-          <View className="px-6 mb-6">
-            <Animated.View
-              className={`rounded-xl border ${
-                isDarkMode ? 'bg-darkSurface border-darkBorder' : 'bg-white border-border'
-              }`}
-              style={{
-                height: searchAnimation.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [56, 240],
-                }),
-                overflow: 'hidden',
-              }}
-            >
-              {/* Collapsed Search Bar */}
-              <Animated.View
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  opacity: searchAnimation.interpolate({
-                    inputRange: [0, 0.3, 1],
-                    outputRange: [1, 0, 0],
-                  }),
+          {/* Map Hero Section */}
+          <View style={{ height: isSearchExpanded ? 480 : 280, overflow: 'hidden', borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}>
+            {/* Map Background */}
+            {userLocation ? (
+              <MapView
+                provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
+                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                initialRegion={{
+                  latitude: userLocation.latitude,
+                  longitude: userLocation.longitude,
+                  latitudeDelta: 0.015,
+                  longitudeDelta: 0.015,
                 }}
-                pointerEvents={isSearchExpanded ? 'none' : 'auto'}
-              >
-                <TouchableOpacity
-                  className="flex-row items-center px-4 py-3 h-14"
-                  onPress={toggleSearchExpansion}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="search" size={20} color={iconColor} />
-                  <ThemedText className="flex-1 ml-3" style={{ color: iconColor }}>
-                    Search destination...
-                  </ThemedText>
-                </TouchableOpacity>
-              </Animated.View>
+                showsUserLocation
+                scrollEnabled={false}
+                zoomEnabled={false}
+                rotateEnabled={false}
+                pitchEnabled={false}
+                showsMyLocationButton={false}
+                showsCompass={false}
+              />
+            ) : (
+              <View style={{ flex: 1, backgroundColor: isDarkMode ? '#1a1a2e' : '#e8e4df' }} />
+            )}
 
-              {/* Expanded Search Form */}
-              <Animated.View
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  padding: 16,
-                  opacity: searchAnimation.interpolate({
-                    inputRange: [0, 0.3, 1],
-                    outputRange: [0, 0, 1],
-                  }),
-                }}
-                pointerEvents={isSearchExpanded ? 'auto' : 'none'}
-              >
-                {/* Close button */}
-                <TouchableOpacity
-                  className="absolute top-2 right-2 p-2 z-10"
-                  onPress={toggleSearchExpansion}
-                >
-                  <Ionicons name="close-circle" size={24} color={iconColor} />
-                </TouchableOpacity>
-
-                {/* Pickup Location */}
-                <Animated.View
+            {/* Header overlay */}
+            <View style={{ position: 'absolute', top: 8, left: 24, right: 24 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                <Image
+                  source={require('../../../assets/chauffit-logo.png')}
+                  style={{ width: 28, height: 28, marginRight: 8 }}
+                  resizeMode="contain"
+                />
+                <ThemedText
+                  variant="h1"
                   style={{
-                    opacity: pickupFieldAnimation,
-                    transform: [
-                      {
-                        translateY: pickupFieldAnimation.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [50, 0],
-                        }),
-                      },
-                    ],
+                    color: '#720C17',
+                    textShadowColor: 'rgba(0,0,0,0.5)',
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 4,
+                  }}
+                >
+                  {getGreeting()}, {user?.name?.split(' ')[0] || 'Guest'}
+                </ThemedText>
+              </View>
+              <ThemedText
+                variant="small"
+                style={{
+                  color: '#720C17',
+                  textShadowColor: 'rgba(0,0,0,0.4)',
+                  textShadowOffset: { width: 0, height: 1 },
+                  textShadowRadius: 3,
+                }}
+              >
+                Where would you like to go today?
+              </ThemedText>
+            </View>
+
+            {/* Search bar overlay */}
+            <View style={{ position: 'absolute', bottom: 16, left: 16, right: 16 }}>
+              <Animated.View
+                style={{
+                  height: searchAnimation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [56, 240],
+                  }),
+                  overflow: 'hidden',
+                  borderRadius: 16,
+                }}
+              >
+                <BlurView
+                  intensity={80}
+                  tint={isDarkMode ? 'dark' : 'light'}
+                  style={{
+                    flex: 1,
+                    borderRadius: 16,
+                    overflow: 'hidden',
                   }}
                 >
                   <View
-                    className={`flex-row items-center px-4 py-3 rounded-lg border mb-3 ${
-                      isDarkMode ? 'bg-darkSurface border-darkBorder' : 'bg-gray-50 border-gray-200'
-                    }`}
-                  >
-                    <Ionicons name="location" size={20} color="#10b981" />
-                    <TextInput
-                      className={`flex-1 ml-3 ${isDarkMode ? 'text-darkText' : 'text-textPrimary'}`}
-                      placeholder="Pickup location"
-                      placeholderTextColor={iconColor}
-                      value={pickupLocation}
-                      onChangeText={setPickupLocation}
-                    />
-                  </View>
-                </Animated.View>
-
-                {/* Destination Location */}
-                <Animated.View
-                  style={{
-                    opacity: destinationFieldAnimation,
-                    transform: [
-                      {
-                        translateY: destinationFieldAnimation.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [50, 0],
-                        }),
-                      },
-                    ],
-                  }}
-                >
-                  <View
-                    className={`flex-row items-center px-4 py-3 rounded-lg border mb-4 ${
-                      isDarkMode ? 'bg-darkSurface border-darkBorder' : 'bg-gray-50 border-gray-200'
-                    }`}
-                  >
-                    <Ionicons name="location" size={20} color="#ef4444" />
-                    <TextInput
-                      className={`flex-1 ml-3 ${isDarkMode ? 'text-darkText' : 'text-textPrimary'}`}
-                      placeholder="Destination"
-                      placeholderTextColor={iconColor}
-                      value={destinationLocation}
-                      onChangeText={setDestinationLocation}
-                    />
-                  </View>
-                </Animated.View>
-
-                {/* Search Button */}
-                <Animated.View
-                  style={{
-                    opacity: buttonAnimation,
-                    transform: [
-                      {
-                        translateY: buttonAnimation.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [50, 0],
-                        }),
-                      },
-                    ],
-                  }}
-                >
-                  <TouchableOpacity
-                    className="bg-burgundy py-3 rounded-lg"
-                    onPress={handleExpandedSearch}
-                    disabled={!pickupLocation.trim() || !destinationLocation.trim()}
                     style={{
-                      opacity: !pickupLocation.trim() || !destinationLocation.trim() ? 0.5 : 1,
+                      flex: 1,
+                      backgroundColor: isDarkMode ? 'rgba(30,30,40,0.75)' : 'rgba(255,255,255,0.8)',
+                      borderRadius: 16,
                     }}
                   >
-                    <ThemedText className="text-white text-center font-semibold">Search</ThemedText>
-                  </TouchableOpacity>
-                </Animated.View>
+                    {/* Collapsed Search Bar */}
+                    <Animated.View
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        opacity: searchAnimation.interpolate({
+                          inputRange: [0, 0.3, 1],
+                          outputRange: [1, 0, 0],
+                        }),
+                      }}
+                      pointerEvents={isSearchExpanded ? 'none' : 'auto'}
+                    >
+                      <TouchableOpacity
+                        style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, height: 56 }}
+                        onPress={toggleSearchExpansion}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="search" size={20} color={isDarkMode ? '#d9d1c6' : '#555'} />
+                        <ThemedText
+                          style={{
+                            flex: 1,
+                            marginLeft: 12,
+                            color: isDarkMode ? '#d9d1c6' : '#555',
+                            fontSize: 15,
+                          }}
+                        >
+                          Search destination...
+                        </ThemedText>
+                      </TouchableOpacity>
+                    </Animated.View>
+
+                    {/* Expanded Search Form */}
+                    <Animated.View
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        padding: 16,
+                        opacity: searchAnimation.interpolate({
+                          inputRange: [0, 0.3, 1],
+                          outputRange: [0, 0, 1],
+                        }),
+                      }}
+                      pointerEvents={isSearchExpanded ? 'auto' : 'none'}
+                    >
+                      {/* Close button */}
+                      <TouchableOpacity
+                        style={{ position: 'absolute', top: 8, right: 8, padding: 8, zIndex: 10 }}
+                        onPress={toggleSearchExpansion}
+                      >
+                        <Ionicons name="close-circle" size={24} color={isDarkMode ? '#d9d1c6' : '#555'} />
+                      </TouchableOpacity>
+
+                      {/* Pickup Location */}
+                      <Animated.View
+                        style={{
+                          opacity: pickupFieldAnimation,
+                          transform: [{
+                            translateY: pickupFieldAnimation.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [50, 0],
+                            }),
+                          }],
+                        }}
+                      >
+                        <View
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            paddingHorizontal: 16,
+                            paddingVertical: 12,
+                            borderRadius: 10,
+                            marginBottom: 12,
+                            backgroundColor: isDarkMode ? 'rgba(40,40,50,0.6)' : 'rgba(245,245,245,0.7)',
+                            borderWidth: 1,
+                            borderColor: isDarkMode ? 'rgba(80,80,90,0.5)' : 'rgba(200,200,200,0.6)',
+                          }}
+                        >
+                          <Ionicons name="location" size={20} color="#10b981" />
+                          <TextInput
+                            style={{
+                              flex: 1,
+                              marginLeft: 12,
+                              color: isDarkMode ? '#e5e5e5' : '#1a1a1a',
+                              fontSize: 15,
+                            }}
+                            placeholder="Pickup location"
+                            placeholderTextColor={isDarkMode ? '#888' : '#999'}
+                            value={pickupLocation}
+                            onChangeText={setPickupLocation}
+                          />
+                        </View>
+                      </Animated.View>
+
+                      {/* Destination Location */}
+                      <Animated.View
+                        style={{
+                          opacity: destinationFieldAnimation,
+                          transform: [{
+                            translateY: destinationFieldAnimation.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [50, 0],
+                            }),
+                          }],
+                        }}
+                      >
+                        <View
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            paddingHorizontal: 16,
+                            paddingVertical: 12,
+                            borderRadius: 10,
+                            marginBottom: 16,
+                            backgroundColor: isDarkMode ? 'rgba(40,40,50,0.6)' : 'rgba(245,245,245,0.7)',
+                            borderWidth: 1,
+                            borderColor: isDarkMode ? 'rgba(80,80,90,0.5)' : 'rgba(200,200,200,0.6)',
+                          }}
+                        >
+                          <Ionicons name="location" size={20} color="#ef4444" />
+                          <TextInput
+                            style={{
+                              flex: 1,
+                              marginLeft: 12,
+                              color: isDarkMode ? '#e5e5e5' : '#1a1a1a',
+                              fontSize: 15,
+                            }}
+                            placeholder="Destination"
+                            placeholderTextColor={isDarkMode ? '#888' : '#999'}
+                            value={destinationLocation}
+                            onChangeText={setDestinationLocation}
+                          />
+                        </View>
+                      </Animated.View>
+
+                      {/* Search Button */}
+                      <Animated.View
+                        style={{
+                          opacity: buttonAnimation,
+                          transform: [{
+                            translateY: buttonAnimation.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [50, 0],
+                            }),
+                          }],
+                        }}
+                      >
+                        <TouchableOpacity
+                          className="bg-burgundy py-3 rounded-lg"
+                          onPress={handleExpandedSearch}
+                          disabled={!pickupLocation.trim() || !destinationLocation.trim()}
+                          style={{
+                            opacity: !pickupLocation.trim() || !destinationLocation.trim() ? 0.5 : 1,
+                          }}
+                        >
+                          <ThemedText className="text-white text-center font-semibold">Search</ThemedText>
+                        </TouchableOpacity>
+                      </Animated.View>
+                    </Animated.View>
+                  </View>
+                </BlurView>
               </Animated.View>
-            </Animated.View>
+            </View>
           </View>
-          
+
+          {/* Spacing after map hero */}
+          <View style={{ height: 16 }} />
+
           {/* Quick Actions */}
           <View className="px-3 mb-6">
             <View className="flex-row justify-between">

@@ -63,7 +63,8 @@ const getTripTypeLabel = (type: string) => {
   switch (type) {
     case 'one_way': return 'One Way';
     case 'round_trip': return 'Round Trip';
-    case 'hourly_charter': return 'Hourly Charter';
+    case 'hourly_charter':
+    case 'hourly': return 'Hourly Charter';
     default: return type;
   }
 };

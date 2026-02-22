@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { View, Animated, Dimensions, Image, RefreshControl, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Animated, Dimensions, Image, RefreshControl, ActivityIndicator, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../components/common/ThemedView';
 import { ThemedText } from '../../components/common/ThemedText';
@@ -160,6 +160,27 @@ export default function SearchingDriversScreen() {
         },
       });
     });
+  };
+
+  const handleCancelSearch = () => {
+    const bookingId = String(params.bookingId || '');
+    Alert.alert(
+      'Cancel Search',
+      'Are you sure you want to cancel your ride request?',
+      [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Yes, Cancel',
+          style: 'destructive',
+          onPress: async () => {
+            if (bookingId) {
+              await BookingApiService.cancelRide(bookingId, 'Cancelled during search');
+            }
+            router.back();
+          },
+        },
+      ]
+    );
   };
 
   const tripDetails = {
@@ -408,6 +429,24 @@ export default function SearchingDriversScreen() {
                   <ThemedText className="pl-6">{tripDetails.destination}</ThemedText>
                 </View>
               </View>
+
+              {/* Cancel Search Button */}
+              <TouchableOpacity
+                onPress={handleCancelSearch}
+                style={{
+                  marginTop: 24,
+                  paddingVertical: 14,
+                  borderRadius: 14,
+                  borderWidth: 1.5,
+                  borderColor: '#DC2626',
+                  alignItems: 'center',
+                  width: '100%',
+                }}
+              >
+                <ThemedText style={{ color: '#DC2626', fontWeight: '600', fontSize: 15 }}>
+                  Cancel Search
+                </ThemedText>
+              </TouchableOpacity>
             </Animated.View>
           </ScrollView>
 

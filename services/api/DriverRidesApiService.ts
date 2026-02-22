@@ -24,7 +24,7 @@ export type BookingStatus =
 /**
  * Trip Type
  */
-export type TripType = 'one_way' | 'round_trip' | 'hourly_charter';
+export type TripType = 'one_way' | 'round_trip' | 'hourly_charter' | 'hourly';
 
 /**
  * Service Type

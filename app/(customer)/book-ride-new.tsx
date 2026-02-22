@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   ScrollView,
   TouchableOpacity,
@@ -27,6 +27,7 @@ import BookingApiService, {
   InsuranceInfo,
 } from '../../services/api/BookingApiService';
 import InsuranceApiService, { InsurancePlan } from '../../services/api/InsuranceApiService';
+import AmenityApiService, { Amenity, AmenityCategory } from '../../services/api/AmenityApiService';
 import { formatFare } from '../../utils/fareCalculator';
 import {
   GooglePlacesAutocomplete,
@@ -69,6 +70,7 @@ export default function BookRideScreen() {
   const [dropLocation, setDropLocation] = useState<BookingLocation | null>(null);
   const [selectedCar, setSelectedCar] = useState<CustomerCar | null>(null);
   const [tripType, setTripType] = useState<TripType>('one_way');
+  const [hourlyHours, setHourlyHours] = useState<number>(1);
   const [scheduleOption, setScheduleOption] = useState<ScheduleOption>('now');
   const [scheduledDate, setScheduledDate] = useState<Date | null>(null);
   const [scheduledTime, setScheduledTime] = useState<string>('');
@@ -92,6 +94,14 @@ export default function BookRideScreen() {
   const [isLoadingInsurance, setIsLoadingInsurance] = useState(false);
   const [tempSelectedPlanId, setTempSelectedPlanId] = useState<string | null>(null);
   const [selectedInsuranceName, setSelectedInsuranceName] = useState<string>('');
+
+  const [showAmenityModal, setShowAmenityModal] = useState(false);
+  const [availableAmenities, setAvailableAmenities] = useState<Amenity[]>([]);
+  const [isLoadingAmenities, setIsLoadingAmenities] = useState(false);
+  const [selectedAmenities, setSelectedAmenities] = useState<Map<string, { amenity: Amenity; quantity: number }>>(new Map());
+
+  const [showBreakdown, setShowBreakdown] = useState(false);
+  const fareEstimateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (params.vehicleId) {
@@ -145,6 +155,81 @@ export default function BookRideScreen() {
       setIsLoadingInsurance(false);
     })();
   }, []);
+
+  // Fetch amenities on mount
+  useEffect(() => {
+    (async () => {
+      setIsLoadingAmenities(true);
+      const res = await AmenityApiService.listAmenities();
+      if (res.success && res.data) setAvailableAmenities(res.data);
+      setIsLoadingAmenities(false);
+    })();
+  }, []);
+
+  // Inline fare calculation (does not open modal)
+  const calculateFareInline = useCallback(async () => {
+    if (!dropLocation || !selectedCar || !pickupLocation?.address) return;
+
+    setIsCalculatingFare(true);
+
+    try {
+      const estimateRequest: FareEstimateRequest = {
+        from_lat: formatCoord(pickupLocation.latitude),
+        from_long: formatCoord(pickupLocation.longitude),
+        from_address: pickupLocation.fullAddress || pickupLocation.address,
+        to_lat: formatCoord(dropLocation.latitude),
+        to_long: formatCoord(dropLocation.longitude),
+        to_address: dropLocation.fullAddress || dropLocation.address,
+        vehicle_id: selectedCar.id,
+        when: scheduleOption,
+        type: tripType,
+        ...(scheduleOption === 'schedule' && scheduledDate
+          ? { scheduled_at: scheduledDate.toISOString() }
+          : {}),
+        ...(selectedInsurancePlanId ? { insurance_plan_id: selectedInsurancePlanId } : {}),
+        ...(tripType === 'hourly' ? { hours: hourlyHours } : {}),
+      };
+
+      const response = await BookingApiService.getFareEstimate(estimateRequest);
+
+      if (response.success && response.data) {
+        setFareEstimate(response.data);
+      } else {
+        Alert.alert('Error', response.error || 'Failed to calculate fare. Please try again.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to calculate fare. Please try again.');
+    } finally {
+      setIsCalculatingFare(false);
+    }
+  }, [pickupLocation, dropLocation, selectedCar, scheduleOption, tripType, scheduledDate, selectedInsurancePlanId, hourlyHours]);
+
+  // Auto-fetch fare estimate when all inputs are ready
+  useEffect(() => {
+    if (!pickupLocation?.address || !dropLocation || !selectedCar) {
+      setFareEstimate(null);
+      return;
+    }
+
+    if (fareEstimateTimerRef.current) {
+      clearTimeout(fareEstimateTimerRef.current);
+    }
+
+    fareEstimateTimerRef.current = setTimeout(() => {
+      calculateFareInline();
+    }, 500);
+
+    return () => {
+      if (fareEstimateTimerRef.current) {
+        clearTimeout(fareEstimateTimerRef.current);
+      }
+    };
+  }, [
+    pickupLocation?.address, pickupLocation?.latitude, pickupLocation?.longitude,
+    dropLocation?.address, dropLocation?.latitude, dropLocation?.longitude,
+    selectedCar?.id, tripType, scheduleOption, scheduledDate,
+    selectedInsurancePlanId, hourlyHours,
+  ]);
 
   const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
   const inputClass = isDarkMode
@@ -334,13 +419,13 @@ export default function BookRideScreen() {
           ? { scheduled_at: scheduledDate.toISOString() }
           : {}),
         ...(selectedInsurancePlanId ? { insurance_plan_id: selectedInsurancePlanId } : {}),
+        ...(tripType === 'hourly' ? { hours: hourlyHours } : {}),
       };
 
       const response = await BookingApiService.getFareEstimate(estimateRequest);
 
       if (response.success && response.data) {
         setFareEstimate(response.data);
-        setShowFareModal(true);
       } else {
         Alert.alert('Error', response.error || 'Failed to calculate fare. Please try again.');
       }
@@ -458,7 +543,11 @@ export default function BookRideScreen() {
       return;
     }
 
-    calculateFare();
+    if (fareEstimate) {
+      confirmBooking();
+    } else {
+      calculateFareInline();
+    }
   };
 
   const openInsuranceModal = () => {
@@ -490,6 +579,40 @@ export default function BookRideScreen() {
     setShowInsuranceModal(false);
   };
 
+  // Amenity helpers
+  const toggleAmenity = (amenity: Amenity) => {
+    setSelectedAmenities((prev) => {
+      const next = new Map(prev);
+      if (next.has(amenity.id)) {
+        next.delete(amenity.id);
+      } else {
+        next.set(amenity.id, { amenity, quantity: 1 });
+      }
+      return next;
+    });
+  };
+
+  const updateAmenityQuantity = (amenityId: string, quantity: number) => {
+    if (quantity < 1 || quantity > 5) return;
+    setSelectedAmenities((prev) => {
+      const next = new Map(prev);
+      const entry = next.get(amenityId);
+      if (entry) {
+        next.set(amenityId, { ...entry, quantity });
+      }
+      return next;
+    });
+  };
+
+  const amenitiesTotal = Array.from(selectedAmenities.values()).reduce(
+    (sum, { amenity, quantity }) => sum + AmenityApiService.parsePrice(amenity.price) * quantity,
+    0
+  );
+
+  const selectedAmenitiesCount = selectedAmenities.size;
+
+  const groupedAvailableAmenities = AmenityApiService.groupByCategory(availableAmenities);
+
   // Recalculate fare when insurance is selected (for future use with dynamic fare updates)
   const recalculateFareWithInsurance = async (insuranceId: string | null) => {
     if (!fareEstimate || !dropLocation || !selectedCar) return;
@@ -513,6 +636,7 @@ export default function BookRideScreen() {
           ? { scheduled_at: scheduledDate.toISOString() }
           : {}),
         ...(insuranceId ? { insurance_plan_id: insuranceId } : {}),
+        ...(tripType === 'hourly' ? { hours: hourlyHours } : {}),
       };
 
       const response = await BookingApiService.getFareEstimate(estimateRequest);
@@ -552,17 +676,28 @@ export default function BookRideScreen() {
           ? { scheduled_at: scheduledDate.toISOString() }
           : {}),
         ...(selectedInsurancePlanId ? { insurance_plan_id: selectedInsurancePlanId } : {}),
+        ...(tripType === 'hourly' ? { hours: hourlyHours } : {}),
       };
 
       const response = await BookingApiService.bookRide(bookingData);
 
       if (response.success && response.data) {
+        const bookingId = response.data.id;
+
+        // Add selected amenities to the booking
+        if (selectedAmenities.size > 0) {
+          const amenityPromises = Array.from(selectedAmenities.values()).map(({ amenity, quantity }) =>
+            AmenityApiService.addAmenityToBooking(bookingId, amenity.id, quantity)
+          );
+          await Promise.allSettled(amenityPromises);
+        }
+
         await createBooking({
-          id: response.data.id,
+          id: bookingId,
           customerId: user?.id || '',
           chauffeurId: '',
           chauffeurName: 'Finding driver...',
-          duration: tripType === 'hourly_charter' ? 'Hourly' : tripType === 'round_trip' ? 'Round-trip' : 'One-way',
+          duration: tripType === 'hourly' ? 'Hourly' : tripType === 'round_trip' ? 'Round-trip' : 'One-way',
           pickupLocation: {
             address: pickupLocation.address,
             latitude: pickupLocation.latitude,
@@ -591,7 +726,7 @@ export default function BookRideScreen() {
         router.push({
           pathname: '/(customer)/searching-drivers',
           params: {
-            bookingId: response.data?.id || '',
+            bookingId: bookingId,
             pickup: pickupLocation.address,
             destination: dropLocation.address,
             fare: String(fareEstimate.estimated_fare),
@@ -640,7 +775,7 @@ export default function BookRideScreen() {
         return 'One-way';
       case 'round_trip':
         return 'Round-trip';
-      case 'hourly_charter':
+      case 'hourly':
         return 'Hourly';
       default:
         return type;
@@ -827,7 +962,7 @@ export default function BookRideScreen() {
                   {([
                     { id: 'one_way' as TripType, label: 'One-way' },
                     { id: 'round_trip' as TripType, label: 'Round-trip' },
-                    { id: 'hourly_charter' as TripType, label: 'Hourly' },
+                    { id: 'hourly' as TripType, label: 'Hourly' },
                   ]).map((type) => (
                     <TouchableOpacity
                       key={type.id}
@@ -848,6 +983,32 @@ export default function BookRideScreen() {
                   ))}
                 </View>
               </View>
+
+              {/* Hourly Duration Selector */}
+              {tripType === 'hourly' && (
+                <View className="mb-4">
+                  <ThemedText variant="small" className="mb-2 text-gray-600 dark:text-gray-400">
+                    Duration (hours)
+                  </ThemedText>
+                  <View className="flex-row items-center justify-between p-3 rounded-xl border border-gray-200 dark:border-darkBorder">
+                    <TouchableOpacity
+                      onPress={() => setHourlyHours(Math.max(1, hourlyHours - 1))}
+                      className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 items-center justify-center"
+                    >
+                      <Ionicons name="remove" size={20} color={isDarkMode ? '#fff' : '#333'} />
+                    </TouchableOpacity>
+                    <ThemedText variant="h2" className="mx-4">
+                      {hourlyHours} {hourlyHours === 1 ? 'hour' : 'hours'}
+                    </ThemedText>
+                    <TouchableOpacity
+                      onPress={() => setHourlyHours(Math.min(12, hourlyHours + 1))}
+                      className="w-10 h-10 rounded-full bg-burgundy items-center justify-center"
+                    >
+                      <Ionicons name="add" size={20} color="white" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
 
               {/* Trip Insurance Banner */}
               <TouchableOpacity
@@ -883,11 +1044,185 @@ export default function BookRideScreen() {
                 </View>
               </TouchableOpacity>
 
-              {/* Book Button */}
+              {/* Amenities Banner */}
+              <TouchableOpacity
+                onPress={() => setShowAmenityModal(true)}
+                className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-700"
+                activeOpacity={0.8}
+              >
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center flex-1">
+                    <View className="w-10 h-10 bg-amber-100 dark:bg-amber-900/40 rounded-full items-center justify-center mr-3">
+                      <Ionicons
+                        name={selectedAmenitiesCount > 0 ? 'cafe' : 'cafe-outline'}
+                        size={20}
+                        color="#D97706"
+                      />
+                    </View>
+                    <View className="flex-1">
+                      <ThemedText variant="small" className="font-semibold">
+                        {selectedAmenitiesCount > 0
+                          ? `${selectedAmenitiesCount} Amenit${selectedAmenitiesCount === 1 ? 'y' : 'ies'} Selected`
+                          : 'Add Amenities'}
+                      </ThemedText>
+                      <ThemedText variant="tiny" className="text-gray-500">
+                        {selectedAmenitiesCount > 0
+                          ? `${formatFare(amenitiesTotal)} total · Tap to change`
+                          : 'Customize your ride experience'}
+                      </ThemedText>
+                    </View>
+                  </View>
+                  <Ionicons
+                    name={selectedAmenitiesCount > 0 ? 'checkmark-circle' : 'chevron-forward'}
+                    size={22}
+                    color={selectedAmenitiesCount > 0 ? '#10B981' : '#D97706'}
+                  />
+                </View>
+              </TouchableOpacity>
+
+              {/* Inline Fare Estimate */}
+              {isCalculatingFare && !fareEstimate && (
+                <View className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl items-center">
+                  <ActivityIndicator size="small" color="#BD8C5E" />
+                  <ThemedText variant="small" className="mt-2 text-gray-500">Calculating fare...</ThemedText>
+                </View>
+              )}
+
+              {fareEstimate && (
+                <ThemedCard variant="elevated" className="mb-4 p-4">
+                  {/* Distance & Duration Row */}
+                  <View className="flex-row justify-around mb-3">
+                    <View className="flex-row items-center">
+                      <Ionicons name="map-outline" size={18} color={iconColor} />
+                      <ThemedText variant="small" className="ml-2 font-semibold">
+                        {fareEstimate.estimated_distance_km != null
+                          ? `${fareEstimate.estimated_distance_km} km`
+                          : 'N/A'}
+                      </ThemedText>
+                    </View>
+                    <View className="w-px bg-gray-300 dark:bg-gray-600" />
+                    <View className="flex-row items-center">
+                      <Ionicons name="time-outline" size={18} color={iconColor} />
+                      <ThemedText variant="small" className="ml-2 font-semibold">
+                        {fareEstimate.estimated_duration_minutes != null
+                          ? formatDuration(fareEstimate.estimated_duration_minutes)
+                          : 'N/A'}
+                      </ThemedText>
+                    </View>
+                  </View>
+
+                  {/* Total Fare */}
+                  <View className="items-center mb-3">
+                    <ThemedText variant="tiny" className="text-gray-500">Estimated Fare</ThemedText>
+                    <ThemedText variant="h1" className="text-burgundy">
+                      {formatFare(Number(fareEstimate.estimated_fare))}
+                    </ThemedText>
+                  </View>
+
+                  {/* Collapsible Breakdown */}
+                  {fareEstimate.fare_breakdown && (
+                    <TouchableOpacity
+                      onPress={() => setShowBreakdown(!showBreakdown)}
+                      className="flex-row items-center justify-center py-3 mb-2"
+                      activeOpacity={0.6}
+                    >
+                      <ThemedText variant="small" className="text-secondary mr-1">
+                        {showBreakdown ? 'Hide breakdown' : 'View breakdown'}
+                      </ThemedText>
+                      <Ionicons
+                        name={showBreakdown ? 'chevron-up' : 'chevron-down'}
+                        size={16}
+                        color="#BD8C5E"
+                      />
+                    </TouchableOpacity>
+                  )}
+
+                  {showBreakdown && fareEstimate.fare_breakdown && (
+                    <View className="border-t border-gray-200 dark:border-gray-700 pt-3 mb-2">
+                      <View className="flex-row justify-between mb-1 px-2">
+                        <ThemedText variant="tiny" className="text-gray-500">Base fare</ThemedText>
+                        <ThemedText variant="tiny" className="text-gray-500">
+                          {formatFare(parseFloat(fareEstimate.fare_breakdown.base_fare))}
+                        </ThemedText>
+                      </View>
+                      <View className="flex-row justify-between mb-1 px-2">
+                        <ThemedText variant="tiny" className="text-gray-500">
+                          {fareEstimate.fare_breakdown.distance_km && fareEstimate.fare_breakdown.per_km_rate
+                            ? `Distance (${parseFloat(fareEstimate.fare_breakdown.distance_km).toFixed(2)} km × ₹${fareEstimate.fare_breakdown.per_km_rate}/km)`
+                            : 'Distance fare'}
+                        </ThemedText>
+                        <ThemedText variant="tiny" className="text-gray-500">
+                          {formatFare(parseFloat(fareEstimate.fare_breakdown.distance_fare))}
+                        </ThemedText>
+                      </View>
+                      {fareEstimate.fare_breakdown.time_fare !== undefined && parseFloat(fareEstimate.fare_breakdown.time_fare) > 0 && (
+                        <View className="flex-row justify-between mb-1 px-2">
+                          <ThemedText variant="tiny" className="text-gray-500">Time fare</ThemedText>
+                          <ThemedText variant="tiny" className="text-gray-500">
+                            {formatFare(parseFloat(fareEstimate.fare_breakdown.time_fare))}
+                          </ThemedText>
+                        </View>
+                      )}
+                      {fareEstimate.fare_breakdown.subtotal !== undefined && (
+                        <View className="flex-row justify-between mb-1 px-2">
+                          <ThemedText variant="tiny" className="text-gray-500">Subtotal</ThemedText>
+                          <ThemedText variant="tiny" className="text-gray-500">
+                            {formatFare(parseFloat(fareEstimate.fare_breakdown.subtotal))}
+                          </ThemedText>
+                        </View>
+                      )}
+                      {fareEstimate.surge_multiplier !== undefined && fareEstimate.surge_multiplier > 1 && fareEstimate.fare_breakdown.surge_amount !== undefined && (
+                        <View className="flex-row justify-between mb-1 px-2">
+                          <ThemedText variant="tiny" className="text-gray-500">
+                            Surge x{fareEstimate.surge_multiplier.toFixed(2)}
+                          </ThemedText>
+                          <ThemedText variant="tiny" className="text-gray-500">
+                            {formatFare(parseFloat(fareEstimate.fare_breakdown.surge_amount))}
+                          </ThemedText>
+                        </View>
+                      )}
+                      {fareEstimate.fare_breakdown.insurance_premium !== undefined && parseFloat(fareEstimate.fare_breakdown.insurance_premium) > 0 && (
+                        <View className="flex-row justify-between mb-1 px-2">
+                          <ThemedText variant="tiny" className="text-green-600">Insurance Premium</ThemedText>
+                          <ThemedText variant="tiny" className="text-green-600">
+                            {formatFare(parseFloat(fareEstimate.fare_breakdown.insurance_premium))}
+                          </ThemedText>
+                        </View>
+                      )}
+                      {amenitiesTotal > 0 && (
+                        <View className="flex-row justify-between mb-1 px-2">
+                          <ThemedText variant="tiny" className="text-amber-600">Amenities ({selectedAmenitiesCount})</ThemedText>
+                          <ThemedText variant="tiny" className="text-amber-600">
+                            {formatFare(amenitiesTotal)}
+                          </ThemedText>
+                        </View>
+                      )}
+                      {fareEstimate.fare_breakdown.total !== undefined && (
+                        <>
+                          <View className="border-t border-gray-200 dark:border-gray-600 mt-1 mb-1 mx-2" />
+                          <View className="flex-row justify-between mb-1 px-2">
+                            <ThemedText variant="tiny" className="text-gray-500 font-semibold">Total</ThemedText>
+                            <ThemedText variant="tiny" className="text-gray-500 font-semibold">
+                              {formatFare(parseFloat(fareEstimate.fare_breakdown.total))}
+                            </ThemedText>
+                          </View>
+                        </>
+                      )}
+                    </View>
+                  )}
+
+                  <ThemedText variant="tiny" className="text-gray-400 text-center">
+                    *Final fare may vary based on actual route and traffic
+                  </ThemedText>
+                </ThemedCard>
+              )}
+
+              {/* Book / Estimate Button */}
               <PrimaryButton
-                title="BOOK NOW"
+                title={fareEstimate ? 'BOOK NOW' : (pickupLocation?.address && dropLocation && selectedCar ? 'GET ESTIMATE' : 'BOOK NOW')}
                 onPress={handleBookNow}
-                loading={isCalculatingFare}
+                loading={fareEstimate ? isBooking : isCalculatingFare}
+                disabled={!pickupLocation?.address || !dropLocation || !selectedCar}
                 className="w-full"
               />
             </ThemedCard>
@@ -1108,7 +1443,7 @@ export default function BookRideScreen() {
                     <View className="flex-row justify-between items-center mb-2">
                       <ThemedText variant="h3">Estimated Fare</ThemedText>
                       <ThemedText variant="h2" className="text-burgundy">
-                        {formatFare(parseFloat(fareEstimate.estimated_fare))}
+                        {formatFare(Number(fareEstimate.estimated_fare))}
                       </ThemedText>
                     </View>
                     {fareEstimate.fare_breakdown && (
@@ -1120,7 +1455,11 @@ export default function BookRideScreen() {
                           </ThemedText>
                         </View>
                         <View className="flex-row justify-between mb-1 px-2">
-                          <ThemedText variant="tiny" className="text-gray-500">Distance fare</ThemedText>
+                          <ThemedText variant="tiny" className="text-gray-500">
+                            {fareEstimate.fare_breakdown.distance_km && fareEstimate.fare_breakdown.per_km_rate
+                              ? `Distance (${parseFloat(fareEstimate.fare_breakdown.distance_km).toFixed(2)} km × ₹${fareEstimate.fare_breakdown.per_km_rate}/km)`
+                              : 'Distance fare'}
+                          </ThemedText>
                           <ThemedText variant="tiny" className="text-gray-500">
                             {formatFare(parseFloat(fareEstimate.fare_breakdown.distance_fare))}
                           </ThemedText>
@@ -1159,13 +1498,24 @@ export default function BookRideScreen() {
                             </ThemedText>
                           </View>
                         )}
-                        {fareEstimate.fare_breakdown.total !== undefined && (
+                        {amenitiesTotal > 0 && (
                           <View className="flex-row justify-between mb-1 px-2">
-                            <ThemedText variant="tiny" className="text-gray-500 font-semibold">Total</ThemedText>
-                            <ThemedText variant="tiny" className="text-gray-500 font-semibold">
-                              {formatFare(parseFloat(fareEstimate.fare_breakdown.total))}
+                            <ThemedText variant="tiny" className="text-amber-600">Amenities ({selectedAmenitiesCount})</ThemedText>
+                            <ThemedText variant="tiny" className="text-amber-600">
+                              {formatFare(amenitiesTotal)}
                             </ThemedText>
                           </View>
+                        )}
+                        {fareEstimate.fare_breakdown.total !== undefined && (
+                          <>
+                            <View className="border-t border-gray-200 dark:border-gray-600 mt-1 mb-1 mx-2" />
+                            <View className="flex-row justify-between mb-1 px-2">
+                              <ThemedText variant="tiny" className="text-gray-500 font-semibold">Total</ThemedText>
+                              <ThemedText variant="tiny" className="text-gray-500 font-semibold">
+                                {formatFare(parseFloat(fareEstimate.fare_breakdown.total))}
+                              </ThemedText>
+                            </View>
+                          </>
                         )}
                       </>
                     )}
@@ -1202,6 +1552,40 @@ export default function BookRideScreen() {
                         name={selectedInsurancePlanId ? "checkmark-circle" : "chevron-forward"}
                         size={24}
                         color={selectedInsurancePlanId ? "#10B981" : "#3B82F6"}
+                      />
+                    </View>
+                  </TouchableOpacity>
+
+                  {/* Amenities Selection in Fare Modal */}
+                  <TouchableOpacity
+                    onPress={() => {
+                      setShowFareModal(false);
+                      setShowAmenityModal(true);
+                    }}
+                    className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800"
+                  >
+                    <View className="flex-row items-center justify-between">
+                      <View className="flex-row items-center">
+                        <View className="w-10 h-10 bg-amber-100 rounded-full items-center justify-center mr-3">
+                          <Ionicons name="cafe" size={20} color="#D97706" />
+                        </View>
+                        <View>
+                          <ThemedText variant="small" className="font-semibold">
+                            {selectedAmenitiesCount > 0
+                              ? `${selectedAmenitiesCount} Amenit${selectedAmenitiesCount === 1 ? 'y' : 'ies'} Added`
+                              : 'Add Amenities'}
+                          </ThemedText>
+                          <ThemedText variant="tiny" className="text-gray-500">
+                            {selectedAmenitiesCount > 0
+                              ? `${formatFare(amenitiesTotal)} total`
+                              : 'Customize your ride experience'}
+                          </ThemedText>
+                        </View>
+                      </View>
+                      <Ionicons
+                        name={selectedAmenitiesCount > 0 ? "checkmark-circle" : "chevron-forward"}
+                        size={24}
+                        color={selectedAmenitiesCount > 0 ? "#10B981" : "#D97706"}
                       />
                     </View>
                   </TouchableOpacity>
@@ -1308,6 +1692,152 @@ export default function BookRideScreen() {
                   <TouchableOpacity onPress={clearInsurance} className="py-3 items-center">
                     <ThemedText className="text-gray-500 text-center">Remove Insurance</ThemedText>
                   </TouchableOpacity>
+                )}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Amenity Selection Modal */}
+        <Modal
+          visible={showAmenityModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowAmenityModal(false)}
+        >
+          <View className="flex-1 justify-end bg-black/50">
+            <View className={`${isDarkMode ? 'bg-darkSurface' : 'bg-white'} rounded-t-3xl p-6 max-h-[85%]`}>
+              <View className="flex-row justify-between items-center mb-4">
+                <ThemedText variant="h2">Add Amenities</ThemedText>
+                <TouchableOpacity onPress={() => setShowAmenityModal(false)}>
+                  <Ionicons name="close" size={24} color={isDarkMode ? '#fff' : '#000'} />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {isLoadingAmenities && (
+                  <View className="py-8 items-center">
+                    <ActivityIndicator size="large" color="#BD8C5E" />
+                    <ThemedText className="mt-3 text-gray-500">Loading amenities...</ThemedText>
+                  </View>
+                )}
+
+                {!isLoadingAmenities && availableAmenities.length === 0 && (
+                  <View className="py-8 items-center">
+                    <Ionicons name="cafe-outline" size={40} color="#999" />
+                    <ThemedText className="mt-3 text-gray-500">No amenities available</ThemedText>
+                  </View>
+                )}
+
+                {!isLoadingAmenities && (Object.entries(groupedAvailableAmenities) as [AmenityCategory, Amenity[]][]).map(([category, items]) => {
+                  if (items.length === 0) return null;
+                  const categoryEmoji = category === 'refreshment' ? '💧' : category === 'comfort' ? '🛋️' : '✨';
+                  return (
+                    <View key={category} className="mb-5">
+                      <ThemedText variant="h3" className="mb-3">
+                        {categoryEmoji} {AmenityApiService.getCategoryDisplayName(category)}
+                      </ThemedText>
+                      {items.map((amenity) => {
+                        const isSelected = selectedAmenities.has(amenity.id);
+                        const entry = selectedAmenities.get(amenity.id);
+                        const quantity = entry?.quantity || 1;
+                        return (
+                          <TouchableOpacity
+                            key={amenity.id}
+                            onPress={() => toggleAmenity(amenity)}
+                            className={`mb-2 p-3 rounded-xl border-2 ${
+                              isSelected
+                                ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
+                                : 'border-gray-200 dark:border-gray-700'
+                            }`}
+                            activeOpacity={0.8}
+                          >
+                            <View className="flex-row items-center justify-between">
+                              <View className="flex-row items-center flex-1">
+                                <Ionicons
+                                  name={AmenityApiService.getCategoryIcon(category) as any}
+                                  size={20}
+                                  color={isSelected ? '#D97706' : '#999'}
+                                />
+                                <View className="ml-3 flex-1">
+                                  <ThemedText variant="small" className="font-semibold">{amenity.name}</ThemedText>
+                                  <ThemedText variant="tiny" className="text-gray-500">{amenity.description}</ThemedText>
+                                </View>
+                              </View>
+                              <View className="items-end ml-2">
+                                <ThemedText variant="small" className="font-bold text-amber-600">
+                                  {AmenityApiService.formatPrice(amenity.price)}
+                                </ThemedText>
+                                <View className={`w-5 h-5 rounded-full border-2 mt-1 items-center justify-center ${
+                                  isSelected ? 'border-amber-500 bg-amber-500' : 'border-gray-300'
+                                }`}>
+                                  {isSelected && <Ionicons name="checkmark" size={12} color="white" />}
+                                </View>
+                              </View>
+                            </View>
+
+                            {isSelected && (
+                              <View className="flex-row items-center justify-between mt-2 pt-2 border-t border-amber-200 dark:border-amber-700">
+                                <ThemedText variant="tiny" className="text-gray-500">Quantity</ThemedText>
+                                <View className="flex-row items-center">
+                                  <TouchableOpacity
+                                    onPress={(e) => { e.stopPropagation(); updateAmenityQuantity(amenity.id, quantity - 1); }}
+                                    className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 items-center justify-center"
+                                  >
+                                    <Ionicons name="remove" size={16} color={isDarkMode ? '#fff' : '#333'} />
+                                  </TouchableOpacity>
+                                  <ThemedText className="mx-3 font-semibold">{quantity}</ThemedText>
+                                  <TouchableOpacity
+                                    onPress={(e) => { e.stopPropagation(); updateAmenityQuantity(amenity.id, quantity + 1); }}
+                                    className="w-7 h-7 rounded-full bg-amber-500 items-center justify-center"
+                                  >
+                                    <Ionicons name="add" size={16} color="white" />
+                                  </TouchableOpacity>
+                                  <ThemedText variant="small" className="ml-3 font-semibold text-amber-600">
+                                    {formatFare(AmenityApiService.parsePrice(amenity.price) * quantity)}
+                                  </ThemedText>
+                                </View>
+                              </View>
+                            )}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  );
+                })}
+
+                {/* Total & Confirm */}
+                {!isLoadingAmenities && (
+                  <>
+                    {selectedAmenitiesCount > 0 && (
+                      <View className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 mb-3">
+                        <View className="flex-row justify-between items-center">
+                          <ThemedText variant="small" className="text-gray-600">
+                            {selectedAmenitiesCount} item{selectedAmenitiesCount !== 1 ? 's' : ''} selected
+                          </ThemedText>
+                          <ThemedText variant="h3" className="text-amber-600">
+                            {formatFare(amenitiesTotal)}
+                          </ThemedText>
+                        </View>
+                      </View>
+                    )}
+                    <PrimaryButton
+                      title={selectedAmenitiesCount > 0 ? `Add ${selectedAmenitiesCount} Amenities` : 'Continue Without Amenities'}
+                      onPress={() => setShowAmenityModal(false)}
+                      className="mt-1 mb-2"
+                    />
+                    {selectedAmenitiesCount > 0 && (
+                      <TouchableOpacity
+                        onPress={() => {
+                          setSelectedAmenities(new Map());
+                          setShowAmenityModal(false);
+                        }}
+                        className="py-3 items-center"
+                      >
+                        <ThemedText className="text-gray-500 text-center">Remove All Amenities</ThemedText>
+                      </TouchableOpacity>
+                    )}
+                  </>
                 )}
               </ScrollView>
             </View>

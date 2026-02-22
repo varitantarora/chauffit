@@ -10,6 +10,7 @@ export interface CustomerCarApi {
   plate: string;
   color: string;
   vehicle_type: CustomerVehicleType;
+  transmission?: 'manual' | 'automatic';
   display_name?: string;
   is_active?: boolean;
   created_at?: string;
@@ -23,6 +24,7 @@ export interface CustomerCarRequest {
   plate: string;
   color: string;
   vehicle_type: CustomerVehicleType;
+  transmission?: 'manual' | 'automatic';
   is_active?: boolean;
 }
 

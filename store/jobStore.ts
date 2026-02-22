@@ -416,7 +416,7 @@ const mapBookingToJobRequest = (booking: BookingDetail, status: JobRequest['stat
     scheduledTime: booking.scheduled_at ? new Date(booking.scheduled_at) : new Date(),
     estimatedDuration: booking.estimated_duration_minutes || 30,
     estimatedDistance: parseFloat(String(booking.estimated_distance_km)) || 10,
-    serviceType: booking.trip_type === 'hourly_charter' ? 'hourly' : 'trip',
+    serviceType: (booking.trip_type === 'hourly_charter' || booking.trip_type === 'hourly') ? 'hourly' : 'trip',
     fare: parseFloat(String(booking.estimated_fare)) || 0,
     vehicleType: 'sedan',
     status,

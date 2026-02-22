@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { ScrollView, TouchableOpacity, View, Image, Animated, Dimensions, Modal } from 'react-native';
+import React, { useRef, useState, useEffect } from 'react';
+import { ScrollView, TouchableOpacity, View, Image, Animated, Dimensions, Modal, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../../components/common/ThemedView';
 import { ThemedCard } from '../../../components/common/ThemedCard';
@@ -7,6 +7,7 @@ import { ThemedText } from '../../../components/common/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../store/authStore';
 import { useRouter } from 'expo-router';
+import AmenityApiService, { Amenity, AmenityCategory } from '../../../services/api/AmenityApiService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -16,6 +17,8 @@ export default function ServicesScreen() {
   const scrollX = useRef(new Animated.Value(0)).current;
   const [showAmenitiesModal, setShowAmenitiesModal] = useState(false);
   const [showCorporateModal, setShowCorporateModal] = useState(false);
+  const [amenities, setAmenities] = useState<Amenity[]>([]);
+  const [isLoadingAmenities, setIsLoadingAmenities] = useState(false);
 
   const iconColor = isDarkMode ? '#BD8C5E' : '#720C17';
 
@@ -70,31 +73,18 @@ export default function ServicesScreen() {
     { id: 4, name: 'Wedding Service', description: 'Make your day special', image: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=80' },
   ];
 
-  // Amenities data
-  const amenitiesData = {
-    refreshments: [
-      { id: 'water', label: 'Water Bottle', icon: 'water-outline' },
-      { id: 'cold-drinks', label: 'Cold Drinks', icon: 'cafe-outline' },
-      { id: 'snacks', label: 'Snacks/Chips', icon: 'fast-food-outline' },
-      { id: 'fruits', label: 'Fresh Fruits', icon: 'nutrition-outline' },
-    ],
-    comfort: [
-      { id: 'tissues', label: 'Tissues', icon: 'document-outline' },
-      { id: 'sanitizer', label: 'Hand Sanitizer', icon: 'hand-left-outline' },
-      { id: 'wipes', label: 'Wet Wipes', icon: 'water-outline' },
-      { id: 'charger', label: 'Phone Charger', icon: 'battery-charging-outline' },
-    ],
-    aromatherapy: [
-      { id: 'lavender', label: 'Lavender Scent', icon: 'flower-outline' },
-      { id: 'citrus', label: 'Citrus Fresh', icon: 'leaf-outline' },
-      { id: 'no-fragrance', label: 'No Fragrance', icon: 'close-circle-outline' },
-    ],
-    entertainment: [
-      { id: 'spotify', label: 'Spotify Premium', icon: 'musical-notes-outline' },
-      { id: 'bluetooth', label: 'Bluetooth Audio', icon: 'bluetooth-outline' },
-      { id: 'newspaper', label: 'Newspaper/Magazine', icon: 'newspaper-outline' },
-    ],
-  };
+  // Fetch amenities from API when modal opens
+  useEffect(() => {
+    if (showAmenitiesModal && amenities.length === 0) {
+      setIsLoadingAmenities(true);
+      AmenityApiService.listAmenities().then((res) => {
+        if (res.success && res.data) setAmenities(res.data);
+        setIsLoadingAmenities(false);
+      });
+    }
+  }, [showAmenitiesModal]);
+
+  const groupedAmenities = AmenityApiService.groupByCategory(amenities);
 
   // Corporate benefits
   const corporateBenefits = [
@@ -412,65 +402,44 @@ export default function ServicesScreen() {
               </View>
 
               <ScrollView showsVerticalScrollIndicator={false}>
-                {/* Refreshments */}
-                <View className="mb-6">
-                  <ThemedText variant="title" className="mb-3">💧 Refreshments</ThemedText>
-                  <View className="flex-row flex-wrap">
-                    {amenitiesData.refreshments.map((item) => (
-                      <View key={item.id} className="w-1/2 p-1">
-                        <ThemedCard className="flex-row items-center py-3 px-3">
-                          <Ionicons name={item.icon as any} size={20} color="#BD8C5E" />
-                          <ThemedText variant="small" className="ml-2 flex-1">{item.label}</ThemedText>
-                        </ThemedCard>
-                      </View>
-                    ))}
+                {isLoadingAmenities && (
+                  <View className="py-8 items-center">
+                    <ActivityIndicator size="large" color="#BD8C5E" />
+                    <ThemedText className="mt-3 text-gray-500">Loading amenities...</ThemedText>
                   </View>
-                </View>
+                )}
 
-                {/* Comfort */}
-                <View className="mb-6">
-                  <ThemedText variant="title" className="mb-3">🛋️ Comfort</ThemedText>
-                  <View className="flex-row flex-wrap">
-                    {amenitiesData.comfort.map((item) => (
-                      <View key={item.id} className="w-1/2 p-1">
-                        <ThemedCard className="flex-row items-center py-3 px-3">
-                          <Ionicons name={item.icon as any} size={20} color="#BD8C5E" />
-                          <ThemedText variant="small" className="ml-2 flex-1">{item.label}</ThemedText>
-                        </ThemedCard>
-                      </View>
-                    ))}
+                {!isLoadingAmenities && amenities.length === 0 && (
+                  <View className="py-8 items-center">
+                    <Ionicons name="cafe-outline" size={40} color="#999" />
+                    <ThemedText className="mt-3 text-gray-500">No amenities available</ThemedText>
                   </View>
-                </View>
+                )}
 
-                {/* Aromatherapy */}
-                <View className="mb-6">
-                  <ThemedText variant="title" className="mb-3">🌸 Aromatherapy</ThemedText>
-                  <View className="flex-row flex-wrap">
-                    {amenitiesData.aromatherapy.map((item) => (
-                      <View key={item.id} className="w-1/3 p-1" style={{ height: 80 }}>
-                        <ThemedCard className="items-center justify-center py-3 px-2 h-full">
-                          <Ionicons name={item.icon as any} size={20} color="#BD8C5E" />
-                          <ThemedText variant="caption" className="mt-1 text-center" numberOfLines={2}>{item.label}</ThemedText>
-                        </ThemedCard>
+                {!isLoadingAmenities && (Object.entries(groupedAmenities) as [AmenityCategory, Amenity[]][]).map(([category, items]) => {
+                  if (items.length === 0) return null;
+                  const categoryEmoji = category === 'refreshment' ? '💧' : category === 'comfort' ? '🛋️' : '✨';
+                  return (
+                    <View key={category} className="mb-6">
+                      <ThemedText variant="title" className="mb-3">
+                        {categoryEmoji} {AmenityApiService.getCategoryDisplayName(category)}
+                      </ThemedText>
+                      <View className="flex-row flex-wrap">
+                        {items.map((item) => (
+                          <View key={item.id} className="w-1/2 p-1">
+                            <ThemedCard className="flex-row items-center py-3 px-3">
+                              <Ionicons name={AmenityApiService.getCategoryIcon(category) as any} size={20} color="#BD8C5E" />
+                              <View className="ml-2 flex-1">
+                                <ThemedText variant="small" numberOfLines={1}>{item.name}</ThemedText>
+                                <ThemedText variant="tiny" className="text-secondary">{AmenityApiService.formatPrice(item.price)}</ThemedText>
+                              </View>
+                            </ThemedCard>
+                          </View>
+                        ))}
                       </View>
-                    ))}
-                  </View>
-                </View>
-
-                {/* Entertainment */}
-                <View className="mb-6">
-                  <ThemedText variant="title" className="mb-3">🎵 Entertainment</ThemedText>
-                  <View className="flex-row flex-wrap">
-                    {amenitiesData.entertainment.map((item) => (
-                      <View key={item.id} className="w-1/3 p-1" style={{ height: 80 }}>
-                        <ThemedCard className="items-center justify-center py-3 px-2 h-full">
-                          <Ionicons name={item.icon as any} size={20} color="#BD8C5E" />
-                          <ThemedText variant="caption" className="mt-1 text-center" numberOfLines={2}>{item.label}</ThemedText>
-                        </ThemedCard>
-                      </View>
-                    ))}
-                  </View>
-                </View>
+                    </View>
+                  );
+                })}
 
                 <ThemedText variant="caption" className="text-center text-textSecondary dark:text-darkTextSecondary mt-4">
                   Select amenities during booking to customize your ride experience

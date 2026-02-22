@@ -22,7 +22,7 @@ export type BookingStatus =
 /**
  * Trip Type
  */
-export type TripType = 'one_way' | 'round_trip' | 'hourly_charter';
+export type TripType = 'one_way' | 'round_trip' | 'hourly';
 
 /**
  * Service Type
@@ -158,9 +158,9 @@ export interface FareEstimateInsurance {
  * Fare Estimate Response
  */
 export interface FareEstimateResponse {
-  estimated_distance_km: number;
-  estimated_duration_minutes: number;
-  estimated_fare: string;
+  estimated_distance_km: number | null;
+  estimated_duration_minutes: number | null;
+  estimated_fare: string | number;
   surge_multiplier?: number;
   insurance?: FareEstimateInsurance;
   fare_breakdown?: {
@@ -173,7 +173,18 @@ export interface FareEstimateResponse {
     insurance_premium?: string;
     subtotal?: string;
     total?: string;
+    per_km_rate?: string;
+    distance_km?: string;
   };
+  breakdown?: Record<string, any>;
+  route?: { distance_km: number; duration_minutes: number; total_distance_km?: number; total_duration_minutes?: number };
+  trip?: { type: string; vehicle_segment: string; when: string; scheduled_at?: string | null };
+  pricing_factors?: { surge_active: boolean; surge_multiplier: number; is_night_surcharge: boolean; hours_booked?: number };
+  estimate?: { total_fare: number; currency: string; fare_range?: { min: number; max: number } };
+  amenities?: any[];
+  trip_type?: string;
+  vehicle_segment?: string;
+  is_night?: boolean;
 }
 
 /**
@@ -365,7 +376,43 @@ class BookingApiService {
    */
   async getFareEstimate(data: FareEstimateRequest): Promise<ApiResponse<FareEstimateResponse>> {
     try {
-      return await BaseApiService.post<FareEstimateResponse>(`${this.basePath}/estimate/`, data);
+      const result = await BaseApiService.post<FareEstimateResponse>(`${this.basePath}/estimate/`, data);
+
+      // Normalize: API returns "breakdown" but our UI expects "fare_breakdown"
+      if (result.success && result.data) {
+        const d = result.data;
+
+        // Normalize estimated_fare to string for backward compat
+        if (typeof d.estimated_fare === 'number') {
+          d.estimated_fare = String(d.estimated_fare);
+        }
+
+        // Populate surge_multiplier from pricing_factors if not at top level
+        if (d.surge_multiplier == null && d.pricing_factors?.surge_multiplier != null) {
+          d.surge_multiplier = d.pricing_factors.surge_multiplier;
+        }
+
+        if (!d.fare_breakdown && d.breakdown) {
+          const b = d.breakdown;
+          const surgeAmount = (b.surge_multiplier > 1 && b.subtotal != null && b.total != null)
+            ? b.total - b.subtotal
+            : (b.surge_amount != null ? b.surge_amount : undefined);
+
+          d.fare_breakdown = {
+            base_fare: String(b.base_fare ?? 0),
+            distance_fare: String(b.distance_fare ?? 0),
+            per_km_rate: b.per_km_rate != null ? String(b.per_km_rate) : undefined,
+            distance_km: b.distance_km != null ? String(b.distance_km) : undefined,
+            time_fare: b.time_fare != null ? String(b.time_fare) : undefined,
+            surge_amount: surgeAmount != null ? String(surgeAmount) : undefined,
+            insurance_premium: d.insurance?.premium_amount != null ? String(d.insurance.premium_amount) : (b.insurance_premium != null ? String(b.insurance_premium) : undefined),
+            subtotal: b.subtotal != null ? String(b.subtotal) : undefined,
+            total: b.total != null ? String(b.total) : (b.total_fare != null ? String(b.total_fare) : undefined),
+          };
+        }
+      }
+
+      return result;
     } catch (error) {
       return {
         success: false,

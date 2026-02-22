@@ -17,6 +17,8 @@ export interface CustomerCar {
   color: string;
   registrationNumber: string;
   isDefault: boolean;
+  vehicleType?: string;
+  transmission?: 'manual' | 'automatic';
 }
 
 export interface Chauffeur {

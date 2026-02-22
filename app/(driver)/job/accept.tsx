@@ -58,7 +58,7 @@ export default function JobAcceptScreen() {
     scheduledTime: booking.scheduled_at ? new Date(booking.scheduled_at) : new Date(booking.created_at),
     estimatedDuration: booking.estimated_duration_minutes || 30,
     estimatedDistance: parseFloat(booking.estimated_distance_km || '0') || 10,
-    serviceType: booking.trip_type === 'hourly_charter' ? 'hourly' : 'trip',
+    serviceType: (booking.trip_type === 'hourly_charter' || booking.trip_type === 'hourly') ? 'hourly' : 'trip',
     fare: parseFloat(booking.estimated_fare) || 0,
     vehicleType: 'sedan',
     status,
