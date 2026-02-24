@@ -285,16 +285,16 @@ export default function CustomerHomeScreen() {
                 initialRegion={{
                   latitude: userLocation.latitude,
                   longitude: userLocation.longitude,
-                  latitudeDelta: 0.015,
-                  longitudeDelta: 0.015,
+                  latitudeDelta: 25,
+                  longitudeDelta: 25,
                 }}
                 showsUserLocation
-                scrollEnabled={false}
-                zoomEnabled={false}
-                rotateEnabled={false}
-                pitchEnabled={false}
-                showsMyLocationButton={false}
-                showsCompass={false}
+                scrollEnabled={true}
+                zoomEnabled={true}
+                rotateEnabled={true}
+                pitchEnabled={true}
+                showsMyLocationButton={true}
+                showsCompass={true}
               />
             ) : (
               <View style={{ flex: 1, backgroundColor: isDarkMode ? '#1a1a2e' : '#e8e4df' }} />
