@@ -12,6 +12,8 @@ import MapViewDirections from 'react-native-maps-directions';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { LightColors } from '../../constants/Colors';
+import { useAuthStore } from '../../store/authStore';
+import { DarkMapStyle } from '../../constants/MapStyles';
 
 const { width, height } = Dimensions.get('window');
 const ASPECT_RATIO = width / height;
@@ -77,6 +79,7 @@ const UniversalMapView = forwardRef<MapViewRef, UniversalMapViewProps>(({
   style,
   children
 }, ref) => {
+  const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const mapRef = useRef<MapView>(null);
   const [currentLocation, setCurrentLocation] = useState<LatLng | null>(null);
   const [region, setRegion] = useState<Region>(initialRegion);
@@ -209,6 +212,7 @@ const UniversalMapView = forwardRef<MapViewRef, UniversalMapViewProps>(({
   return (
     <View className={`flex-1 ${className}`} style={[{ flex: 1 }, style]}>
       <MapView
+        key={isDarkMode ? 'dark' : 'light'}
         ref={mapRef}
         provider={PROVIDER_GOOGLE}
         style={{ flex: 1 }}
@@ -229,6 +233,7 @@ const UniversalMapView = forwardRef<MapViewRef, UniversalMapViewProps>(({
         onRegionChangeComplete={setRegion}
         onMapReady={() => console.log('✓ Native Map is ready')}
         mapType="standard"
+        customMapStyle={isDarkMode ? DarkMapStyle : undefined}
       >
         {/* Render custom markers */}
         {markers.map((marker) => (

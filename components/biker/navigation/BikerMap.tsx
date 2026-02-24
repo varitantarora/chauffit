@@ -8,6 +8,7 @@ import { ThemedCard } from '../../common/ThemedCard';
 import { Location as LocationType } from '../../../types/navigation';
 import { useAuthStore } from '../../../store/authStore';
 import BikerApiService from '../../../services/api/BikerApiService';
+import { DarkMapStyle } from '../../../constants/MapStyles';
 
 interface BikerMapProps {
   pickupLocation: LocationType;
@@ -218,7 +219,7 @@ export function BikerMap({
           style={{ flex: 1 }}
           initialRegion={getInitialRegion()}
           onMapReady={() => setMapReady(true)}
-          customMapStyle={isDarkMode ? darkMapStyle : undefined}
+          customMapStyle={isDarkMode ? DarkMapStyle : undefined}
           showsUserLocation={false}
           showsMyLocationButton={false}
           showsTraffic={false}
@@ -285,7 +286,7 @@ export function BikerMap({
         style={{ flex: 1 }}
         initialRegion={getInitialRegion()}
         onMapReady={() => setMapReady(true)}
-        customMapStyle={isDarkMode ? darkMapStyle : undefined}
+        customMapStyle={isDarkMode ? DarkMapStyle : undefined}
         showsUserLocation={false}
         showsMyLocationButton={false}
         showsTraffic={true}
@@ -332,7 +333,6 @@ export function BikerMap({
             coordinates={route}
             strokeColor="#bd8c5e"
             strokeWidth={4}
-            strokePattern={[1]}
           />
         )}
       </MapView>
@@ -378,42 +378,3 @@ export function BikerMap({
   );
 }
 
-// Dark mode map style
-const darkMapStyle = [
-  {
-    elementType: "geometry",
-    stylers: [{ color: "#212121" }]
-  },
-  {
-    elementType: "labels.icon",
-    stylers: [{ visibility: "off" }]
-  },
-  {
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#757575" }]
-  },
-  {
-    elementType: "labels.text.stroke",
-    stylers: [{ color: "#212121" }]
-  },
-  {
-    featureType: "administrative",
-    elementType: "geometry",
-    stylers: [{ color: "#757575" }]
-  },
-  {
-    featureType: "road",
-    elementType: "geometry.fill",
-    stylers: [{ color: "#2c2c2c" }]
-  },
-  {
-    featureType: "road",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#8a8a8a" }]
-  },
-  {
-    featureType: "water",
-    elementType: "geometry",
-    stylers: [{ color: "#000000" }]
-  }
-];

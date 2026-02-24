@@ -9,6 +9,7 @@ import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { useAuthStore } from '../../../store/authStore';
 import { useBookingStore } from '../../../store/bookingStore';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { DarkMapStyle } from '../../../constants/MapStyles';
 
 export default function RideTracking() {
   const [mapRegion, setMapRegion] = useState({
@@ -136,12 +137,14 @@ export default function RideTracking() {
         {/* Map View */}
         <View className="flex-1 relative">
           <MapView
+            key={isDarkMode ? 'dark' : 'light'}
             className="flex-1"
             region={mapRegion}
             onRegionChange={setMapRegion}
             showsUserLocation={true}
             showsMyLocationButton={false}
             style={{ flex: 1 }}
+            customMapStyle={isDarkMode ? DarkMapStyle : undefined}
           >
             {/* Chauffeur Marker */}
             {activeRideTracking && (
@@ -184,7 +187,6 @@ export default function RideTracking() {
                 }))}
                 strokeColor="#BD8C5E"
                 strokeWidth={4}
-                strokePattern={[1]}
               />
             )}
           </MapView>

@@ -13,6 +13,7 @@ import BlogApiService, { BlogListItem } from '../../../services/api/BlogApiServi
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { BlurView } from 'expo-blur';
+import { DarkMapStyle } from '../../../constants/MapStyles';
 
 export default function CustomerHomeScreen() {
   const user = useAuthStore((state) => state.user);
@@ -280,6 +281,7 @@ export default function CustomerHomeScreen() {
             {/* Map Background */}
             {userLocation ? (
               <MapView
+                key={isDarkMode ? 'dark' : 'light'}
                 provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
                 style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
                 initialRegion={{
@@ -295,9 +297,10 @@ export default function CustomerHomeScreen() {
                 pitchEnabled={true}
                 showsMyLocationButton={true}
                 showsCompass={true}
+                customMapStyle={isDarkMode ? DarkMapStyle : undefined}
               />
             ) : (
-              <View style={{ flex: 1, backgroundColor: isDarkMode ? '#1a1a2e' : '#e8e4df' }} />
+              <View style={{ flex: 1, backgroundColor: isDarkMode ? '#1a1a1a' : '#e8e4df' }} />
             )}
 
             {/* Header overlay */}
@@ -357,7 +360,7 @@ export default function CustomerHomeScreen() {
                   <View
                     style={{
                       flex: 1,
-                      backgroundColor: isDarkMode ? 'rgba(30,30,40,0.75)' : 'rgba(255,255,255,0.8)',
+                      backgroundColor: isDarkMode ? 'rgba(26,26,26,0.75)' : 'rgba(255,255,255,0.8)',
                       borderRadius: 16,
                     }}
                   >
@@ -437,9 +440,9 @@ export default function CustomerHomeScreen() {
                             paddingVertical: 12,
                             borderRadius: 10,
                             marginBottom: 12,
-                            backgroundColor: isDarkMode ? 'rgba(40,40,50,0.6)' : 'rgba(245,245,245,0.7)',
+                            backgroundColor: isDarkMode ? 'rgba(44,44,44,0.6)' : 'rgba(245,245,245,0.7)',
                             borderWidth: 1,
-                            borderColor: isDarkMode ? 'rgba(80,80,90,0.5)' : 'rgba(200,200,200,0.6)',
+                            borderColor: isDarkMode ? 'rgba(74,74,74,0.5)' : 'rgba(200,200,200,0.6)',
                           }}
                         >
                           <Ionicons name="location" size={20} color="#10b981" />
@@ -478,9 +481,9 @@ export default function CustomerHomeScreen() {
                             paddingVertical: 12,
                             borderRadius: 10,
                             marginBottom: 16,
-                            backgroundColor: isDarkMode ? 'rgba(40,40,50,0.6)' : 'rgba(245,245,245,0.7)',
+                            backgroundColor: isDarkMode ? 'rgba(44,44,44,0.6)' : 'rgba(245,245,245,0.7)',
                             borderWidth: 1,
-                            borderColor: isDarkMode ? 'rgba(80,80,90,0.5)' : 'rgba(200,200,200,0.6)',
+                            borderColor: isDarkMode ? 'rgba(74,74,74,0.5)' : 'rgba(200,200,200,0.6)',
                           }}
                         >
                           <Ionicons name="location" size={20} color="#ef4444" />
