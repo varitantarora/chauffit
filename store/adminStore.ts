@@ -72,10 +72,10 @@ interface AdminState {
   updateUserStatus: (id: string, status: string) => Promise<boolean>;
   fetchDrivers: () => Promise<void>;
   fetchPendingDrivers: () => Promise<void>;
-  verifyDriver: (id: string, isVerified: boolean, rejectionReason?: string) => Promise<boolean>;
+  verifyDriver: (id: string, isApproved: boolean, rejectionReason?: string) => Promise<boolean>;
   fetchBikers: () => Promise<void>;
   fetchPendingBikers: () => Promise<void>;
-  verifyBiker: (id: string, isVerified: boolean, rejectionReason?: string) => Promise<boolean>;
+  verifyBiker: (id: string, isApproved: boolean, rejectionReason?: string) => Promise<boolean>;
   fetchRides: (params?: { status?: string; search?: string }) => Promise<void>;
   fetchRideDetail: (id: string) => Promise<AdminRideDetail | null>;
   dispatchRide: (id: string, driverId: string) => Promise<boolean>;
@@ -198,8 +198,11 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     }
   },
 
-  verifyDriver: async (id, isVerified, rejectionReason) => {
-    const res = await AdminApiService.verifyDriver(id, { is_verified: isVerified, rejection_reason: rejectionReason });
+  verifyDriver: async (id, isApproved, rejectionReason) => {
+    const res = await AdminApiService.verifyDriver(id, {
+      current_status: isApproved ? 'active' : 'suspended',
+      background_check_status: isApproved ? 'verified' : 'failed',
+    });
     if (res.success) {
       get().fetchPendingDrivers();
       get().fetchDashboard();
@@ -230,8 +233,11 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     }
   },
 
-  verifyBiker: async (id, isVerified, rejectionReason) => {
-    const res = await AdminApiService.verifyBiker(id, { is_verified: isVerified, rejection_reason: rejectionReason });
+  verifyBiker: async (id, isApproved, rejectionReason) => {
+    const res = await AdminApiService.verifyBiker(id, {
+      current_status: isApproved ? 'active' : 'suspended',
+      background_check_status: isApproved ? 'verified' : 'failed',
+    });
     if (res.success) {
       get().fetchPendingBikers();
       get().fetchDashboard();

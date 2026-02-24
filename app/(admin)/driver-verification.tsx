@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View, Alert } from 'react-native';
+import { ScrollView, View, Alert, Modal, TextInput, TouchableOpacity, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,7 +9,7 @@ import { StatusBadge } from '../../components/admin/StatusBadge';
 import { useAdminStore } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
 import { LightColors, DarkColors } from '../../constants/Colors';
-import AdminApiService, { AdminDriver } from '../../services/api/AdminApiService';
+import AdminApiService, { AdminDriver, AdminDocument } from '../../services/api/AdminApiService';
 
 export default function DriverVerification() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -19,47 +19,87 @@ export default function DriverVerification() {
   const { verifyDriver } = useAdminStore();
   const [driver, setDriver] = useState<AdminDriver | null>(null);
   const [loading, setLoading] = useState(false);
+  const [rejectionModalVisible, setRejectionModalVisible] = useState(false);
+  const [rejectionTarget, setRejectionTarget] = useState<{ type: 'driver' | 'document'; docId?: string } | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
 
   useEffect(() => {
     if (id) loadDriver();
   }, [id]);
 
   const loadDriver = async () => {
-    // Fetch via pending drivers or drivers list
-    const res = await AdminApiService.getPendingDrivers();
+    if (!id) return;
+    const res = await AdminApiService.getDriver(id);
     if (res.success && res.data) {
-      const list = Array.isArray(res.data) ? res.data : (res.data as any).results || [];
-      const found = list.find((d: AdminDriver) => d.id === id);
-      if (found) setDriver(found);
+      setDriver(res.data);
     }
   };
 
   const handleVerify = (approve: boolean) => {
     if (!id) return;
-    const action = approve ? 'approve' : 'reject';
-    Alert.alert(
-      `${approve ? 'Approve' : 'Reject'} Driver`,
-      `Are you sure you want to ${action} this driver?`,
-      [
+    if (!approve) {
+      setRejectionTarget({ type: 'driver' });
+      setRejectionModalVisible(true);
+    } else {
+      Alert.alert(
+        'Approve Driver',
+        'Are you sure you want to approve this driver?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Confirm',
+            style: 'default',
+            onPress: async () => {
+              setLoading(true);
+              const success = await verifyDriver(id, true);
+              setLoading(false);
+              if (success) router.back();
+            },
+          },
+        ]
+      );
+    }
+  };
+
+  const handleDocVerify = (docId: string, approve: boolean) => {
+    if (!approve) {
+      setRejectionTarget({ type: 'document', docId });
+      setRejectionModalVisible(true);
+    } else {
+      if (!id) return;
+      Alert.alert('Approve Document', 'Approve this document?', [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Confirm',
-          style: approve ? 'default' : 'destructive',
           onPress: async () => {
-            setLoading(true);
-            const success = await verifyDriver(id, approve, approve ? undefined : 'Rejected by admin');
-            setLoading(false);
-            if (success) router.back();
+            await AdminApiService.verifyDriverDocument(id, docId, { verification_status: 'approved' });
+            loadDriver();
           },
         },
-      ]
-    );
+      ]);
+    }
   };
 
-  const handleDocVerify = async (docId: string, approve: boolean) => {
-    if (!id) return;
-    await AdminApiService.verifyDriverDocument(id, docId, { is_verified: approve });
-    loadDriver();
+  const handleSubmitRejection = async () => {
+    if (!rejectionTarget || !id) return;
+
+    setRejectionModalVisible(false);
+
+    if (rejectionTarget.type === 'driver') {
+      setLoading(true);
+      const success = await verifyDriver(id, false, rejectionReason || undefined);
+      setLoading(false);
+      if (success) router.back();
+    } else if (rejectionTarget.type === 'document' && rejectionTarget.docId) {
+      await AdminApiService.verifyDriverDocument(id, rejectionTarget.docId, {
+        verification_status: 'rejected',
+        rejection_reason: rejectionReason || undefined,
+      });
+      loadDriver();
+    }
+
+    setRejectionReason('');
+    setRejectionTarget(null);
   };
 
   return (
@@ -78,7 +118,7 @@ export default function DriverVerification() {
               <ThemedText variant="h2">{driver.user_details.full_name || `${driver.user_details.first_name} ${driver.user_details.last_name}`}</ThemedText>
               <ThemedText variant="small" className="mt-1">{driver.user_details.email}</ThemedText>
               <View className="flex-row gap-2 mt-2">
-                <StatusBadge status={driver.is_verified ? 'verified' : 'pending'} />
+                <StatusBadge status={driver.current_status ? (driver.current_status === 'active' ? 'verified' : 'pending') : 'pending'} />
               </View>
             </View>
 
@@ -86,6 +126,9 @@ export default function DriverVerification() {
               <InfoRow label="Phone" value={driver.user_details.phone_number || 'N/A'} />
               <InfoRow label="License" value={driver.license_number || 'N/A'} />
               <InfoRow label="License Expiry" value={driver.license_expiry ? new Date(driver.license_expiry).toLocaleDateString() : 'N/A'} />
+              <InfoRow label="Aadhar Number" value={driver.aadhar_number ? driver.aadhar_number.slice(-4).padStart(driver.aadhar_number.length, '*') : 'N/A'} />
+              <InfoRow label="Years of Experience" value={driver.years_of_experience ? String(driver.years_of_experience) : 'N/A'} />
+              <InfoRow label="Background Check" value={driver.background_check_status_display || driver.background_check_status || 'N/A'} />
               <InfoRow label="Total Trips" value={String(driver.total_trips)} />
               <InfoRow label="Rating" value={driver.average_rating ? String(driver.average_rating) : 'N/A'} isLast />
             </View>
@@ -98,16 +141,28 @@ export default function DriverVerification() {
                   <View key={doc.id} className="p-4 mb-3 rounded-2xl border bg-surface dark:bg-darkSurface border-border dark:border-darkBorder">
                     <View className="flex-row items-center justify-between mb-2">
                       <ThemedText className="font-semibold capitalize">{doc.document_type.replace(/_/g, ' ')}</ThemedText>
-                      <StatusBadge status={doc.is_verified ? 'verified' : 'pending'} />
+                      <StatusBadge status={doc.verification_status as any} />
                     </View>
                     {doc.document_number && <ThemedText variant="tiny">Number: {doc.document_number}</ThemedText>}
                     {doc.expiry_date && <ThemedText variant="tiny">Expires: {new Date(doc.expiry_date).toLocaleDateString()}</ThemedText>}
-                    {!doc.is_verified && (
-                      <View className="flex-row gap-3 mt-3">
-                        <PrimaryButton title="Approve" onPress={() => handleDocVerify(doc.id, true)} variant="secondary" size="small" className="flex-1" />
-                        <PrimaryButton title="Reject" onPress={() => handleDocVerify(doc.id, false)} variant="outline" size="small" className="flex-1" />
-                      </View>
-                    )}
+                    {doc.rejection_reason && <ThemedText variant="tiny" className="text-red-500 mt-1">Rejection: {doc.rejection_reason}</ThemedText>}
+                    <View className="flex-row gap-3 mt-3">
+                      {doc.document_url && (
+                        <PrimaryButton
+                          title="View Document"
+                          onPress={() => Linking.openURL(doc.document_url!)}
+                          variant="outline"
+                          size="small"
+                          className="flex-1"
+                        />
+                      )}
+                      {doc.verification_status === 'pending' && (
+                        <>
+                          <PrimaryButton title="Approve" onPress={() => handleDocVerify(doc.id, true)} variant="secondary" size="small" className="flex-1" />
+                          <PrimaryButton title="Reject" onPress={() => handleDocVerify(doc.id, false)} variant="outline" size="small" className="flex-1" />
+                        </>
+                      )}
+                    </View>
                   </View>
                 ))}
               </>
@@ -124,6 +179,63 @@ export default function DriverVerification() {
           </View>
         )}
       </ScrollView>
+
+      {/* Rejection Reason Modal */}
+      <Modal
+        visible={rejectionModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setRejectionModalVisible(false);
+          setRejectionReason('');
+          setRejectionTarget(null);
+        }}
+      >
+        <View className="flex-1 bg-black/50 items-center justify-center">
+          <View className="w-4/5 bg-white dark:bg-gray-900 rounded-2xl p-4">
+            <ThemedText variant="h3" className="mb-3">
+              {rejectionTarget?.type === 'driver' ? 'Reject Driver' : 'Reject Document'}
+            </ThemedText>
+            <ThemedText variant="small" className="mb-3 text-gray-600 dark:text-gray-400">
+              Please provide a rejection reason:
+            </ThemedText>
+            <TextInput
+              placeholder="Enter rejection reason..."
+              placeholderTextColor={colors.textSecondary}
+              value={rejectionReason}
+              onChangeText={setRejectionReason}
+              multiline
+              numberOfLines={3}
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                padding: 10,
+                color: colors.textPrimary,
+                backgroundColor: isDarkMode ? colors.darkSurface : colors.surface,
+              }}
+            />
+            <View className="flex-row gap-3 mt-4">
+              <PrimaryButton
+                title="Cancel"
+                onPress={() => {
+                  setRejectionModalVisible(false);
+                  setRejectionReason('');
+                  setRejectionTarget(null);
+                }}
+                variant="outline"
+                className="flex-1"
+              />
+              <PrimaryButton
+                title="Submit"
+                onPress={handleSubmitRejection}
+                variant="secondary"
+                className="flex-1"
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

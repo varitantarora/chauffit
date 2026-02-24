@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View, Alert } from 'react-native';
+import { ScrollView, View, Alert, Modal, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,39 +19,54 @@ export default function BikerVerification() {
   const { verifyBiker } = useAdminStore();
   const [biker, setBiker] = useState<AdminBiker | null>(null);
   const [loading, setLoading] = useState(false);
+  const [rejectionModalVisible, setRejectionModalVisible] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
 
   useEffect(() => {
     if (id) loadBiker();
   }, [id]);
 
   const loadBiker = async () => {
-    const res = await AdminApiService.getPendingBikers();
+    if (!id) return;
+    const res = await AdminApiService.getBiker(id);
     if (res.success && res.data) {
-      const list = Array.isArray(res.data) ? res.data : (res.data as any).results || [];
-      const found = list.find((b: AdminBiker) => b.id === id);
-      if (found) setBiker(found);
+      setBiker(res.data);
     }
   };
 
   const handleVerify = (approve: boolean) => {
     if (!id) return;
-    Alert.alert(
-      `${approve ? 'Approve' : 'Reject'} Biker`,
-      `Are you sure you want to ${approve ? 'approve' : 'reject'} this biker?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm',
-          style: approve ? 'default' : 'destructive',
-          onPress: async () => {
-            setLoading(true);
-            const success = await verifyBiker(id, approve, approve ? undefined : 'Rejected by admin');
-            setLoading(false);
-            if (success) router.back();
+    if (!approve) {
+      setRejectionModalVisible(true);
+    } else {
+      Alert.alert(
+        'Approve Biker',
+        'Are you sure you want to approve this biker?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Confirm',
+            style: 'default',
+            onPress: async () => {
+              setLoading(true);
+              const success = await verifyBiker(id, true);
+              setLoading(false);
+              if (success) router.back();
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
+  };
+
+  const handleSubmitRejection = async () => {
+    if (!id) return;
+    setRejectionModalVisible(false);
+    setLoading(true);
+    const success = await verifyBiker(id, false, rejectionReason || undefined);
+    setLoading(false);
+    if (success) router.back();
+    setRejectionReason('');
   };
 
   return (
@@ -70,12 +85,16 @@ export default function BikerVerification() {
               <ThemedText variant="h2">{biker.user_details.full_name || `${biker.user_details.first_name} ${biker.user_details.last_name}`}</ThemedText>
               <ThemedText variant="small" className="mt-1">{biker.user_details.email}</ThemedText>
               <View className="flex-row gap-2 mt-2">
-                <StatusBadge status={biker.is_verified ? 'verified' : 'pending'} />
+                <StatusBadge status={biker.current_status ? (biker.current_status === 'active' ? 'verified' : 'pending') : 'pending'} />
               </View>
             </View>
 
             <View className="p-4 rounded-2xl border bg-surface dark:bg-darkSurface border-border dark:border-darkBorder mb-4">
               <InfoRow label="Phone" value={biker.user_details.phone_number || 'N/A'} />
+              <InfoRow label="License" value={biker.license_number || 'N/A'} />
+              <InfoRow label="Aadhar Number" value={biker.aadhar_number ? biker.aadhar_number.slice(-4).padStart(biker.aadhar_number.length, '*') : 'N/A'} />
+              <InfoRow label="Years of Experience" value={biker.years_of_experience ? String(biker.years_of_experience) : 'N/A'} />
+              <InfoRow label="Background Check" value={biker.background_check_status_display || biker.background_check_status || 'N/A'} />
               <InfoRow label="Total Tasks" value={String(biker.total_tasks)} />
               <InfoRow label="Rating" value={biker.average_rating ? String(biker.average_rating) : 'N/A'} />
               <InfoRow label="Online" value={biker.is_online ? 'Yes' : 'No'} isLast />
@@ -92,6 +111,59 @@ export default function BikerVerification() {
           </View>
         )}
       </ScrollView>
+
+      {/* Rejection Reason Modal */}
+      <Modal
+        visible={rejectionModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setRejectionModalVisible(false);
+          setRejectionReason('');
+        }}
+      >
+        <View className="flex-1 bg-black/50 items-center justify-center">
+          <View className="w-4/5 bg-white dark:bg-gray-900 rounded-2xl p-4">
+            <ThemedText variant="h3" className="mb-3">Reject Biker</ThemedText>
+            <ThemedText variant="small" className="mb-3 text-gray-600 dark:text-gray-400">
+              Please provide a rejection reason:
+            </ThemedText>
+            <TextInput
+              placeholder="Enter rejection reason..."
+              placeholderTextColor={colors.textSecondary}
+              value={rejectionReason}
+              onChangeText={setRejectionReason}
+              multiline
+              numberOfLines={3}
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                padding: 10,
+                color: colors.textPrimary,
+                backgroundColor: isDarkMode ? colors.darkSurface : colors.surface,
+              }}
+            />
+            <View className="flex-row gap-3 mt-4">
+              <PrimaryButton
+                title="Cancel"
+                onPress={() => {
+                  setRejectionModalVisible(false);
+                  setRejectionReason('');
+                }}
+                variant="outline"
+                className="flex-1"
+              />
+              <PrimaryButton
+                title="Submit"
+                onPress={handleSubmitRejection}
+                variant="secondary"
+                className="flex-1"
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

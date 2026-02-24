@@ -39,6 +39,7 @@ interface MappedBooking {
   vehicleType: string;
   createdAt: Date;
   updatedAt: Date;
+  loyaltyDiscountPct?: number;
 }
 
 // Map API booking to store booking format
@@ -73,6 +74,7 @@ const mapApiBookingToStore = (apiBooking: CustomerRide): MappedBooking => {
     carId: apiBooking.car?.id || '',
     createdAt: new Date(apiBooking.created_at),
     updatedAt: apiBooking.updated_at ? new Date(apiBooking.updated_at) : new Date(apiBooking.created_at),
+    loyaltyDiscountPct: apiBooking.loyalty_discount_pct,
   };
 };
 
@@ -333,6 +335,7 @@ export default function HistoryScreen() {
                     onViewDetails={() => handleViewDetails(booking)}
                     onCancel={() => handleCancelBooking(booking)}
                     onPayNow={() => handlePayNow(booking)}
+                    loyaltyDiscountPct={booking.loyaltyDiscountPct}
                   />
                 ))
             ) : (

@@ -40,7 +40,12 @@ export interface AdminDriver {
   user_details: AdminUser;
   license_number?: string;
   license_expiry?: string;
-  is_verified: boolean;
+  aadhar_number?: string;
+  background_check_status?: string;
+  background_check_status_display?: string;
+  current_status?: string;
+  current_status_display?: string;
+  years_of_experience?: number;
   is_online: boolean;
   average_rating?: number;
   total_trips: number;
@@ -53,7 +58,8 @@ export interface AdminDocument {
   document_type: string;
   document_number?: string;
   document_url?: string;
-  is_verified: boolean;
+  verification_status: 'pending' | 'approved' | 'rejected';
+  rejection_reason?: string;
   verified_at?: string;
   uploaded_at: string;
   expiry_date?: string;
@@ -62,7 +68,13 @@ export interface AdminDocument {
 export interface AdminBiker {
   id: string;
   user_details: AdminUser;
-  is_verified: boolean;
+  license_number?: string;
+  aadhar_number?: string;
+  background_check_status?: string;
+  background_check_status_display?: string;
+  current_status?: string;
+  current_status_display?: string;
+  years_of_experience?: number;
   is_online: boolean;
   average_rating?: number;
   total_tasks: number;
@@ -153,16 +165,14 @@ export interface AdminRideDetail {
 
 export interface AdminTask {
   id: string;
-  task_type: string;
+  task_reference: string;
   priority: string;
-  title: string;
-  description?: string;
-  biker?: AdminUser;
-  customer?: AdminUser;
-  status: string;
-  fare: string;
+  biker_name: string;
+  task_status: string;
+  task_status_display: string;
+  booking_reference: string;
   created_at: string;
-  completed_at?: string;
+  updated_at: string;
 }
 
 export interface AdminPayment {
@@ -270,7 +280,15 @@ class AdminApiService {
     }
   }
 
-  async verifyDriver(id: string, data: { is_verified: boolean; rejection_reason?: string }): Promise<ApiResponse<AdminDriver>> {
+  async getDriver(id: string): Promise<ApiResponse<AdminDriver>> {
+    try {
+      return await BaseApiService.get<AdminDriver>(`${this.basePath}/drivers/${id}/`);
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch driver' };
+    }
+  }
+
+  async verifyDriver(id: string, data: { current_status: string; background_check_status?: string }): Promise<ApiResponse<AdminDriver>> {
     try {
       return await BaseApiService.put<AdminDriver>(`${this.basePath}/drivers/${id}/verify/`, data);
     } catch (error) {
@@ -278,7 +296,7 @@ class AdminApiService {
     }
   }
 
-  async verifyDriverDocument(driverId: string, docId: string, data: { is_verified: boolean }): Promise<ApiResponse<AdminDocument>> {
+  async verifyDriverDocument(driverId: string, docId: string, data: { verification_status: 'approved' | 'rejected'; rejection_reason?: string }): Promise<ApiResponse<AdminDocument>> {
     try {
       return await BaseApiService.put<AdminDocument>(`${this.basePath}/drivers/${driverId}/documents/${docId}/verify/`, data);
     } catch (error) {
@@ -303,7 +321,15 @@ class AdminApiService {
     }
   }
 
-  async verifyBiker(id: string, data: { is_verified: boolean; rejection_reason?: string }): Promise<ApiResponse<AdminBiker>> {
+  async getBiker(id: string): Promise<ApiResponse<AdminBiker>> {
+    try {
+      return await BaseApiService.get<AdminBiker>(`${this.basePath}/bikers/${id}/`);
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch biker' };
+    }
+  }
+
+  async verifyBiker(id: string, data: { current_status: string; background_check_status?: string }): Promise<ApiResponse<AdminBiker>> {
     try {
       return await BaseApiService.put<AdminBiker>(`${this.basePath}/bikers/${id}/verify/`, data);
     } catch (error) {

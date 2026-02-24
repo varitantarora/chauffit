@@ -4,6 +4,7 @@ export default function AdminLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="profile" />
       <Stack.Screen name="user-detail" />
       <Stack.Screen name="driver-verification" />
       <Stack.Screen name="biker-verification" />

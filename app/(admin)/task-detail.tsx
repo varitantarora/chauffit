@@ -32,19 +32,16 @@ export default function TaskDetail() {
         {task ? (
           <>
             <View className="flex-row items-center justify-between mb-4">
-              <ThemedText variant="h2">{task.title}</ThemedText>
-              <StatusBadge status={task.status} />
+              <ThemedText variant="h2">{task.task_reference}</ThemedText>
+              <StatusBadge status={task.task_status} customLabel={task.task_status_display} />
             </View>
 
             <View className="p-4 rounded-2xl border bg-surface dark:bg-darkSurface border-border dark:border-darkBorder mb-4">
-              <InfoRow label="Type" value={task.task_type.replace(/_/g, ' ')} />
+              <InfoRow label="Booking Ref" value={task.booking_reference} />
               <InfoRow label="Priority" value={task.priority} />
-              <InfoRow label="Fare" value={`₹${task.fare}`} />
-              <InfoRow label="Biker" value={task.biker?.full_name || 'Not assigned'} />
-              <InfoRow label="Customer" value={task.customer?.full_name || 'N/A'} />
+              <InfoRow label="Biker" value={task.biker_name || 'Not assigned'} />
               <InfoRow label="Created" value={new Date(task.created_at).toLocaleString()} />
-              {task.completed_at && <InfoRow label="Completed" value={new Date(task.completed_at).toLocaleString()} />}
-              {task.description && <InfoRow label="Description" value={task.description} isLast />}
+              <InfoRow label="Updated" value={new Date(task.updated_at).toLocaleString()} isLast />
             </View>
           </>
         ) : (

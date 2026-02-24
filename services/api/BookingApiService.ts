@@ -22,12 +22,38 @@ export type BookingStatus =
 /**
  * Trip Type
  */
-export type TripType = 'one_way' | 'round_trip' | 'hourly';
+export type TripType = 'one_way' | 'round_trip' | 'hourly' | 'multi_stop';
 
 /**
  * Service Type
  */
 export type ServiceType = 'driver_booking';
+
+/**
+ * Stop Status
+ */
+export type StopStatus = 'pending' | 'visited' | 'skipped' | 'failed';
+
+/**
+ * Multi-Stop
+ */
+export interface Stop {
+  stop_number: number;
+  address?: string;
+  lat?: number;
+  long?: number;
+  location_id?: string;
+  notes?: string;
+}
+
+/**
+ * Stop Detail (returned from API)
+ */
+export interface StopDetail extends Stop {
+  id: string;
+  status: StopStatus;
+  created_at: string;
+}
 
 /**
  * Payment Status
@@ -82,6 +108,10 @@ export interface CustomerRide {
   car?: CarInfo;
   rating?: number;
   insurance?: InsuranceInfo;
+  priority_type?: string;
+  loyalty_discount_pct?: number;
+  multi_stop_discount_pct?: number;
+  stops?: StopDetail[];
 }
 
 /**
@@ -140,6 +170,7 @@ export interface FareEstimateRequest {
   scheduled_at?: string | null;
   hours?: number | null;
   insurance_plan_id?: string | null;
+  stops?: Stop[];
 }
 
 /**
@@ -179,12 +210,15 @@ export interface FareEstimateResponse {
   breakdown?: Record<string, any>;
   route?: { distance_km: number; duration_minutes: number; total_distance_km?: number; total_duration_minutes?: number };
   trip?: { type: string; vehicle_segment: string; when: string; scheduled_at?: string | null };
-  pricing_factors?: { surge_active: boolean; surge_multiplier: number; is_night_surcharge: boolean; hours_booked?: number };
+  pricing_factors?: { surge_active: boolean; surge_multiplier: number; is_night_surcharge: boolean; hours_booked?: number; multi_stop_discount_pct?: number };
   estimate?: { total_fare: number; currency: string; fare_range?: { min: number; max: number } };
   amenities?: any[];
   trip_type?: string;
   vehicle_segment?: string;
   is_night?: boolean;
+  multi_stop_discount_pct?: number;
+  total_distance_km?: number;
+  total_duration_minutes?: number;
 }
 
 /**
@@ -215,6 +249,9 @@ export interface BookRideRequest {
   scheduled_at?: string | null;
   hours?: number | null;
   insurance_plan_id?: string | null;
+  credits_to_apply?: number | null;
+  stops?: Stop[];
+  special_requests?: string;
 }
 
 /**
@@ -227,6 +264,14 @@ export interface BookRideResponse {
   estimated_fare: string;
   insurance?: InsuranceInfo | null;
   created_at: string;
+  priority_type?: string;
+  loyalty_discount_pct?: number;
+  credits_applied?: number;
+  trip_type?: TripType;
+  multi_stop_discount_pct?: number;
+  stops?: StopDetail[];
+  total_distance_km?: number;
+  total_duration_minutes?: number;
 }
 
 /**

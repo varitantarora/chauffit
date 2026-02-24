@@ -6,6 +6,7 @@ import {
   Alert,
   Modal,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
@@ -25,9 +26,13 @@ import BookingApiService, {
   FareEstimateResponse,
   BookingRequest,
   InsuranceInfo,
+  Stop,
 } from '../../services/api/BookingApiService';
 import InsuranceApiService, { InsurancePlan } from '../../services/api/InsuranceApiService';
 import AmenityApiService, { Amenity, AmenityCategory } from '../../services/api/AmenityApiService';
+import LoyaltyApiService from '../../services/api/LoyaltyApiService';
+import { useLoyaltyStore } from '../../store/loyaltyStore';
+import LocationApiService, { FavoriteLocation, LocationType } from '../../services/api/LocationApiService';
 import { formatFare } from '../../utils/fareCalculator';
 import {
   GooglePlacesAutocomplete,
@@ -74,6 +79,8 @@ export default function BookRideScreen() {
   const [scheduleOption, setScheduleOption] = useState<ScheduleOption>('now');
   const [scheduledDate, setScheduledDate] = useState<Date | null>(null);
   const [scheduledTime, setScheduledTime] = useState<string>('');
+  const [stops, setStops] = useState<Array<{ stop_number: number; address: string; lat: number; long: number; notes?: string }>>([]);
+  const [expandedStopIndex, setExpandedStopIndex] = useState<number | null>(null);
 
   const [showVehicleModal, setShowVehicleModal] = useState(false);
   const [showFareModal, setShowFareModal] = useState(false);
@@ -84,6 +91,15 @@ export default function BookRideScreen() {
 
   const [isFetchingPlaceDetails, setIsFetchingPlaceDetails] = useState(false);
   const [isFetchingCurrentLocation, setIsFetchingCurrentLocation] = useState(false);
+  const [favoriteLocations, setFavoriteLocations] = useState<FavoriteLocation[]>([]);
+  const [isFetchingFavorites, setIsFetchingFavorites] = useState(false);
+  const [showAddPlaceModal, setShowAddPlaceModal] = useState(false);
+  const [newPlaceTitle, setNewPlaceTitle] = useState('');
+  const [newPlaceAddress, setNewPlaceAddress] = useState('');
+  const [newPlaceLat, setNewPlaceLat] = useState<number | null>(null);
+  const [newPlaceLng, setNewPlaceLng] = useState<number | null>(null);
+  const [newPlaceType, setNewPlaceType] = useState<LocationType>('favorite');
+  const [isSavingPlace, setIsSavingPlace] = useState(false);
 
   const [fareEstimate, setFareEstimate] = useState<FareEstimateResponse | null>(null);
   const [selectedInsurancePlanId, setSelectedInsurancePlanId] = useState<string | null>(null);
@@ -103,6 +119,13 @@ export default function BookRideScreen() {
   const [showBreakdown, setShowBreakdown] = useState(false);
   const fareEstimateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Loyalty & Credits
+  const { profile: loyaltyProfile, fetchProfile: fetchLoyaltyProfile } = useLoyaltyStore();
+  const [showCreditsModal, setShowCreditsModal] = useState(false);
+  const [pendingBookingId, setPendingBookingId] = useState<string | null>(null);
+  const [creditsInput, setCreditsInput] = useState('');
+  const [isApplyingCredits, setIsApplyingCredits] = useState(false);
+
   useEffect(() => {
     if (params.vehicleId) {
       const car = cars.find((c) => c.id === params.vehicleId);
@@ -115,8 +138,17 @@ export default function BookRideScreen() {
   useEffect(() => {
     if (user?.id) {
       loadUserCars(user.id).catch(() => null);
+      fetchLoyaltyProfile();
     }
   }, [user?.id, loadUserCars]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    setIsFetchingFavorites(true);
+    LocationApiService.getFavorites()
+      .then((res) => { if (res.success && res.data) setFavoriteLocations(res.data); })
+      .finally(() => setIsFetchingFavorites(false));
+  }, [user?.id]);
 
   useEffect(() => {
     if (params.destination) {
@@ -169,6 +201,7 @@ export default function BookRideScreen() {
   // Inline fare calculation (does not open modal)
   const calculateFareInline = useCallback(async () => {
     if (!dropLocation || !selectedCar || !pickupLocation?.address) return;
+    if (tripType === 'multi_stop' && stops.length === 0) return;
 
     setIsCalculatingFare(true);
 
@@ -188,6 +221,7 @@ export default function BookRideScreen() {
           : {}),
         ...(selectedInsurancePlanId ? { insurance_plan_id: selectedInsurancePlanId } : {}),
         ...(tripType === 'hourly' ? { hours: hourlyHours } : {}),
+        ...(tripType === 'multi_stop' ? { stops: stops.map(s => ({ ...s, lat: formatCoord(s.lat), long: formatCoord(s.long) })) } : {}),
       };
 
       const response = await BookingApiService.getFareEstimate(estimateRequest);
@@ -202,7 +236,7 @@ export default function BookRideScreen() {
     } finally {
       setIsCalculatingFare(false);
     }
-  }, [pickupLocation, dropLocation, selectedCar, scheduleOption, tripType, scheduledDate, selectedInsurancePlanId, hourlyHours]);
+  }, [pickupLocation, dropLocation, selectedCar, scheduleOption, tripType, scheduledDate, selectedInsurancePlanId, hourlyHours, stops]);
 
   // Auto-fetch fare estimate when all inputs are ready
   useEffect(() => {
@@ -228,7 +262,7 @@ export default function BookRideScreen() {
     pickupLocation?.address, pickupLocation?.latitude, pickupLocation?.longitude,
     dropLocation?.address, dropLocation?.latitude, dropLocation?.longitude,
     selectedCar?.id, tripType, scheduleOption, scheduledDate,
-    selectedInsurancePlanId, hourlyHours,
+    selectedInsurancePlanId, hourlyHours, stops,
   ]);
 
   const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
@@ -236,32 +270,13 @@ export default function BookRideScreen() {
     ? 'bg-darkSurface text-darkText border-darkBorder'
     : 'bg-white text-textPrimary border-gray-200';
 
-  const savedLocations = [
-    {
-      id: 'home',
-      icon: 'home' as const,
-      label: 'Home',
-      address: '123 Main St, Delhi',
-      latitude: 28.6139,
-      longitude: 77.2090,
-    },
-    {
-      id: 'work',
-      icon: 'business' as const,
-      label: 'Work',
-      address: '456 Office Plaza, Gurgaon',
-      latitude: 28.4695,
-      longitude: 77.0366,
-    },
-    {
-      id: 'airport',
-      icon: 'airplane' as const,
-      label: 'Airport',
-      address: 'IGI Airport Terminal 3',
-      latitude: 28.5562,
-      longitude: 77.0999,
-    },
-  ];
+  const getFavoriteIcon = (title: string): React.ComponentProps<typeof Ionicons>['name'] => {
+    const t = title.toLowerCase();
+    if (t.includes('home')) return 'home';
+    if (t.includes('work') || t.includes('office')) return 'business';
+    if (t.includes('airport')) return 'airplane';
+    return 'star';
+  };
 
   // Helper function to generate next 7 days
   const generateNext7Days = () => {
@@ -654,8 +669,63 @@ export default function BookRideScreen() {
     }
   };
 
+  const navigateToSearching = (bookingId: string, creditsApplied: number = 0) => {
+    router.push({
+      pathname: '/(customer)/searching-drivers',
+      params: {
+        bookingId,
+        pickup: pickupLocation.address,
+        destination: dropLocation!.address,
+        fare: String(fareEstimate?.estimated_fare ?? 0),
+        pickupLat: pickupLocation.latitude.toString(),
+        pickupLng: pickupLocation.longitude.toString(),
+        dropLat: dropLocation!.latitude.toString(),
+        dropLng: dropLocation!.longitude.toString(),
+        creditsApplied: creditsApplied.toString(),
+        loyaltyDiscountPct: String(loyaltyProfile?.discount_percentage ?? 0),
+      },
+    });
+  };
+
+  const handleApplyCredits = async () => {
+    if (!pendingBookingId) return;
+    const amount = parseFloat(creditsInput);
+    if (isNaN(amount) || amount <= 0) {
+      Alert.alert('Invalid amount', 'Please enter a valid credit amount.');
+      return;
+    }
+    if (loyaltyProfile && amount > Number(loyaltyProfile.credit_balance)) {
+      Alert.alert('Insufficient credits', `You only have ₹${Number(loyaltyProfile.credit_balance).toFixed(2)} credits available.`);
+      return;
+    }
+
+    setIsApplyingCredits(true);
+    try {
+      const response = await LoyaltyApiService.applyCredits({
+        booking_id: pendingBookingId,
+        credits_to_apply: amount,
+      });
+      if (response.success) {
+        await fetchLoyaltyProfile();
+        setShowCreditsModal(false);
+        navigateToSearching(pendingBookingId, amount);
+      } else {
+        Alert.alert('Failed', response.error || 'Could not apply credits. Please try again.');
+      }
+    } catch {
+      Alert.alert('Error', 'An error occurred while applying credits.');
+    } finally {
+      setIsApplyingCredits(false);
+    }
+  };
+
   const confirmBooking = async () => {
     if (!fareEstimate || !dropLocation || !selectedCar) {
+      return;
+    }
+
+    if (tripType === 'multi_stop' && stops.length === 0) {
+      Alert.alert('Invalid Booking', 'Please add at least one stop for multi-stop bookings');
       return;
     }
 
@@ -677,6 +747,7 @@ export default function BookRideScreen() {
           : {}),
         ...(selectedInsurancePlanId ? { insurance_plan_id: selectedInsurancePlanId } : {}),
         ...(tripType === 'hourly' ? { hours: hourlyHours } : {}),
+        ...(tripType === 'multi_stop' ? { stops: stops.map(s => ({ ...s, lat: formatCoord(s.lat), long: formatCoord(s.long) })) } : {}),
       };
 
       const response = await BookingApiService.bookRide(bookingData);
@@ -697,7 +768,7 @@ export default function BookRideScreen() {
           customerId: user?.id || '',
           chauffeurId: '',
           chauffeurName: 'Finding driver...',
-          duration: tripType === 'hourly' ? 'Hourly' : tripType === 'round_trip' ? 'Round-trip' : 'One-way',
+          duration: tripType === 'hourly' ? 'Hourly' : tripType === 'round_trip' ? 'Round-trip' : tripType === 'multi_stop' ? 'Multi-stop' : 'One-way',
           pickupLocation: {
             address: pickupLocation.address,
             latitude: pickupLocation.latitude,
@@ -723,19 +794,14 @@ export default function BookRideScreen() {
 
         setShowFareModal(false);
 
-        router.push({
-          pathname: '/(customer)/searching-drivers',
-          params: {
-            bookingId: bookingId,
-            pickup: pickupLocation.address,
-            destination: dropLocation.address,
-            fare: String(fareEstimate.estimated_fare),
-            pickupLat: pickupLocation.latitude.toString(),
-            pickupLng: pickupLocation.longitude.toString(),
-            dropLat: dropLocation.latitude.toString(),
-            dropLng: dropLocation.longitude.toString(),
-          },
-        });
+        // If customer has credits, show the credits modal
+        if (loyaltyProfile && Number(loyaltyProfile.credit_balance) > 0) {
+          setPendingBookingId(bookingId);
+          setCreditsInput('');
+          setShowCreditsModal(true);
+        } else {
+          navigateToSearching(bookingId);
+        }
       } else {
         Alert.alert('Booking Failed', response.error || 'Unable to book ride. Please try again.');
       }
@@ -746,7 +812,38 @@ export default function BookRideScreen() {
     }
   };
 
-  const selectSavedLocation = (location: typeof savedLocations[0]) => {
+  const handleAddPlace = async () => {
+    if (!newPlaceTitle.trim()) {
+      Alert.alert('Missing name', 'Please enter a name for this place.');
+      return;
+    }
+    if (!newPlaceAddress || newPlaceLat === null || newPlaceLng === null) {
+      Alert.alert('Missing address', 'Please search and select an address.');
+      return;
+    }
+    setIsSavingPlace(true);
+    const res = await LocationApiService.addFavorite({
+      title: newPlaceTitle.trim(),
+      address: newPlaceAddress,
+      latitude: newPlaceLat,
+      longitude: newPlaceLng,
+      location_type: newPlaceType,
+    });
+    setIsSavingPlace(false);
+    if (res.success && res.data) {
+      setFavoriteLocations((prev) => [...prev, res.data!]);
+      setShowAddPlaceModal(false);
+      setNewPlaceTitle('');
+      setNewPlaceAddress('');
+      setNewPlaceLat(null);
+      setNewPlaceLng(null);
+      setNewPlaceType('favorite');
+    } else {
+      Alert.alert('Error', res.error || 'Failed to save place. Please try again.');
+    }
+  };
+
+  const selectSavedLocation = (location: FavoriteLocation) => {
     setDropLocation({
       address: location.address,
       latitude: location.latitude,
@@ -777,6 +874,8 @@ export default function BookRideScreen() {
         return 'Round-trip';
       case 'hourly':
         return 'Hourly';
+      case 'multi_stop':
+        return 'Multi-stop';
       default:
         return type;
     }
@@ -830,6 +929,38 @@ export default function BookRideScreen() {
           <View className="px-6 py-4">
             {/* Main Booking Card */}
             <ThemedCard variant="elevated" className="mb-4 p-4">
+              {/* Trip Type */}
+              <View className="mb-4">
+                <ThemedText variant="small" className="mb-2 text-gray-600 dark:text-gray-400">
+                  Trip Type
+                </ThemedText>
+                <View className="flex-row justify-between gap-2">
+                  {([
+                    { id: 'one_way' as TripType, label: 'One-way' },
+                    { id: 'round_trip' as TripType, label: 'Round-trip' },
+                    { id: 'hourly' as TripType, label: 'Hourly' },
+                    { id: 'multi_stop' as TripType, label: 'Multi-stop' },
+                  ]).map((type) => (
+                    <TouchableOpacity
+                      key={type.id}
+                      onPress={() => setTripType(type.id)}
+                      className={`flex-1 p-2 rounded-lg border ${
+                        tripType === type.id ? 'bg-burgundy border-burgundy' : inputClass
+                      }`}
+                    >
+                      <ThemedText
+                        variant="small"
+                        className={`text-center ${
+                          tripType === type.id ? 'text-white' : ''
+                        }`}
+                      >
+                        {type.label}
+                      </ThemedText>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
               {/* From Location */}
               <View className="mb-4">
                 <ThemedText variant="small" className="mb-2 text-gray-600 dark:text-gray-400">
@@ -858,6 +989,120 @@ export default function BookRideScreen() {
                   </ThemedText>
                 </TouchableOpacity>
               </View>
+
+              {/* Multi-Stop Management */}
+              {tripType === 'multi_stop' && (
+                <View className="mb-4">
+                  <View className="flex-row items-center justify-between mb-3">
+                    <ThemedText variant="small" className="text-gray-600 dark:text-gray-400">
+                      Stops ({stops.length})
+                    </ThemedText>
+                    {stops.length < 8 && (
+                      <TouchableOpacity
+                        onPress={() => {
+                          const newStop = {
+                            stop_number: stops.length + 1,
+                            address: '',
+                            lat: pickupLocation.latitude,
+                            long: pickupLocation.longitude,
+                          };
+                          setStops([...stops, newStop]);
+                        }}
+                        className="flex-row items-center bg-burgundy rounded-lg px-3 py-2"
+                      >
+                        <Ionicons name="add" size={16} color="white" />
+                        <ThemedText className="text-white text-xs font-semibold ml-1">Add Stop</ThemedText>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+
+                  {stops.length === 0 && (
+                    <ThemedCard className="p-3 border border-dashed border-gray-300 items-center">
+                      <Ionicons name="location-outline" size={24} color="#999" />
+                      <ThemedText variant="tiny" className="text-gray-500 mt-2 text-center">
+                        Add at least one stop
+                      </ThemedText>
+                    </ThemedCard>
+                  )}
+
+                  {stops.map((stop, index) => (
+                    <View key={index} className="mb-2">
+                      <TouchableOpacity
+                        onPress={() => setExpandedStopIndex(expandedStopIndex === index ? null : index)}
+                        className="p-3 rounded-xl border border-gray-200 dark:border-darkBorder bg-gray-50 dark:bg-gray-900/30 active:opacity-70"
+                      >
+                        <View className="flex-row items-center justify-between">
+                          <View className="flex-1">
+                            <ThemedText variant="tiny" className="font-semibold text-gray-600 mb-1">
+                              Stop {stop.stop_number}
+                            </ThemedText>
+                            <ThemedText variant="tiny" className={`${stop.address ? 'text-gray-700 dark:text-gray-300 font-medium' : 'text-gray-500 dark:text-gray-400 italic'}`}>
+                              {stop.address || 'Tap to set location'}
+                            </ThemedText>
+                          </View>
+                          <View className="flex-row items-center ml-2">
+                            <TouchableOpacity
+                              onPress={(e) => {
+                                e.stopPropagation();
+                                setStops(stops.filter((_, i) => i !== index));
+                              }}
+                              className="ml-2"
+                            >
+                              <Ionicons name="close-circle" size={20} color="#EF4444" />
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+
+                      {expandedStopIndex === index && (
+                        <View className="mt-2 p-3 rounded-xl border border-gray-200 dark:border-darkBorder bg-white dark:bg-gray-900">
+                          <GooglePlacesAutocomplete
+                            placeholder="Search location"
+                            value={stop.address}
+                            apiKey={appConfig.googlePlacesApiKey}
+                            isDarkMode={isDarkMode}
+                            icon="location"
+                            onPlaceSelected={async (place) => {
+                              setIsFetchingPlaceDetails(true);
+                              try {
+                                const details = await getPlaceDetails(place.place_id, appConfig.googlePlacesApiKey);
+                                const displayAddress = place.structured_formatting?.main_text
+                                  ? place.description
+                                  : details.address;
+
+                                const updatedStops = [...stops];
+                                updatedStops[index] = {
+                                  ...updatedStops[index],
+                                  address: displayAddress,
+                                  lat: details.lat,
+                                  long: details.lng,
+                                };
+                                setStops(updatedStops);
+                                setExpandedStopIndex(null);
+                              } catch (error) {
+                                Alert.alert('Error', 'Failed to fetch location details');
+                              } finally {
+                                setIsFetchingPlaceDetails(false);
+                              }
+                            }}
+                          />
+                        </View>
+                      )}
+                    </View>
+                  ))}
+
+                  {stops.length > 0 && (
+                    <ThemedCard className="p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-700">
+                      <View className="flex-row items-start">
+                        <Ionicons name="information-circle" size={16} color="#B45309" className="mr-2 mt-0.5" />
+                        <ThemedText variant="tiny" className="text-amber-900 dark:text-amber-200 flex-1">
+                          Multi-stop bookings get {Math.min(15, 5 + (stops.length - 1) * 5)}% off the fare
+                        </ThemedText>
+                      </View>
+                    </ThemedCard>
+                  )}
+                </View>
+              )}
 
               {/* To Location */}
               <View className="mb-4">
@@ -951,37 +1196,6 @@ export default function BookRideScreen() {
                     </TouchableOpacity>
                   </View>
                 )}
-              </View>
-
-              {/* Ride Type */}
-              <View className="mb-4">
-                <ThemedText variant="small" className="mb-2 text-gray-600 dark:text-gray-400">
-                  Trip Type
-                </ThemedText>
-                <View className="flex-row justify-between">
-                  {([
-                    { id: 'one_way' as TripType, label: 'One-way' },
-                    { id: 'round_trip' as TripType, label: 'Round-trip' },
-                    { id: 'hourly' as TripType, label: 'Hourly' },
-                  ]).map((type) => (
-                    <TouchableOpacity
-                      key={type.id}
-                      onPress={() => setTripType(type.id)}
-                      className={`flex-1 p-3 rounded-xl border mx-1 ${
-                        tripType === type.id ? 'bg-burgundy border-burgundy' : inputClass
-                      }`}
-                    >
-                      <ThemedText
-                        variant="small"
-                        className={`text-center ${
-                          tripType === type.id ? 'text-white' : ''
-                        }`}
-                      >
-                        {type.label}
-                      </ThemedText>
-                    </TouchableOpacity>
-                  ))}
-                </View>
               </View>
 
               {/* Hourly Duration Selector */}
@@ -1119,6 +1333,16 @@ export default function BookRideScreen() {
                     </ThemedText>
                   </View>
 
+                  {/* Loyalty Discount Badge */}
+                  {loyaltyProfile && loyaltyProfile.discount_percentage > 0 && (
+                    <View className="flex-row items-center justify-center mb-3 bg-green-50 py-2 px-4 rounded-xl">
+                      <Ionicons name="star" size={14} color="#10B981" />
+                      <ThemedText variant="tiny" className="ml-2 text-green-700">
+                        {loyaltyProfile.discount_percentage}% {LoyaltyApiService.getTierLabel(loyaltyProfile.tier)} discount already applied
+                      </ThemedText>
+                    </View>
+                  )}
+
                   {/* Collapsible Breakdown */}
                   {fareEstimate.fare_breakdown && (
                     <TouchableOpacity
@@ -1229,25 +1453,40 @@ export default function BookRideScreen() {
 
             {/* Quick Actions - Saved Locations */}
             <View className="mb-4">
-              <ThemedText variant="h3" className="mb-3">
-                Saved Places
-              </ThemedText>
-              <View className="flex-row justify-between">
-                {savedLocations.map((location) => (
-                  <TouchableOpacity
-                    key={location.id}
-                    onPress={() => selectSavedLocation(location)}
-                    className="flex-1 mx-1"
-                  >
-                    <ThemedCard className="items-center py-3">
-                      <Ionicons name={location.icon} size={24} color={iconColor} />
-                      <ThemedText variant="small" className="mt-1">
-                        {location.label}
-                      </ThemedText>
-                    </ThemedCard>
-                  </TouchableOpacity>
-                ))}
+              <View className="flex-row justify-between items-center mb-3">
+                <ThemedText variant="h3">Saved Places</ThemedText>
+                <TouchableOpacity
+                  onPress={() => setShowAddPlaceModal(true)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Ionicons name="add-circle-outline" size={24} color={iconColor} />
+                </TouchableOpacity>
               </View>
+              {isFetchingFavorites ? (
+                <ActivityIndicator size="small" color={iconColor} />
+              ) : favoriteLocations.length === 0 ? (
+                <ThemedText variant="small" className="text-gray-400 text-center">
+                  No saved places
+                </ThemedText>
+              ) : (
+                <View className="flex-row flex-wrap">
+                  {favoriteLocations.map((location) => (
+                    <TouchableOpacity
+                      key={location.id}
+                      onPress={() => selectSavedLocation(location)}
+                      className="mx-1 mb-2"
+                      style={{ width: '30%' }}
+                    >
+                      <ThemedCard className="items-center py-3">
+                        <Ionicons name={getFavoriteIcon(location.title)} size={24} color={iconColor} />
+                        <ThemedText variant="small" className="mt-1 text-center" numberOfLines={1}>
+                          {location.title}
+                        </ThemedText>
+                      </ThemedCard>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
             </View>
 
             {/* No Cars Warning */}
@@ -1668,12 +1907,14 @@ export default function BookRideScreen() {
                         </ThemedText>
                       </View>
                       {/* Features */}
-                      {plan.coverage_details?.map((feat, i) => (
-                        <View key={i} className="flex-row items-center mt-1">
-                          <Ionicons name="checkmark-circle" size={14} color="#720C17" />
-                          <ThemedText variant="tiny" className="ml-1 text-gray-600 dark:text-gray-400">{feat}</ThemedText>
-                        </View>
-                      ))}
+                      <View className="flex-row flex-wrap mt-2">
+                        {plan.coverage_details?.map((feat, i) => (
+                          <View key={i} className="w-1/2 flex-row items-start mb-1 pr-2">
+                            <Ionicons name="checkmark-circle" size={14} color="#720C17" className="flex-shrink-0 mt-0.5" />
+                            <ThemedText variant="tiny" className="ml-1 text-gray-600 dark:text-gray-400 flex-1">{feat}</ThemedText>
+                          </View>
+                        ))}
+                      </View>
                     </TouchableOpacity>
                   );
                 })}
@@ -2015,6 +2256,96 @@ export default function BookRideScreen() {
           </View>
         </Modal>
 
+        {/* Add Place Modal */}
+        <Modal
+          visible={showAddPlaceModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowAddPlaceModal(false)}
+        >
+          <View className="flex-1 justify-end bg-black/50">
+            <View className={`${isDarkMode ? 'bg-darkSurface' : 'bg-white'} rounded-t-3xl p-6`}>
+              <View className="flex-row justify-between items-center mb-5">
+                <ThemedText variant="h2">Add Saved Place</ThemedText>
+                <TouchableOpacity onPress={() => setShowAddPlaceModal(false)}>
+                  <Ionicons name="close" size={24} color={isDarkMode ? '#fff' : '#000'} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Name */}
+              <ThemedText variant="small" className="mb-1 text-gray-500">Name</ThemedText>
+              <TextInput
+                value={newPlaceTitle}
+                onChangeText={setNewPlaceTitle}
+                placeholder="e.g. Home, Office, Gym"
+                placeholderTextColor={isDarkMode ? '#6B7280' : '#9CA3AF'}
+                className={`border rounded-xl px-4 py-3 mb-4 ${inputClass}`}
+              />
+
+              {/* Address search */}
+              <ThemedText variant="small" className="mb-1 text-gray-500">Address</ThemedText>
+              <GooglePlacesAutocomplete
+                placeholder="Search address"
+                value={newPlaceAddress}
+                apiKey={appConfig.googlePlacesApiKey}
+                isDarkMode={isDarkMode}
+                onPlaceSelected={async (place) => {
+                  try {
+                    const details = await getPlaceDetails(place.place_id, appConfig.googlePlacesApiKey);
+                    const addr = place.structured_formatting?.main_text ? place.description : details.address;
+                    setNewPlaceAddress(addr);
+                    setNewPlaceLat(details.lat);
+                    setNewPlaceLng(details.lng);
+                  } catch {
+                    setNewPlaceAddress(place.description);
+                    setNewPlaceLat(null);
+                    setNewPlaceLng(null);
+                  }
+                }}
+              />
+
+              {/* Type selector */}
+              <ThemedText variant="small" className="mt-4 mb-2 text-gray-500">Type</ThemedText>
+              <View className="flex-row mb-6">
+                {(['home', 'work', 'favorite'] as LocationType[]).map((type) => {
+                  const active = newPlaceType === type;
+                  return (
+                    <TouchableOpacity
+                      key={type}
+                      onPress={() => setNewPlaceType(type)}
+                      className={`flex-row items-center mr-3 px-3 py-2 rounded-full border ${
+                        active
+                          ? 'border-secondary bg-secondary/10'
+                          : 'border-gray-300 dark:border-darkBorder'
+                      }`}
+                    >
+                      <Ionicons
+                        name={type === 'home' ? 'home' : type === 'work' ? 'business' : 'star'}
+                        size={14}
+                        color={active ? '#BD8C5E' : isDarkMode ? '#9CA3AF' : '#6B7280'}
+                      />
+                      <ThemedText
+                        variant="tiny"
+                        className={`ml-1 capitalize ${active ? 'text-secondary font-semibold' : 'text-gray-500'}`}
+                      >
+                        {type}
+                      </ThemedText>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <PrimaryButton
+                title="Save Place"
+                onPress={handleAddPlace}
+                loading={isSavingPlace}
+                disabled={isSavingPlace}
+                className="w-full"
+              />
+            </View>
+          </View>
+        </Modal>
+
         {/* Saved Locations Modal */}
         <Modal
           visible={showSavedLocations}
@@ -2032,24 +2363,114 @@ export default function BookRideScreen() {
               </View>
 
               <ScrollView showsVerticalScrollIndicator={false}>
-                {savedLocations.map((location) => (
-                  <TouchableOpacity
-                    key={location.id}
-                    onPress={() => selectSavedLocation(location)}
-                    className="mb-3 p-4 border border-gray-200 dark:border-darkBorder rounded-xl"
-                  >
-                    <View className="flex-row items-center">
-                      <Ionicons name={location.icon} size={20} color={iconColor} />
-                      <View className="ml-3">
-                        <ThemedText variant="body">{location.label}</ThemedText>
-                        <ThemedText variant="small" className="text-gray-500">
-                          {location.address}
-                        </ThemedText>
+                {isFetchingFavorites ? (
+                  <ActivityIndicator size="small" color={iconColor} className="mt-4" />
+                ) : favoriteLocations.length === 0 ? (
+                  <ThemedText variant="small" className="text-gray-400 text-center mt-4">
+                    No saved places
+                  </ThemedText>
+                ) : (
+                  favoriteLocations.map((location) => (
+                    <TouchableOpacity
+                      key={location.id}
+                      onPress={() => selectSavedLocation(location)}
+                      className="mb-3 p-4 border border-gray-200 dark:border-darkBorder rounded-xl"
+                    >
+                      <View className="flex-row items-center">
+                        <Ionicons name={getFavoriteIcon(location.title)} size={20} color={iconColor} />
+                        <View className="ml-3">
+                          <ThemedText variant="body">{location.title}</ThemedText>
+                          <ThemedText variant="small" className="text-gray-500">
+                            {location.address}
+                          </ThemedText>
+                        </View>
                       </View>
-                    </View>
+                    </TouchableOpacity>
+                  ))
+                )}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Credits Application Modal */}
+        <Modal
+          visible={showCreditsModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => {
+            setShowCreditsModal(false);
+            if (pendingBookingId) navigateToSearching(pendingBookingId);
+          }}
+        >
+          <View className="flex-1 justify-end bg-black/50">
+            <View className={`${isDarkMode ? 'bg-darkSurface' : 'bg-white'} rounded-t-3xl p-6`}>
+              {/* Handle bar */}
+              <View className="items-center mb-4">
+                <View className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
+              </View>
+
+              <ThemedText variant="h2" className="mb-1">Apply Credits</ThemedText>
+              <ThemedText variant="small" className="text-gray-500 mb-4">
+                You have ₹{Number(loyaltyProfile?.credit_balance).toFixed(2)} credits available
+              </ThemedText>
+
+              {/* Preset Buttons */}
+              <View className="flex-row mb-4">
+                {[50, 100, 200].map((preset) => (
+                  <TouchableOpacity
+                    key={preset}
+                    onPress={() => setCreditsInput(preset.toString())}
+                    className="flex-1 mx-1 py-2 border border-gray-300 dark:border-darkBorder rounded-lg"
+                  >
+                    <ThemedText variant="small" className="text-center">₹{preset}</ThemedText>
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
+                <TouchableOpacity
+                  onPress={() =>
+                    setCreditsInput(Number(loyaltyProfile?.credit_balance).toFixed(2) || '0')
+                  }
+                  className="flex-1 mx-1 py-2 bg-secondary/20 border border-secondary rounded-lg"
+                >
+                  <ThemedText variant="small" className="text-center text-secondary font-semibold">Max</ThemedText>
+                </TouchableOpacity>
+              </View>
+
+              {/* Input */}
+              <TextInput
+                className={`border border-gray-300 dark:border-darkBorder rounded-xl p-4 mb-4 text-lg ${
+                  isDarkMode ? 'bg-darkSurface text-darkText' : 'bg-white text-textPrimary'
+                }`}
+                placeholder="₹ Enter amount"
+                placeholderTextColor="#9CA3AF"
+                value={creditsInput}
+                onChangeText={setCreditsInput}
+                keyboardType="numeric"
+              />
+
+              {/* Apply Button */}
+              <TouchableOpacity
+                onPress={handleApplyCredits}
+                disabled={isApplyingCredits}
+                className="bg-burgundy py-4 rounded-xl mb-3 items-center"
+              >
+                {isApplyingCredits ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <ThemedText className="text-white font-bold">Apply Credits</ThemedText>
+                )}
+              </TouchableOpacity>
+
+              {/* Skip */}
+              <TouchableOpacity
+                onPress={() => {
+                  setShowCreditsModal(false);
+                  if (pendingBookingId) navigateToSearching(pendingBookingId);
+                }}
+                className="py-3 items-center"
+              >
+                <ThemedText className="text-gray-500">Skip for now</ThemedText>
+              </TouchableOpacity>
             </View>
           </View>
         </Modal>

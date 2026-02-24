@@ -13,6 +13,7 @@ interface BookingCardProps {
   onViewDetails?: () => void;
   onPayNow?: () => void;
   showActions?: boolean;
+  loyaltyDiscountPct?: number;
 }
 
 // Map API booking status to card display status
@@ -38,6 +39,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
   onViewDetails,
   onPayNow,
   showActions = true,
+  loyaltyDiscountPct,
 }) => {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
 
@@ -124,6 +126,23 @@ export const BookingCard: React.FC<BookingCardProps> = ({
     return ['cancelled_by_customer', 'cancelled_by_driver', 'cancelled_by_system'].includes(booking.status);
   };
 
+  const getTripTypeLabel = (duration?: string): string => {
+    if (!duration) return 'Ride';
+    const type = duration.toLowerCase().replace('-', '_');
+    switch (type) {
+      case 'one_way':
+        return 'One-way';
+      case 'round_trip':
+        return 'Round-trip';
+      case 'hourly':
+        return 'Hourly';
+      case 'multi_stop':
+        return 'Multi-stop';
+      default:
+        return duration;
+    }
+  };
+
   const needsPayment = () => {
     return booking.status === 'trip_completed' &&
       booking.paymentStatus !== 'paid' &&
@@ -141,30 +160,32 @@ export const BookingCard: React.FC<BookingCardProps> = ({
       activeOpacity={1}
     >
       {/* Header */}
-      <View className="flex-row items-center justify-between mb-4">
-        <View className="flex-row items-center">
-          <View 
-            className="w-3 h-3 rounded-full mr-3"
-            style={{ backgroundColor: getStatusColor() }}
-          />
-          <ThemedText variant="h3" className="font-bold">
-            {booking?.duration || 'Ride'} Service
-          </ThemedText>
-        </View>
-        
-        <View className="flex-row items-center">
-          <Ionicons 
-            name={getStatusIcon() as any} 
-            size={16} 
-            color={getStatusColor()} 
-          />
-          <ThemedText 
-            variant="small" 
-            className="ml-1 font-semibold"
-            style={{ color: getStatusColor() }}
-          >
-            {getStatusText()}
-          </ThemedText>
+      <View className="mb-4">
+        <View className="flex-row items-center justify-between">
+          <View className="flex-row items-center flex-1">
+            <View
+              className="w-3 h-3 rounded-full mr-3"
+              style={{ backgroundColor: getStatusColor() }}
+            />
+            <ThemedText variant="h3" className="font-bold">
+              {getTripTypeLabel(booking?.duration)}
+            </ThemedText>
+          </View>
+
+          <View className="flex-row items-center gap-1 ml-2">
+            <Ionicons
+              name={getStatusIcon() as any}
+              size={16}
+              color={getStatusColor()}
+            />
+            <ThemedText
+              variant="small"
+              className="font-semibold"
+              style={{ color: getStatusColor() }}
+            >
+              {getStatusText()}
+            </ThemedText>
+          </View>
         </View>
       </View>
 
@@ -231,6 +252,16 @@ export const BookingCard: React.FC<BookingCardProps> = ({
           </View>
         </View>
       </View>
+
+      {/* Loyalty Discount Badge */}
+      {loyaltyDiscountPct && loyaltyDiscountPct > 0 ? (
+        <View className="flex-row items-center mb-3 px-1">
+          <Ionicons name="star" size={12} color="#10B981" />
+          <ThemedText variant="tiny" className="ml-1 text-green-600 font-semibold">
+            {loyaltyDiscountPct}% loyalty discount applied
+          </ThemedText>
+        </View>
+      ) : null}
 
       {/* Actions for active rides - show Track (and Cancel only for requested status) */}
       {showActions && canTrack() && (

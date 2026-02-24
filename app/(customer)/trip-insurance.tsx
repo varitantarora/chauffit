@@ -289,14 +289,16 @@ export default function TripInsuranceScreen() {
 
                         {/* Features */}
                         <View className="border-t border-gray-200 dark:border-gray-700 pt-3">
-                          {option.features.map((feature, index) => (
-                            <View key={index} className="flex-row items-center mb-1">
-                              <Ionicons name="checkmark-circle" size={16} color="#720C17" />
-                              <ThemedText variant="small" className="ml-2 text-gray-700 dark:text-gray-300">
-                                {feature}
-                              </ThemedText>
-                            </View>
-                          ))}
+                          <View className="flex-row flex-wrap">
+                            {option.features.map((feature, index) => (
+                              <View key={index} className="w-1/2 flex-row items-start mb-2 pr-2">
+                                <Ionicons name="checkmark-circle" size={16} color="#720C17" className="flex-shrink-0 mt-0.5" />
+                                <ThemedText variant="small" className="ml-2 text-gray-700 dark:text-gray-300 flex-1">
+                                  {feature}
+                                </ThemedText>
+                              </View>
+                            ))}
+                          </View>
                         </View>
                       </ThemedCard>
                     </TouchableOpacity>

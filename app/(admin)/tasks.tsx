@@ -30,15 +30,15 @@ export default function Tasks() {
       className="p-4 mb-3 rounded-2xl border bg-surface dark:bg-darkSurface border-border dark:border-darkBorder"
     >
       <View className="flex-row items-center justify-between mb-2">
-        <ThemedText className="font-semibold flex-1 mr-2" numberOfLines={1}>{item.title}</ThemedText>
-        <StatusBadge status={item.status} />
+        <ThemedText className="font-semibold flex-1 mr-2" numberOfLines={1}>{item.task_reference}</ThemedText>
+        <StatusBadge status={item.task_status} customLabel={item.task_status_display} />
       </View>
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-2">
           <StatusBadge status={item.priority} customLabel={item.priority} />
-          <ThemedText variant="tiny" className="capitalize">{item.task_type.replace(/_/g, ' ')}</ThemedText>
+          <ThemedText variant="tiny" className="capitalize">{item.biker_name}</ThemedText>
         </View>
-        <ThemedText className="font-semibold text-secondary">₹{item.fare}</ThemedText>
+        <ThemedText variant="small" className="text-textSecondary">{item.booking_reference}</ThemedText>
       </View>
     </Pressable>
   );

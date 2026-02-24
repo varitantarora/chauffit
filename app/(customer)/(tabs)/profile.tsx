@@ -8,6 +8,8 @@ import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../store/authStore';
 import { useCarStore } from '../../../store/carStore';
+import { useLoyaltyStore } from '../../../store/loyaltyStore';
+import LoyaltyApiService from '../../../services/api/LoyaltyApiService';
 import { useRouter } from 'expo-router';
 import { appConfig } from '../../../config/env';
 import { LightColors, DarkColors, useThemeColors } from '../../../constants/Colors';
@@ -22,6 +24,7 @@ export default function Profile() {
   const setActiveRole = useAuthStore((state) => state.setActiveRole);
   const switchRole = useAuthStore((state) => state.switchRole);
   const { cars, loadUserCars, deleteCar } = useCarStore();
+  const { profile: loyaltyProfile, fetchProfile: fetchLoyaltyProfile } = useLoyaltyStore();
   const router = useRouter();
   const [showAddCarForm, setShowAddCarForm] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -51,6 +54,7 @@ export default function Profile() {
   useEffect(() => {
     if (user?.id) {
       loadUserCars(user.id);
+      fetchLoyaltyProfile();
     }
   }, [user?.id]);
 
@@ -177,6 +181,53 @@ export default function Profile() {
                 <ThemedText variant="tiny" className="text-secondary font-semibold">CUSTOMER</ThemedText>
               </View>
             </ThemedCard>
+          </View>
+
+          {/* Loyalty & Rewards Card */}
+          <View className="px-6 mb-6">
+            <TouchableOpacity activeOpacity={0.8} onPress={() => router.push('/(customer)/wallet')}>
+              <ThemedCard variant="elevated" className="p-4">
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center flex-1">
+                    <View
+                      className="w-10 h-10 rounded-full items-center justify-center mr-3"
+                      style={{
+                        backgroundColor: loyaltyProfile
+                          ? `${LoyaltyApiService.getTierColor(loyaltyProfile.tier)}30`
+                          : '#D9D1C630',
+                      }}
+                    >
+                      <Ionicons
+                        name="star"
+                        size={20}
+                        color={
+                          loyaltyProfile
+                            ? LoyaltyApiService.getTierColor(loyaltyProfile.tier)
+                            : '#BD8C5E'
+                        }
+                      />
+                    </View>
+                    <View className="flex-1">
+                      <ThemedText variant="h3">Loyalty & Rewards</ThemedText>
+                      <ThemedText variant="small" className="text-textSecondary">
+                        {loyaltyProfile
+                          ? `${LoyaltyApiService.getTierLabel(loyaltyProfile.tier)} • ₹${Number(loyaltyProfile.credit_balance).toFixed(0)} credits`
+                          : 'View your tier and credits'}
+                      </ThemedText>
+                    </View>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color="#720C17" />
+                </View>
+                {loyaltyProfile && loyaltyProfile.discount_percentage > 0 && (
+                  <View className="mt-3 p-2 bg-green-50 rounded-xl flex-row items-center">
+                    <Ionicons name="pricetag" size={14} color="#10B981" />
+                    <ThemedText variant="tiny" className="ml-2 text-green-700 font-semibold">
+                      {loyaltyProfile.discount_percentage}% loyalty discount active
+                    </ThemedText>
+                  </View>
+                )}
+              </ThemedCard>
+            </TouchableOpacity>
           </View>
 
           {/* Car Management Section */}

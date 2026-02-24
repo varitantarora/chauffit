@@ -1,395 +1,344 @@
-import React, { useState } from 'react';
-import { ScrollView, TouchableOpacity, View, Alert, TextInput } from 'react-native';
+import React, { useEffect, useRef, useCallback } from 'react';
+import {
+  ScrollView,
+  TouchableOpacity,
+  View,
+  ActivityIndicator,
+  FlatList,
+  Share,
+  Alert,
+} from 'react-native';
+import { Clipboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../components/common/ThemedView';
 import { ThemedCard } from '../../components/common/ThemedCard';
 import { ThemedText } from '../../components/common/ThemedText';
-import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
+import { useLoyaltyStore } from '../../store/loyaltyStore';
+import LoyaltyApiService, { CreditTransaction, ReferralEvent } from '../../services/api/LoyaltyApiService';
 import { useRouter } from 'expo-router';
-
-interface PaymentMethod {
-  id: string;
-  type: 'card' | 'upi' | 'cash';
-  title: string;
-  subtitle: string;
-  icon: string;
-  isDefault?: boolean;
-}
-
-interface Transaction {
-  id: string;
-  type: 'debit' | 'credit';
-  description: string;
-  amount: number;
-  date: string;
-  status: 'completed' | 'pending' | 'failed';
-}
 
 export default function WalletScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const router = useRouter();
-  
-  const [walletBalance, setWalletBalance] = useState(1250);
-  const [showAddMoney, setShowAddMoney] = useState(false);
-  const [addAmount, setAddAmount] = useState('');
-  
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  const {
+    profile,
+    transactions,
+    referrals,
+    isLoadingProfile,
+    isLoadingTransactions,
+    isLoadingReferrals,
+    error,
+    fetchAll,
+    fetchProfile,
+  } = useLoyaltyStore();
+
   const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
 
-  const paymentMethods: PaymentMethod[] = [
-    {
-      id: '1',
-      type: 'card',
-      title: 'Visa ****1234',
-      subtitle: 'Expires: 12/26',
-      icon: 'card',
-      isDefault: true,
-    },
-    {
-      id: '2',
-      type: 'card',
-      title: 'Mastercard ****5678',
-      subtitle: 'Expires: 08/25',
-      icon: 'card',
-    },
-    {
-      id: '3',
-      type: 'upi',
-      title: 'UPI: sarah@okicici',
-      subtitle: 'Linked to ICICI Bank',
-      icon: 'phone-portrait',
-    },
-    {
-      id: '4',
-      type: 'cash',
-      title: 'Cash Payment',
-      subtitle: 'Pay driver directly',
-      icon: 'cash',
-    },
-  ];
+  const [refreshing, setRefreshing] = React.useState(false);
 
-  const recentTransactions: Transaction[] = [
-    {
-      id: '1',
-      type: 'debit',
-      description: 'Trip to Office',
-      amount: 650,
-      date: 'Today',
-      status: 'completed',
-    },
-    {
-      id: '2',
-      type: 'credit',
-      description: 'Wallet topup',
-      amount: 1000,
-      date: 'Yesterday',
-      status: 'completed',
-    },
-    {
-      id: '3',
-      type: 'debit',
-      description: 'Airport trip',
-      amount: 1200,
-      date: '2 days ago',
-      status: 'completed',
-    },
-    {
-      id: '4',
-      type: 'debit',
-      description: 'Shopping mall',
-      amount: 450,
-      date: '3 days ago',
-      status: 'completed',
-    },
-  ];
+  useEffect(() => {
+    fetchAll();
+  }, []);
 
-  const handleAddMoney = () => {
-    setShowAddMoney(true);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchAll();
+    setRefreshing(false);
+  }, [fetchAll]);
+
+  const scrollToTransactions = () => {
+    scrollViewRef.current?.scrollToEnd({ animated: true });
   };
 
-  const handleWithdraw = () => {
-    Alert.alert('Withdraw Money', 'Withdrawal functionality would be implemented here.');
+  const handleCopyCode = async () => {
+    if (!profile?.referral_code) return;
+    Clipboard.setString(profile.referral_code);
+    Alert.alert('Copied!', 'Referral code copied to clipboard.');
   };
 
-  const handleAddPaymentMethod = () => {
-    Alert.alert('Add Payment Method', 'Add new payment method functionality would be implemented here.');
+  const handleShareCode = async () => {
+    if (!profile?.referral_code) return;
+    await Share.share({
+      message: `Use my referral code ${profile.referral_code} on Chauffit to get a discount on your first ride!`,
+    });
   };
 
-  const handleRemovePaymentMethod = (id: string) => {
-    Alert.alert(
-      'Remove Payment Method',
-      'Are you sure you want to remove this payment method?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Remove',
-          style: 'destructive',
-          onPress: () => Alert.alert('Removed', 'Payment method has been removed.')
-        }
-      ]
-    );
-  };
-
-  const handleSetDefault = (id: string) => {
-    Alert.alert('Set Default', `Payment method has been set as default.`);
-  };
-
-  const handlePayNow = () => {
-    Alert.alert('Pay Now', 'Quick payment functionality would be implemented here.');
-  };
-
-  const confirmAddMoney = () => {
-    if (!addAmount || parseFloat(addAmount) <= 0) {
-      Alert.alert('Invalid Amount', 'Please enter a valid amount to add.');
-      return;
-    }
-
-    const amount = parseFloat(addAmount);
-    setWalletBalance(prev => prev + amount);
-    setAddAmount('');
-    setShowAddMoney(false);
-    Alert.alert('Success', `₹${amount} has been added to your wallet.`);
-  };
-
-  const getPaymentIcon = (method: PaymentMethod) => {
-    switch (method.type) {
-      case 'card':
-        return method.title.includes('Visa') ? 'card' : 'card';
-      case 'upi':
-        return 'phone-portrait';
-      case 'cash':
-        return 'cash';
+  const getReferralStatusColor = (status: ReferralEvent['status']) => {
+    switch (status) {
+      case 'pending':
+        return '#F59E0B';
+      case 'completed':
+        return '#3B82F6';
+      case 'rewarded':
+        return '#10B981';
       default:
-        return 'card';
+        return '#6B7280';
     }
   };
 
-  const getTransactionIcon = (transaction: Transaction) => {
-    return transaction.type === 'credit' ? 'add-circle' : 'remove-circle';
+  const getReferralStatusLabel = (status: ReferralEvent['status']) => {
+    switch (status) {
+      case 'pending':
+        return 'Pending';
+      case 'completed':
+        return 'Completed';
+      case 'rewarded':
+        return 'Rewarded';
+      default:
+        return status;
+    }
   };
 
-  const getTransactionColor = (transaction: Transaction) => {
-    return transaction.type === 'credit' ? '#059669' : '#DC2626';
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  const renderReferralItem = ({ item }: { item: ReferralEvent }) => (
+    <View className="flex-row items-center justify-between py-3 border-b border-gray-100 dark:border-darkBorder">
+      <View className="flex-1">
+        <ThemedText variant="small" className="font-semibold">{item.referred_email}</ThemedText>
+        <ThemedText variant="tiny" className="text-gray-500">{formatDate(item.created_at)}</ThemedText>
+      </View>
+      <View
+        className="px-3 py-1 rounded-full"
+        style={{ backgroundColor: `${getReferralStatusColor(item.status)}20` }}
+      >
+        <ThemedText
+          variant="tiny"
+          className="font-semibold"
+          style={{ color: getReferralStatusColor(item.status) }}
+        >
+          {getReferralStatusLabel(item.status)}
+        </ThemedText>
+      </View>
+    </View>
+  );
+
+  const renderTransactionItem = ({ item }: { item: CreditTransaction }) => {
+    const isPositive = item.amount > 0;
+    const amountColor = isPositive ? '#10B981' : '#EF4444';
+
+    return (
+      <View className="flex-row items-center justify-between py-3 border-b border-gray-100 dark:border-darkBorder">
+        <View
+          className="w-10 h-10 rounded-full items-center justify-center mr-3"
+          style={{ backgroundColor: `${amountColor}20` }}
+        >
+          <Ionicons
+            name={isPositive ? 'add-circle' : 'remove-circle'}
+            size={20}
+            color={amountColor}
+          />
+        </View>
+        <View className="flex-1">
+          <ThemedText variant="small" className="font-semibold">
+            {item.description || LoyaltyApiService.getTransactionTypeLabel(item.transaction_type)}
+          </ThemedText>
+          <ThemedText variant="tiny" className="text-gray-500">{formatDate(item.created_at)}</ThemedText>
+        </View>
+        <ThemedText className="font-bold" style={{ color: amountColor }}>
+          {isPositive ? '+' : ''}₹{Math.abs(item.amount).toFixed(2)}
+        </ThemedText>
+      </View>
+    );
   };
 
   return (
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
         {/* Header */}
-        <View className="flex-row items-center justify-between px-6 py-4 border-b border-gray-200">
+        <View className="flex-row items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-darkBorder">
           <View className="flex-row items-center">
             <TouchableOpacity onPress={() => router.back()} className="mr-3">
               <Ionicons name="arrow-back" size={24} color={iconColor} />
             </TouchableOpacity>
-            <ThemedText variant="h2">Wallet</ThemedText>
+            <ThemedText variant="h2">Loyalty & Rewards</ThemedText>
           </View>
-          <TouchableOpacity>
-            <Ionicons name="ellipsis-vertical" size={24} color={iconColor} />
-          </TouchableOpacity>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView
+          ref={scrollViewRef}
+          showsVerticalScrollIndicator={false}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+        >
           <View className="px-6 py-4">
-            {/* Wallet Balance Card */}
-            <ThemedCard variant="elevated" className="mb-6">
-              <ThemedText variant="h3" className="mb-2">💰 Wallet Balance</ThemedText>
-              <ThemedText variant="h1" className="text-burgundy mb-4">₹{walletBalance.toFixed(2)}</ThemedText>
-              
-              <View className="flex-row justify-between">
-                <TouchableOpacity 
-                  onPress={handleAddMoney}
-                  className="flex-1 mr-2 bg-green-600 py-3 rounded-xl"
-                >
-                  <View className="flex-row items-center justify-center">
-                    <Ionicons name="add" size={20} color="white" />
-                    <ThemedText className="text-white ml-2">Add Money</ThemedText>
-                  </View>
-                </TouchableOpacity>
 
-                <TouchableOpacity 
-                  onPress={handleWithdraw}
-                  className="flex-1 ml-2 border border-gray-300 py-3 rounded-xl"
-                >
-                  <View className="flex-row items-center justify-center">
-                    <Ionicons name="arrow-up" size={20} color={iconColor} />
-                    <ThemedText className="ml-2">Withdraw</ThemedText>
+            {/* A. Loyalty Tier Card */}
+            <ThemedCard variant="elevated" className="mb-4 p-4">
+              <ThemedText variant="h3" className="mb-3">Your Tier</ThemedText>
+
+              {isLoadingProfile && !profile ? (
+                <ActivityIndicator size="small" color="#BD8C5E" />
+              ) : error && !profile ? (
+                <View className="items-center py-4">
+                  <ThemedText variant="small" className="text-red-500 mb-3">{error}</ThemedText>
+                  <TouchableOpacity
+                    onPress={fetchProfile}
+                    className="px-4 py-2 bg-burgundy rounded-xl"
+                  >
+                    <ThemedText className="text-white font-semibold">Retry</ThemedText>
+                  </TouchableOpacity>
+                </View>
+              ) : profile ? (
+                <>
+                  {/* Tier Badge */}
+                  <View className="flex-row items-center mb-4">
+                    <View
+                      className="px-4 py-2 rounded-full mr-3"
+                      style={{ backgroundColor: LoyaltyApiService.getTierColor(profile.tier) }}
+                    >
+                      <ThemedText className="font-bold text-gray-800">
+                        {LoyaltyApiService.getTierLabel(profile.tier)}
+                      </ThemedText>
+                    </View>
+                    {profile.discount_percentage > 0 && (
+                      <View className="px-3 py-1 bg-green-100 rounded-full">
+                        <ThemedText variant="small" className="text-green-700 font-semibold">
+                          {profile.discount_percentage}% discount
+                        </ThemedText>
+                      </View>
+                    )}
+                    {profile.is_priority_customer && (
+                      <View className="ml-2 px-3 py-1 bg-burgundy rounded-full">
+                        <ThemedText variant="tiny" className="text-white font-semibold">
+                          Priority Booking
+                        </ThemedText>
+                      </View>
+                    )}
                   </View>
-                </TouchableOpacity>
-              </View>
+
+                  {/* Trip Counters */}
+                  <View className="flex-row">
+                    <View className="flex-1 items-center p-3 bg-gray-50 dark:bg-darkSurface rounded-xl mr-2">
+                      <ThemedText variant="h2" className="text-burgundy">{profile.total_completed_trips}</ThemedText>
+                      <ThemedText variant="tiny" className="text-gray-500 text-center">Total Trips</ThemedText>
+                    </View>
+                    <View className="flex-1 items-center p-3 bg-gray-50 dark:bg-darkSurface rounded-xl">
+                      <ThemedText variant="h2" className="text-burgundy">{profile.monthly_trip_count}</ThemedText>
+                      <ThemedText variant="tiny" className="text-gray-500 text-center">This Month</ThemedText>
+                    </View>
+                  </View>
+                </>
+              ) : (
+                <ThemedText variant="small" className="text-gray-500">No loyalty data available.</ThemedText>
+              )}
             </ThemedCard>
 
-            {/* Payment Methods */}
-            <View className="mb-6">
-              <ThemedText variant="h3" className="mb-4">💳 Payment Methods</ThemedText>
-              
-              {paymentMethods.map((method) => (
-                <ThemedCard key={method.id} className="mb-3">
-                  <View className="flex-row items-center justify-between">
-                    <View className="flex-row items-center flex-1">
-                      <View className="w-12 h-8 bg-gray-200 rounded items-center justify-center mr-3">
-                        <Ionicons name={getPaymentIcon(method) as any} size={20} color={iconColor} />
-                      </View>
-                      <View className="flex-1">
-                        <View className="flex-row items-center">
-                          <ThemedText>{method.title}</ThemedText>
-                          {method.isDefault && (
-                            <View className="ml-2 px-2 py-1 bg-burgundy rounded">
-                              <ThemedText variant="small" className="text-white">Default</ThemedText>
-                            </View>
-                          )}
-                        </View>
-                        <ThemedText variant="small" className="text-gray-600">{method.subtitle}</ThemedText>
-                      </View>
-                    </View>
-                    
-                    <View className="flex-row">
-                      {!method.isDefault && method.type !== 'cash' && (
-                        <TouchableOpacity 
-                          onPress={() => handleSetDefault(method.id)}
-                          className="mr-3"
-                        >
-                          <ThemedText variant="small" className="text-burgundy">Set Default</ThemedText>
-                        </TouchableOpacity>
-                      )}
-                      
-                      {method.type !== 'cash' && (
-                        <TouchableOpacity onPress={() => handleRemovePaymentMethod(method.id)}>
-                          <ThemedText variant="small" className="text-red-600">Remove</ThemedText>
-                        </TouchableOpacity>
-                      )}
-                      
-                      {method.type === 'cash' && (
-                        <ThemedText variant="small" className="text-green-600">Available</ThemedText>
-                      )}
-                    </View>
-                  </View>
-                </ThemedCard>
-              ))}
-
-              <TouchableOpacity 
-                onPress={handleAddPaymentMethod}
-                className="border-2 border-dashed border-gray-300 rounded-xl p-4 items-center"
-              >
-                <Ionicons name="add-circle-outline" size={24} color={iconColor} />
-                <ThemedText className="mt-2">Add New Payment Method</ThemedText>
-              </TouchableOpacity>
-            </View>
-
-            {/* Recent Transactions */}
-            <View className="mb-6">
-              <View className="flex-row justify-between items-center mb-4">
-                <ThemedText variant="h3">📊 Recent Transactions</ThemedText>
-                <TouchableOpacity>
-                  <ThemedText variant="small" className="text-burgundy">More</ThemedText>
-                </TouchableOpacity>
-              </View>
-
-              {recentTransactions.slice(0, 4).map((transaction) => (
-                <ThemedCard key={transaction.id} className="mb-2">
-                  <View className="flex-row items-center justify-between">
-                    <View className="flex-row items-center flex-1">
-                      <View 
-                        className="w-10 h-10 rounded-full items-center justify-center mr-3"
-                        style={{ backgroundColor: `${getTransactionColor(transaction)}20` }}
-                      >
-                        <Ionicons 
-                          name={getTransactionIcon(transaction) as any} 
-                          size={20} 
-                          color={getTransactionColor(transaction)} 
-                        />
-                      </View>
-                      <View className="flex-1">
-                        <ThemedText>{transaction.description}</ThemedText>
-                        <ThemedText variant="small" className="text-gray-600">{transaction.date}</ThemedText>
-                      </View>
-                    </View>
-                    
-                    <ThemedText 
-                      className="font-semibold"
-                      style={{ color: getTransactionColor(transaction) }}
-                    >
-                      {transaction.type === 'credit' ? '+' : '-'}₹{transaction.amount}
+            {/* B. Credit Balance Widget */}
+            <ThemedCard variant="elevated" className="mb-4 p-4">
+              <ThemedText variant="h3" className="mb-3">Credit Balance</ThemedText>
+              {profile ? (
+                <View className="items-center">
+                  <ThemedText variant="h1" className="text-burgundy mb-3">
+                    ₹{Number(profile.credit_balance).toFixed(2)}
+                  </ThemedText>
+                  <TouchableOpacity onPress={scrollToTransactions}>
+                    <ThemedText variant="small" className="text-secondary underline">
+                      View Transaction History
                     </ThemedText>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <ActivityIndicator size="small" color="#BD8C5E" />
+              )}
+            </ThemedCard>
+
+            {/* C. Referral Card */}
+            <ThemedCard variant="elevated" className="mb-4 p-4">
+              <ThemedText variant="h3" className="mb-3">Referral Program</ThemedText>
+
+              {profile ? (
+                <>
+                  {/* Code Display */}
+                  <View className="flex-row items-center justify-between mb-4 p-3 bg-gray-50 dark:bg-darkSurface rounded-xl">
+                    <View>
+                      <ThemedText variant="tiny" className="text-gray-500">Your Code</ThemedText>
+                      <ThemedText variant="h3" className="font-mono tracking-widest">
+                        {profile.referral_code}
+                      </ThemedText>
+                    </View>
+                    <View className="flex-row">
+                      <TouchableOpacity
+                        onPress={handleCopyCode}
+                        className="w-10 h-10 bg-secondary/20 rounded-full items-center justify-center mr-2"
+                      >
+                        <Ionicons name="copy-outline" size={18} color="#BD8C5E" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={handleShareCode}
+                        className="w-10 h-10 bg-burgundy rounded-full items-center justify-center"
+                      >
+                        <Ionicons name="share-social-outline" size={18} color="white" />
+                      </TouchableOpacity>
+                    </View>
                   </View>
+
+                  {/* Referral List */}
+                  {isLoadingReferrals ? (
+                    <ActivityIndicator size="small" color="#BD8C5E" />
+                  ) : referrals.length > 0 ? (
+                    <>
+                      <ThemedText variant="small" className="font-semibold mb-2">
+                        Your Referrals ({referrals.length})
+                      </ThemedText>
+                      <FlatList
+                        data={referrals}
+                        keyExtractor={(item) => item.id}
+                        renderItem={renderReferralItem}
+                        scrollEnabled={false}
+                      />
+                    </>
+                  ) : (
+                    <ThemedText variant="small" className="text-gray-500 text-center py-3">
+                      No referrals yet. Share your code to earn rewards!
+                    </ThemedText>
+                  )}
+                </>
+              ) : (
+                <ActivityIndicator size="small" color="#BD8C5E" />
+              )}
+            </ThemedCard>
+
+            {/* D. Credit Transaction History */}
+            <View className="mb-6">
+              <ThemedText variant="h3" className="mb-3">Transaction History</ThemedText>
+
+              {isLoadingTransactions ? (
+                <ActivityIndicator size="small" color="#BD8C5E" />
+              ) : transactions.length > 0 ? (
+                <ThemedCard className="p-4">
+                  <FlatList
+                    data={transactions}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderTransactionItem}
+                    scrollEnabled={false}
+                  />
                 </ThemedCard>
-              ))}
-
-              <TouchableOpacity className="py-3">
-                <ThemedText className="text-center text-burgundy">View All Transactions</ThemedText>
-              </TouchableOpacity>
+              ) : (
+                <ThemedCard className="items-center py-8">
+                  <Ionicons name="receipt-outline" size={32} color="#9CA3AF" />
+                  <ThemedText variant="small" className="text-gray-500 mt-2 text-center">
+                    No transactions yet.
+                  </ThemedText>
+                </ThemedCard>
+              )}
             </View>
 
-            {/* Quick Actions */}
-            <View className="flex-row justify-between">
-              <TouchableOpacity 
-                onPress={handleSetDefault}
-                className="flex-1 mr-2 py-3 border border-gray-300 rounded-xl"
-              >
-                <ThemedText className="text-center">Set Default Payment</ThemedText>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                onPress={handlePayNow}
-                className="flex-1 ml-2 bg-burgundy py-3 rounded-xl"
-              >
-                <ThemedText className="text-center text-white">Pay Now</ThemedText>
-              </TouchableOpacity>
-            </View>
           </View>
         </ScrollView>
-
-        {/* Add Money Modal */}
-        {showAddMoney && (
-          <View className="absolute inset-0 bg-black/50 flex-1 justify-center px-6">
-            <ThemedCard variant="elevated" className="p-6">
-              <View className="flex-row justify-between items-center mb-4">
-                <ThemedText variant="h2">Add Money</ThemedText>
-                <TouchableOpacity onPress={() => setShowAddMoney(false)}>
-                  <Ionicons name="close" size={24} color={isDarkMode ? '#fff' : '#000'} />
-                </TouchableOpacity>
-              </View>
-
-              <ThemedText className="mb-4">Enter amount to add to wallet:</ThemedText>
-              
-              <TextInput
-                className={`border border-gray-300 rounded-xl p-4 mb-4 text-lg ${
-                  isDarkMode ? 'bg-darkSurface text-darkText' : 'bg-white'
-                }`}
-                placeholder="₹ 0.00"
-                placeholderTextColor="#9CA3AF"
-                value={addAmount}
-                onChangeText={setAddAmount}
-                keyboardType="numeric"
-              />
-
-              <View className="flex-row mb-4">
-                {[100, 500, 1000, 2000].map((amount) => (
-                  <TouchableOpacity
-                    key={amount}
-                    onPress={() => setAddAmount(amount.toString())}
-                    className="flex-1 mx-1 py-2 border border-gray-300 rounded-lg"
-                  >
-                    <ThemedText variant="small" className="text-center">₹{amount}</ThemedText>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <PrimaryButton
-                title="Add Money"
-                onPress={confirmAddMoney}
-                className="mb-3"
-              />
-              
-              <TouchableOpacity 
-                onPress={() => setShowAddMoney(false)}
-                className="py-3"
-              >
-                <ThemedText className="text-center text-gray-600">Cancel</ThemedText>
-              </TouchableOpacity>
-            </ThemedCard>
-          </View>
-        )}
       </ThemedView>
     </SafeAreaView>
   );

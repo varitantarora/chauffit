@@ -209,8 +209,10 @@ class AmenityApiService {
       premium: [],
     };
 
+    if (!amenities || !Array.isArray(amenities)) return grouped;
+
     amenities.forEach((amenity) => {
-      if (grouped[amenity.category]) {
+      if (amenity && grouped[amenity.category]) {
         grouped[amenity.category].push(amenity);
       }
     });

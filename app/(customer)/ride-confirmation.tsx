@@ -22,6 +22,9 @@ export default function RideConfirmationScreen() {
   const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
   const screenWidth = Dimensions.get('window').width;
 
+  const creditsApplied = parseFloat(params.creditsApplied as string || '0');
+  const loyaltyDiscountPct = parseFloat(params.loyaltyDiscountPct as string || '0');
+
   const tripDetails = {
     pickup: params.pickup || 'Home - 123 Main St, Palo Alto',
     destination: params.destination || 'Downtown Office - 456 Market St, SF',
@@ -264,6 +267,22 @@ export default function RideConfirmationScreen() {
                     <ThemedText variant="small" className="text-gray-600">Taxes (18%)</ThemedText>
                     <ThemedText variant="small">₹{totals.taxes.toFixed(2)}</ThemedText>
                   </View>
+                  {loyaltyDiscountPct > 0 && (
+                    <View className="flex-row justify-between mb-2">
+                      <ThemedText variant="small" className="text-green-600">
+                        Loyalty Discount ({loyaltyDiscountPct}%)
+                      </ThemedText>
+                      <ThemedText variant="small" className="text-green-600">Applied</ThemedText>
+                    </View>
+                  )}
+                  {creditsApplied > 0 && (
+                    <View className="flex-row justify-between mb-2">
+                      <ThemedText variant="small" className="text-green-600">Credits Applied</ThemedText>
+                      <ThemedText variant="small" className="text-green-600">
+                        -₹{creditsApplied.toFixed(2)}
+                      </ThemedText>
+                    </View>
+                  )}
                   <View className="border-t border-gray-200 dark:border-gray-700 pt-3">
                     <View className="flex-row justify-between">
                       <ThemedText variant="h3">Total</ThemedText>
