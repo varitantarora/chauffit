@@ -925,7 +925,7 @@ export default function BookRideScreen() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
           <View className="px-6 py-4">
             {/* Main Booking Card */}
             <ThemedCard variant="elevated" className="mb-4 p-4">
@@ -1526,7 +1526,7 @@ export default function BookRideScreen() {
                 </TouchableOpacity>
               </View>
 
-              <ScrollView showsVerticalScrollIndicator={false}>
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 50 }}>
                 {isCarsLoading && (
                   <View className="py-8 items-center">
                     <ActivityIndicator size="large" color="#BD8C5E" />
@@ -1599,7 +1599,7 @@ export default function BookRideScreen() {
               </View>
 
               {fareEstimate && (
-                <ScrollView showsVerticalScrollIndicator={false} className="max-h-[80%]">
+                <ScrollView showsVerticalScrollIndicator={false} className="max-h-[80%]" contentContainerStyle={{ paddingBottom: 50 }}>
                   <View className="mb-4 h-48 rounded-2xl overflow-hidden border border-gray-200 dark:border-darkBorder">
                     <UniversalMapView
                       initialRegion={{
@@ -1860,7 +1860,7 @@ export default function BookRideScreen() {
                 </TouchableOpacity>
               </View>
 
-              <ScrollView showsVerticalScrollIndicator={false}>
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 50 }}>
                 {/* Loading */}
                 {isLoadingInsurance && (
                   <View className="py-8 items-center">
@@ -1955,7 +1955,7 @@ export default function BookRideScreen() {
                 </TouchableOpacity>
               </View>
 
-              <ScrollView showsVerticalScrollIndicator={false}>
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 50 }}>
                 {isLoadingAmenities && (
                   <View className="py-8 items-center">
                     <ActivityIndicator size="large" color="#BD8C5E" />
@@ -2100,8 +2100,7 @@ export default function BookRideScreen() {
               onPress={() => setShowScheduleModal(false)}
             />
 
-            {/* Modal Content - doesn't propagate to backdrop */}
-            <View className={`${isDarkMode ? 'bg-darkSurface' : 'bg-white'} rounded-t-3xl max-h-[80%]`}>
+            <View className={`${isDarkMode ? 'bg-darkSurface' : 'bg-white'} rounded-t-3xl h-[70%]`}>
               {/* Handle Bar */}
               <View className="items-center py-3">
                 <View className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
@@ -2120,7 +2119,7 @@ export default function BookRideScreen() {
                 </ThemedText>
               </View>
 
-              <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 50 }}>
                 <View className="p-6">
                   {/* Date Selection */}
                   <View className="mb-6">

@@ -570,7 +570,7 @@ export default function ScheduleScreen() {
           <ThemedText variant="title" className="ml-4">Schedule Ride</ThemedText>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
+        <ScrollView showsVerticalScrollIndicator={false} className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
           {/* Service Type Toggle */}
           <View className="px-6 py-6">
             <ThemedText variant="title" className="text-lg mb-4">Service Type</ThemedText>
@@ -891,7 +891,7 @@ export default function ScheduleScreen() {
                 </TouchableOpacity>
               </View>
 
-              <ScrollView showsVerticalScrollIndicator={false}>
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 50 }}>
                 {isCarsLoading && (
                   <View className="py-8 items-center">
                     <ActivityIndicator size="large" color="#BD8C5E" />
@@ -964,7 +964,7 @@ export default function ScheduleScreen() {
               </View>
 
               {fareEstimate && (
-                <ScrollView showsVerticalScrollIndicator={false} className="max-h-[80%]">
+                <ScrollView showsVerticalScrollIndicator={false} className="max-h-[80%]" contentContainerStyle={{ paddingBottom: 50 }}>
                   {/* Trip Summary */}
                   <View className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                     <View className="flex-row items-center mb-2">

@@ -361,7 +361,8 @@ export default function SearchingDriversScreen() {
 
           {/* Bottom - Search Status */}
           <ScrollView 
-            className="flex-1 px-6 pt-8 pb-6"
+            className="flex-1"
+            contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 32, paddingBottom: 30 }}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -392,7 +393,7 @@ export default function SearchingDriversScreen() {
               </View>
 
               {/* Search Text with Animated Dots */}
-              <View className="flex-row items-center mb-4">
+              <View className="flex-row items-center mb-8">
                 <ThemedText variant="h3" className="text-center">
                   {searchText}
                 </ThemedText>
