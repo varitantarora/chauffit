@@ -44,11 +44,13 @@ export function GooglePlacesAutocomplete({
   const [predictions, setPredictions] = useState<GooglePlace[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // Update query when value prop changes
   useEffect(() => {
     setQuery(value);
+    setIsTyping(false);
   }, [value]);
 
   // Fetch predictions from Google Places API
@@ -96,7 +98,7 @@ export function GooglePlacesAutocomplete({
       clearTimeout(timeoutRef.current);
     }
 
-    if (query && query.length >= 3) {
+    if (isTyping && query && query.length >= 3) {
       timeoutRef.current = setTimeout(() => {
         fetchPredictions(query);
         setShowResults(true);
@@ -111,18 +113,26 @@ export function GooglePlacesAutocomplete({
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [query, apiKey]);
+  }, [query, isTyping, apiKey]);
 
   const selectPlace = (place: GooglePlace) => {
+    setIsTyping(false);
     setQuery(place.description);
     setShowResults(false);
+    setPredictions([]);
     onPlaceSelected(place);
   };
 
   const handleClear = () => {
+    setIsTyping(false);
     setQuery('');
     setPredictions([]);
     setShowResults(false);
+  };
+
+  const handleTextChange = (text: string) => {
+    setIsTyping(true);
+    setQuery(text);
   };
 
   const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
@@ -144,7 +154,7 @@ export function GooglePlacesAutocomplete({
           className={`flex-1 ml-3 text-base ${isDarkMode ? 'text-darkText' : 'text-textPrimary'}`}
           placeholder={placeholder}
           value={query}
-          onChangeText={setQuery}
+          onChangeText={handleTextChange}
           placeholderTextColor={isDarkMode ? '#999' : '#666'}
           autoFocus={false}
         />
