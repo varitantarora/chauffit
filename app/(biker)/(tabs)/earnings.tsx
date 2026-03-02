@@ -9,6 +9,7 @@ import { useAuthStore } from '../../../store/authStore';
 import { useBikerEarningsStore } from '../../../store/bikerEarningsStore';
 import { IncentiveTracker } from '../../../components/biker/earnings/IncentiveTracker';
 import BikerApiService from '../../../services/api/BikerApiService';
+import { useI18nStore } from '../../../store/i18nStore';
 
 const toAmount = (value: unknown): number => {
   if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
@@ -21,6 +22,7 @@ const toAmount = (value: unknown): number => {
 
 export default function BikerEarningsScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const t = useI18nStore((state) => state.t);
   const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
   
   // Earnings store
@@ -243,10 +245,24 @@ export default function BikerEarningsScreen() {
             }
           >
           {/* Header */}
-          <View className="px-6 pt-4 pb-6">
-            <ThemedText variant="title">Earnings</ThemedText>
-            <ThemedText variant="secondary" className="mt-1">
-              Driver pickup & transport income
+          <View
+            style={{
+              backgroundColor: '#720C17',
+              paddingHorizontal: 24,
+              paddingTop: 16,
+              paddingBottom: 20,
+              borderBottomLeftRadius: 24,
+              borderBottomRightRadius: 24,
+              shadowColor: '#720C17',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.25,
+              shadowRadius: 8,
+              elevation: 8,
+            }}
+          >
+            <ThemedText style={{ color: '#ffffff', fontSize: 22, fontWeight: '800' }}>{t('earnings')}</ThemedText>
+            <ThemedText style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, marginTop: 4 }}>
+              {t('driverPickupIncome')}
             </ThemedText>
           </View>
           
@@ -284,7 +300,7 @@ export default function BikerEarningsScreen() {
           {/* Earnings Summary */}
           <View className="px-6 mb-6">
             <ThemedCard className="p-6">
-              <ThemedText variant="secondary" className="mb-2">Total Earnings</ThemedText>
+              <ThemedText variant="secondary" className="mb-2">{t('totalEarnings')}</ThemedText>
               <ThemedText variant="title" className="text-3xl mb-4">₹{totalEarnings}</ThemedText>
               <View className="flex-row justify-between">
                 <View>

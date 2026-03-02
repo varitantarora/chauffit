@@ -43,7 +43,7 @@ export default function DriverVerification() {
     } else {
       Alert.alert(
         'Approve Driver',
-        'Are you sure you want to approve this driver?',
+        'This will verify the driver and mark them as ready for training. Continue?',
         [
           { text: 'Cancel', style: 'cancel' },
           {
@@ -118,7 +118,15 @@ export default function DriverVerification() {
               <ThemedText variant="h2">{driver.user_details.full_name || `${driver.user_details.first_name} ${driver.user_details.last_name}`}</ThemedText>
               <ThemedText variant="small" className="mt-1">{driver.user_details.email}</ThemedText>
               <View className="flex-row gap-2 mt-2">
-                <StatusBadge status={driver.current_status ? (driver.current_status === 'active' ? 'verified' : 'pending') : 'pending'} />
+                <StatusBadge status={
+                  driver.current_status === 'active' ? 'verified'
+                  : driver.current_status === 'verified_ready_for_training' ? 'verified'
+                  : driver.current_status === 'certified' ? 'verified'
+                  : driver.current_status === 'rejected' ? 'rejected'
+                  : driver.current_status === 'verification_failed' ? 'rejected'
+                  : 'pending'
+                } />
+                <ThemedText variant="tiny" className="mt-1">{driver.current_status_display || driver.current_status}</ThemedText>
               </View>
             </View>
 

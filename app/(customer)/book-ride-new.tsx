@@ -944,15 +944,13 @@ export default function BookRideScreen() {
                     <TouchableOpacity
                       key={type.id}
                       onPress={() => setTripType(type.id)}
-                      className={`flex-1 p-2 rounded-lg border ${
-                        tripType === type.id ? 'bg-burgundy border-burgundy' : inputClass
-                      }`}
+                      className={`flex-1 p-2 rounded-lg border ${tripType === type.id ? 'bg-burgundy border-burgundy' : inputClass
+                        }`}
                     >
                       <ThemedText
                         variant="small"
-                        className={`text-center ${
-                          tripType === type.id ? 'text-white' : ''
-                        }`}
+                        className={`text-center ${tripType === type.id ? 'text-white' : ''
+                          }`}
                       >
                         {type.label}
                       </ThemedText>
@@ -1107,7 +1105,7 @@ export default function BookRideScreen() {
               {/* To Location */}
               <View className="mb-4">
                 <ThemedText variant="small" className="mb-2 text-gray-600 dark:text-gray-400">
-                  To
+                  {tripType === 'round_trip' ? 'To (return point)' : 'To'}
                 </ThemedText>
                 <GooglePlacesAutocomplete
                   placeholder="Select destination"
@@ -1152,33 +1150,29 @@ export default function BookRideScreen() {
                 </ThemedText>
                 <View className="flex-row">
                   <TouchableOpacity
-                    className={`flex-1 p-3 rounded-xl border mr-2 ${
-                      scheduleOption === 'now'
+                    className={`flex-1 p-3 rounded-xl border mr-2 ${scheduleOption === 'now'
                         ? 'bg-burgundy border-burgundy'
                         : inputClass
-                    }`}
+                      }`}
                     onPress={() => setScheduleOption('now')}
                   >
                     <ThemedText
-                      className={`text-center ${
-                        scheduleOption === 'now' ? 'text-white' : ''
-                      }`}
+                      className={`text-center ${scheduleOption === 'now' ? 'text-white' : ''
+                        }`}
                     >
                       Now
                     </ThemedText>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    className={`flex-1 p-3 rounded-xl border ${
-                      scheduleOption === 'schedule'
+                    className={`flex-1 p-3 rounded-xl border ${scheduleOption === 'schedule'
                         ? 'bg-burgundy border-burgundy'
                         : inputClass
-                    }`}
+                      }`}
                     onPress={() => setShowScheduleModal(true)}
                   >
                     <ThemedText
-                      className={`text-center ${
-                        scheduleOption === 'schedule' ? 'text-white' : ''
-                      }`}
+                      className={`text-center ${scheduleOption === 'schedule' ? 'text-white' : ''
+                        }`}
                     >
                       Schedule
                     </ThemedText>
@@ -1553,11 +1547,10 @@ export default function BookRideScreen() {
                   <TouchableOpacity
                     key={car.id}
                     onPress={() => selectVehicle(car)}
-                    className={`mb-3 p-4 rounded-xl border ${
-                      selectedCar?.id === car.id
+                    className={`mb-3 p-4 rounded-xl border ${selectedCar?.id === car.id
                         ? 'border-burgundy bg-burgundy/10 dark:border-secondary dark:bg-secondary/10'
                         : 'border-gray-200 dark:border-darkBorder'
-                    }`}
+                      }`}
                   >
                     <View className="flex-row items-center">
                       <View className="w-12 h-12 bg-secondary/20 rounded-full items-center justify-center mr-3">
@@ -1615,230 +1608,230 @@ export default function BookRideScreen() {
                     />
                   </View>
                   <View>
-                  {/* Trip Summary */}
-                  <View className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                    <View className="flex-row items-center mb-2">
-                      <Ionicons name="location" size={16} color={isDarkMode ? '#BD8C5E' : '#666'} />
-                      <ThemedText variant="small" className="ml-2 flex-1">
-                        {pickupLocation.address}
-                      </ThemedText>
+                    {/* Trip Summary */}
+                    <View className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                      <View className="flex-row items-center mb-2">
+                        <Ionicons name="location" size={16} color={isDarkMode ? '#BD8C5E' : '#666'} />
+                        <ThemedText variant="small" className="ml-2 flex-1">
+                          {pickupLocation.address}
+                        </ThemedText>
+                      </View>
+                      <View className="flex-row items-center justify-center my-2">
+                        <Ionicons name="arrow-down" size={16} color={isDarkMode ? '#BD8C5E' : '#666'} />
+                      </View>
+                      <View className="flex-row items-center">
+                        <Ionicons name="navigate" size={16} color={isDarkMode ? '#BD8C5E' : '#666'} />
+                        <ThemedText variant="small" className="ml-2 flex-1">
+                          {dropLocation?.address}
+                        </ThemedText>
+                      </View>
                     </View>
-                    <View className="flex-row items-center justify-center my-2">
-                      <Ionicons name="arrow-down" size={16} color={isDarkMode ? '#BD8C5E' : '#666'} />
-                    </View>
-                    <View className="flex-row items-center">
-                      <Ionicons name="navigate" size={16} color={isDarkMode ? '#BD8C5E' : '#666'} />
-                      <ThemedText variant="small" className="ml-2 flex-1">
-                        {dropLocation?.address}
-                      </ThemedText>
-                    </View>
-                  </View>
 
-                  {/* Trip Details */}
-                  <View className="flex-row justify-between mb-4 px-2">
-                    <ThemedText variant="small" className="text-gray-600">
-                      Trip Type
-                    </ThemedText>
-                    <ThemedText variant="small" className="font-semibold">
-                      {getTripTypeLabel(tripType)}
-                    </ThemedText>
-                  </View>
-                  <View className="flex-row justify-between mb-4 px-2">
-                    <ThemedText variant="small" className="text-gray-600">
-                      Distance
-                    </ThemedText>
-                    <ThemedText variant="small" className="font-semibold">
-                      {fareEstimate.estimated_distance_km !== null
-                        ? `${fareEstimate.estimated_distance_km} km`
-                        : 'N/A'}
-                    </ThemedText>
-                  </View>
-                  <View className="flex-row justify-between mb-4 px-2">
-                    <ThemedText variant="small" className="text-gray-600">
-                      Duration
-                    </ThemedText>
-                    <ThemedText variant="small" className="font-semibold">
-                      {fareEstimate.estimated_duration_minutes
-                        ? formatDuration(fareEstimate.estimated_duration_minutes)
-                        : 'N/A'}
-                    </ThemedText>
-                  </View>
-                  <View className="flex-row justify-between mb-4 px-2">
-                    <ThemedText variant="small" className="text-gray-600">
-                      Vehicle
-                    </ThemedText>
-                    <View className="items-end">
+                    {/* Trip Details */}
+                    <View className="flex-row justify-between mb-4 px-2">
+                      <ThemedText variant="small" className="text-gray-600">
+                        Trip Type
+                      </ThemedText>
                       <ThemedText variant="small" className="font-semibold">
-                        {selectedCar?.make} {selectedCar?.model}
-                      </ThemedText>
-                      <ThemedText variant="tiny" className="text-gray-500">
-                        {selectedCar?.registrationNumber}
+                        {getTripTypeLabel(tripType)}
                       </ThemedText>
                     </View>
-                  </View>
+                    <View className="flex-row justify-between mb-4 px-2">
+                      <ThemedText variant="small" className="text-gray-600">
+                        Distance
+                      </ThemedText>
+                      <ThemedText variant="small" className="font-semibold">
+                        {fareEstimate.estimated_distance_km !== null
+                          ? `${fareEstimate.estimated_distance_km} km`
+                          : 'N/A'}
+                      </ThemedText>
+                    </View>
+                    <View className="flex-row justify-between mb-4 px-2">
+                      <ThemedText variant="small" className="text-gray-600">
+                        Duration
+                      </ThemedText>
+                      <ThemedText variant="small" className="font-semibold">
+                        {fareEstimate.estimated_duration_minutes
+                          ? formatDuration(fareEstimate.estimated_duration_minutes)
+                          : 'N/A'}
+                      </ThemedText>
+                    </View>
+                    <View className="flex-row justify-between mb-4 px-2">
+                      <ThemedText variant="small" className="text-gray-600">
+                        Vehicle
+                      </ThemedText>
+                      <View className="items-end">
+                        <ThemedText variant="small" className="font-semibold">
+                          {selectedCar?.make} {selectedCar?.model}
+                        </ThemedText>
+                        <ThemedText variant="tiny" className="text-gray-500">
+                          {selectedCar?.registrationNumber}
+                        </ThemedText>
+                      </View>
+                    </View>
 
-                  {/* Fare Breakdown */}
-                  <View className="border-t border-gray-200 dark:border-gray-700 pt-4 mb-4">
-                    <View className="flex-row justify-between items-center mb-2">
-                      <ThemedText variant="h3">Estimated Fare</ThemedText>
-                      <ThemedText variant="h2" className="text-burgundy">
-                        {formatFare(Number(fareEstimate.estimated_fare))}
-                      </ThemedText>
-                    </View>
-                    {fareEstimate.fare_breakdown && (
-                      <>
-                        <View className="flex-row justify-between mb-1 px-2">
-                          <ThemedText variant="tiny" className="text-gray-500">Base fare</ThemedText>
-                          <ThemedText variant="tiny" className="text-gray-500">
-                            {formatFare(parseFloat(fareEstimate.fare_breakdown.base_fare))}
-                          </ThemedText>
-                        </View>
-                        <View className="flex-row justify-between mb-1 px-2">
-                          <ThemedText variant="tiny" className="text-gray-500">
-                            {fareEstimate.fare_breakdown.distance_km && fareEstimate.fare_breakdown.per_km_rate
-                              ? `Distance (${parseFloat(fareEstimate.fare_breakdown.distance_km).toFixed(2)} km × ₹${fareEstimate.fare_breakdown.per_km_rate}/km)`
-                              : 'Distance fare'}
-                          </ThemedText>
-                          <ThemedText variant="tiny" className="text-gray-500">
-                            {formatFare(parseFloat(fareEstimate.fare_breakdown.distance_fare))}
-                          </ThemedText>
-                        </View>
-                        {fareEstimate.fare_breakdown.time_fare !== undefined && parseFloat(fareEstimate.fare_breakdown.time_fare) > 0 && (
+                    {/* Fare Breakdown */}
+                    <View className="border-t border-gray-200 dark:border-gray-700 pt-4 mb-4">
+                      <View className="flex-row justify-between items-center mb-2">
+                        <ThemedText variant="h3">Estimated Fare</ThemedText>
+                        <ThemedText variant="h2" className="text-burgundy">
+                          {formatFare(Number(fareEstimate.estimated_fare))}
+                        </ThemedText>
+                      </View>
+                      {fareEstimate.fare_breakdown && (
+                        <>
                           <View className="flex-row justify-between mb-1 px-2">
-                            <ThemedText variant="tiny" className="text-gray-500">Time fare</ThemedText>
+                            <ThemedText variant="tiny" className="text-gray-500">Base fare</ThemedText>
                             <ThemedText variant="tiny" className="text-gray-500">
-                              {formatFare(parseFloat(fareEstimate.fare_breakdown.time_fare))}
+                              {formatFare(parseFloat(fareEstimate.fare_breakdown.base_fare))}
                             </ThemedText>
                           </View>
-                        )}
-                        {fareEstimate.fare_breakdown.subtotal !== undefined && (
-                          <View className="flex-row justify-between mb-1 px-2">
-                            <ThemedText variant="tiny" className="text-gray-500">Subtotal</ThemedText>
-                            <ThemedText variant="tiny" className="text-gray-500">
-                              {formatFare(parseFloat(fareEstimate.fare_breakdown.subtotal))}
-                            </ThemedText>
-                          </View>
-                        )}
-                        {fareEstimate.surge_multiplier !== undefined && fareEstimate.surge_multiplier > 1 && fareEstimate.fare_breakdown.surge_amount !== undefined && (
                           <View className="flex-row justify-between mb-1 px-2">
                             <ThemedText variant="tiny" className="text-gray-500">
-                              Surge x{fareEstimate.surge_multiplier.toFixed(2)}
+                              {fareEstimate.fare_breakdown.distance_km && fareEstimate.fare_breakdown.per_km_rate
+                                ? `Distance (${parseFloat(fareEstimate.fare_breakdown.distance_km).toFixed(2)} km × ₹${fareEstimate.fare_breakdown.per_km_rate}/km)`
+                                : 'Distance fare'}
                             </ThemedText>
                             <ThemedText variant="tiny" className="text-gray-500">
-                              {formatFare(parseFloat(fareEstimate.fare_breakdown.surge_amount))}
+                              {formatFare(parseFloat(fareEstimate.fare_breakdown.distance_fare))}
                             </ThemedText>
                           </View>
-                        )}
-                        {fareEstimate.fare_breakdown.insurance_premium !== undefined && parseFloat(fareEstimate.fare_breakdown.insurance_premium) > 0 && (
-                          <View className="flex-row justify-between mb-1 px-2">
-                            <ThemedText variant="tiny" className="text-green-600">Insurance Premium</ThemedText>
-                            <ThemedText variant="tiny" className="text-green-600">
-                              {formatFare(parseFloat(fareEstimate.fare_breakdown.insurance_premium))}
-                            </ThemedText>
-                          </View>
-                        )}
-                        {amenitiesTotal > 0 && (
-                          <View className="flex-row justify-between mb-1 px-2">
-                            <ThemedText variant="tiny" className="text-amber-600">Amenities ({selectedAmenitiesCount})</ThemedText>
-                            <ThemedText variant="tiny" className="text-amber-600">
-                              {formatFare(amenitiesTotal)}
-                            </ThemedText>
-                          </View>
-                        )}
-                        {fareEstimate.fare_breakdown.total !== undefined && (
-                          <>
-                            <View className="border-t border-gray-200 dark:border-gray-600 mt-1 mb-1 mx-2" />
+                          {fareEstimate.fare_breakdown.time_fare !== undefined && parseFloat(fareEstimate.fare_breakdown.time_fare) > 0 && (
                             <View className="flex-row justify-between mb-1 px-2">
-                              <ThemedText variant="tiny" className="text-gray-500 font-semibold">Total</ThemedText>
-                              <ThemedText variant="tiny" className="text-gray-500 font-semibold">
-                                {formatFare(parseFloat(fareEstimate.fare_breakdown.total))}
+                              <ThemedText variant="tiny" className="text-gray-500">Time fare</ThemedText>
+                              <ThemedText variant="tiny" className="text-gray-500">
+                                {formatFare(parseFloat(fareEstimate.fare_breakdown.time_fare))}
                               </ThemedText>
                             </View>
-                          </>
-                        )}
-                      </>
-                    )}
-                    <ThemedText variant="tiny" className="text-gray-500 text-center">
-                      *Final fare may vary based on actual route and traffic
-                    </ThemedText>
+                          )}
+                          {fareEstimate.fare_breakdown.subtotal !== undefined && (
+                            <View className="flex-row justify-between mb-1 px-2">
+                              <ThemedText variant="tiny" className="text-gray-500">Subtotal</ThemedText>
+                              <ThemedText variant="tiny" className="text-gray-500">
+                                {formatFare(parseFloat(fareEstimate.fare_breakdown.subtotal))}
+                              </ThemedText>
+                            </View>
+                          )}
+                          {fareEstimate.surge_multiplier !== undefined && fareEstimate.surge_multiplier > 1 && fareEstimate.fare_breakdown.surge_amount !== undefined && (
+                            <View className="flex-row justify-between mb-1 px-2">
+                              <ThemedText variant="tiny" className="text-gray-500">
+                                Surge x{fareEstimate.surge_multiplier.toFixed(2)}
+                              </ThemedText>
+                              <ThemedText variant="tiny" className="text-gray-500">
+                                {formatFare(parseFloat(fareEstimate.fare_breakdown.surge_amount))}
+                              </ThemedText>
+                            </View>
+                          )}
+                          {fareEstimate.fare_breakdown.insurance_premium !== undefined && parseFloat(fareEstimate.fare_breakdown.insurance_premium) > 0 && (
+                            <View className="flex-row justify-between mb-1 px-2">
+                              <ThemedText variant="tiny" className="text-green-600">Insurance Premium</ThemedText>
+                              <ThemedText variant="tiny" className="text-green-600">
+                                {formatFare(parseFloat(fareEstimate.fare_breakdown.insurance_premium))}
+                              </ThemedText>
+                            </View>
+                          )}
+                          {amenitiesTotal > 0 && (
+                            <View className="flex-row justify-between mb-1 px-2">
+                              <ThemedText variant="tiny" className="text-amber-600">Amenities ({selectedAmenitiesCount})</ThemedText>
+                              <ThemedText variant="tiny" className="text-amber-600">
+                                {formatFare(amenitiesTotal)}
+                              </ThemedText>
+                            </View>
+                          )}
+                          {fareEstimate.fare_breakdown.total !== undefined && (
+                            <>
+                              <View className="border-t border-gray-200 dark:border-gray-600 mt-1 mb-1 mx-2" />
+                              <View className="flex-row justify-between mb-1 px-2">
+                                <ThemedText variant="tiny" className="text-gray-500 font-semibold">Total</ThemedText>
+                                <ThemedText variant="tiny" className="text-gray-500 font-semibold">
+                                  {formatFare(parseFloat(fareEstimate.fare_breakdown.total))}
+                                </ThemedText>
+                              </View>
+                            </>
+                          )}
+                        </>
+                      )}
+                      <ThemedText variant="tiny" className="text-gray-500 text-center">
+                        *Final fare may vary based on actual route and traffic
+                      </ThemedText>
+                    </View>
+
+                    {/* Insurance Selection */}
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShowFareModal(false);
+                        openInsuranceModal();
+                      }}
+                      className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800"
+                    >
+                      <View className="flex-row items-center justify-between">
+                        <View className="flex-row items-center">
+                          <View className="w-10 h-10 bg-blue-100 rounded-full items-center justify-center mr-3">
+                            <Ionicons name="shield-checkmark" size={20} color="#3B82F6" />
+                          </View>
+                          <View>
+                            <ThemedText variant="small" className="font-semibold">
+                              {selectedInsurancePlanId ? 'Insurance Added' : 'Add Trip Insurance'}
+                            </ThemedText>
+                            <ThemedText variant="tiny" className="text-gray-500">
+                              {selectedInsurancePlanId
+                                ? `₹${selectedInsurancePremium} for trip coverage`
+                                : 'Protect your journey from unexpected damages'}
+                            </ThemedText>
+                          </View>
+                        </View>
+                        <Ionicons
+                          name={selectedInsurancePlanId ? "checkmark-circle" : "chevron-forward"}
+                          size={24}
+                          color={selectedInsurancePlanId ? "#10B981" : "#3B82F6"}
+                        />
+                      </View>
+                    </TouchableOpacity>
+
+                    {/* Amenities Selection in Fare Modal */}
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShowFareModal(false);
+                        setShowAmenityModal(true);
+                      }}
+                      className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800"
+                    >
+                      <View className="flex-row items-center justify-between">
+                        <View className="flex-row items-center">
+                          <View className="w-10 h-10 bg-amber-100 rounded-full items-center justify-center mr-3">
+                            <Ionicons name="cafe" size={20} color="#D97706" />
+                          </View>
+                          <View>
+                            <ThemedText variant="small" className="font-semibold">
+                              {selectedAmenitiesCount > 0
+                                ? `${selectedAmenitiesCount} Amenit${selectedAmenitiesCount === 1 ? 'y' : 'ies'} Added`
+                                : 'Add Amenities'}
+                            </ThemedText>
+                            <ThemedText variant="tiny" className="text-gray-500">
+                              {selectedAmenitiesCount > 0
+                                ? `${formatFare(amenitiesTotal)} total`
+                                : 'Customize your ride experience'}
+                            </ThemedText>
+                          </View>
+                        </View>
+                        <Ionicons
+                          name={selectedAmenitiesCount > 0 ? "checkmark-circle" : "chevron-forward"}
+                          size={24}
+                          color={selectedAmenitiesCount > 0 ? "#10B981" : "#D97706"}
+                        />
+                      </View>
+                    </TouchableOpacity>
+
+                    {/* Confirm Button */}
+                    <PrimaryButton
+                      title="CONFIRM BOOKING"
+                      onPress={confirmBooking}
+                      loading={isBooking}
+                      className="w-full"
+                    />
                   </View>
-
-                  {/* Insurance Selection */}
-                  <TouchableOpacity
-                    onPress={() => {
-                      setShowFareModal(false);
-                      openInsuranceModal();
-                    }}
-                    className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800"
-                  >
-                    <View className="flex-row items-center justify-between">
-                      <View className="flex-row items-center">
-                        <View className="w-10 h-10 bg-blue-100 rounded-full items-center justify-center mr-3">
-                          <Ionicons name="shield-checkmark" size={20} color="#3B82F6" />
-                        </View>
-                        <View>
-                          <ThemedText variant="small" className="font-semibold">
-                            {selectedInsurancePlanId ? 'Insurance Added' : 'Add Trip Insurance'}
-                          </ThemedText>
-                          <ThemedText variant="tiny" className="text-gray-500">
-                            {selectedInsurancePlanId
-                              ? `₹${selectedInsurancePremium} for trip coverage`
-                              : 'Protect your journey from unexpected damages'}
-                          </ThemedText>
-                        </View>
-                      </View>
-                      <Ionicons
-                        name={selectedInsurancePlanId ? "checkmark-circle" : "chevron-forward"}
-                        size={24}
-                        color={selectedInsurancePlanId ? "#10B981" : "#3B82F6"}
-                      />
-                    </View>
-                  </TouchableOpacity>
-
-                  {/* Amenities Selection in Fare Modal */}
-                  <TouchableOpacity
-                    onPress={() => {
-                      setShowFareModal(false);
-                      setShowAmenityModal(true);
-                    }}
-                    className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800"
-                  >
-                    <View className="flex-row items-center justify-between">
-                      <View className="flex-row items-center">
-                        <View className="w-10 h-10 bg-amber-100 rounded-full items-center justify-center mr-3">
-                          <Ionicons name="cafe" size={20} color="#D97706" />
-                        </View>
-                        <View>
-                          <ThemedText variant="small" className="font-semibold">
-                            {selectedAmenitiesCount > 0
-                              ? `${selectedAmenitiesCount} Amenit${selectedAmenitiesCount === 1 ? 'y' : 'ies'} Added`
-                              : 'Add Amenities'}
-                          </ThemedText>
-                          <ThemedText variant="tiny" className="text-gray-500">
-                            {selectedAmenitiesCount > 0
-                              ? `${formatFare(amenitiesTotal)} total`
-                              : 'Customize your ride experience'}
-                          </ThemedText>
-                        </View>
-                      </View>
-                      <Ionicons
-                        name={selectedAmenitiesCount > 0 ? "checkmark-circle" : "chevron-forward"}
-                        size={24}
-                        color={selectedAmenitiesCount > 0 ? "#10B981" : "#D97706"}
-                      />
-                    </View>
-                  </TouchableOpacity>
-
-                  {/* Confirm Button */}
-                  <PrimaryButton
-                    title="CONFIRM BOOKING"
-                    onPress={confirmBooking}
-                    loading={isBooking}
-                    className="w-full"
-                  />
-                </View>
-              </ScrollView>
-            )}
+                </ScrollView>
+              )}
             </View>
           </View>
         </Modal>
@@ -1878,11 +1871,10 @@ export default function BookRideScreen() {
                     <TouchableOpacity
                       key={plan.id}
                       onPress={() => setTempSelectedPlanId(isSelected ? null : plan.id)}
-                      className={`mb-3 p-4 rounded-xl border-2 ${
-                        isSelected
+                      className={`mb-3 p-4 rounded-xl border-2 ${isSelected
                           ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                           : 'border-gray-200 dark:border-gray-700'
-                      }`}
+                        }`}
                       activeOpacity={0.8}
                     >
                       <View className="flex-row items-start justify-between mb-2">
@@ -1892,9 +1884,8 @@ export default function BookRideScreen() {
                         </View>
                         <View className="items-end ml-3">
                           <ThemedText variant="h3" className="text-blue-600 font-bold">₹{premium}</ThemedText>
-                          <View className={`w-6 h-6 rounded-full border-2 mt-1 items-center justify-center ${
-                            isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
-                          }`}>
+                          <View className={`w-6 h-6 rounded-full border-2 mt-1 items-center justify-center ${isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
+                            }`}>
                             {isSelected && <Ionicons name="checkmark" size={14} color="white" />}
                           </View>
                         </View>
@@ -1986,11 +1977,10 @@ export default function BookRideScreen() {
                           <TouchableOpacity
                             key={amenity.id}
                             onPress={() => toggleAmenity(amenity)}
-                            className={`mb-2 p-3 rounded-xl border-2 ${
-                              isSelected
+                            className={`mb-2 p-3 rounded-xl border-2 ${isSelected
                                 ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
                                 : 'border-gray-200 dark:border-gray-700'
-                            }`}
+                              }`}
                             activeOpacity={0.8}
                           >
                             <View className="flex-row items-center justify-between">
@@ -2009,9 +1999,8 @@ export default function BookRideScreen() {
                                 <ThemedText variant="small" className="font-bold text-amber-600">
                                   {AmenityApiService.formatPrice(amenity.price)}
                                 </ThemedText>
-                                <View className={`w-5 h-5 rounded-full border-2 mt-1 items-center justify-center ${
-                                  isSelected ? 'border-amber-500 bg-amber-500' : 'border-gray-300'
-                                }`}>
+                                <View className={`w-5 h-5 rounded-full border-2 mt-1 items-center justify-center ${isSelected ? 'border-amber-500 bg-amber-500' : 'border-gray-300'
+                                  }`}>
                                   {isSelected && <Ionicons name="checkmark" size={12} color="white" />}
                                 </View>
                               </View>
@@ -2145,17 +2134,15 @@ export default function BookRideScreen() {
                             <TouchableOpacity
                               key={day.dateString}
                               onPress={() => handleDateSelect(day.date)}
-                              className={`px-4 py-3 rounded-xl border-2 min-w-[70px] items-center ${
-                                isSelected
+                              className={`px-4 py-3 rounded-xl border-2 min-w-[70px] items-center ${isSelected
                                   ? 'border-burgundy bg-burgundy/10 dark:border-secondary dark:bg-secondary/10'
                                   : 'border-gray-200 dark:border-gray-700'
-                              }`}
+                                }`}
                             >
                               <ThemedText
                                 variant="tiny"
-                                className={`${
-                                  isSelected ? 'text-burgundy dark:text-secondary font-semibold' : 'text-gray-500'
-                                }`}
+                                className={`${isSelected ? 'text-burgundy dark:text-secondary font-semibold' : 'text-gray-500'
+                                  }`}
                               >
                                 {isToday ? 'Today' : day.dayName}
                               </ThemedText>
@@ -2195,23 +2182,21 @@ export default function BookRideScreen() {
                               key={timeSlot.value}
                               onPress={() => !isDisabled && handleTimeSelect(timeSlot.value)}
                               disabled={isDisabled}
-                              className={`px-4 py-3 rounded-xl border-2 min-w-[90px] items-center ${
-                                isDisabled
+                              className={`px-4 py-3 rounded-xl border-2 min-w-[90px] items-center ${isDisabled
                                   ? 'border-gray-100 bg-gray-50 opacity-50'
                                   : isSelected
-                                  ? 'border-burgundy bg-burgundy/10'
-                                  : 'border-gray-200 dark:border-gray-700'
-                              }`}
+                                    ? 'border-burgundy bg-burgundy/10'
+                                    : 'border-gray-200 dark:border-gray-700'
+                                }`}
                             >
                               <ThemedText
                                 variant="body"
-                                className={`${
-                                  isDisabled
+                                className={`${isDisabled
                                     ? 'text-gray-400'
                                     : isSelected
-                                    ? 'text-burgundy dark:text-secondary font-semibold'
-                                    : ''
-                                }`}
+                                      ? 'text-burgundy dark:text-secondary font-semibold'
+                                      : ''
+                                  }`}
                               >
                                 {timeSlot.label}
                               </ThemedText>
@@ -2312,11 +2297,10 @@ export default function BookRideScreen() {
                     <TouchableOpacity
                       key={type}
                       onPress={() => setNewPlaceType(type)}
-                      className={`flex-row items-center mr-3 px-3 py-2 rounded-full border ${
-                        active
+                      className={`flex-row items-center mr-3 px-3 py-2 rounded-full border ${active
                           ? 'border-secondary bg-secondary/10'
                           : 'border-gray-300 dark:border-darkBorder'
-                      }`}
+                        }`}
                     >
                       <Ionicons
                         name={type === 'home' ? 'home' : type === 'work' ? 'business' : 'star'}
@@ -2437,9 +2421,8 @@ export default function BookRideScreen() {
 
               {/* Input */}
               <TextInput
-                className={`border border-gray-300 dark:border-darkBorder rounded-xl p-4 mb-4 text-lg ${
-                  isDarkMode ? 'bg-darkSurface text-darkText' : 'bg-white text-textPrimary'
-                }`}
+                className={`border border-gray-300 dark:border-darkBorder rounded-xl p-4 mb-4 text-lg ${isDarkMode ? 'bg-darkSurface text-darkText' : 'bg-white text-textPrimary'
+                  }`}
                 placeholder="₹ Enter amount"
                 placeholderTextColor="#9CA3AF"
                 value={creditsInput}

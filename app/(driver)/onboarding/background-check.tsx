@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,66 +9,84 @@ import { ThemedText } from '../../../components/common/ThemedText';
 import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { useAuthStore } from '../../../store/authStore';
 
-interface VerificationStep {
-  id: string;
-  title: string;
-  status: 'completed' | 'in-progress' | 'pending';
-  completedDate?: string;
-  estimatedDays?: string;
-}
-
 export default function BackgroundCheckScreen() {
   const router = useRouter();
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const driverOnboardingStatus = useAuthStore((state) => state.driverOnboardingStatus);
+  const fetchDriverOnboardingStatus = useAuthStore((state) => state.fetchDriverOnboardingStatus);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const verificationSteps: VerificationStep[] = [
-    {
-      id: 'documents',
-      title: 'Documents Submitted',
-      status: 'completed',
-      completedDate: 'Mar 15, 2024'
-    },
-    {
-      id: 'identity',
-      title: 'Identity Verification',
-      status: 'in-progress',
-      estimatedDays: '2-3 days'
-    },
-    {
-      id: 'driving-record',
-      title: 'Driving Record Check',
-      status: 'pending',
-      estimatedDays: '3-5 days'
-    },
-    {
-      id: 'background',
-      title: 'Background Verification',
-      status: 'pending',
-      estimatedDays: '5-7 days'
-    },
-    {
-      id: 'final-review',
-      title: 'Final Review',
-      status: 'pending',
-      estimatedDays: '1-2 days'
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchDriverOnboardingStatus();
+    setRefreshing(false);
+    // If status changed to one that needs a different screen, navigate
+    const newStatus = useAuthStore.getState().driverOnboardingStatus;
+    if (newStatus === 'training_scheduled') {
+      router.replace('/(driver)/onboarding/training-scheduled');
+    } else if (newStatus === 'certified') {
+      router.replace('/(driver)/onboarding/onboarding-complete');
+    } else if (newStatus === 'active') {
+      router.replace('/(driver)/(tabs)');
     }
-  ];
+  }, [fetchDriverOnboardingStatus, router]);
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed': return 'checkmark-circle';
-      case 'in-progress': return 'time';
-      default: return 'time';
+  const getStatusMessage = () => {
+    switch (driverOnboardingStatus) {
+      case 'registered':
+        return {
+          title: 'Documents Under Review',
+          subtitle: 'Your documents have been submitted and are awaiting review.',
+          icon: 'document-text' as const,
+          color: '#f59e0b',
+        };
+      case 'verification_in_progress':
+        return {
+          title: 'Verification In Progress',
+          subtitle: 'Your documents are being verified. This usually takes 2-3 business days.',
+          icon: 'time' as const,
+          color: '#f59e0b',
+        };
+      case 'verification_failed':
+        return {
+          title: 'Verification Failed',
+          subtitle: 'Some of your documents could not be verified. Please re-upload the required documents.',
+          icon: 'alert-circle' as const,
+          color: '#EF4444',
+        };
+      case 'verified_ready_for_training':
+        return {
+          title: 'Verified!',
+          subtitle: 'Your documents have been verified. Awaiting training assignment.',
+          icon: 'checkmark-circle' as const,
+          color: '#10B981',
+        };
+      case 'suspended':
+        return {
+          title: 'Account Suspended',
+          subtitle: 'Your account has been suspended. Please contact support for more information.',
+          icon: 'ban' as const,
+          color: '#EF4444',
+        };
+      case 'rejected':
+        return {
+          title: 'Application Rejected',
+          subtitle: 'Unfortunately, your application has been rejected. Please contact support for more information.',
+          icon: 'close-circle' as const,
+          color: '#EF4444',
+        };
+      default:
+        return {
+          title: 'Application Status',
+          subtitle: 'Your application is being processed.',
+          icon: 'hourglass' as const,
+          color: '#6b7280',
+        };
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return '#10b981';
-      case 'in-progress': return '#f59e0b';
-      default: return '#6b7280';
-    }
-  };
+  const statusInfo = getStatusMessage();
+  const showReupload = driverOnboardingStatus === 'verification_failed';
 
   return (
     <SafeAreaView className="flex-1">
@@ -80,15 +98,33 @@ export default function BackgroundCheckScreen() {
               <Ionicons name="arrow-back" size={24} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
             </TouchableOpacity>
             <ThemedText variant="title" className="font-bold">
-              Background Check Status
+              Application Status
             </ThemedText>
-            <View className="w-6" />
+            <TouchableOpacity onPress={handleRefresh} disabled={refreshing}>
+              {refreshing ? (
+                <ActivityIndicator size="small" color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
+              ) : (
+                <Ionicons name="refresh" size={24} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
+              )}
+            </TouchableOpacity>
           </View>
 
-          <View className="px-6 pt-6">
-            <ThemedText variant="secondary" className="text-center mb-6">
-              Your application is being processed
-            </ThemedText>
+          <View className="px-6 pt-8">
+            {/* Status Icon & Message */}
+            <View className="items-center mb-8">
+              <View
+                className="w-20 h-20 rounded-full items-center justify-center mb-4"
+                style={{ backgroundColor: `${statusInfo.color}20` }}
+              >
+                <Ionicons name={statusInfo.icon} size={48} color={statusInfo.color} />
+              </View>
+              <ThemedText variant="title" className="text-xl font-bold text-center mb-2">
+                {statusInfo.title}
+              </ThemedText>
+              <ThemedText variant="secondary" className="text-center px-4">
+                {statusInfo.subtitle}
+              </ThemedText>
+            </View>
 
             {/* Verification Status Header */}
             <View className="flex-row items-center mb-4">
@@ -96,55 +132,64 @@ export default function BackgroundCheckScreen() {
               <ThemedText className="font-bold ml-2">VERIFICATION STATUS</ThemedText>
             </View>
 
-            {/* Verification Steps */}
-            <View className="space-y-4 mb-6">
-              {verificationSteps.map((step, index) => (
-                <ThemedCard key={step.id} className="p-4">
-                  <View className="flex-row items-center justify-between">
-                    <View className="flex-row items-center flex-1">
-                      <Ionicons 
-                        name={getStatusIcon(step.status) as any} 
-                        size={20} 
-                        color={getStatusColor(step.status)} 
-                      />
-                      <View className="ml-3 flex-1">
-                        <ThemedText className="font-semibold">
-                          {step.status === 'completed' ? '✅' : step.status === 'in-progress' ? '⏳' : '⏳'} {step.title}
-                        </ThemedText>
-                        <ThemedText variant="caption" className="text-secondary">
-                          {step.status === 'completed' 
-                            ? `Completed on ${step.completedDate}`
-                            : step.status === 'in-progress'
-                            ? `In progress (${step.estimatedDays})`
-                            : `Pending (${step.estimatedDays})`
-                          }
-                        </ThemedText>
-                      </View>
-                    </View>
-                  </View>
-                </ThemedCard>
-              ))}
+            {/* Dynamic Steps Based on Status */}
+            <View className="space-y-3 mb-6">
+              <StatusStep
+                title="Documents Submitted"
+                status={driverOnboardingStatus === 'registered' ? 'in-progress' : 'completed'}
+              />
+              <StatusStep
+                title="Identity Verification"
+                status={
+                  driverOnboardingStatus === 'verification_in_progress'
+                    ? 'in-progress'
+                    : driverOnboardingStatus === 'verification_failed'
+                    ? 'failed'
+                    : ['verified_ready_for_training', 'training_scheduled', 'certified', 'active'].includes(driverOnboardingStatus || '')
+                    ? 'completed'
+                    : 'pending'
+                }
+              />
+              <StatusStep
+                title="Background Verification"
+                status={
+                  driverOnboardingStatus === 'verification_in_progress'
+                    ? 'pending'
+                    : ['verified_ready_for_training', 'training_scheduled', 'certified', 'active'].includes(driverOnboardingStatus || '')
+                    ? 'completed'
+                    : driverOnboardingStatus === 'verification_failed'
+                    ? 'failed'
+                    : 'pending'
+                }
+              />
+              <StatusStep
+                title="Training Assignment"
+                status={
+                  driverOnboardingStatus === 'verified_ready_for_training'
+                    ? 'in-progress'
+                    : ['training_scheduled', 'certified', 'active'].includes(driverOnboardingStatus || '')
+                    ? 'completed'
+                    : 'pending'
+                }
+              />
             </View>
 
-            {/* Next Steps */}
-            <View className="flex-row items-center mb-4">
-              <Ionicons name="phone-portrait" size={20} color="#BD8C5E" />
-              <ThemedText className="font-bold ml-2">NEXT STEPS</ThemedText>
-            </View>
-
-            <ThemedCard className="p-4 mb-6">
-              <View className="space-y-2">
-                <ThemedText>• Complete online training module</ThemedText>
-                <ThemedText>• Schedule in-person orientation</ThemedText>
-                <ThemedText>• Download driver app</ThemedText>
-              </View>
-            </ThemedCard>
+            {/* Re-upload button for failed verification */}
+            {showReupload && (
+              <PrimaryButton
+                title="Re-upload Documents"
+                onPress={() => router.push('/(driver)/onboarding/documents')}
+                className="mb-6"
+              />
+            )}
 
             {/* Timeline */}
             <ThemedCard className="p-4 mb-6">
               <View className="items-center">
                 <ThemedText className="font-bold text-burgundy text-lg mb-2">
-                  Estimated completion: 7-10 days
+                  {driverOnboardingStatus === 'verified_ready_for_training'
+                    ? 'Awaiting training assignment'
+                    : 'Estimated completion: 7-10 days'}
                 </ThemedText>
                 <ThemedText variant="secondary" className="text-center">
                   We'll notify you via SMS & email
@@ -162,7 +207,7 @@ export default function BackgroundCheckScreen() {
                   </ThemedText>
                 </View>
               </TouchableOpacity>
-              
+
               <TouchableOpacity className="flex-1 bg-secondary/10 py-3 px-4 rounded-lg border border-secondary/20">
                 <View className="flex-row items-center justify-center">
                   <Ionicons name="help-circle" size={16} color="#BD8C5E" />
@@ -176,5 +221,47 @@ export default function BackgroundCheckScreen() {
         </ScrollView>
       </ThemedView>
     </SafeAreaView>
+  );
+}
+
+function StatusStep({
+  title,
+  status,
+}: {
+  title: string;
+  status: 'completed' | 'in-progress' | 'pending' | 'failed';
+}) {
+  const getIcon = () => {
+    switch (status) {
+      case 'completed': return { name: 'checkmark-circle' as const, color: '#10B981' };
+      case 'in-progress': return { name: 'time' as const, color: '#f59e0b' };
+      case 'failed': return { name: 'close-circle' as const, color: '#EF4444' };
+      default: return { name: 'ellipse-outline' as const, color: '#6b7280' };
+    }
+  };
+
+  const getLabel = () => {
+    switch (status) {
+      case 'completed': return 'Completed';
+      case 'in-progress': return 'In Progress';
+      case 'failed': return 'Failed';
+      default: return 'Pending';
+    }
+  };
+
+  const icon = getIcon();
+
+  return (
+    <ThemedCard className="p-4">
+      <View className="flex-row items-center">
+        <Ionicons name={icon.name} size={20} color={icon.color} />
+        <View className="ml-3 flex-1">
+          <ThemedText className="font-semibold">{title}</ThemedText>
+          <ThemedText variant="caption" style={{ color: icon.color }}>
+            {getLabel()}
+          </ThemedText>
+        </View>
+      </View>
+    </ThemedCard>
   );
 }

@@ -9,6 +9,7 @@ import { JobCard } from '../../../components/driver/job/JobCard';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../store/authStore';
 import { useJobStore } from '../../../store/jobStore';
+import { useI18nStore } from '../../../store/i18nStore';
 
 type TabType = 'pending' | 'accepted' | 'in-progress' | 'completed';
 
@@ -24,6 +25,7 @@ export default function RideRequestsScreen() {
   const router = useRouter();
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const user = useAuthStore((state) => state.user);
+  const t = useI18nStore((state) => state.t);
 
   const {
     pendingRequests,
@@ -256,12 +258,26 @@ export default function RideRequestsScreen() {
           }
         >
           {/* Header */}
-          <View className="px-6 pt-4 pb-6">
-            <ThemedText variant="title" className="text-2xl font-bold">
-              Ride Requests
+          <View
+            style={{
+              backgroundColor: '#720C17',
+              paddingHorizontal: 24,
+              paddingTop: 16,
+              paddingBottom: 20,
+              borderBottomLeftRadius: 24,
+              borderBottomRightRadius: 24,
+              shadowColor: '#720C17',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.25,
+              shadowRadius: 8,
+              elevation: 8,
+            }}
+          >
+            <ThemedText style={{ color: '#ffffff', fontSize: 22, fontWeight: '800' }}>
+              {t('rideRequests')}
             </ThemedText>
-            <ThemedText variant="secondary" className="mt-1">
-              {getPendingCount()} pending request{getPendingCount() !== 1 ? 's' : ''}
+            <ThemedText style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, marginTop: 4 }}>
+              {getPendingCount()} {t('pendingRequests')}
             </ThemedText>
           </View>
 

@@ -8,7 +8,7 @@ import { ThemedCard } from '../../../components/common/ThemedCard';
 import { ThemedText } from '../../../components/common/ThemedText';
 import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { useAuthStore } from '../../../store/authStore';
-import DriverApiService, { DriverDocumentRequest } from '../../../services/api/DriverApiService';
+import DriverApiService, { DriverDocumentRequest, DriverDocumentType } from '../../../services/api/DriverApiService';
 import * as ImagePicker from 'expo-image-picker';
 
 interface DocumentStatus {
@@ -17,6 +17,7 @@ interface DocumentStatus {
   icon: string;
   uploaded: boolean;
   status: 'pending' | 'uploaded' | 'verified' | 'rejected';
+  apiType: DriverDocumentType;
 }
 
 export default function DocumentUploadScreen() {
@@ -25,33 +26,37 @@ export default function DocumentUploadScreen() {
   
   const [documents, setDocuments] = useState<DocumentStatus[]>([
     {
-      id: 'license',
-      name: 'Driving License',
+      id: 'license_front',
+      name: 'Driving License (Front)',
       icon: 'card',
       uploaded: false,
-      status: 'pending'
+      status: 'pending',
+      apiType: 'driving_license_front',
     },
     {
-      id: 'id',
-      name: 'Government ID (Aadhar/PAN)',
+      id: 'license_back',
+      name: 'Driving License (Back)',
+      icon: 'card',
+      uploaded: false,
+      status: 'pending',
+      apiType: 'driving_license_back',
+    },
+    {
+      id: 'aadhaar_front',
+      name: 'Aadhaar Card (Front)',
       icon: 'id-card',
       uploaded: false,
-      status: 'pending'
+      status: 'pending',
+      apiType: 'aadhaar_front',
     },
     {
-      id: 'address',
-      name: 'Address Proof',
-      icon: 'location',
+      id: 'aadhaar_back',
+      name: 'Aadhaar Card (Back)',
+      icon: 'id-card',
       uploaded: false,
-      status: 'pending'
+      status: 'pending',
+      apiType: 'aadhaar_back',
     },
-    {
-      id: 'bank',
-      name: 'Bank Account Details',
-      icon: 'card',
-      uploaded: false,
-      status: 'pending'
-    }
   ]);
 
   const [liveSelfie, setLiveSelfie] = useState({
@@ -59,63 +64,79 @@ export default function DocumentUploadScreen() {
     status: 'pending'
   });
 
-  // Map document ID to API document type
-  const mapDocIdToApiType = (docId: string): 'police_verification' | 'address_proof' | 'passport' | 'insurance' | 'other' => {
-    switch (docId) {
-      case 'license':
-        return 'other';
-      case 'id':
-        return 'passport';
-      case 'address':
-        return 'address_proof';
-      case 'bank':
-        return 'other';
-      default:
-        return 'other';
+  const pickFromCamera = async (docId: string) => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Please allow camera access to take a photo.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      await uploadDocumentFile(docId, result.assets[0].uri);
     }
   };
 
-  const handleUploadDocument = async (docId: string) => {
+  const pickFromGallery = async (docId: string) => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Please allow access to photos to upload documents.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      await uploadDocumentFile(docId, result.assets[0].uri);
+    }
+  };
+
+  const uploadDocumentFile = async (docId: string, uri: string) => {
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Please allow access to photos to upload documents');
-        return;
-      }
+      const doc = documents.find(d => d.id === docId);
+      if (!doc) return;
 
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-      });
+      const documentRequest: DriverDocumentRequest = {
+        document_type: doc.apiType,
+        document_file: {
+          uri,
+          name: `${docId}_${Date.now()}.jpg`,
+          type: 'image/jpeg',
+        } as any,
+      };
 
-      if (!result.canceled && result.assets[0]) {
-        // Upload to API
-        const documentRequest: DriverDocumentRequest = {
-          document_type: mapDocIdToApiType(docId),
-          document_file: {
-            uri: result.assets[0].uri,
-            name: `${docId}_${Date.now()}.jpg`,
-            type: 'image/jpeg',
-          } as any,
-        };
+      const response = await DriverApiService.uploadDocument(documentRequest);
 
-        const response = await DriverApiService.uploadDocument(documentRequest);
-        
-        if (response.success) {
-          setDocuments(docs => docs.map(doc => 
-            doc.id === docId ? { ...doc, uploaded: true, status: 'uploaded' } : doc
-          ));
-          Alert.alert('Document Uploaded', 'Document uploaded successfully! It will be reviewed shortly.');
-        } else {
-          Alert.alert('Upload Failed', response.error || 'Please try again later.');
-        }
+      if (response.success) {
+        setDocuments(docs => docs.map(doc =>
+          doc.id === docId ? { ...doc, uploaded: true, status: 'uploaded' } : doc
+        ));
+        Alert.alert('Document Uploaded', 'Document uploaded successfully! It will be reviewed shortly.');
+      } else {
+        Alert.alert('Upload Failed', response.error || 'Please try again later.');
       }
     } catch (error) {
       Alert.alert('Upload Failed', 'Please try again later.');
       console.error('Error uploading document:', error);
     }
+  };
+
+  const handleUploadDocument = (docId: string) => {
+    Alert.alert(
+      'Upload Document',
+      'Choose how to upload your document',
+      [
+        { text: 'Take Photo', onPress: () => pickFromCamera(docId) },
+        { text: 'Choose from Gallery', onPress: () => pickFromGallery(docId) },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
   };
 
   const handleTakeSelfie = async () => {
@@ -135,7 +156,7 @@ export default function DocumentUploadScreen() {
       if (!result.canceled && result.assets[0]) {
         // Upload selfie as a document
         const documentRequest: DriverDocumentRequest = {
-          document_type: 'police_verification', // Using police_verification for selfie
+          document_type: 'live_selfie',
           document_file: {
             uri: result.assets[0].uri,
             name: `selfie_${Date.now()}.jpg`,
@@ -239,7 +260,7 @@ export default function DocumentUploadScreen() {
                     >
                       <Ionicons name="camera" size={16} color="#BD8C5E" />
                       <ThemedText className="text-secondary font-semibold ml-2">
-                        Upload Front & Back
+                        Upload Photo
                       </ThemedText>
                     </TouchableOpacity>
                   ) : (

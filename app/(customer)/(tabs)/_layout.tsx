@@ -7,7 +7,7 @@ import { LightColors, DarkColors } from '../../../constants/Colors';
 export default function CustomerTabsLayout() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const colors = isDarkMode ? DarkColors : LightColors;
-  
+
   return (
     <Tabs
       screenOptions={{
@@ -39,20 +39,20 @@ export default function CustomerTabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="history"
-        options={{
-          title: 'History',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="time" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="services"
         options={{
           title: 'Services',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="briefcase-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="history"
+        options={{
+          title: 'Trips',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="car-outline" size={size} color={color} />
           ),
         }}
       />

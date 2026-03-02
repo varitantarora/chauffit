@@ -7,10 +7,12 @@ import { ThemedText } from '../../../components/common/ThemedText';
 import { EarningsCard, EarningsSummaryCard, WeeklyProgressCard } from '../../../components/driver/earnings/EarningsCard';
 import { Ionicons } from '@expo/vector-icons';
 import { useEarningsStore } from '../../../store/earningsStore';
+import { useI18nStore } from '../../../store/i18nStore';
 import DriverApiService, { DriverStats, DailyEarningsResponse, BonusesIncentivesResponse, BonusTipEntry } from '../../../services/api/DriverApiService';
 import { useEffect } from 'react';
 
 export default function EarningsScreen() {
+  const t = useI18nStore((state) => state.t);
   const {
     earnings,
     dailyBreakdown,
@@ -37,7 +39,7 @@ export default function EarningsScreen() {
     earnedAt: string;
   }[]>([]);
   const [loadingBonuses, setLoadingBonuses] = useState(false);
-  
+
   const getPeriodStart = (period: 'daily' | 'weekly' | 'monthly') => {
     const start = new Date();
     start.setHours(0, 0, 0, 0);
@@ -231,22 +233,36 @@ export default function EarningsScreen() {
             <ActivityIndicator size="large" color="#BD8C5E" />
           </View>
         )}
-        <ScrollView 
+        <ScrollView
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
           {/* Header */}
-          <View className="px-6 pt-4 pb-6">
-            <ThemedText variant="title" className="text-2xl font-bold">
-              Earnings
+          <View
+            style={{
+              backgroundColor: '#720C17',
+              paddingHorizontal: 24,
+              paddingTop: 16,
+              paddingBottom: 20,
+              borderBottomLeftRadius: 24,
+              borderBottomRightRadius: 24,
+              shadowColor: '#720C17',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.25,
+              shadowRadius: 8,
+              elevation: 8,
+            }}
+          >
+            <ThemedText style={{ color: '#ffffff', fontSize: 22, fontWeight: '800' }}>
+              {t('earnings')}
             </ThemedText>
-            <ThemedText variant="secondary" className="mt-1">
-              Track your income and performance
+            <ThemedText style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, marginTop: 4 }}>
+              {t('trackIncome')}
             </ThemedText>
           </View>
-          
+
           {/* Earnings Summary */}
           <View className="px-6 mb-6">
             <EarningsSummaryCard />
@@ -259,14 +275,14 @@ export default function EarningsScreen() {
                 <TouchableOpacity
                   key={period}
                   onPress={() => setSelectedPeriod(period)}
-                  className={`flex-1 py-3 rounded-lg ${
-                    selectedPeriod === period ? 'bg-burgundy' : ''
-                  }`}
-                >
-                  <ThemedText 
-                    className={`text-center capitalize ${
-                      selectedPeriod === period ? 'text-white font-semibold' : ''
+                  className={`flex-1 py-3 rounded-lg ${selectedPeriod === period
+                      ? 'bg-burgundy'
+                      : 'border border-border dark:border-darkBorder'
                     }`}
+                >
+                  <ThemedText
+                    className={`text-center capitalize font-semibold ${selectedPeriod === period ? 'text-white' : 'text-textPrimary dark:text-darkTextPrimary'
+                      }`}
                   >
                     {period}
                   </ThemedText>
@@ -274,7 +290,7 @@ export default function EarningsScreen() {
               ))}
             </View>
           </View>
-          
+
           {/* Weekly Progress */}
           {selectedPeriod === 'weekly' && (
             <View className="px-6 mb-6">
@@ -331,7 +347,7 @@ export default function EarningsScreen() {
               </View>
             </View>
           </View>
-          
+
           {/* Period Breakdown */}
           <View className="px-6 mb-6">
             <View className="flex-row justify-between items-center mb-4">
@@ -339,7 +355,7 @@ export default function EarningsScreen() {
                 {selectedPeriod.charAt(0).toUpperCase() + selectedPeriod.slice(1)} Breakdown
               </ThemedText>
             </View>
-            
+
             {loadingDaily ? (
               <ThemedCard className="p-4">
                 <View className="items-center py-2">
@@ -354,20 +370,20 @@ export default function EarningsScreen() {
                 const date = day.dateObj;
                 const isToday = date.toDateString() === new Date().toDateString();
                 const isYesterday = date.toDateString() === new Date(Date.now() - 86400000).toDateString();
-                
+
                 let dateLabel = '';
                 if (isToday) {
                   dateLabel = 'Today';
                 } else if (isYesterday) {
                   dateLabel = 'Yesterday';
                 } else {
-                  dateLabel = date.toLocaleDateString('en-IN', { 
+                  dateLabel = date.toLocaleDateString('en-IN', {
                     weekday: 'short',
-                    month: 'short', 
-                    day: 'numeric' 
+                    month: 'short',
+                    day: 'numeric'
                   });
                 }
-                
+
                 return (
                   <ThemedCard key={index} className="mb-3">
                     <View className="flex-row justify-between items-center">
@@ -400,7 +416,7 @@ export default function EarningsScreen() {
             <ThemedText variant="title" className="text-lg font-bold mb-4">
               Bonuses & Incentives
             </ThemedText>
-            
+
             {loadingBonuses ? (
               <ThemedCard className="p-4">
                 <View className="items-center py-2">
@@ -447,7 +463,7 @@ export default function EarningsScreen() {
               </ThemedCard>
             )}
           </View>
-          
+
           {/* Performance Metrics */}
           <View className="px-6 mb-6">
             <ThemedText variant="title" className="text-lg font-bold mb-4">
@@ -466,11 +482,29 @@ export default function EarningsScreen() {
                   <View className="flex-row justify-between mb-3">
                     <View className="flex-row items-center">
                       <Ionicons name="star" size={20} color="#bd8c5e" />
-                      <ThemedText className="ml-2">Average Rating</ThemedText>
+                      <ThemedText className="ml-2">{t('drivingScore')}</ThemedText>
                     </View>
-                    <ThemedText className="font-semibold">
-                      {stats.lifetime.average_rating > 0 ? stats.lifetime.average_rating.toFixed(1) : 'N/A'}
-                    </ThemedText>
+                    <View className="items-center">
+                      {/* Circular Score Display */}
+                      <View
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 24,
+                          borderWidth: 4,
+                          borderColor: (stats?.lifetime?.average_rating ?? 0) >= 4 ? '#10B981'
+                            : (stats?.lifetime?.average_rating ?? 0) >= 3 ? '#F59E0B' : '#EF4444',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: 'transparent',
+                        }}
+                      >
+                        <ThemedText style={{ fontSize: 14, fontWeight: '800' }}>
+                          {stats.lifetime.average_rating > 0 ? stats.lifetime.average_rating.toFixed(1) : 'N/A'}
+                        </ThemedText>
+                      </View>
+                      <ThemedText variant="caption" style={{ fontSize: 10, marginTop: 2 }}>/5</ThemedText>
+                    </View>
                   </View>
                   <View className="flex-row justify-between mb-3">
                     <View className="flex-row items-center">

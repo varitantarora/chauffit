@@ -15,11 +15,13 @@ import { BikerTask, TaskPriority, TaskType } from '../../../types/navigation';
 import { router } from 'expo-router';
 import BikerApiService from '../../../services/api/BikerApiService';
 import BikerTaskApiService, { BikerTaskDetail } from '../../../services/api/BikerTaskApiService';
+import { useI18nStore } from '../../../store/i18nStore';
 
 export default function BikerHomeScreen() {
   const user = useAuthStore((state) => state.user);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
-  
+  const t = useI18nStore((state) => state.t);
+
   // Task store state
   const availableTasks = useTaskStore((state) => state.availableTasks);
   const acceptedTasks = useTaskStore((state) => state.acceptedTasks);
@@ -36,11 +38,11 @@ export default function BikerHomeScreen() {
   const setSortBy = useTaskStore((state) => state.setSortBy);
   const setAvailableTasks = useTaskStore((state) => state.setAvailableTasks);
   const setEmergencyAlerts = useTaskStore((state) => state.setEmergencyAlerts);
-  
+
   // Auth store state (biker online status)
   const isOnline = useAuthStore((state) => state.bikerIsOnline);
   const setIsOnline = useAuthStore((state) => state.setBikerIsOnline);
-  
+
   // Earnings store state
   const currentShift = useBikerEarningsStore((state) => state.currentShift);
   const earnings = useBikerEarningsStore((state) => state.earnings);
@@ -70,7 +72,7 @@ export default function BikerHomeScreen() {
       if (response.success && response.data) {
         const tasks = response.data || [];
         setRequestedTasks(tasks);
-        
+
         // Convert API tasks to BikerTask format for TaskCard component
         const convertedTasks: BikerTask[] = tasks.map((task) => ({
           id: task.id,
@@ -100,7 +102,7 @@ export default function BikerHomeScreen() {
           expiresAt: task.assigned_at ? new Date(new Date(task.assigned_at).getTime() + 30 * 60 * 1000) : new Date(Date.now() + 30 * 60 * 1000),
           responseTimeLimit: 15,
         }));
-        
+
         setAvailableTasks(convertedTasks);
       } else {
         console.error('Failed to fetch requested tasks:', response.error);
@@ -129,11 +131,11 @@ export default function BikerHomeScreen() {
     try {
       setLoadingStats(true);
       const response = await BikerApiService.getStats();
-      
+
       if (response.success && response.data) {
         const statsData = response.data as any;
         const lifetime = statsData.lifetime || statsData;
-        
+
         setStats({
           averageRating: lifetime.average_rating || 0,
         });
@@ -153,7 +155,7 @@ export default function BikerHomeScreen() {
     try {
       setLoadingEarnings(true);
       const response = await BikerApiService.getEarnings();
-      
+
       if (response.success && response.data) {
         const earningsData = response.data as any;
         setTodayEarningsValue(earningsData.today_earnings ?? 0);
@@ -172,7 +174,7 @@ export default function BikerHomeScreen() {
   useEffect(() => {
     // Clear any existing emergency alerts to avoid duplicates
     setEmergencyAlerts([]);
-    
+
     // Initialize online status from API
     const initializeOnlineStatus = async () => {
       try {
@@ -184,7 +186,7 @@ export default function BikerHomeScreen() {
         console.error('Error fetching online status:', error);
       }
     };
-    
+
     initializeOnlineStatus();
     fetchStats();
     fetchEarnings();
@@ -208,18 +210,18 @@ export default function BikerHomeScreen() {
         }
       } else if (!value && currentShift) {
         // Going offline - end shift
-        
+
         Alert.alert(
           'End Shift',
           'Are you sure you want to go offline and end your current shift?',
           [
-            { 
-              text: 'Cancel', 
+            {
+              text: 'Cancel',
               style: 'cancel',
               // Toggle already reverted, no action needed
             },
-            { 
-              text: 'End Shift', 
+            {
+              text: 'End Shift',
               style: 'destructive',
               onPress: async () => {
                 try {
@@ -249,7 +251,7 @@ export default function BikerHomeScreen() {
         const response = await BikerApiService.updateStatus({
           is_online: value,
         });
-        
+
         if (response.success) {
           setIsOnline(value);
         } else {
@@ -273,7 +275,7 @@ export default function BikerHomeScreen() {
       if (response.success && response.data) {
         // Update local store
         acceptTask(taskId);
-        
+
         Alert.alert(
           'Task Accepted!',
           `You've accepted "${task.title}". Navigate to task details to continue.`,
@@ -281,7 +283,7 @@ export default function BikerHomeScreen() {
             { text: 'OK', onPress: () => router.push(`/(biker)/task/${taskId}`) }
           ]
         );
-        
+
         // Refresh available tasks
         fetchRequestedTasks();
       } else {
@@ -307,10 +309,10 @@ export default function BikerHomeScreen() {
   }, [isOnline]);
 
   const priorityTasks = getPriorityTasks();
-  
+
   const getFilteredAndSortedTasks = () => {
     let tasks = availableTasks;
-    
+
     // If showing 'all' and there are priority tasks, exclude them from the main list to avoid duplication
     if (selectedFilter === 'all' && priorityTasks.length > 0) {
       const priorityTaskIds = priorityTasks.map(t => t.id);
@@ -320,12 +322,12 @@ export default function BikerHomeScreen() {
     } else if (selectedFilter === 'urgent') {
       tasks = tasks.filter(t => t.priority === 'urgent');
     }
-    
+
     return tasks.sort((a, b) => {
       // Emergency tasks first
       if (a.priority === 'emergency' && b.priority !== 'emergency') return -1;
       if (b.priority === 'emergency' && a.priority !== 'emergency') return 1;
-      
+
       // Then by creation time (newest first)
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
@@ -338,7 +340,7 @@ export default function BikerHomeScreen() {
   return (
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
-        <ScrollView 
+        <ScrollView
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -349,26 +351,47 @@ export default function BikerHomeScreen() {
             <View className="flex-row justify-between items-center">
               <View>
                 <ThemedText variant="title">
-                  Hello, {user?.name || 'Biker'}
+                  {t('hello')}, {user?.name || 'Biker'}
                 </ThemedText>
                 <ThemedText variant="secondary" className="mt-1">
-                  {isOnline ? 'Ready for driver pickups' : 'You are offline'}
+                  {isOnline ? t('readyForPickups') : t('youAreOffline')}
                 </ThemedText>
               </View>
               <View className="items-end">
-                <Switch
-                  value={isOnline}
-                  onValueChange={handleToggleOnline}
-                  trackColor={{ false: '#767577', true: '#bd8c5e' }}
-                  thumbColor={isOnline ? '#ffffff' : '#f4f3f4'}
-                />
                 <ThemedText variant="caption" className="mt-1 text-textSecondary">
-                  {currentShift ? 'On Shift' : 'Off Shift'}
+                  {currentShift ? t('onShift') : t('offShift')}
                 </ThemedText>
               </View>
             </View>
           </View>
-          
+
+          {/* Large Bold Online/Offline Toggle */}
+          <View className="px-6 mb-4">
+            <TouchableOpacity
+              onPress={() => handleToggleOnline(!isOnline)}
+              activeOpacity={0.85}
+              style={{
+                backgroundColor: isOnline ? '#10B981' : '#EF4444',
+                paddingVertical: 20,
+                borderRadius: 20,
+                alignItems: 'center',
+                justifyContent: 'center',
+                shadowColor: isOnline ? '#10B981' : '#EF4444',
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.35,
+                shadowRadius: 12,
+                elevation: 8,
+              }}
+            >
+              <ThemedText style={{ color: '#fff', fontSize: 22, fontWeight: '800', letterSpacing: 1 }}>
+                {isOnline ? `● ${t('online').toUpperCase()}` : `○ ${t('offline').toUpperCase()}`}
+              </ThemedText>
+              <ThemedText style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginTop: 4 }}>
+                {isOnline ? t('tapToGoOffline') : t('tapToGoOnline')}
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+
           {/* Emergency Alert */}
           {emergencyAlerts.length > 0 && (
             <View className="px-6 mb-4">
@@ -391,27 +414,39 @@ export default function BikerHomeScreen() {
             </View>
           )}
 
-          {/* Quick Stats */}
+          {/* Quick Stats — expanded with Total Earnings & Completed Trips */}
           <View className="px-6 mb-6">
             <ThemedCard>
-              <View className="flex-row justify-around py-2">
-                <View className="items-center">
+              <View className="flex-row flex-wrap justify-around py-2">
+                <View className="items-center w-1/3 mb-2">
                   <ThemedText variant="title" className="text-2xl">
                     {acceptedTasks.length + activeTasks.length}
                   </ThemedText>
-                  <ThemedText variant="caption">Active Pickups</ThemedText>
+                  <ThemedText variant="caption">{t('activePickups')}</ThemedText>
                 </View>
-                <View className="items-center">
+                <View className="items-center w-1/3 mb-2">
                   <ThemedText variant="title" className="text-2xl">
                     {loadingEarnings ? '...' : `₹${todayEarnings.toFixed(0)}`}
                   </ThemedText>
-                  <ThemedText variant="caption">Today's Earnings</ThemedText>
+                  <ThemedText variant="caption">{t('todaysEarnings')}</ThemedText>
                 </View>
-                <View className="items-center">
+                <View className="items-center w-1/3 mb-2">
                   <ThemedText variant="title" className="text-2xl">
                     {loadingStats ? '...' : (stats?.averageRating ? stats.averageRating.toFixed(1) : 'N/A')}
                   </ThemedText>
-                  <ThemedText variant="caption">Rating</ThemedText>
+                  <ThemedText variant="caption">{t('rating')}</ThemedText>
+                </View>
+                <View className="items-center w-1/2">
+                  <ThemedText variant="title" className="text-2xl text-success">
+                    {loadingEarnings ? '...' : `₹${(todayEarningsValue ?? 0).toFixed(0)}`}
+                  </ThemedText>
+                  <ThemedText variant="caption">{t('totalEarnings')}</ThemedText>
+                </View>
+                <View className="items-center w-1/2">
+                  <ThemedText variant="title" className="text-2xl">
+                    {loadingStats ? '...' : ((stats as any)?.totalTrips ?? 0)}
+                  </ThemedText>
+                  <ThemedText variant="caption">{t('completedTrips')}</ThemedText>
                 </View>
               </View>
             </ThemedCard>
@@ -428,9 +463,9 @@ export default function BikerHomeScreen() {
           <View className="px-6 mb-4">
             <View className="flex-row justify-between items-center mb-3">
               <ThemedText variant="title" className="text-lg">
-                Driver Pickups ({filteredTasks.length})
+                {t('driverPickups')} ({filteredTasks.length})
               </ThemedText>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setShowFilters(!showFilters)}
                 className="bg-secondary/10 p-2 rounded-lg"
               >
@@ -444,17 +479,15 @@ export default function BikerHomeScreen() {
                   <TouchableOpacity
                     key={filter}
                     onPress={() => setSelectedFilter(filter)}
-                    className={`px-3 py-2 rounded-full ${
-                      selectedFilter === filter 
-                        ? 'bg-burgundy' 
-                        : 'bg-gray-100 dark:bg-gray-800'
-                    }`}
+                    className={`px-3 py-2 rounded-full ${selectedFilter === filter
+                      ? 'bg-burgundy'
+                      : 'bg-gray-100 dark:bg-gray-800'
+                      }`}
                   >
-                    <ThemedText className={`text-sm font-semibold ${
-                      selectedFilter === filter 
-                        ? 'text-white' 
-                        : 'text-textSecondary'
-                    }`}>
+                    <ThemedText className={`text-sm font-semibold ${selectedFilter === filter
+                      ? 'text-white'
+                      : 'text-textSecondary'
+                      }`}>
                       {filter.charAt(0).toUpperCase() + filter.slice(1)}
                     </ThemedText>
                   </TouchableOpacity>
@@ -462,7 +495,7 @@ export default function BikerHomeScreen() {
               </View>
             )}
           </View>
-          
+
           {loadingTasks && (
             <View className="px-6 mb-4">
               <ThemedCard className="p-4">
@@ -519,12 +552,12 @@ export default function BikerHomeScreen() {
                     <Ionicons name="bicycle" size={32} color="#6B7280" />
                   </View>
                   <ThemedText className="font-semibold text-center">
-                    {isOnline ? 'No Driver Pickups Available' : 'Go Online to See Pickups'}
+                    {isOnline ? t('noDriverPickups') : t('goOnlineToSee')}
                   </ThemedText>
                   <ThemedText variant="caption" className="text-center mt-1">
-                    {isOnline 
-                      ? 'New driver pickup requests will appear here' 
-                      : 'Turn on your availability to start receiving driver pickups'
+                    {isOnline
+                      ? t('newPickupsWillAppear')
+                      : t('turnOnAvailability')
                     }
                   </ThemedText>
                 </View>
@@ -536,9 +569,9 @@ export default function BikerHomeScreen() {
           {(acceptedTasks.length > 0 || activeTasks.length > 0) && (
             <View className="px-6 mb-6">
               <ThemedText variant="title" className="text-lg mb-4">
-                Your Active Tasks
+                {t('yourActiveTasks')}
               </ThemedText>
-              
+
               {acceptedTasks.map((task) => (
                 <TaskCard
                   key={task.id}
@@ -547,7 +580,7 @@ export default function BikerHomeScreen() {
                   compact={true}
                 />
               ))}
-              
+
               {activeTasks.map((task) => (
                 <TaskCard
                   key={task.id}

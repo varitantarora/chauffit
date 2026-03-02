@@ -24,6 +24,7 @@ export default function AdminDashboard() {
   }, []);
 
   const quickActions = [
+    { title: 'Revenue', icon: 'cash' as const, count: dashboard?.total_revenue ? `₹${dashboard.total_revenue}` : '₹0', route: '/(admin)/revenue' },
     { title: 'Pending Drivers', icon: 'car' as const, count: dashboard?.pending_driver_verifications || 0, route: '/(admin)/drivers-pending' },
     { title: 'Pending Bikers', icon: 'bicycle' as const, count: dashboard?.pending_biker_verifications || 0, route: '/(admin)/bikers-pending' },
     { title: 'Open Disputes', icon: 'warning' as const, count: dashboard?.open_disputes || 0, route: '/(admin)/disputes' },

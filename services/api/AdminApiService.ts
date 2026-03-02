@@ -206,6 +206,79 @@ export interface AdminDispute {
   created_at: string;
 }
 
+export interface AdminInsurancePlan {
+  id: string;
+  tier: 'scratch' | 'scratch_and_dent' | 'full';
+  name: string;
+  description: string;
+  premium_amount: string;
+  max_coverage_amount: string;
+  coverage_details: string[];
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminAmenity {
+  id: string;
+  name: string;
+  description: string;
+  category: 'refreshment' | 'comfort' | 'premium';
+  price: string;
+  available_segments: string[];
+  image_url: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+
+export interface AdminSurgeConfig {
+  id?: string;
+  surge_type: 'NIGHT' | 'TRAFFIC' | 'HOURLY';
+  multiplier: string;
+  min_multiplier?: string;
+  max_multiplier?: string;
+}
+
+export interface AdminPerKmRate {
+  id?: string;
+  vehicle_segment: string;
+  base_fare: string;
+  per_km: string;
+}
+
+export interface AdminPerMinRate {
+  id?: string;
+  vehicle_segment: string;
+  base_fare: string;
+  per_min: string;
+}
+
+export interface AdminHourlyHireRate {
+  id?: string;
+  vehicle_segment: string;
+  base_1h: string;
+  per_hour_after_1h: string;
+}
+
+export interface AdminRateCard {
+  id: string;
+  code: string;
+  city: string;
+  currency: string;
+  driver_share: string;
+  platform_share: string;
+  is_active: boolean;
+  effective_from?: string;
+  effective_to?: string;
+  surge_configs: AdminSurgeConfig[];
+  per_km_rates: AdminPerKmRate[];
+  per_min_rates: AdminPerMinRate[];
+  hourly_rates: AdminHourlyHireRate[];
+}
+
 export interface HourlyHireSettings {
   id?: string;
   is_enabled: boolean;
@@ -214,6 +287,27 @@ export interface HourlyHireSettings {
   min_hours: number;
   max_hours?: number;
   base_rate_per_hour?: number;
+}
+
+export interface RevenuePayment {
+  id: string;
+  payment_reference?: string;
+  booking_reference?: string;
+  customer_name?: string;
+  amount: string;
+  net_amount?: string;
+  payment_type?: string;
+  payment_type_display?: string;
+  created_at: string;
+}
+
+export interface RevenueData {
+  weekly_earnings: string;
+  monthly_earnings: string;
+  selected_date: string;
+  daily_revenue: string;
+  daily_rides: number;
+  daily_breakdown: RevenuePayment[];
 }
 
 // ============================================================================
@@ -229,6 +323,20 @@ class AdminApiService {
       return await BaseApiService.get<DashboardStats>(`${this.basePath}/dashboard/`);
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch dashboard' };
+    }
+  }
+
+  // Revenue
+  async getRevenue(date?: string): Promise<ApiResponse<RevenueData>> {
+    try {
+      const queryParams: Record<string, string> = {};
+      if (date) queryParams.date = date;
+      return await BaseApiService.get<RevenueData>(
+        `${this.basePath}/revenue/`,
+        Object.keys(queryParams).length > 0 ? queryParams : undefined
+      );
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch revenue' };
     }
   }
 
@@ -288,7 +396,7 @@ class AdminApiService {
     }
   }
 
-  async verifyDriver(id: string, data: { current_status: string; background_check_status?: string }): Promise<ApiResponse<AdminDriver>> {
+  async verifyDriver(id: string, data: { action: 'approve' | 'reject'; rejection_reason?: string }): Promise<ApiResponse<AdminDriver>> {
     try {
       return await BaseApiService.put<AdminDriver>(`${this.basePath}/drivers/${id}/verify/`, data);
     } catch (error) {
@@ -441,6 +549,32 @@ class AdminApiService {
     }
   }
 
+
+  // Pricing / Rate Cards
+  async getRateCards(): Promise<ApiResponse<AdminRateCard[]>> {
+    try {
+      return await BaseApiService.get<AdminRateCard[]>(`${this.basePath}/pricing/rate-cards/`);
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch rate cards' };
+    }
+  }
+
+  async getRateCard(id: string): Promise<ApiResponse<AdminRateCard>> {
+    try {
+      return await BaseApiService.get<AdminRateCard>(`${this.basePath}/pricing/rate-cards/${id}/`);
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch rate card' };
+    }
+  }
+
+  async updateRateCard(id: string, data: Partial<AdminRateCard>): Promise<ApiResponse<AdminRateCard>> {
+    try {
+      return await BaseApiService.patch<AdminRateCard>(`${this.basePath}/pricing/rate-cards/${id}/`, data);
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to update rate card' };
+    }
+  }
+
   // Hourly Hire Settings
   async getHourlyHireSettings(): Promise<ApiResponse<HourlyHireSettings>> {
     try {
@@ -455,6 +589,88 @@ class AdminApiService {
       return await BaseApiService.put<HourlyHireSettings>(`${this.basePath}/hourly-hire/`, data);
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Failed to update hourly hire settings' };
+    }
+  }
+
+  // Insurance Plans Admin
+  async getInsurancePlans(): Promise<ApiResponse<AdminInsurancePlan[]>> {
+    try {
+      return await BaseApiService.get<AdminInsurancePlan[]>('/insurance/admin/plans/');
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch insurance plans' };
+    }
+  }
+
+  async getInsurancePlan(id: string): Promise<ApiResponse<AdminInsurancePlan>> {
+    try {
+      return await BaseApiService.get<AdminInsurancePlan>(`/insurance/admin/plans/${id}/`);
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch insurance plan' };
+    }
+  }
+
+  async createInsurancePlan(data: Partial<AdminInsurancePlan>): Promise<ApiResponse<AdminInsurancePlan>> {
+    try {
+      return await BaseApiService.post<AdminInsurancePlan>('/insurance/admin/plans/', data);
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to create insurance plan' };
+    }
+  }
+
+  async updateInsurancePlan(id: string, data: Partial<AdminInsurancePlan>): Promise<ApiResponse<AdminInsurancePlan>> {
+    try {
+      return await BaseApiService.put<AdminInsurancePlan>(`/insurance/admin/plans/${id}/`, data);
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to update insurance plan' };
+    }
+  }
+
+  async deleteInsurancePlan(id: string): Promise<ApiResponse<void>> {
+    try {
+      return await BaseApiService.delete<void>(`/insurance/admin/plans/${id}/`);
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to delete insurance plan' };
+    }
+  }
+
+  // Amenities Admin
+  async getAmenities(): Promise<ApiResponse<AdminAmenity[]>> {
+    try {
+      return await BaseApiService.get<AdminAmenity[]>('/amenities/admin/');
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch amenities' };
+    }
+  }
+
+  async getAmenity(id: string): Promise<ApiResponse<AdminAmenity>> {
+    try {
+      return await BaseApiService.get<AdminAmenity>(`/amenities/admin/${id}/`);
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch amenity' };
+    }
+  }
+
+  async createAmenity(data: Partial<AdminAmenity>): Promise<ApiResponse<AdminAmenity>> {
+    try {
+      return await BaseApiService.post<AdminAmenity>('/amenities/admin/', data);
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to create amenity' };
+    }
+  }
+
+  async updateAmenity(id: string, data: Partial<AdminAmenity>): Promise<ApiResponse<AdminAmenity>> {
+    try {
+      return await BaseApiService.put<AdminAmenity>(`/amenities/admin/${id}/`, data);
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to update amenity' };
+    }
+  }
+
+  async deleteAmenity(id: string): Promise<ApiResponse<void>> {
+    try {
+      return await BaseApiService.delete<void>(`/amenities/admin/${id}/`);
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to delete amenity' };
     }
   }
 }

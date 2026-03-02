@@ -146,10 +146,27 @@ export default function Profile() {
           }
         >
           {/* Header */}
-          <View className="flex-row items-center justify-between px-6 py-4 border-b border-border dark:border-darkBorder">
-            <ThemedText variant="h1">Profile</ThemedText>
+          <View
+            style={{
+              backgroundColor: '#720C17',
+              paddingHorizontal: 24,
+              paddingTop: 16,
+              paddingBottom: 20,
+              borderBottomLeftRadius: 24,
+              borderBottomRightRadius: 24,
+              shadowColor: '#720C17',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.25,
+              shadowRadius: 8,
+              elevation: 8,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <ThemedText style={{ color: '#ffffff', fontSize: 22, fontWeight: '800' }}>Profile</ThemedText>
             <TouchableOpacity onPress={() => router.push('/(customer)/edit-profile')}>
-              <Ionicons name="create" size={24} color={colors.textSecondary} />
+              <Ionicons name="create" size={24} color="rgba(255,255,255,0.85)" />
             </TouchableOpacity>
           </View>
 

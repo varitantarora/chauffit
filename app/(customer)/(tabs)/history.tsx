@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ScrollView, TouchableOpacity, View, RefreshControl, Alert } from 'react-native';
+import { ScrollView, TouchableOpacity, View, RefreshControl, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 import { ThemedView } from '../../../components/common/ThemedView';
 import { ThemedText } from '../../../components/common/ThemedText';
 import { BookingCard } from '../../../components/customer/BookingCard';
@@ -286,11 +287,31 @@ export default function HistoryScreen() {
   return (
     <SafeAreaView className="flex-1" edges={['top', 'left', 'right']}>
       <ThemedView className="flex-1">
-        {/* Header */}
-        <View className="px-6 py-4 border-b border-border">
-          <ThemedText variant="h1">Bookings</ThemedText>
-          <ThemedText variant="small" className="mt-1 text-textSecondary">
-            Manage your rides and view history
+        {/* Burgundy Header */}
+        <View
+          style={{
+            backgroundColor: '#720C17',
+            paddingHorizontal: 24,
+            paddingTop: 16,
+            paddingBottom: 20,
+            borderBottomLeftRadius: 24,
+            borderBottomRightRadius: 24,
+            shadowColor: '#720C17',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.25,
+            shadowRadius: 8,
+            elevation: 8,
+          }}
+        >
+          <ThemedText
+            style={{ color: '#ffffff', fontSize: 22, fontWeight: '800' }}
+          >
+            Trips
+          </ThemedText>
+          <ThemedText
+            style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, marginTop: 4 }}
+          >
+            Your ride history & active trips
           </ThemedText>
         </View>
 
@@ -368,20 +389,45 @@ export default function HistoryScreen() {
           <View className="h-6" />
         </ScrollView>
 
-        {/* Floating Action Button */}
+        {/* Floating Action Button with Glass-morph */}
         <View className="absolute bottom-6 right-6">
           <TouchableOpacity
             onPress={() => router.push('/(customer)/book-ride-new')}
-            className="w-14 h-14 bg-burgundy rounded-full items-center justify-center shadow-lg"
+            activeOpacity={0.8}
             style={{
+              width: 60,
+              height: 60,
+              borderRadius: 30,
+              overflow: 'hidden',
               shadowColor: '#720C17',
               shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 8,
+              shadowOpacity: 0.35,
+              shadowRadius: 10,
+              elevation: 10,
             }}
           >
-            <Ionicons name="add" size={28} color="white" />
+            <BlurView
+              intensity={80}
+              tint={isDarkMode ? 'dark' : 'light'}
+              style={{
+                width: 60,
+                height: 60,
+                borderRadius: 30,
+                overflow: 'hidden',
+              }}
+            >
+              <View
+                style={{
+                  flex: 1,
+                  backgroundColor: 'rgba(114,12,23,0.85)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 30,
+                }}
+              >
+                <Ionicons name="add" size={28} color="white" />
+              </View>
+            </BlurView>
           </TouchableOpacity>
         </View>
       </ThemedView>

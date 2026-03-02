@@ -22,30 +22,41 @@ export default function ServicesScreen() {
 
   const iconColor = isDarkMode ? '#BD8C5E' : '#720C17';
 
-  // Main service types
+  // Main service types - standardized icon buttons
   const mainServices = [
     {
-      id: 'one-side',
-      name: 'One-Side',
-      image: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=400&q=80',
+      id: 'one-way',
+      name: 'One-Way',
+      icon: 'car-outline',
+      route: '/(customer)/book-ride-new',
+      params: {},
     },
     {
-      id: 'round-trip',
-      name: 'Round-Trip',
-      image: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=400&q=80',
+      id: 'multi-stop',
+      name: 'Multi-stop',
+      icon: 'git-branch-outline',
+      route: '/(customer)/book-ride-new',
+      params: { multiStop: 'true' },
     },
     {
       id: 'hourly',
-      name: 'Hourly Flexi-hire',
-      image: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400&q=80',
+      name: 'Hourly Hire',
+      icon: 'time-outline',
+      route: '/(customer)/schedule',
+      params: { bookingType: 'hourly_charter' },
+    },
+    {
+      id: 'round-trip',
+      name: 'Round Trip',
+      icon: 'repeat-outline',
+      route: '/(customer)/schedule',
+      params: { bookingType: 'hourly_charter' },
     },
   ];
 
-  // Feature buttons with navigation
+  // Feature buttons with navigation (insurance & amenities hidden for pilot)
   const featureButtons = [
     { id: 'schedule', name: 'Schedule', icon: 'calendar-outline', route: '/(customer)/schedule' },
-    { id: 'amenities', name: 'Amenities List', icon: 'list-outline', route: null },
-    { id: 'insurance', name: 'Insurance', icon: 'shield-checkmark-outline', route: '/(customer)/trip-insurance' },
     { id: 'corporate', name: 'Corporate', icon: 'business-outline', route: null },
   ];
 
@@ -96,8 +107,8 @@ export default function ServicesScreen() {
     { icon: 'shield-checkmark-outline', title: 'Dedicated Support', desc: '24/7 dedicated account manager' },
   ];
 
-  const handleBookService = () => {
-    router.push('/(customer)/book-ride-new');
+  const handleBookService = (service: typeof mainServices[0]) => {
+    router.push({ pathname: service.route as any, params: service.params });
   };
 
   const handleFeaturePress = (feature: typeof featureButtons[0]) => {
@@ -137,7 +148,7 @@ export default function ServicesScreen() {
 
     const onPressIn = () => {
       Animated.spring(scaleAnim, {
-        toValue: 0.97,
+        toValue: 0.95,
         useNativeDriver: true,
       }).start();
     };
@@ -155,23 +166,18 @@ export default function ServicesScreen() {
         activeOpacity={1}
         onPressIn={onPressIn}
         onPressOut={onPressOut}
-        onPress={handleBookService}
+        onPress={() => handleBookService(service)}
         className="flex-1 mx-1"
       >
-        <Animated.View
-          style={{ transform: [{ scale: scaleAnim }] }}
-          className={`rounded-2xl overflow-hidden ${isDarkMode ? 'bg-darkSurface' : 'bg-secondary/10'}`}
-        >
-          <Image
-            source={{ uri: service.image }}
-            className="w-full h-24"
-            resizeMode="cover"
-          />
-          <View className="py-3 px-2">
-            <ThemedText className="text-center font-bold text-sm" numberOfLines={1}>
+        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+          <ThemedCard className="items-center py-4 px-1">
+            <View className="bg-secondary/10 p-3 rounded-full mb-2">
+              <Ionicons name={service.icon as any} size={24} color="#BD8C5E" />
+            </View>
+            <ThemedText variant="caption" className="text-center font-semibold" numberOfLines={1}>
               {service.name}
             </ThemedText>
-          </View>
+          </ThemedCard>
         </Animated.View>
       </TouchableOpacity>
     );
@@ -254,7 +260,7 @@ export default function ServicesScreen() {
         activeOpacity={1}
         onPressIn={onPressIn}
         onPressOut={onPressOut}
-        onPress={handleBookService}
+        onPress={() => router.push('/(customer)/book-ride-new')}
         style={{ width: cardWidth, marginRight: 16 }}
       >
         <Animated.View
@@ -290,18 +296,34 @@ export default function ServicesScreen() {
       <ThemedView className="flex-1">
         <ScrollView showsVerticalScrollIndicator={false}>
           {/* Header */}
-          <View className="px-6 pt-4 pb-6">
-            <ThemedText variant="h1">Services</ThemedText>
-            <ThemedText variant="small" className="mt-1 text-textSecondary dark:text-darkTextSecondary">
+          <View
+            style={{
+              backgroundColor: '#720C17',
+              paddingHorizontal: 24,
+              paddingTop: 16,
+              paddingBottom: 20,
+              borderBottomLeftRadius: 24,
+              borderBottomRightRadius: 24,
+              shadowColor: '#720C17',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.25,
+              shadowRadius: 8,
+              elevation: 8,
+            }}
+          >
+            <ThemedText style={{ color: '#ffffff', fontSize: 22, fontWeight: '800' }}>Services</ThemedText>
+            <ThemedText style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, marginTop: 4 }}>
               Go anywhere, get anything
             </ThemedText>
           </View>
 
-          {/* Main Service Buttons */}
+          {/* Main Service Buttons - Standardized Icon Grid */}
           <View className="px-3 mb-6">
-            <View className="flex-row">
+            <View className="flex-row flex-wrap">
               {mainServices.map((service) => (
-                <ServiceButton key={service.id} service={service} />
+                <View key={service.id} className="w-1/4 px-1 mb-2">
+                  <ServiceButton service={service} />
+                </View>
               ))}
             </View>
           </View>
@@ -357,7 +379,7 @@ export default function ServicesScreen() {
                   key={service.id}
                   className="mr-4"
                   activeOpacity={0.8}
-                  onPress={handleBookService}
+                  onPress={() => router.push('/(customer)/book-ride-new')}
                 >
                   <ThemedCard className="w-48 px-3 pt-3 pb-1 my-2 h-[175px]">
                     <Image

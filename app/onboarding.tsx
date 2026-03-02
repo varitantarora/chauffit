@@ -45,10 +45,12 @@ const onboardingData: OnboardingSlide[] = [
 
 export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedTheme, setSelectedTheme] = useState<'system' | 'light' | 'dark'>('system');
   const scrollViewRef = useRef<ScrollView>(null);
+  const totalSlides = onboardingData.length + 1; // +1 for theme selection slide
 
   const handleNext = () => {
-    if (currentIndex < onboardingData.length - 1) {
+    if (currentIndex < totalSlides - 1) {
       const nextIndex = currentIndex + 1;
       scrollViewRef.current?.scrollTo({
         x: SCREEN_WIDTH * nextIndex,
@@ -64,6 +66,7 @@ export default function OnboardingScreen() {
   };
 
   const handleGetStarted = () => {
+    useAuthStore.getState().setThemeMode(selectedTheme);
     useAuthStore.getState().setHasSeenOnboarding(true);
     router.replace('/(auth)/login');
   };
@@ -76,7 +79,7 @@ export default function OnboardingScreen() {
   return (
     <SafeAreaView className="flex-1 bg-white">
       <StatusBar barStyle="dark-content" backgroundColor="white" />
-      
+
       {/* Skip Button */}
       <View className="absolute top-12 right-6 z-10">
         <TouchableOpacity
@@ -126,26 +129,78 @@ export default function OnboardingScreen() {
             </View>
           </View>
         ))}
+
+        {/* Theme Selection Slide */}
+        <View
+          style={{ width: SCREEN_WIDTH }}
+          className="flex-1 items-center justify-center px-8"
+        >
+          <View className="items-center px-4 mb-8">
+            <Text className="text-3xl font-bold text-gray-900 text-center mb-4">
+              Choose Your Theme
+            </Text>
+            <Text className="text-base text-gray-600 text-center leading-6 px-4 mb-8">
+              Select your preferred appearance. You can change this later in Settings.
+            </Text>
+
+            <View className="w-full space-y-4">
+              {[
+                { key: 'system' as const, label: 'System Default', icon: '📱', desc: 'Match your device settings' },
+                { key: 'light' as const, label: 'Light Mode', icon: '☀️', desc: 'Classic bright appearance' },
+                { key: 'dark' as const, label: 'Dark Mode', icon: '🌙', desc: 'Easy on the eyes at night' },
+              ].map((option) => (
+                <TouchableOpacity
+                  key={option.key}
+                  onPress={() => setSelectedTheme(option.key)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    padding: 16,
+                    borderRadius: 16,
+                    borderWidth: 2,
+                    borderColor: selectedTheme === option.key ? '#720C17' : '#e5e5e5',
+                    backgroundColor: selectedTheme === option.key ? 'rgba(114,12,23,0.05)' : '#fff',
+                    marginBottom: 12,
+                  }}
+                >
+                  <Text style={{ fontSize: 28, marginRight: 16 }}>{option.icon}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#1a1a1a' }}>
+                      {option.label}
+                    </Text>
+                    <Text style={{ fontSize: 13, color: '#666', marginTop: 2 }}>
+                      {option.desc}
+                    </Text>
+                  </View>
+                  {selectedTheme === option.key && (
+                    <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#720C17', alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>✓</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
       </ScrollView>
 
       {/* Bottom Section */}
       <View className="px-8 pb-8">
         {/* Pagination Dots */}
         <View className="flex-row justify-center items-center mb-8">
-          {onboardingData.map((_, index) => (
+          {[...onboardingData, { id: 999 }].map((_, index) => (
             <View
               key={index}
-              className={`mx-1 rounded-full ${
-                index === currentIndex
+              className={`mx-1 rounded-full ${index === currentIndex
                   ? 'w-8 h-2 bg-burgundy'
                   : 'w-2 h-2 bg-gray-300'
-              }`}
+                }`}
             />
           ))}
         </View>
 
         {/* Action Buttons */}
-        {currentIndex === onboardingData.length - 1 ? (
+        {currentIndex === totalSlides - 1 ? (
           <TouchableOpacity
             onPress={handleGetStarted}
             className="w-full bg-burgundy py-4 px-8 rounded-full"

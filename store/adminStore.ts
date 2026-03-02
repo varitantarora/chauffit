@@ -10,6 +10,14 @@ import AdminApiService, {
   AdminPayment,
   AdminDispute,
   HourlyHireSettings,
+  AdminRateCard,
+  AdminPerKmRate,
+  AdminPerMinRate,
+  AdminHourlyHireRate,
+  AdminSurgeConfig,
+  AdminInsurancePlan,
+  AdminAmenity,
+  RevenueData,
 } from '../services/api/AdminApiService';
 
 interface AdminState {
@@ -60,10 +68,43 @@ interface AdminState {
   disputesError: string | null;
   selectedDispute: AdminDispute | null;
 
+
+  // Rate Cards / Pricing
+  rateCards: AdminRateCard[];
+  rateCardsLoading: boolean;
+  rateCardsError: string | null;
+  activeRateCard: AdminRateCard | null;
+
+  fetchRateCards: () => Promise<void>;
+  fetchRateCardDetail: (id: string) => Promise<AdminRateCard | null>;
+  updateRateCard: (id: string, data: Partial<AdminRateCard>) => Promise<boolean>;
+
+  // Pricing convenience
+  pricingLoading: boolean;
+  pricingError: string | null;
+
+  fetchPricingSettings: () => Promise<void>;
+  savePricingSettings: (rateCardId: string, data: Partial<AdminRateCard>) => Promise<boolean>;
+
   // Hourly Hire Settings
   hourlyHireSettings: HourlyHireSettings | null;
   hourlyHireLoading: boolean;
   hourlyHireError: string | null;
+
+  // Insurance Plans
+  insurancePlans: AdminInsurancePlan[];
+  insurancePlansLoading: boolean;
+  insurancePlansError: string | null;
+
+  // Amenities
+  amenities: AdminAmenity[];
+  amenitiesLoading: boolean;
+  amenitiesError: string | null;
+
+  // Revenue
+  revenue: RevenueData | null;
+  revenueLoading: boolean;
+  revenueError: string | null;
 
   // Actions
   fetchDashboard: () => Promise<void>;
@@ -89,6 +130,15 @@ interface AdminState {
   resolveDispute: (id: string, resolution: string, status: string) => Promise<boolean>;
   fetchHourlyHireSettings: () => Promise<void>;
   updateHourlyHireSettings: (data: Partial<HourlyHireSettings>) => Promise<boolean>;
+  fetchInsurancePlans: () => Promise<void>;
+  createInsurancePlan: (data: Partial<AdminInsurancePlan>) => Promise<boolean>;
+  updateInsurancePlan: (id: string, data: Partial<AdminInsurancePlan>) => Promise<boolean>;
+  deleteInsurancePlan: (id: string) => Promise<boolean>;
+  fetchAmenities: () => Promise<void>;
+  createAmenity: (data: Partial<AdminAmenity>) => Promise<boolean>;
+  updateAmenity: (id: string, data: Partial<AdminAmenity>) => Promise<boolean>;
+  deleteAmenity: (id: string) => Promise<boolean>;
+  fetchRevenue: (date?: string) => Promise<void>;
 }
 
 export const useAdminStore = create<AdminState>((set, get) => ({
@@ -131,9 +181,30 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   disputesError: null,
   selectedDispute: null,
 
+
+  rateCards: [],
+  rateCardsLoading: false,
+  rateCardsError: null,
+  activeRateCard: null,
+
   hourlyHireSettings: null,
   hourlyHireLoading: false,
   hourlyHireError: null,
+
+  pricingLoading: false,
+  pricingError: null,
+
+  insurancePlans: [],
+  insurancePlansLoading: false,
+  insurancePlansError: null,
+
+  amenities: [],
+  amenitiesLoading: false,
+  amenitiesError: null,
+
+  revenue: null,
+  revenueLoading: false,
+  revenueError: null,
 
   fetchDashboard: async () => {
     set({ dashboardLoading: true, dashboardError: null });
@@ -200,8 +271,8 @@ export const useAdminStore = create<AdminState>((set, get) => ({
 
   verifyDriver: async (id, isApproved, rejectionReason) => {
     const res = await AdminApiService.verifyDriver(id, {
-      current_status: isApproved ? 'active' : 'suspended',
-      background_check_status: isApproved ? 'verified' : 'failed',
+      action: isApproved ? 'approve' : 'reject',
+      rejection_reason: rejectionReason || '',
     });
     if (res.success) {
       get().fetchPendingDrivers();
@@ -354,6 +425,69 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     return false;
   },
 
+
+  fetchRateCards: async () => {
+    set({ rateCardsLoading: true, rateCardsError: null });
+    const res = await AdminApiService.getRateCards();
+    if (res.success && res.data) {
+      const rateCards = Array.isArray(res.data) ? res.data : (res.data as any).results || [];
+      set({ rateCards, rateCardsLoading: false });
+    } else {
+      set({ rateCardsError: res.error || 'Failed to fetch rate cards', rateCardsLoading: false });
+    }
+  },
+
+  fetchRateCardDetail: async (id) => {
+    const res = await AdminApiService.getRateCard(id);
+    if (res.success && res.data) {
+      set({ activeRateCard: res.data });
+      return res.data;
+    }
+    return null;
+  },
+
+  updateRateCard: async (id, data) => {
+    set({ rateCardsLoading: true });
+    const res = await AdminApiService.updateRateCard(id, data);
+    if (res.success && res.data) {
+      set({ activeRateCard: res.data, rateCardsLoading: false });
+      return true;
+    }
+    set({ rateCardsLoading: false });
+    return false;
+  },
+
+  fetchPricingSettings: async () => {
+    set({ pricingLoading: true, pricingError: null });
+    const res = await AdminApiService.getRateCards();
+    if (res.success && res.data) {
+      const rateCards = Array.isArray(res.data) ? res.data : (res.data as any).results || [];
+      set({ rateCards });
+      const activeCard = rateCards.find((rc: AdminRateCard) => rc.is_active) || rateCards[0];
+      if (activeCard) {
+        const detail = await AdminApiService.getRateCard(activeCard.id);
+        if (detail.success && detail.data) {
+          set({ activeRateCard: detail.data, pricingLoading: false });
+          return;
+        }
+      }
+      set({ pricingLoading: false });
+    } else {
+      set({ pricingError: res.error || 'Failed to fetch pricing settings', pricingLoading: false });
+    }
+  },
+
+  savePricingSettings: async (rateCardId, data) => {
+    set({ pricingLoading: true, pricingError: null });
+    const res = await AdminApiService.updateRateCard(rateCardId, data);
+    if (res.success && res.data) {
+      set({ activeRateCard: res.data, pricingLoading: false });
+      return true;
+    }
+    set({ pricingError: res.error || 'Failed to save pricing settings', pricingLoading: false });
+    return false;
+  },
+
   fetchHourlyHireSettings: async () => {
     set({ hourlyHireLoading: true, hourlyHireError: null });
     const res = await AdminApiService.getHourlyHireSettings();
@@ -373,5 +507,91 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     }
     set({ hourlyHireLoading: false });
     return false;
+  },
+
+  fetchInsurancePlans: async () => {
+    set({ insurancePlansLoading: true, insurancePlansError: null });
+    const res = await AdminApiService.getInsurancePlans();
+    if (res.success && res.data) {
+      const plans = Array.isArray(res.data) ? res.data : (res.data as any).results || [];
+      set({ insurancePlans: plans, insurancePlansLoading: false });
+    } else {
+      set({ insurancePlansError: res.error || 'Failed to fetch insurance plans', insurancePlansLoading: false });
+    }
+  },
+
+  createInsurancePlan: async (data) => {
+    const res = await AdminApiService.createInsurancePlan(data);
+    if (res.success) {
+      get().fetchInsurancePlans();
+      return true;
+    }
+    return false;
+  },
+
+  updateInsurancePlan: async (id, data) => {
+    const res = await AdminApiService.updateInsurancePlan(id, data);
+    if (res.success) {
+      get().fetchInsurancePlans();
+      return true;
+    }
+    return false;
+  },
+
+  deleteInsurancePlan: async (id) => {
+    const res = await AdminApiService.deleteInsurancePlan(id);
+    if (res.success) {
+      get().fetchInsurancePlans();
+      return true;
+    }
+    return false;
+  },
+
+  fetchAmenities: async () => {
+    set({ amenitiesLoading: true, amenitiesError: null });
+    const res = await AdminApiService.getAmenities();
+    if (res.success && res.data) {
+      const amenities = Array.isArray(res.data) ? res.data : (res.data as any).results || [];
+      set({ amenities, amenitiesLoading: false });
+    } else {
+      set({ amenitiesError: res.error || 'Failed to fetch amenities', amenitiesLoading: false });
+    }
+  },
+
+  createAmenity: async (data) => {
+    const res = await AdminApiService.createAmenity(data);
+    if (res.success) {
+      get().fetchAmenities();
+      return true;
+    }
+    return false;
+  },
+
+  updateAmenity: async (id, data) => {
+    const res = await AdminApiService.updateAmenity(id, data);
+    if (res.success) {
+      get().fetchAmenities();
+      return true;
+    }
+    return false;
+  },
+
+  deleteAmenity: async (id) => {
+    const res = await AdminApiService.deleteAmenity(id);
+    if (res.success) {
+      get().fetchAmenities();
+      return true;
+    }
+    return false;
+  },
+
+  fetchRevenue: async (date) => {
+    set({ revenueLoading: true, revenueError: null });
+    const res = await AdminApiService.getRevenue(date);
+    if (res.success && res.data) {
+      set({ revenue: res.data, revenueLoading: false });
+    } else {
+      set({ revenueError: res.error || 'Failed to fetch revenue', revenueLoading: false });
+    }
   },
 }));

@@ -13,6 +13,7 @@ import { useJobStore } from '../../../store/jobStore';
 import { useEarningsStore } from '../../../store/earningsStore';
 import { useRouter, useFocusEffect } from 'expo-router';
 import DriverApiService, { DriverProfile as DriverProfileType } from '../../../services/api/DriverApiService';
+import { useI18nStore } from '../../../store/i18nStore';
 import { appConfig } from '../../../config/env';
 
 type RidesTabType = 'accepted' | 'in-progress' | 'completed';
@@ -24,13 +25,14 @@ export default function DriverProfile() {
   const logout = useAuthStore((state) => state.logout);
   const toggleTheme = useAuthStore((state) => state.toggleTheme);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const { language, setLanguage, t } = useI18nStore();
   const router = useRouter();
 
   const { isOnline, setOnlineStatus, jobHistory, resetDemoRequests,
-          acceptedJobs, inProgressJobs, completedJobs,
-          loadingAccepted, loadingInProgress, loadingCompleted,
-          fetchAcceptedJobs, fetchInProgressJobs, fetchCompletedJobs,
-          fetchRideDetailsAndSync } = useJobStore();
+    acceptedJobs, inProgressJobs, completedJobs,
+    loadingAccepted, loadingInProgress, loadingCompleted,
+    fetchAcceptedJobs, fetchInProgressJobs, fetchCompletedJobs,
+    fetchRideDetailsAndSync } = useJobStore();
   const { earnings } = useEarningsStore();
 
   const [activeTab, setActiveTab] = useState<'profile' | 'documents' | 'stats' | 'rides'>('profile');
@@ -218,9 +220,9 @@ export default function DriverProfile() {
   // Extract date from createdAt (which is a datetime string) and format for Member Since
   const displayMemberSince = driverProfile?.created_at || userCreatedAt
     ? (() => {
-        const date = new Date(driverProfile?.created_at || userCreatedAt || '');
-        return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-      })()
+      const date = new Date(driverProfile?.created_at || userCreatedAt || '');
+      return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    })()
     : 'N/A';
 
   // Driver stats from profile
@@ -246,12 +248,29 @@ export default function DriverProfile() {
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
         {/* Header */}
-        <View className="flex-row items-center justify-between p-4 border-b border-border dark:border-darkBorder">
-          <ThemedText variant="title" className="font-bold">
-            Driver Profile
+        <View
+          style={{
+            backgroundColor: '#720C17',
+            paddingHorizontal: 24,
+            paddingTop: 16,
+            paddingBottom: 20,
+            borderBottomLeftRadius: 24,
+            borderBottomRightRadius: 24,
+            shadowColor: '#720C17',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.25,
+            shadowRadius: 8,
+            elevation: 8,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <ThemedText style={{ color: '#ffffff', fontSize: 22, fontWeight: '800' }}>
+            {t('driverProfile')}
           </ThemedText>
           <TouchableOpacity onPress={handleEditProfile}>
-            <Ionicons name="create" size={24} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
+            <Ionicons name="create" size={24} color="rgba(255,255,255,0.85)" />
           </TouchableOpacity>
         </View>
 
@@ -318,7 +337,7 @@ export default function DriverProfile() {
                         {displayRating > 0 ? displayRating.toFixed(1) : 'N/A'}
                       </ThemedText>
                     </View>
-                    <ThemedText variant="caption">Rating</ThemedText>
+                    <ThemedText variant="caption">{t('drivingScore')}</ThemedText>
                   </View>
                   <View className="items-center">
                     <ThemedText className="text-2xl font-bold">
@@ -382,9 +401,8 @@ export default function DriverProfile() {
                 <TouchableOpacity
                   onPress={handleGoOnline}
                   disabled={updatingStatus}
-                  className={`px-4 py-2 rounded-lg ${
-                    isOnline ? 'bg-danger/10 border border-danger/20' : 'bg-success/10 border border-success/20'
-                  } ${updatingStatus ? 'opacity-50' : ''}`}
+                  className={`px-4 py-2 rounded-lg ${isOnline ? 'bg-danger/10 border border-danger/20' : 'bg-success/10 border border-success/20'
+                    } ${updatingStatus ? 'opacity-50' : ''}`}
                 >
                   {updatingStatus ? (
                     <ActivityIndicator size="small" color={isOnline ? '#ef4444' : '#10b981'} />
@@ -410,14 +428,12 @@ export default function DriverProfile() {
                 <TouchableOpacity
                   key={tab.key}
                   onPress={() => setActiveTab(tab.key as any)}
-                  className={`flex-1 py-2 px-1 rounded-lg ${
-                    activeTab === tab.key ? 'bg-burgundy' : ''
-                  }`}
+                  className={`flex-1 py-2 px-1 rounded-lg ${activeTab === tab.key ? 'bg-burgundy' : ''
+                    }`}
                 >
                   <ThemedText
-                    className={`text-center text-sm ${
-                      activeTab === tab.key ? 'text-white font-semibold' : ''
-                    }`}
+                    className={`text-center text-sm ${activeTab === tab.key ? 'text-white font-semibold' : ''
+                      }`}
                   >
                     {tab.label}
                   </ThemedText>
@@ -433,26 +449,26 @@ export default function DriverProfile() {
                 {/* Account Info */}
                 <ThemedCard className="p-4 mb-6">
                   <ThemedText className="font-bold text-lg mb-4">
-                    ℹ️ ACCOUNT INFORMATION
+                    ℹ️ {t('accountInfo')}
                   </ThemedText>
 
                   <View className="space-y-3">
                     <View className="flex-row justify-between">
-                      <ThemedText>Member Since:</ThemedText>
+                      <ThemedText>{t('memberSince')}:</ThemedText>
                       <ThemedText className="font-semibold">{displayMemberSince}</ThemedText>
                     </View>
                     {driverProfile ? (
                       <>
                         <View className="flex-row justify-between">
-                          <ThemedText>License Number:</ThemedText>
+                          <ThemedText>{t('licenseNumber')}:</ThemedText>
                           <ThemedText className="font-semibold">{driverProfile?.license_number || 'N/A'}</ThemedText>
                         </View>
                         <View className="flex-row justify-between">
-                          <ThemedText>License Expiry:</ThemedText>
+                          <ThemedText>{t('licenseExpiry')}:</ThemedText>
                           <ThemedText className="font-semibold">{driverProfile?.license_expiry_date || 'N/A'}</ThemedText>
                         </View>
                         <View className="flex-row justify-between">
-                          <ThemedText>Experience:</ThemedText>
+                          <ThemedText>{t('experience')}:</ThemedText>
                           <ThemedText className="font-semibold">
                             {driverProfile?.years_of_experience ? `${driverProfile.years_of_experience} years` : 'N/A'}
                           </ThemedText>
@@ -476,10 +492,35 @@ export default function DriverProfile() {
                   >
                     <View className="flex-row items-center">
                       <Ionicons name={isDarkMode ? 'moon' : 'sunny'} size={20} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
-                      <ThemedText className="ml-3">Dark Mode</ThemedText>
+                      <ThemedText className="ml-3">{t('darkMode')}</ThemedText>
                     </View>
                     <View className={`w-12 h-6 rounded-full ${isDarkMode ? 'bg-burgundy' : 'bg-gray-300'} justify-center`}>
                       <View className={`w-5 h-5 bg-white rounded-full ${isDarkMode ? 'self-end mr-0.5' : 'self-start ml-0.5'}`} />
+                    </View>
+                  </TouchableOpacity>
+
+                  {/* English/Hindi Language Toggle */}
+                  <TouchableOpacity
+                    onPress={() => {
+                      Alert.alert(
+                        'Language / भाषा',
+                        'Select your preferred language',
+                        [
+                          { text: 'English', onPress: () => setLanguage('en') },
+                          { text: 'हिन्दी', onPress: () => setLanguage('hi') },
+                          { text: 'Cancel', style: 'cancel' },
+                        ]
+                      );
+                    }}
+                    className="flex-row justify-between items-center p-4 bg-surface dark:bg-darkSurface rounded-xl mb-3"
+                  >
+                    <View className="flex-row items-center">
+                      <Ionicons name="language" size={20} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
+                      <ThemedText className="ml-3">{t('language')}</ThemedText>
+                    </View>
+                    <View className="flex-row items-center">
+                      <ThemedText variant="caption" className="text-secondary mr-1">{language === 'en' ? 'EN' : 'हि'}</ThemedText>
+                      <Ionicons name="chevron-forward" size={16} color={isDarkMode ? '#9ca3af' : '#6b7280'} />
                     </View>
                   </TouchableOpacity>
 
@@ -489,7 +530,7 @@ export default function DriverProfile() {
                   >
                     <View className="flex-row items-center">
                       <Ionicons name="card" size={20} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
-                      <ThemedText className="ml-3">Banking Details</ThemedText>
+                      <ThemedText className="ml-3">{t('bankingDetails')}</ThemedText>
                     </View>
                     <Ionicons name="chevron-forward" size={20} color={isDarkMode ? '#9ca3af' : '#6b7280'} />
                   </TouchableOpacity>
@@ -500,7 +541,7 @@ export default function DriverProfile() {
                   >
                     <View className="flex-row items-center">
                       <Ionicons name="notifications" size={20} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
-                      <ThemedText className="ml-3">Notifications</ThemedText>
+                      <ThemedText className="ml-3">{t('notifications')}</ThemedText>
                     </View>
                     <Ionicons name="chevron-forward" size={20} color={isDarkMode ? '#9ca3af' : '#6b7280'} />
                   </TouchableOpacity>
@@ -511,7 +552,7 @@ export default function DriverProfile() {
                   >
                     <View className="flex-row items-center">
                       <Ionicons name="help-circle" size={20} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
-                      <ThemedText className="ml-3">Help & Support</ThemedText>
+                      <ThemedText className="ml-3">{t('helpSupport')}</ThemedText>
                     </View>
                     <Ionicons name="chevron-forward" size={20} color={isDarkMode ? '#9ca3af' : '#6b7280'} />
                   </TouchableOpacity>
@@ -552,14 +593,12 @@ export default function DriverProfile() {
                       <TouchableOpacity
                         key={tab.key}
                         onPress={() => setRidesTab(tab.key)}
-                        className={`flex-1 py-2 rounded-lg ${
-                          ridesTab === tab.key ? 'bg-burgundy' : ''
-                        }`}
+                        className={`flex-1 py-2 rounded-lg ${ridesTab === tab.key ? 'bg-burgundy' : ''
+                          }`}
                       >
                         <ThemedText
-                          className={`text-center text-sm ${
-                            ridesTab === tab.key ? 'text-white font-semibold' : ''
-                          }`}
+                          className={`text-center text-sm ${ridesTab === tab.key ? 'text-white font-semibold' : ''
+                            }`}
                         >
                           {tab.label}
                         </ThemedText>
@@ -670,13 +709,13 @@ export default function DriverProfile() {
 
                   <View className="space-y-3">
                     <View className="flex-row justify-between">
-                      <ThemedText>Member Since:</ThemedText>
+                      <ThemedText>{t('memberSince')}:</ThemedText>
                       <ThemedText className="font-semibold">
                         {driverStats.joinDate
                           ? driverStats.joinDate.toLocaleDateString('en-IN', {
-                              month: 'short',
-                              year: 'numeric'
-                            })
+                            month: 'short',
+                            year: 'numeric'
+                          })
                           : 'N/A'}
                       </ThemedText>
                     </View>
@@ -759,7 +798,7 @@ export default function DriverProfile() {
           {/* Logout Button */}
           <View className="px-6 py-6">
             <PrimaryButton
-              title="Logout"
+              title={t('logout')}
               onPress={handleLogout}
             />
           </View>

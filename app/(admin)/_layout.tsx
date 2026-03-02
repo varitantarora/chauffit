@@ -17,6 +17,9 @@ export default function AdminLayout() {
       <Stack.Screen name="bikers-pending" />
       <Stack.Screen name="payments" />
       <Stack.Screen name="tasks" />
+      <Stack.Screen name="insurance-management" />
+      <Stack.Screen name="amenities-management" />
+      <Stack.Screen name="revenue" />
     </Stack>
   );
 }

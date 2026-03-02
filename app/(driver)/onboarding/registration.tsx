@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Alert, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,19 +12,35 @@ import { useAuthStore } from '../../../store/authStore';
 export default function DriverRegistrationScreen() {
   const router = useRouter();
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
-  
+  const user = useAuthStore((state) => state.user);
+
+  const inputClass = isDarkMode
+    ? 'bg-gray-800 border-gray-600 text-white'
+    : 'bg-white border-gray-300 text-gray-900';
+  const disabledClass = isDarkMode
+    ? 'bg-gray-700 border-gray-600'
+    : 'bg-gray-100 border-gray-200';
+  const placeholderColor = isDarkMode ? '#9ca3af' : '#9ca3af';
+
   const [formData, setFormData] = useState({
-    fullName: '',
-    phoneNumber: '',
-    email: '',
-    dateOfBirth: '',
     applicationType: 'driver', // 'driver' or 'biker'
-    experience: ''
+    dateOfBirth: '',
+    experience: '',
+    transmissionType: '',
+    uniformSize: '',
   });
 
   const handleContinue = () => {
-    if (!formData.fullName || !formData.phoneNumber || !formData.email || !formData.dateOfBirth) {
-      Alert.alert('Missing Information', 'Please fill in all required fields.');
+    if (!formData.dateOfBirth) {
+      Alert.alert('Missing Information', 'Please enter your date of birth.');
+      return;
+    }
+    if (!formData.transmissionType) {
+      Alert.alert('Missing Information', 'Please select your transmission type preference.');
+      return;
+    }
+    if (!formData.uniformSize) {
+      Alert.alert('Missing Information', 'Please select your uniform size.');
       return;
     }
     router.push('/(driver)/onboarding/documents');
@@ -33,7 +49,7 @@ export default function DriverRegistrationScreen() {
   return (
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {/* Header */}
           <View className="px-6 pt-8 pb-6 items-center">
             <View className="w-16 h-16 bg-burgundy rounded-full items-center justify-center mb-4">
@@ -81,50 +97,39 @@ export default function DriverRegistrationScreen() {
               </View>
             </ThemedCard>
 
-            {/* Form Fields */}
+            {/* Pre-filled account info (read-only) */}
             <View className="space-y-4 mb-6">
               <View>
-                <ThemedText className="mb-2">Legal Full Name *</ThemedText>
-                <ThemedCard className="p-4">
-                  <ThemedText 
-                    className={formData.fullName ? '' : 'text-gray-500'}
-                  >
-                    {formData.fullName || 'Enter your full legal name'}
-                  </ThemedText>
-                </ThemedCard>
+                <ThemedText className="mb-2">Full Name</ThemedText>
+                <View className={`p-4 rounded-xl border ${disabledClass}`}>
+                  <ThemedText>{user?.name || 'N/A'}</ThemedText>
+                </View>
               </View>
 
               <View>
-                <ThemedText className="mb-2">Phone Number *</ThemedText>
-                <ThemedCard className="p-4">
-                  <ThemedText 
-                    className={formData.phoneNumber ? '' : 'text-gray-500'}
-                  >
-                    {formData.phoneNumber || '+91 XXXXX XXXXX'}
-                  </ThemedText>
-                </ThemedCard>
+                <ThemedText className="mb-2">Phone Number</ThemedText>
+                <View className={`p-4 rounded-xl border ${disabledClass}`}>
+                  <ThemedText>{user?.phone || 'N/A'}</ThemedText>
+                </View>
               </View>
 
               <View>
-                <ThemedText className="mb-2">Email Address *</ThemedText>
-                <ThemedCard className="p-4">
-                  <ThemedText 
-                    className={formData.email ? '' : 'text-gray-500'}
-                  >
-                    {formData.email || 'your.email@example.com'}
-                  </ThemedText>
-                </ThemedCard>
+                <ThemedText className="mb-2">Email Address</ThemedText>
+                <View className={`p-4 rounded-xl border ${disabledClass}`}>
+                  <ThemedText>{user?.email || 'N/A'}</ThemedText>
+                </View>
               </View>
 
               <View>
                 <ThemedText className="mb-2">Date of Birth *</ThemedText>
-                <ThemedCard className="p-4">
-                  <ThemedText 
-                    className={formData.dateOfBirth ? '' : 'text-gray-500'}
-                  >
-                    {formData.dateOfBirth || 'DD/MM/YYYY'}
-                  </ThemedText>
-                </ThemedCard>
+                <TextInput
+                  className={`p-4 rounded-xl border ${inputClass}`}
+                  placeholder="DD/MM/YYYY"
+                  placeholderTextColor={placeholderColor}
+                  value={formData.dateOfBirth}
+                  onChangeText={(text) => setFormData({...formData, dateOfBirth: text})}
+                  keyboardType="numbers-and-punctuation"
+                />
               </View>
             </View>
 
@@ -149,6 +154,67 @@ export default function DriverRegistrationScreen() {
                   </TouchableOpacity>
                 ))}
               </View>
+            </ThemedCard>
+
+            {/* City */}
+            <ThemedCard className="p-4 mb-6">
+              <ThemedText className="font-bold mb-4">City:</ThemedText>
+              <View className={`p-4 rounded-xl border ${disabledClass}`}>
+                <ThemedText className="text-gray-500">Gurgaon (Pilot)</ThemedText>
+              </View>
+            </ThemedCard>
+
+            {/* Transmission Type */}
+            <ThemedCard className="p-4 mb-6">
+              <ThemedText className="font-bold mb-4">Transmission Type: *</ThemedText>
+              <View className="flex-row flex-wrap">
+                {[
+                  { key: 'manual', label: 'Manual' },
+                  { key: 'automatic', label: 'Automatic' },
+                  { key: 'both', label: 'Both' },
+                ].map((option) => (
+                  <TouchableOpacity
+                    key={option.key}
+                    onPress={() => setFormData({...formData, transmissionType: option.key})}
+                    className="mr-6 mb-3 flex-row items-center"
+                  >
+                    <View className={`w-5 h-5 rounded-full border-2 ${
+                      formData.transmissionType === option.key ? 'border-burgundy bg-burgundy' : 'border-gray-400'
+                    } mr-2`}>
+                      {formData.transmissionType === option.key && (
+                        <View className="w-full h-full rounded-full bg-white scale-50" />
+                      )}
+                    </View>
+                    <ThemedText>{option.label}</ThemedText>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ThemedCard>
+
+            {/* Uniform Size */}
+            <ThemedCard className="p-4 mb-6">
+              <ThemedText className="font-bold mb-4">Uniform Size: *</ThemedText>
+              <View className="flex-row flex-wrap">
+                {['M', 'L', 'XL'].map((size) => (
+                  <TouchableOpacity
+                    key={size}
+                    onPress={() => setFormData({...formData, uniformSize: size})}
+                    className="mr-6 mb-3 flex-row items-center"
+                  >
+                    <View className={`w-5 h-5 rounded-full border-2 ${
+                      formData.uniformSize === size ? 'border-burgundy bg-burgundy' : 'border-gray-400'
+                    } mr-2`}>
+                      {formData.uniformSize === size && (
+                        <View className="w-full h-full rounded-full bg-white scale-50" />
+                      )}
+                    </View>
+                    <ThemedText>{size}</ThemedText>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <TouchableOpacity className="mt-2">
+                <ThemedText className="text-burgundy underline text-sm">View Size Chart</ThemedText>
+              </TouchableOpacity>
             </ThemedCard>
 
             {/* Continue Button */}

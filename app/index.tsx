@@ -11,6 +11,7 @@ export default function Index() {
   const hasSeenOnboarding = useAuthStore((state) => state.hasSeenOnboarding);
   const isInitializing = useAuthStore((state) => state.isInitializing);
   const initializeAuth = useAuthStore((state) => state.initializeAuth);
+  const driverOnboardingStatus = useAuthStore((state) => state.driverOnboardingStatus);
 
   // Initialize auth on mount
   useEffect(() => {
@@ -30,22 +31,56 @@ export default function Index() {
   // if (!hasSeenOnboarding) {
   //   return <Redirect href="/onboarding" />;
   // }
-  
+
   if (!isAuthenticated) {
     return <Redirect href="/(auth)/login" />;
   }
-  
+
   if (activeRole === 'admin' || activeRole === 'super_admin') {
     return <Redirect href="/(admin)/(tabs)" />;
   }
 
   if (activeRole === 'driver') {
-    return <Redirect href="/(driver)/(tabs)" />;
+    return <Redirect href={getDriverRoute(driverOnboardingStatus)} />;
   }
-  
+
   if (activeRole === 'biker') {
     return <Redirect href="/(biker)/(tabs)" />;
   }
-  
+
   return <Redirect href="/(customer)/(tabs)" />;
+}
+
+function getDriverRoute(status: string | null): string {
+  switch (status) {
+    case null:
+    case undefined:
+      // No profile yet
+      return '/(driver)/onboarding/registration';
+
+    case 'registered':
+    case 'verification_in_progress':
+    case 'verification_failed':
+    case 'verified_ready_for_training':
+      return '/(driver)/onboarding/background-check';
+
+    case 'training_scheduled':
+      return '/(driver)/onboarding/training-scheduled';
+
+    case 'training_failed':
+      return '/(driver)/onboarding/training-failed';
+
+    case 'certified':
+      return '/(driver)/onboarding/onboarding-complete';
+
+    case 'active':
+      return '/(driver)/(tabs)';
+
+    case 'suspended':
+    case 'rejected':
+      return '/(driver)/onboarding/background-check';
+
+    default:
+      return '/(driver)/(tabs)';
+  }
 }

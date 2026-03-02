@@ -14,6 +14,7 @@ import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { BlurView } from 'expo-blur';
 import { DarkMapStyle } from '../../../constants/MapStyles';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function CustomerHomeScreen() {
   const user = useAuthStore((state) => state.user);
@@ -25,11 +26,13 @@ export default function CustomerHomeScreen() {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [pickupLocation, setPickupLocation] = useState('');
   const [destinationLocation, setDestinationLocation] = useState('');
+  const [tripType, setTripType] = useState<'one_way' | 'hourly'>('one_way');
+  const [timeMode, setTimeMode] = useState<'now' | 'schedule'>('now');
   const [recentActivity, setRecentActivity] = useState<CustomerRide[]>([]);
   const [loadingActivity, setLoadingActivity] = useState(true);
   const [blogs, setBlogs] = useState<BlogListItem[]>([]);
   const [blogsLoading, setBlogsLoading] = useState(true);
-  const [userLocation, setUserLocation] = useState<{latitude: number; longitude: number} | null>(null);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const clipAnimation = useRef(new Animated.Value(0)).current;
   const searchAnimation = useRef(new Animated.Value(0)).current;
@@ -86,13 +89,29 @@ export default function CustomerHomeScreen() {
     fetchBlogs();
   }, [fetchRecentActivity, fetchBlogs]);
 
-  // Fetch user location for map hero
+  const destinationRef = useRef<TextInput>(null);
+
+  // Fetch user location for map hero & auto-fill pickup
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
         const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
         setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+        // Auto-fill pickup location via reverse geocoding
+        try {
+          const addresses = await Location.reverseGeocodeAsync({
+            latitude: loc.coords.latitude,
+            longitude: loc.coords.longitude,
+          });
+          if (addresses.length > 0) {
+            const addr = addresses[0];
+            const parts = [addr.name, addr.street, addr.district, addr.city].filter(Boolean);
+            setPickupLocation(parts.join(', '));
+          }
+        } catch (e) {
+          console.warn('Reverse geocode failed:', e);
+        }
       }
     })();
   }, []);
@@ -112,13 +131,6 @@ export default function CustomerHomeScreen() {
 
     return () => clearTimeout(timer);
   }, []);
-
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  };
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
@@ -243,19 +255,36 @@ export default function CustomerHomeScreen() {
             friction: 10,
           }),
         ]).start();
+
+        // Auto-focus destination field after animation
+        setTimeout(() => {
+          destinationRef.current?.focus();
+        }, 300);
       });
     }
   };
 
   const handleExpandedSearch = () => {
     if (pickupLocation.trim() && destinationLocation.trim()) {
-      router.push({
-        pathname: '/(customer)/book-ride-new',
-        params: {
-          pickup: pickupLocation.trim(),
-          destination: destinationLocation.trim()
-        }
-      });
+      if (timeMode === 'schedule') {
+        router.push({
+          pathname: '/(customer)/schedule',
+          params: {
+            pickup: pickupLocation.trim(),
+            destination: destinationLocation.trim(),
+            bookingType: tripType === 'hourly' ? 'hourly_charter' : 'one_way',
+          }
+        });
+      } else {
+        router.push({
+          pathname: '/(customer)/book-ride-new',
+          params: {
+            pickup: pickupLocation.trim(),
+            destination: destinationLocation.trim(),
+            tripType: tripType,
+          }
+        });
+      }
       toggleSearchExpansion();
     }
   };
@@ -263,7 +292,7 @@ export default function CustomerHomeScreen() {
   const quickActions = [
     { title: 'Book Now', icon: 'car', action: () => router.push('/(customer)/book-ride-new') },
     { title: 'Schedule', icon: 'time', action: () => router.push('/(customer)/schedule') },
-    { title: 'History', icon: 'list', action: () => router.push('/(customer)/(tabs)/history') },
+    { title: 'Trips', icon: 'list', action: () => router.push('/(customer)/(tabs)/history') },
     { title: 'Favorites', icon: 'heart', action: () => router.push('/(customer)/(tabs)/favorites') }
   ];
 
@@ -277,7 +306,7 @@ export default function CustomerHomeScreen() {
           }
         >
           {/* Map Hero Section */}
-          <View style={{ height: isSearchExpanded ? 480 : 280, overflow: 'hidden', borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}>
+          <View style={{ height: isSearchExpanded ? 540 : 280, overflow: 'hidden', borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}>
             {/* Map Background */}
             {userLocation ? (
               <MapView
@@ -303,38 +332,23 @@ export default function CustomerHomeScreen() {
               <View style={{ flex: 1, backgroundColor: isDarkMode ? '#1a1a1a' : '#e8e4df' }} />
             )}
 
-            {/* Header overlay */}
-            <View style={{ position: 'absolute', top: 8, left: 24, right: 24 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                <Image
-                  source={require('../../../assets/chauffit-logo.png')}
-                  style={{ width: 28, height: 28, marginRight: 8 }}
-                  resizeMode="contain"
-                />
-                <ThemedText
-                  variant="h1"
-                  style={{
-                    color: '#720C17',
-                    textShadowColor: 'rgba(0,0,0,0.5)',
-                    textShadowOffset: { width: 0, height: 1 },
-                    textShadowRadius: 4,
-                  }}
-                >
-                  {getGreeting()}, {user?.name?.split(' ')[0] || 'Guest'}
-                </ThemedText>
-              </View>
+            {/* Header overlay with gradient + glassmorphism */}
+            <LinearGradient
+              colors={isDarkMode ? ['rgba(26,26,26,0.85)', 'rgba(26,26,26,0)'] : ['rgba(255,255,255,0.9)', 'rgba(255,255,255,0)']}
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, paddingTop: 12, paddingBottom: 30, paddingHorizontal: 24 }}
+            >
               <ThemedText
-                variant="small"
+                variant="h1"
                 style={{
                   color: '#720C17',
-                  textShadowColor: 'rgba(0,0,0,0.4)',
-                  textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 3,
+                  fontSize: 22,
+                  fontWeight: '800',
+                  letterSpacing: 1,
                 }}
               >
-                Where would you like to go today?
+                Chauffit
               </ThemedText>
-            </View>
+            </LinearGradient>
 
             {/* Search bar overlay */}
             <View style={{ position: 'absolute', bottom: 16, left: 16, right: 16 }}>
@@ -342,7 +356,7 @@ export default function CustomerHomeScreen() {
                 style={{
                   height: searchAnimation.interpolate({
                     inputRange: [0, 1],
-                    outputRange: [56, 240],
+                    outputRange: [56, 300],
                   }),
                   overflow: 'hidden',
                   borderRadius: 16,
@@ -379,21 +393,47 @@ export default function CustomerHomeScreen() {
                       pointerEvents={isSearchExpanded ? 'none' : 'auto'}
                     >
                       <TouchableOpacity
-                        style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, height: 56 }}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          paddingHorizontal: 20,
+                          height: 52,
+                          borderRadius: 28,
+                          backgroundColor: isDarkMode ? 'rgba(44,44,44,0.8)' : 'rgba(245,245,245,0.95)',
+                          marginHorizontal: 4,
+                          marginVertical: 2,
+                        }}
                         onPress={toggleSearchExpansion}
                         activeOpacity={0.7}
                       >
-                        <Ionicons name="search" size={20} color={isDarkMode ? '#d9d1c6' : '#555'} />
+                        <Ionicons name="search" size={18} color={isDarkMode ? '#d9d1c6' : '#888'} />
                         <ThemedText
                           style={{
                             flex: 1,
                             marginLeft: 12,
-                            color: isDarkMode ? '#d9d1c6' : '#555',
-                            fontSize: 15,
+                            color: isDarkMode ? '#999' : '#888',
+                            fontSize: 16,
+                            fontWeight: '500',
                           }}
                         >
-                          Search destination...
+                          Where to?
                         </ThemedText>
+                        <TouchableOpacity
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            router.push({ pathname: '/(customer)/book-ride-new', params: { multiStop: 'true' } });
+                          }}
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 16,
+                            backgroundColor: isDarkMode ? 'rgba(114,12,23,0.3)' : 'rgba(114,12,23,0.1)',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Ionicons name="add" size={20} color="#720C17" />
+                        </TouchableOpacity>
                       </TouchableOpacity>
                     </Animated.View>
 
@@ -419,6 +459,81 @@ export default function CustomerHomeScreen() {
                       >
                         <Ionicons name="close-circle" size={24} color={isDarkMode ? '#d9d1c6' : '#555'} />
                       </TouchableOpacity>
+
+                      {/* Pill-shaped dropdown controls */}
+                      <View style={{ flexDirection: 'row', marginBottom: 12, gap: 8, paddingRight: 36 }}>
+                        {/* Trip Type Pill */}
+                        <TouchableOpacity
+                          onPress={() => setTripType(tripType === 'one_way' ? 'hourly' : 'one_way')}
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            paddingHorizontal: 12,
+                            paddingVertical: 7,
+                            borderRadius: 20,
+                            backgroundColor: isDarkMode ? 'rgba(114,12,23,0.25)' : 'rgba(114,12,23,0.08)',
+                            borderWidth: 1,
+                            borderColor: isDarkMode ? 'rgba(114,12,23,0.4)' : 'rgba(114,12,23,0.2)',
+                          }}
+                        >
+                          <Ionicons
+                            name={tripType === 'one_way' ? 'arrow-forward' : 'time-outline'}
+                            size={14}
+                            color="#720C17"
+                          />
+                          <ThemedText style={{ marginLeft: 6, fontSize: 12, fontWeight: '600', color: '#720C17' }}>
+                            {tripType === 'one_way' ? 'One Way' : 'Hourly'}
+                          </ThemedText>
+                          <Ionicons name="chevron-down" size={12} color="#720C17" style={{ marginLeft: 4 }} />
+                        </TouchableOpacity>
+
+                        {/* Vehicle Selector Pill */}
+                        <TouchableOpacity
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            paddingHorizontal: 12,
+                            paddingVertical: 7,
+                            borderRadius: 20,
+                            backgroundColor: isDarkMode ? 'rgba(189,140,94,0.15)' : 'rgba(189,140,94,0.08)',
+                            borderWidth: 1,
+                            borderColor: isDarkMode ? 'rgba(189,140,94,0.3)' : 'rgba(189,140,94,0.2)',
+                          }}
+                        >
+                          <Ionicons name="car" size={14} color="#BD8C5E" />
+                          <ThemedText style={{ marginLeft: 6, fontSize: 12, fontWeight: '600', color: '#BD8C5E' }}>
+                            Sedan
+                          </ThemedText>
+                          <Ionicons name="chevron-down" size={12} color="#BD8C5E" style={{ marginLeft: 4 }} />
+                        </TouchableOpacity>
+
+                        {/* Time Pill */}
+                        <TouchableOpacity
+                          onPress={() => {
+                            if (timeMode === 'now') {
+                              setTimeMode('schedule');
+                            } else {
+                              setTimeMode('now');
+                            }
+                          }}
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            paddingHorizontal: 12,
+                            paddingVertical: 7,
+                            borderRadius: 20,
+                            backgroundColor: isDarkMode ? 'rgba(44,44,44,0.6)' : 'rgba(245,245,245,0.8)',
+                            borderWidth: 1,
+                            borderColor: isDarkMode ? 'rgba(74,74,74,0.5)' : 'rgba(200,200,200,0.6)',
+                          }}
+                        >
+                          <Ionicons name="time" size={14} color={isDarkMode ? '#d9d1c6' : '#555'} />
+                          <ThemedText style={{ marginLeft: 6, fontSize: 12, fontWeight: '600', color: isDarkMode ? '#d9d1c6' : '#555' }}>
+                            {timeMode === 'now' ? 'Now' : 'Schedule'}
+                          </ThemedText>
+                          <Ionicons name="chevron-down" size={12} color={isDarkMode ? '#d9d1c6' : '#555'} style={{ marginLeft: 4 }} />
+                        </TouchableOpacity>
+                      </View>
 
                       {/* Pickup Location */}
                       <Animated.View
@@ -488,19 +603,51 @@ export default function CustomerHomeScreen() {
                         >
                           <Ionicons name="location" size={20} color="#ef4444" />
                           <TextInput
+                            ref={destinationRef}
                             style={{
                               flex: 1,
                               marginLeft: 12,
                               color: isDarkMode ? '#e5e5e5' : '#1a1a1a',
                               fontSize: 15,
                             }}
-                            placeholder="Destination"
+                            placeholder="Where to?"
                             placeholderTextColor={isDarkMode ? '#888' : '#999'}
                             value={destinationLocation}
                             onChangeText={setDestinationLocation}
                           />
                         </View>
                       </Animated.View>
+
+                      {/* Destination Suggestions */}
+                      {isSearchExpanded && !destinationLocation.trim() && recentActivity.length > 0 && (
+                        <View style={{ marginBottom: 8, maxHeight: 100 }}>
+                          <ThemedText style={{ fontSize: 11, fontWeight: '600', color: isDarkMode ? '#999' : '#888', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                            Recent Destinations
+                          </ThemedText>
+                          {recentActivity.slice(0, 2).map((activity) => (
+                            activity.dropoff_address ? (
+                              <TouchableOpacity
+                                key={activity.id}
+                                onPress={() => setDestinationLocation(activity.dropoff_address)}
+                                style={{
+                                  flexDirection: 'row',
+                                  alignItems: 'center',
+                                  paddingVertical: 8,
+                                  paddingHorizontal: 4,
+                                }}
+                              >
+                                <Ionicons name="time-outline" size={16} color={isDarkMode ? '#BD8C5E' : '#720C17'} />
+                                <ThemedText
+                                  numberOfLines={1}
+                                  style={{ marginLeft: 10, fontSize: 13, flex: 1, color: isDarkMode ? '#d9d1c6' : '#333' }}
+                                >
+                                  {activity.dropoff_address}
+                                </ThemedText>
+                              </TouchableOpacity>
+                            ) : null
+                          ))}
+                        </View>
+                      )}
 
                       {/* Search Button */}
                       <Animated.View
@@ -540,8 +687,8 @@ export default function CustomerHomeScreen() {
             <View className="flex-row justify-between">
               {quickActions.map((action, index) => (
                 <View key={index} className="flex-1 mx-1">
-                  <ThemedCard 
-                    variant="premium" 
+                  <ThemedCard
+                    variant="premium"
                     className="items-center py-3 h-[110px] justify-center px-1"
                     pressable
                     onPress={action.action}
@@ -549,8 +696,8 @@ export default function CustomerHomeScreen() {
                     <View className="bg-secondary/10 p-2 rounded-full mb-2">
                       <Ionicons name={action.icon as any} size={22} color="#BD8C5E" />
                     </View>
-                    <ThemedText 
-                      variant="small" 
+                    <ThemedText
+                      variant="small"
                       className="text-center font-medium"
                       numberOfLines={1}
                     >
@@ -561,7 +708,7 @@ export default function CustomerHomeScreen() {
               ))}
             </View>
           </View>
-          
+
           {/* Recent Activity */}
           <View className="px-3 mb-6">
             <View className="flex-row justify-between items-center mb-4">
@@ -591,34 +738,33 @@ export default function CustomerHomeScreen() {
                     activeOpacity={0.7}
                   >
                     <View className="flex-row items-center">
-                      <View className={`p-2 rounded-full ${
-                        activity.booking_status === 'trip_completed'
+                      <View className={`p-2 rounded-full ${activity.booking_status === 'trip_completed'
                           ? 'bg-green-500/10'
                           : activity.booking_status === 'trip_started'
-                          ? 'bg-blue-500/10'
-                          : activity.booking_status === 'cancelled_by_customer' || activity.booking_status === 'cancelled_by_driver' || activity.booking_status === 'cancelled_by_system'
-                          ? 'bg-red-500/10'
-                          : 'bg-yellow-500/10'
-                      }`}>
+                            ? 'bg-blue-500/10'
+                            : activity.booking_status === 'cancelled_by_customer' || activity.booking_status === 'cancelled_by_driver' || activity.booking_status === 'cancelled_by_system'
+                              ? 'bg-red-500/10'
+                              : 'bg-yellow-500/10'
+                        }`}>
                         <Ionicons
                           name={
                             activity.booking_status === 'trip_completed'
                               ? 'checkmark-circle'
                               : activity.booking_status === 'trip_started'
-                              ? 'car'
-                              : activity.booking_status === 'cancelled_by_customer' || activity.booking_status === 'cancelled_by_driver' || activity.booking_status === 'cancelled_by_system'
-                              ? 'close-circle'
-                              : 'time'
+                                ? 'car'
+                                : activity.booking_status === 'cancelled_by_customer' || activity.booking_status === 'cancelled_by_driver' || activity.booking_status === 'cancelled_by_system'
+                                  ? 'close-circle'
+                                  : 'time'
                           }
                           size={20}
                           color={
                             activity.booking_status === 'trip_completed'
                               ? '#10b981'
                               : activity.booking_status === 'trip_started'
-                              ? '#3b82f6'
-                              : activity.booking_status === 'cancelled_by_customer' || activity.booking_status === 'cancelled_by_driver' || activity.booking_status === 'cancelled_by_system'
-                              ? '#ef4444'
-                              : '#f59e0b'
+                                ? '#3b82f6'
+                                : activity.booking_status === 'cancelled_by_customer' || activity.booking_status === 'cancelled_by_driver' || activity.booking_status === 'cancelled_by_system'
+                                  ? '#ef4444'
+                                  : '#f59e0b'
                           }
                         />
                       </View>
@@ -627,8 +773,8 @@ export default function CustomerHomeScreen() {
                           {activity.trip_type === 'one_way'
                             ? 'One-way Trip'
                             : activity.trip_type === 'round_trip'
-                            ? 'Round-trip'
-                            : 'Hourly Charter'}
+                              ? 'Round-trip'
+                              : 'Hourly Charter'}
                         </ThemedText>
                         <ThemedText variant="caption">
                           {formatBookingStatus(activity.booking_status)} • {formatDate(activity.created_at)}
@@ -737,7 +883,7 @@ export default function CustomerHomeScreen() {
           {/* Bottom Spacing */}
           <View className="h-6" />
         </ScrollView>
-        
+
         {/* Masking Animation Overlay */}
         {showAnimation && (
           <Animated.View
@@ -762,10 +908,10 @@ export default function CustomerHomeScreen() {
                 backgroundColor: isDarkMode ? '#BD8C5E' : '#720C17',
               }}
             >
-              <Image 
+              <Image
                 source={require('../../../assets/chauffit-logo.png')}
-                style={{ 
-                  width: 50, 
+                style={{
+                  width: 50,
                   height: 50,
                 }}
                 resizeMode="contain"

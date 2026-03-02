@@ -1,5 +1,18 @@
 import BaseApiService, { ApiResponse } from './BaseApiService';
 
+// Onboarding status values
+export type DriverOnboardingStatus =
+  | 'registered'
+  | 'verification_in_progress'
+  | 'verified_ready_for_training'
+  | 'verification_failed'
+  | 'training_scheduled'
+  | 'training_failed'
+  | 'certified'
+  | 'active'
+  | 'suspended'
+  | 'rejected';
+
 // Types based on API YAML schema
 export interface DriverProfile {
   id: string;
@@ -20,16 +33,20 @@ export interface DriverProfile {
   license_photo_back?: string;
   aadhar_number: string;
   aadhar_photo?: string;
+  aadhar_photo_back?: string;
   background_check_status: 'pending' | 'in_progress' | 'verified' | 'failed';
   background_check_date?: string;
   bio?: string;
   years_of_experience?: number;
   languages_spoken?: Record<string, any>;
+  city?: string;
+  transmission_type?: 'manual' | 'automatic' | 'both';
+  uniform_size?: 'M' | 'L' | 'XL';
   is_online: boolean;
   current_location_lat?: string;
   current_location_long?: string;
   location_updated_at?: string;
-  current_status: 'pending_verification' | 'active' | 'inactive' | 'suspended' | 'banned';
+  current_status: DriverOnboardingStatus;
   is_verified: boolean;
   average_rating: number;
   total_trips: number;
@@ -37,15 +54,73 @@ export interface DriverProfile {
   updated_at: string;
 }
 
+export interface TrainingBatch {
+  id: string;
+  location_name: string;
+  location_address: string;
+  location_lat: string;
+  location_long: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  capacity: number;
+  spots_remaining: number;
+  is_active: boolean;
+}
+
+export interface TrainingSession {
+  id: string;
+  batch: TrainingBatch;
+  driver: string;
+  driver_name: string;
+  result: 'pending' | 'pass' | 'fail' | 'absent';
+  attendance_marked: boolean;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OnboardingStatus {
+  current_status: DriverOnboardingStatus | null;
+  current_status_display: string | null;
+  training_session: TrainingSession | null;
+  profile_id: string | null;
+}
+
 export interface DriverProfileDetail extends DriverProfile {
   documents: DriverDocument[];
 }
+
+// All supported driver document types
+export type DriverDocumentType =
+  // Primary onboarding documents (required)
+  | 'driving_license_front'
+  | 'driving_license_back'
+  | 'aadhaar_front'
+  | 'aadhaar_back'
+  | 'live_selfie'
+  // Additional identity documents
+  | 'pan_card'
+  | 'passport'
+  | 'voter_id'
+  // Address proof documents
+  | 'address_proof'
+  | 'utility_bill'
+  | 'rent_agreement'
+  // Verification documents
+  | 'police_verification'
+  | 'medical_certificate'
+  | 'insurance'
+  // Profile
+  | 'profile_photo'
+  // Other
+  | 'other';
 
 export interface DriverDocument {
   id: string;
   driver: string;
   driver_name: string;
-  document_type: 'police_verification' | 'address_proof' | 'passport' | 'insurance' | 'other';
+  document_type: DriverDocumentType;
   document_number?: string;
   document_file: string;
   issue_date?: string;
@@ -64,15 +139,19 @@ export interface DriverProfileRequest {
   license_photo_back?: any;
   aadhar_number: string;
   aadhar_photo?: any;
+  aadhar_photo_back?: any;
   background_check_status?: 'pending' | 'in_progress' | 'verified' | 'failed';
   bio?: string;
   years_of_experience?: number;
   languages_spoken?: Record<string, any>;
+  city?: string;
+  transmission_type?: 'manual' | 'automatic' | 'both';
+  uniform_size?: 'M' | 'L' | 'XL';
   is_online?: boolean;
   current_location_lat?: string;
   current_location_long?: string;
   location_updated_at?: string;
-  current_status?: 'pending_verification' | 'active' | 'inactive' | 'suspended' | 'banned';
+  current_status?: DriverOnboardingStatus;
 }
 
 export interface UpdateLocationRequest {
@@ -87,7 +166,7 @@ export interface UpdateStatusRequest {
 }
 
 export interface DriverDocumentRequest {
-  document_type: 'police_verification' | 'address_proof' | 'passport' | 'insurance' | 'other';
+  document_type: DriverDocumentType;
   document_number?: string;
   document_file: any; // File/Blob
   issue_date?: string;
@@ -274,7 +353,7 @@ class DriverApiService {
   // Create driver profile
   async createProfile(data: DriverProfileRequest): Promise<ApiResponse<DriverProfile>> {
     try {
-      const isFormData = !!(data.license_photo_front || data.license_photo_back || data.aadhar_photo);
+      const isFormData = !!(data.license_photo_front || data.license_photo_back || data.aadhar_photo || data.aadhar_photo_back);
 
       if (isFormData) {
         const formData = new FormData();
@@ -297,6 +376,9 @@ class DriverApiService {
         }
         if (data.current_location_lat) formData.append('current_location_lat', data.current_location_lat);
         if (data.current_location_long) formData.append('current_location_long', data.current_location_long);
+        if (data.city) formData.append('city', data.city);
+        if (data.transmission_type) formData.append('transmission_type', data.transmission_type);
+        if (data.uniform_size) formData.append('uniform_size', data.uniform_size);
 
         // Add file fields
         if (data.license_photo_front) {
@@ -307,6 +389,9 @@ class DriverApiService {
         }
         if (data.aadhar_photo) {
           formData.append('aadhar_photo', data.aadhar_photo as any);
+        }
+        if (data.aadhar_photo_back) {
+          formData.append('aadhar_photo_back', data.aadhar_photo_back as any);
         }
 
         return await BaseApiService.post<DriverProfile>(
@@ -329,7 +414,7 @@ class DriverApiService {
   // Update driver profile
   async updateProfile(id: string, data: Partial<DriverProfileRequest>): Promise<ApiResponse<DriverProfile>> {
     try {
-      const isFormData = !!(data.license_photo_front || data.license_photo_back || data.aadhar_photo);
+      const isFormData = !!(data.license_photo_front || data.license_photo_back || data.aadhar_photo || data.aadhar_photo_back);
 
       if (isFormData) {
         const formData = new FormData();
@@ -366,7 +451,7 @@ class DriverApiService {
   // Partial update driver profile
   async patchProfile(id: string, data: Partial<DriverProfileRequest>): Promise<ApiResponse<DriverProfile>> {
     try {
-      const isFormData = !!(data.license_photo_front || data.license_photo_back || data.aadhar_photo);
+      const isFormData = !!(data.license_photo_front || data.license_photo_back || data.aadhar_photo || data.aadhar_photo_back);
 
       if (isFormData) {
         const formData = new FormData();
@@ -613,6 +698,55 @@ class DriverApiService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to fetch driver stats',
+      };
+    }
+  }
+
+  // =========================================================================
+  // ONBOARDING & TRAINING API METHODS
+  // =========================================================================
+
+  /**
+   * Get Driver Onboarding Status
+   * GET /api/v1/drivers/onboarding-status/
+   */
+  async getOnboardingStatus(): Promise<ApiResponse<OnboardingStatus>> {
+    try {
+      return await BaseApiService.get<OnboardingStatus>(`${this.basePath}/onboarding-status/`);
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch onboarding status',
+      };
+    }
+  }
+
+  /**
+   * Get Training Schedule
+   * GET /api/v1/drivers/training/
+   */
+  async getTrainingSchedule(): Promise<ApiResponse<TrainingSession | null>> {
+    try {
+      return await BaseApiService.get<TrainingSession | null>(`${this.basePath}/training/`);
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch training schedule',
+      };
+    }
+  }
+
+  /**
+   * Request Training Reschedule
+   * POST /api/v1/drivers/training/reschedule/
+   */
+  async requestReschedule(): Promise<ApiResponse<{ message: string }>> {
+    try {
+      return await BaseApiService.post<{ message: string }>(`${this.basePath}/training/reschedule/`, {});
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to reschedule training',
       };
     }
   }

@@ -2,10 +2,17 @@ import '../global.css';
 import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useI18nStore } from '../store/i18nStore';
 
 export default function RootLayout() {
   console.log('🏠 RootLayout rendering...');
+
+  // Initialize language preference from AsyncStorage
+  const initLanguage = useI18nStore((state) => state.initLanguage);
+  useEffect(() => {
+    initLanguage();
+  }, []);
   
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

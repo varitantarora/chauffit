@@ -6,15 +6,18 @@ import { ThemedCard } from '../../../components/common/ThemedCard';
 import { ThemedText } from '../../../components/common/ThemedText';
 import { EarningsSummaryCard } from '../../../components/driver/earnings/EarningsCard';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Circle } from 'react-native-svg';
 import { useAuthStore } from '../../../store/authStore';
 import { useJobStore } from '../../../store/jobStore';
 import { useEarningsStore } from '../../../store/earningsStore';
 import { useRouter } from 'expo-router';
 import DriverApiService, { DriverStats } from '../../../services/api/DriverApiService';
+import { useI18nStore } from '../../../store/i18nStore';
 
 export default function DriverHomeScreen() {
   const user = useAuthStore((state) => state.user);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const t = useI18nStore((state) => state.t);
   const router = useRouter();
 
   const {
@@ -102,25 +105,25 @@ export default function DriverHomeScreen() {
   // Weekly goals - using real data from API
   const weeklyGoals = [
     {
-      title: 'Weekly Earnings',
+      title: t('weeklyEarnings'),
       current: earnings.weeklyEarnings || 0,
       target: weeklyTarget || 67000,
       unit: '₹'
     },
     {
-      title: 'Total Trips',
+      title: t('totalTrips'),
       current: stats?.week?.trips || stats?.today?.trips || 0,
       target: 80,
       unit: ''
     },
     {
-      title: 'Online Hours',
+      title: t('onlineHours'),
       current: 0, // TODO: Add online hours tracking from API
       target: 50,
       unit: 'h'
     },
     {
-      title: 'Rating',
+      title: t('drivingScore'),
       current: stats?.week?.average_rating || stats?.lifetime?.average_rating || 0,
       target: 4.8,
       unit: '/5'
@@ -128,36 +131,36 @@ export default function DriverHomeScreen() {
   ];
 
   const quickActions = [
-    { 
-      title: 'View Requests', 
-      icon: 'car', 
+    {
+      title: t('viewRequests'),
+      icon: 'car',
       color: '#10b981',
-      action: () => router.push('/(driver)/(tabs)/requests') 
+      action: () => router.push('/(driver)/(tabs)/requests')
     },
-    { 
-      title: 'Earnings', 
-      icon: 'cash', 
+    {
+      title: t('earnings'),
+      icon: 'cash',
       color: '#3b82f6',
-      action: () => router.push('/(driver)/(tabs)/earnings') 
+      action: () => router.push('/(driver)/(tabs)/earnings')
     },
-    { 
-      title: 'Vehicle', 
-      icon: 'car-sport', 
+    {
+      title: t('vehicle'),
+      icon: 'car-sport',
       color: '#f59e0b',
-      action: () => console.log('Vehicle details') 
+      action: () => console.log('Vehicle details')
     },
-    { 
-      title: 'Navigation', 
-      icon: 'navigate', 
+    {
+      title: t('navigation'),
+      icon: 'navigate',
       color: '#8b5cf6',
-      action: () => console.log('Open navigation') 
+      action: () => console.log('Open navigation')
     }
   ];
 
   return (
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
-        <ScrollView 
+        <ScrollView
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -171,7 +174,7 @@ export default function DriverHomeScreen() {
                   {getGreeting()}, {user?.name?.split(' ')[0] || 'Driver'}
                 </ThemedText>
                 <ThemedText variant="secondary" className="mt-1">
-                  {isOnline ? 'You are online and available' : 'You are offline'}
+                  {isOnline ? t('youAreOnline') : t('youAreOffline')}
                 </ThemedText>
               </View>
               <TouchableOpacity onPress={() => router.push('/(driver)/(tabs)/profile')}>
@@ -201,7 +204,7 @@ export default function DriverHomeScreen() {
                   <View className="flex-row items-center">
                     <View className="w-4 h-4 bg-success rounded-full mr-3" />
                     <View className="flex-1">
-                      <ThemedText className="font-bold text-lg">Active Ride</ThemedText>
+                      <ThemedText className="font-bold text-lg">{t('activeRide')}</ThemedText>
                       <ThemedText variant="secondary">
                         {activeJob.customerName} • {activeJob.status.replace('_', ' ')}
                       </ThemedText>
@@ -211,7 +214,7 @@ export default function DriverHomeScreen() {
                         ₹{activeJob.fare.toLocaleString('en-IN')}
                       </ThemedText>
                       <ThemedText variant="caption" className="text-secondary">
-                        Tap to manage
+                        {t('tapToManage')}
                       </ThemedText>
                     </View>
                   </View>
@@ -236,7 +239,7 @@ export default function DriverHomeScreen() {
                           {pendingCount} New Request{pendingCount > 1 ? 's' : ''}
                         </ThemedText>
                         <ThemedText variant="secondary">
-                          Tap to view and accept rides
+                          {t('tapToViewRides')}
                         </ThemedText>
                       </View>
                     </View>
@@ -247,26 +250,51 @@ export default function DriverHomeScreen() {
             </View>
           )}
 
-          {/* Online Status Toggle */}
+          {/* Large Bold Online/Offline Toggle */}
+          <View className="px-6 mb-4">
+            <TouchableOpacity
+              onPress={() => setOnlineStatus(!isOnline)}
+              activeOpacity={0.85}
+              style={{
+                backgroundColor: isOnline ? '#10B981' : '#EF4444',
+                paddingVertical: 20,
+                borderRadius: 20,
+                alignItems: 'center',
+                justifyContent: 'center',
+                shadowColor: isOnline ? '#10B981' : '#EF4444',
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.35,
+                shadowRadius: 12,
+                elevation: 8,
+              }}
+            >
+              <ThemedText style={{ color: '#fff', fontSize: 22, fontWeight: '800', letterSpacing: 1 }}>
+                {isOnline ? `● ${t('online').toUpperCase()}` : `○ ${t('offline').toUpperCase()}`}
+              </ThemedText>
+              <ThemedText style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginTop: 4 }}>
+                {isOnline ? t('tapToGoOffline') : t('tapToGoOnline')}
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+
+          {/* Payout Section */}
           <View className="px-6 mb-4">
             <ThemedCard className="p-4">
               <View className="flex-row items-center justify-between">
                 <View>
-                  <ThemedText variant="h3">Status</ThemedText>
-                  <ThemedText variant="small">{isOnline ? 'You are online' : 'You are offline'}</ThemedText>
-                </View>
-                <TouchableOpacity
-                  onPress={() => setOnlineStatus(!isOnline)}
-                  className={`px-4 py-2 rounded-lg ${isOnline ? 'bg-success' : 'bg-gray-400'}`}
-                >
-                  <ThemedText className="text-white font-semibold">
-                    {isOnline ? 'Go Offline' : 'Go Online'}
+                  <ThemedText variant="caption" className="text-textSecondary">{t('availableBalance')}</ThemedText>
+                  <ThemedText variant="title" className="text-2xl font-bold text-success">
+                    ₹{(earnings?.totalEarnings ?? 0).toLocaleString('en-IN')}
                   </ThemedText>
-                </TouchableOpacity>
+                </View>
+                <View className="items-end">
+                  <ThemedText variant="caption" className="text-textSecondary">{t('lastPayout')}</ThemedText>
+                  <ThemedText variant="body" className="font-semibold text-burgundy">{t('processed')}</ThemedText>
+                </View>
               </View>
             </ThemedCard>
           </View>
-          
+
           {/* Earnings Summary */}
           <View className="px-6 mb-4">
             <EarningsSummaryCard onViewDetails={() => router.push('/(driver)/(tabs)/earnings')} />
@@ -275,21 +303,21 @@ export default function DriverHomeScreen() {
           {/* Performance Dashboard */}
           <View className="px-6 mb-6">
             <ThemedText variant="title" className="text-lg font-bold mb-4">
-              Today's Performance
+              {t('todaysPerformance')}
             </ThemedText>
             <ThemedCard className="p-6">
-              <View className="flex-row justify-around">
+              <View className="flex-row justify-around items-center">
                 <View className="items-center">
                   <ThemedText variant="title" className="text-2xl font-bold text-burgundy">
                     ₹{todayStats.earnings.toLocaleString('en-IN')}
                   </ThemedText>
-                  <ThemedText variant="caption">Earnings</ThemedText>
+                  <ThemedText variant="caption">{t('earnings')}</ThemedText>
                 </View>
                 <View className="items-center">
                   <ThemedText variant="title" className="text-2xl font-bold">
                     {todayStats.trips}
                   </ThemedText>
-                  <ThemedText variant="caption">Trips</ThemedText>
+                  <ThemedText variant="caption">{t('trips')}</ThemedText>
                 </View>
                 <View className="items-center">
                   <ThemedText variant="title" className="text-2xl font-bold">
@@ -297,31 +325,58 @@ export default function DriverHomeScreen() {
                   </ThemedText>
                   <ThemedText variant="caption">Online</ThemedText>
                 </View>
+                {/* Driving Score - Circular UI */}
                 <View className="items-center">
-                  <ThemedText variant="title" className="text-2xl font-bold">
-                    {todayStats.rating.toFixed(1)}
-                  </ThemedText>
-                  <ThemedText variant="caption">Rating</ThemedText>
+                  <View style={{ width: 56, height: 56, alignItems: 'center', justifyContent: 'center' }}>
+                    <Svg width={56} height={56} style={{ position: 'absolute' }}>
+                      {/* Background circle */}
+                      <Circle
+                        cx={28}
+                        cy={28}
+                        r={24}
+                        stroke={isDarkMode ? '#4A4A4A' : '#E5E5E5'}
+                        strokeWidth={4}
+                        fill="none"
+                      />
+                      {/* Progress circle */}
+                      <Circle
+                        cx={28}
+                        cy={28}
+                        r={24}
+                        stroke={todayStats.rating >= 4.5 ? '#10B981' : todayStats.rating >= 3.5 ? '#F59E0B' : '#EF4444'}
+                        strokeWidth={4}
+                        fill="none"
+                        strokeDasharray={`${(todayStats.rating / 5) * 2 * Math.PI * 24} ${2 * Math.PI * 24}`}
+                        strokeDashoffset={0}
+                        strokeLinecap="round"
+                        transform="rotate(-90 28 28)"
+                      />
+                    </Svg>
+                    <ThemedText style={{ fontSize: 14, fontWeight: '800' }}>
+                      {todayStats.rating.toFixed(1)}
+                    </ThemedText>
+                  </View>
+                  <ThemedText variant="caption" style={{ marginTop: 2 }}>{t('drivingScore')}</ThemedText>
                 </View>
               </View>
             </ThemedCard>
           </View>
-          
+
           {/* Quick Actions */}
           <View className="px-6 mb-6">
             <ThemedText variant="title" className="text-lg mb-4">
-              Quick Actions
+              {t('quickActions')}
             </ThemedText>
             <View className="flex-row flex-wrap">
               {quickActions.map((action, index) => (
-                <TouchableOpacity 
+                <TouchableOpacity
                   key={index}
                   onPress={action.action}
                   className="w-[48%] mb-3"
                   style={{ marginRight: index % 2 === 0 ? 8 : 0 }}
                 >
                   <ThemedCard className="items-center py-4">
-                    <View 
+                    <View
                       className="p-3 rounded-full mb-2"
                       style={{ backgroundColor: action.color + '20' }}
                     >
@@ -335,18 +390,18 @@ export default function DriverHomeScreen() {
               ))}
             </View>
           </View>
-          
+
           {/* Weekly Goals */}
           <View className="px-6 mb-6">
             <View className="flex-row justify-between items-center mb-4">
               <ThemedText variant="title" className="text-lg">
-                Weekly Goals
+                {t('weeklyGoals')}
               </ThemedText>
               <TouchableOpacity>
-                <ThemedText className="text-secondary">View All</ThemedText>
+                <ThemedText className="text-secondary">{t('viewAll')}</ThemedText>
               </TouchableOpacity>
             </View>
-            
+
             {weeklyGoals.slice(0, 2).map((goal, index) => (
               <ThemedCard key={index} className="mb-3 p-4">
                 <View className="flex-row justify-between items-center mb-2">
@@ -357,37 +412,37 @@ export default function DriverHomeScreen() {
                   </ThemedText>
                 </View>
                 <View className="bg-surface dark:bg-darkSurface rounded-full h-2">
-                  <View 
+                  <View
                     className="bg-burgundy rounded-full h-2"
                     style={{ width: `${Math.min((goal.current / goal.target) * 100, 100)}%` }}
                   />
                 </View>
                 <View className="flex-row justify-between mt-2">
                   <ThemedText variant="caption">
-                    {Math.round((goal.current / goal.target) * 100)}% complete
+                    {Math.round((goal.current / goal.target) * 100)}% {t('complete')}
                   </ThemedText>
                   <ThemedText variant="caption">
-                    {goal.target - goal.current > 0 
-                      ? `${goal.unit === '₹' ? '₹' : ''}${(goal.target - goal.current).toLocaleString('en-IN')}${goal.unit === '₹' ? '' : goal.unit} to go`
-                      : 'Goal achieved!'
+                    {goal.target - goal.current > 0
+                      ? `${goal.unit === '₹' ? '₹' : ''}${(goal.target - goal.current).toLocaleString('en-IN')}${goal.unit === '₹' ? '' : goal.unit} ${t('toGo')}`
+                      : t('goalAchieved')
                     }
                   </ThemedText>
                 </View>
               </ThemedCard>
             ))}
           </View>
-          
+
           {/* Recent Activity */}
           <View className="px-6">
             <View className="flex-row justify-between items-center mb-4">
               <ThemedText variant="title" className="text-lg font-bold">
-                Recent Activity
+                {t('recentActivity')}
               </ThemedText>
               <TouchableOpacity onPress={() => router.push('/(driver)/(tabs)/earnings')}>
-                <ThemedText className="text-burgundy">View All</ThemedText>
+                <ThemedText className="text-burgundy">{t('viewAll')}</ThemedText>
               </TouchableOpacity>
             </View>
-            
+
             {jobHistory.length > 0 ? (
               jobHistory.slice(0, 3).map((job) => (
                 <ThemedCard key={job.id} className="mb-3 p-4">
@@ -415,11 +470,11 @@ export default function DriverHomeScreen() {
                       {job.rating && (
                         <View className="flex-row items-center mt-1">
                           {[1, 2, 3, 4, 5].map((star) => (
-                            <Ionicons 
-                              key={star} 
-                              name={star <= job.rating! ? "star" : "star-outline"} 
-                              size={12} 
-                              color="#fbbf24" 
+                            <Ionicons
+                              key={star}
+                              name={star <= job.rating! ? "star" : "star-outline"}
+                              size={12}
+                              color="#fbbf24"
                             />
                           ))}
                         </View>
@@ -432,14 +487,14 @@ export default function DriverHomeScreen() {
               <ThemedCard className="p-8 items-center">
                 <Ionicons name="time" size={48} color="#bd8c5e" />
                 <ThemedText variant="title" className="mt-4 mb-2">
-                  No Recent Activity
+                  {t('noRecentActivity')}
                 </ThemedText>
                 <ThemedText variant="secondary" className="text-center">
-                  Complete your first ride to see activity here.
+                  {t('completeFirstRide')}
                 </ThemedText>
               </ThemedCard>
             )}
-            
+
             {!isOnline && (
               <View className="mt-6 p-4 bg-secondary/10 border border-secondary rounded-xl">
                 <View className="flex-row items-center">
@@ -454,7 +509,7 @@ export default function DriverHomeScreen() {
               </View>
             )}
           </View>
-          
+
           {/* Bottom Spacing */}
           <View className="h-6" />
         </ScrollView>
