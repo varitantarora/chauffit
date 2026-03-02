@@ -135,6 +135,7 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails, processing = 
   const customerName = job.customerName;
   const customerRating = 'customerRating' in job ? job.customerRating : (job as JobRequest)?.customerRating;
   const fare = job.fare;
+  const net_earnings = job.net_earnings || job.fare; // Fallback to fare if net_earnings is missing
   const pickupLocation = job.pickupLocation;
   const dropoffLocation = job.dropoffLocation;
   const isCompletedJob = isJobHistory(job);
@@ -168,8 +169,8 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails, processing = 
               />
               <ThemedText variant="title" className="text-lg font-bold ml-2 capitalize">
                 {serviceType === 'airport' ? 'Airport Transfer' :
-                 serviceType === 'outstation' ? 'Outstation Trip' :
-                 serviceType === 'hourly' ? 'Hourly Service' : 'Point to Point'}
+                  serviceType === 'outstation' ? 'Outstation Trip' :
+                    serviceType === 'hourly' ? 'Hourly Service' : 'Point to Point'}
               </ThemedText>
               {isCompletedJob && (
                 <View className="bg-success/20 px-2 py-0.5 rounded ml-2">
@@ -190,7 +191,7 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails, processing = 
           </View>
           <View className="items-end">
             <ThemedText className="text-burgundy font-bold text-xl">
-              ₹{(fare + tips).toLocaleString('en-IN')}
+              ₹{(net_earnings + tips).toLocaleString('en-IN')}
             </ThemedText>
             {!isCompletedJob && timeLeft > 0 && (
               <ThemedText variant="caption" className="text-secondary">

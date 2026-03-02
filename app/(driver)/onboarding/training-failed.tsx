@@ -1,13 +1,107 @@
-import React from 'react';
-import { View, ScrollView } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedView } from '../../../components/common/ThemedView';
 import { ThemedCard } from '../../../components/common/ThemedCard';
 import { ThemedText } from '../../../components/common/ThemedText';
 import { PrimaryButton } from '../../../components/common/PrimaryButton';
+import { useAuthStore } from '../../../store/authStore';
+import DriverApiService from '../../../services/api/DriverApiService';
 
 export default function TrainingFailedScreen() {
+  const router = useRouter();
+  const driverOnboardingStatus = useAuthStore((state) => state.driverOnboardingStatus);
+  const fetchDriverOnboardingStatus = useAuthStore((state) => state.fetchDriverOnboardingStatus);
+  const [trainingSession, setTrainingSession] = useState<any>(null);
+  const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isEligible, setIsEligible] = useState(false);
+
+  // On mount, fetch latest training session and calculate eligibility
+  useEffect(() => {
+    const initializeScreen = async () => {
+      // Get onboarding status which includes training_session
+      const authState = useAuthStore.getState();
+      const session = authState.trainingSession;
+
+      if (session) {
+        setTrainingSession(session);
+        calculateEligibility(session);
+      } else {
+        // Fallback: refresh the onboarding status
+        await fetchDriverOnboardingStatus();
+        const updatedState = useAuthStore.getState();
+        if (updatedState.trainingSession) {
+          setTrainingSession(updatedState.trainingSession);
+          calculateEligibility(updatedState.trainingSession);
+        }
+      }
+    };
+
+    initializeScreen();
+  }, [fetchDriverOnboardingStatus]);
+
+  const calculateEligibility = (session: any) => {
+    if (!session || !session.batch || !session.batch.date) return;
+
+    const batchDate = new Date(session.batch.date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    batchDate.setHours(0, 0, 0, 0);
+
+    const daysPassed = Math.floor((today.getTime() - batchDate.getTime()) / (1000 * 60 * 60 * 24));
+    const remaining = Math.max(0, 7 - daysPassed);
+
+    setDaysRemaining(remaining);
+    setIsEligible(remaining === 0);
+  };
+
+  const handleRetakeTraining = useCallback(async () => {
+    if (!isEligible) return;
+
+    setIsLoading(true);
+    try {
+      const response = await DriverApiService.requestRetakeTraining();
+
+      if (response.success) {
+        Alert.alert(
+          'Success',
+          'You are eligible to retake training. You will be assigned to the next available batch.',
+          [
+            {
+              text: 'OK',
+              onPress: async () => {
+                // Refresh onboarding status
+                await fetchDriverOnboardingStatus();
+                // Navigate back to background check
+                router.replace('/(driver)/onboarding/background-check');
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert('Error', response.error || 'Failed to request training retake');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isEligible, fetchDriverOnboardingStatus, router]);
+
+  const getButtonTitle = (): string => {
+    if (isEligible) {
+      return 'Retake Training Now';
+    }
+    if (daysRemaining !== null) {
+      const dayWord = daysRemaining === 1 ? 'day' : 'days';
+      return `Available in ${daysRemaining} ${dayWord}`;
+    }
+    return 'Retake Training';
+  };
+
   return (
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
@@ -26,6 +120,27 @@ export default function TrainingFailedScreen() {
             <ThemedText variant="secondary" className="text-center mb-8 px-4">
               Unfortunately, you did not pass the training session. Don't worry — you can retake the training.
             </ThemedText>
+
+            {/* Days Remaining Card */}
+            {daysRemaining !== null && !isEligible && (
+              <ThemedCard className="p-4 mb-6 w-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center flex-1">
+                    <Ionicons name="time" size={24} color="#F59E0B" />
+                    <View className="ml-3 flex-1">
+                      <ThemedText className="font-bold text-amber-700 dark:text-amber-300">
+                        Come Back Soon
+                      </ThemedText>
+                      <ThemedText variant="secondary" className="text-sm">
+                        {daysRemaining === 1
+                          ? 'You can retake in 1 day'
+                          : `You can retake in ${daysRemaining} days`}
+                      </ThemedText>
+                    </View>
+                  </View>
+                </View>
+              </ThemedCard>
+            )}
 
             {/* Info Card */}
             <ThemedCard className="p-4 mb-6 w-full">
@@ -54,13 +169,15 @@ export default function TrainingFailedScreen() {
               </View>
             </ThemedCard>
 
-            {/* Retake Button - disabled for now */}
+            {/* Retake Button */}
             <PrimaryButton
-              title="Retake Training (Available After 1 Week)"
-              onPress={() => {}}
-              disabled={true}
+              title={getButtonTitle()}
+              onPress={handleRetakeTraining}
+              disabled={!isEligible || isLoading}
               className="w-full mb-6"
-            />
+            >
+              {isLoading && <ActivityIndicator color="white" size="small" />}
+            </PrimaryButton>
           </View>
         </ScrollView>
       </ThemedView>

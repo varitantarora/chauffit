@@ -311,6 +311,56 @@ export interface RevenueData {
 }
 
 // ============================================================================
+// TRAINING BATCH TYPES
+// ============================================================================
+
+export interface AdminTrainingSession {
+  id: string;
+  driver_id: string;
+  driver_name: string;
+  result: 'pending' | 'pass' | 'fail' | 'absent';
+  notes?: string;
+}
+
+export interface AdminTrainingBatch {
+  id: string;
+  location_name: string;
+  location_address: string;
+  location_lat?: string;
+  location_long?: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  capacity: number;
+  spots_remaining: number;
+  is_active: boolean;
+  sessions?: AdminTrainingSession[];
+  created_at: string;
+}
+
+export interface CreateTrainingBatchRequest {
+  location_name: string;
+  location_address: string;
+  location_lat: string;
+  location_long: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  capacity: number;
+}
+
+export interface MarkTrainingResultsRequest {
+  session_id: string;
+  result: 'pass' | 'fail' | 'absent';
+  notes?: string;
+}
+
+export interface AutoAssignResponse {
+  message: string;
+  assigned_count: number;
+}
+
+// ============================================================================
 // ADMIN API SERVICE
 // ============================================================================
 
@@ -412,6 +462,14 @@ class AdminApiService {
     }
   }
 
+  async updateDriverStatus(driverId: string, status: string): Promise<ApiResponse<AdminDriver>> {
+    try {
+      return await BaseApiService.patch<AdminDriver>(`${this.basePath}/drivers/${driverId}/`, { current_status: status });
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to update driver status' };
+    }
+  }
+
   // Bikers
   async getBikers(): Promise<ApiResponse<AdminBiker[]>> {
     try {
@@ -442,6 +500,14 @@ class AdminApiService {
       return await BaseApiService.put<AdminBiker>(`${this.basePath}/bikers/${id}/verify/`, data);
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Failed to verify biker' };
+    }
+  }
+
+  async updateBikerStatus(bikerId: string, status: string): Promise<ApiResponse<AdminBiker>> {
+    try {
+      return await BaseApiService.patch<AdminBiker>(`${this.basePath}/bikers/${bikerId}/`, { current_status: status });
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to update biker status' };
     }
   }
 
@@ -671,6 +737,47 @@ class AdminApiService {
       return await BaseApiService.delete<void>(`/amenities/admin/${id}/`);
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Failed to delete amenity' };
+    }
+  }
+
+  // Training Batches
+  async getTrainingBatches(): Promise<ApiResponse<AdminTrainingBatch[]>> {
+    try {
+      return await BaseApiService.get<AdminTrainingBatch[]>(`${this.basePath}/training-batches/`);
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch training batches' };
+    }
+  }
+
+  async getTrainingBatch(id: string): Promise<ApiResponse<AdminTrainingBatch>> {
+    try {
+      return await BaseApiService.get<AdminTrainingBatch>(`${this.basePath}/training-batches/${id}/`);
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch training batch' };
+    }
+  }
+
+  async createTrainingBatch(data: CreateTrainingBatchRequest): Promise<ApiResponse<AdminTrainingBatch>> {
+    try {
+      return await BaseApiService.post<AdminTrainingBatch>(`${this.basePath}/training-batches/`, data);
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to create training batch' };
+    }
+  }
+
+  async autoAssignBatch(id: string): Promise<ApiResponse<AutoAssignResponse>> {
+    try {
+      return await BaseApiService.post<AutoAssignResponse>(`${this.basePath}/training-batches/${id}/auto-assign/`, {});
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to auto-assign batch' };
+    }
+  }
+
+  async markTrainingResults(id: string, results: MarkTrainingResultsRequest[]): Promise<ApiResponse<AdminTrainingBatch>> {
+    try {
+      return await BaseApiService.post<AdminTrainingBatch>(`${this.basePath}/training-batches/${id}/mark-results/`, { results });
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to mark training results' };
     }
   }
 }

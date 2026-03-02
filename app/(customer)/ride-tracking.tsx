@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { View, TouchableOpacity, Alert, Linking, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { View, TouchableOpacity, Alert, Linking, ScrollView, Image, Dimensions, Platform, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../components/common/ThemedView';
 import { ThemedCard } from '../../components/common/ThemedCard';
@@ -26,19 +26,42 @@ const getImageUrl = (url: string | null | undefined): string | null => {
 
 type RideStatus = 'driver_coming' | 'driver_arrived' | 'in_progress' | 'completed';
 
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const BOTTOM_PANEL_HEIGHT = SCREEN_HEIGHT * 0.40;
+
 export default function RideTrackingScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const router = useRouter();
   const params = useLocalSearchParams();
-  
+
   const [rideStatus, setRideStatus] = useState<RideStatus>('driver_coming');
   const [eta, setEta] = useState(18);
   const [isSharing, setIsSharing] = useState(false);
   const [showSOS, setShowSOS] = useState(false);
   const [rideDetails, setRideDetails] = useState<BookingDetail | null>(null);
   const [showCancelReasonModal, setShowCancelReasonModal] = useState(false);
+  const [tripDuration, setTripDuration] = useState(0);
+  const tripStartRef = useRef<number>(Date.now());
 
   const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
+
+  // Trip duration timer - ticks every second
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTripDuration(Math.floor((Date.now() - tripStartRef.current) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatDuration = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hrs > 0) {
+      return `${hrs}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+    return `${mins}:${String(secs).padStart(2, '0')}`;
+  };
 
   useEffect(() => {
     // Simulate ride status updates
@@ -218,12 +241,43 @@ export default function RideTrackingScreen() {
       'Would you like to end your ride now?',
       [
         { text: 'Not Yet', style: 'cancel' },
-        { 
+        {
           text: 'End Trip',
           onPress: () => router.push('/(customer)/trip-completion')
         }
       ]
     );
+  };
+
+  const handleStartNavigation = () => {
+    if (!dropoffCoordinate) {
+      Alert.alert('Navigation', 'Destination coordinates are not available yet.');
+      return;
+    }
+    const { latitude, longitude } = dropoffCoordinate;
+    const label = encodeURIComponent(rideDetails?.dropoff_address || 'Destination');
+
+    if (Platform.OS === 'ios') {
+      // Try Apple Maps first, fallback to Google Maps
+      const appleMapsUrl = `maps://app?daddr=${latitude},${longitude}&dirflg=d`;
+      Linking.canOpenURL(appleMapsUrl).then((supported) => {
+        if (supported) {
+          Linking.openURL(appleMapsUrl);
+        } else {
+          Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}&destination_place_id=${label}`);
+        }
+      });
+    } else {
+      // Android: Google Maps navigation
+      const googleMapsUrl = `google.navigation:q=${latitude},${longitude}`;
+      Linking.canOpenURL(googleMapsUrl).then((supported) => {
+        if (supported) {
+          Linking.openURL(googleMapsUrl);
+        } else {
+          Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`);
+        }
+      });
+    }
   };
 
   if (showSOS) {
@@ -235,245 +289,207 @@ export default function RideTrackingScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1">
-      <ThemedView className="flex-1">
-        {/* Header */}
-        <View className="flex-row items-center justify-between px-6 py-4">
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={iconColor} />
+    <View style={styles.container}>
+      {/* Full-Screen Map Background */}
+      <UniversalMapView
+        initialRegion={initialMapRegion}
+        markers={mapMarkers}
+        route={mapRoute}
+        googleMapsApiKey={appConfig.googleMapsApiKey}
+        showUserLocation={true}
+        style={StyleSheet.absoluteFillObject}
+      />
+
+      {/* Floating Header Overlay */}
+      <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
+        <View style={[styles.headerBar, { backgroundColor: isDarkMode ? 'rgba(30,30,30,0.92)' : 'rgba(255,255,255,0.92)' }]}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn}>
+            <Ionicons name="arrow-back" size={22} color={iconColor} />
           </TouchableOpacity>
-          <ThemedText variant="h2">
-            {rideStatus === 'driver_coming' && 'Driver En Route'}
-            {rideStatus === 'driver_arrived' && 'Driver Arrived'}
-            {rideStatus === 'in_progress' && 'Your ride is in progress'}
-            {rideStatus === 'completed' && 'Trip Completed'}
-          </ThemedText>
-          <TouchableOpacity>
-            <Ionicons name="ellipsis-vertical" size={24} color={iconColor} />
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
-          {/* Status Header */}
-          <View className="items-center py-6">
-          {rideStatus === 'driver_coming' && (
-            <>
-              <ThemedText className="text-gray-600 mb-2">Driver arriving in</ThemedText>
-              <ThemedText variant="h1" className="text-burgundy">⏰ {eta} minutes</ThemedText>
-            </>
-          )}
-          {rideStatus === 'driver_arrived' && (
-            <>
-              <ThemedText className="text-gray-600 mb-2">Your driver has</ThemedText>
-              <ThemedText variant="h1" className="text-blue-600">✅ Arrived</ThemedText>
-            </>
-          )}
-          {rideStatus === 'in_progress' && (
-            <>
-              <ThemedText className="text-gray-600 mb-2">Arriving in</ThemedText>
-              <ThemedText variant="h1" className="text-burgundy">⏰ 32 minutes</ThemedText>
-            </>
-          )}
-        </View>
-
-        {/* Map View with Live Tracking */}
-        <View className="mx-6 mb-4 h-64 rounded-2xl overflow-hidden border border-border dark:border-darkBorder bg-white dark:bg-darkSurface">
-          <UniversalMapView
-            initialRegion={initialMapRegion}
-            markers={mapMarkers}
-            route={mapRoute}
-            googleMapsApiKey={appConfig.googleMapsApiKey}
-            showUserLocation={true}
-            className="flex-1"
-          />
-        </View>
-
-        {/* Driver/Biker Info */}
-        {rideStatus === 'driver_coming' && rideDetails?.biker_details && (
-          <ThemedCard variant="elevated" className="mx-6 mb-4">
-            <ThemedText variant="small" className="text-gray-600 mb-3">
-              {driverDetails.name} is being transported by {driverDetails.bikerName} (Biker) to your vehicle
+          <View style={styles.headerCenter}>
+            <ThemedText style={styles.headerTitle}>
+              {rideStatus === 'driver_coming' && 'Driver En Route'}
+              {rideStatus === 'driver_arrived' && 'Driver Arrived'}
+              {rideStatus === 'in_progress' && 'Ride in Progress'}
+              {rideStatus === 'completed' && 'Trip Completed'}
             </ThemedText>
+            <ThemedText style={styles.durationText}>Duration: {formatDuration(tripDuration)}</ThemedText>
+          </View>
+          <TouchableOpacity style={styles.headerBtn}>
+            <Ionicons name="ellipsis-vertical" size={22} color={iconColor} />
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
 
-            <View className="flex-row items-center mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-              {driverDetails.bikerPicture ? (
-                <Image
-                  source={{ uri: driverDetails.bikerPicture }}
-                  className="w-12 h-12 rounded-full mr-3"
-                  style={{ backgroundColor: '#BD8C5E' }}
-                />
-              ) : (
-                <View className="w-12 h-12 bg-blue-100 rounded-full mr-3 items-center justify-center">
-                  <Ionicons name="bicycle" size={20} color="#3B82F6" />
-                </View>
-              )}
-              <View className="flex-1">
-                <View className="flex-row items-center">
-                  <ThemedText>🏍️ {driverDetails.bikerName}</ThemedText>
-                  <View className="flex-row items-center ml-2">
-                    <Ionicons name="star" size={16} color="#F59E0B" />
-                    <ThemedText variant="small" className="ml-1">
-                      {typeof driverDetails.bikerRating === 'number' ? driverDetails.bikerRating.toFixed(1) : driverDetails.bikerRating}
-                    </ThemedText>
+      {/* Bottom Panel */}
+      <View style={[styles.bottomPanel, { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF' }]}>
+        {/* Drag Handle */}
+        <View style={styles.dragHandle} />
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.bottomScrollContent}
+          bounces={false}
+        >
+          {/* Single Unified Card — All Details */}
+          <View style={[styles.card, { backgroundColor: isDarkMode ? '#2A2A2A' : '#FFFFFF', borderWidth: 1, borderColor: isDarkMode ? '#3A3A3A' : '#F0F0F0' }]}>
+            {/* Biker Info (when driver is being transported) */}
+            {rideStatus === 'driver_coming' && rideDetails?.biker_details && (
+              <View style={[styles.bikerSection, { backgroundColor: isDarkMode ? '#1E293B' : '#F0F7FF' }]}>
+                <ThemedText style={styles.cardSubtitle}>
+                  {driverDetails.name} is being transported by {driverDetails.bikerName} to your vehicle
+                </ThemedText>
+                <View style={styles.bikerRow}>
+                  {driverDetails.bikerPicture ? (
+                    <Image
+                      source={{ uri: driverDetails.bikerPicture }}
+                      style={styles.bikerAvatar}
+                    />
+                  ) : (
+                    <View style={[styles.bikerAvatar, styles.bikerAvatarPlaceholder]}>
+                      <Ionicons name="bicycle" size={18} color="#3B82F6" />
+                    </View>
+                  )}
+                  <View style={{ flex: 1 }}>
+                    <View style={styles.nameRatingRow}>
+                      <ThemedText style={styles.bikerName}>🏍️ {driverDetails.bikerName}</ThemedText>
+                      <View style={styles.ratingBadge}>
+                        <Ionicons name="star" size={14} color="#F59E0B" />
+                        <ThemedText style={styles.ratingText}>
+                          {typeof driverDetails.bikerRating === 'number' ? driverDetails.bikerRating.toFixed(1) : driverDetails.bikerRating}
+                        </ThemedText>
+                      </View>
+                    </View>
+                    <ThemedText style={styles.bikerEta}>ETA: 15 min to your car</ThemedText>
                   </View>
                 </View>
-                <ThemedText variant="small" className="text-gray-600">
-                  ETA: 15 min to your car
-                </ThemedText>
-              </View>
-            </View>
-          </ThemedCard>
-        )}
-
-        {/* Driver Details Card */}
-        <ThemedCard variant="elevated" className="mx-6 mb-4">
-          <View className="flex-row items-center">
-            {driverDetails.picture ? (
-              <Image
-                source={{ uri: driverDetails.picture }}
-                className="w-16 h-16 rounded-full mr-4"
-                style={{ backgroundColor: '#BD8C5E' }}
-              />
-            ) : (
-              <View className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full mr-4 items-center justify-center">
-                <Ionicons name="person" size={32} color={iconColor} />
               </View>
             )}
-            <View className="flex-1">
-              <ThemedText variant="h3">{driverDetails.name}</ThemedText>
-              <View className="flex-row items-center mt-1">
-                <Ionicons name="star" size={16} color="#F59E0B" />
-                <ThemedText variant="small" className="ml-1 text-gray-600">
-                  {typeof driverDetails.rating === 'number' ? driverDetails.rating.toFixed(1) : driverDetails.rating} • {driverDetails.experience}
-                </ThemedText>
+
+            {/* Driver Info */}
+            <View style={styles.driverRow}>
+              {driverDetails.picture ? (
+                <Image
+                  source={{ uri: driverDetails.picture }}
+                  style={styles.driverAvatar}
+                />
+              ) : (
+                <View style={[styles.driverAvatar, { backgroundColor: isDarkMode ? '#444' : '#E5E7EB', alignItems: 'center', justifyContent: 'center' }]}>
+                  <Ionicons name="person" size={28} color={iconColor} />
+                </View>
+              )}
+              <View style={{ flex: 1 }}>
+                <ThemedText style={styles.driverName}>{driverDetails.name}</ThemedText>
+                <View style={styles.nameRatingRow}>
+                  <Ionicons name="star" size={14} color="#F59E0B" />
+                  <ThemedText style={styles.driverMeta}>
+                    {typeof driverDetails.rating === 'number' ? driverDetails.rating.toFixed(1) : driverDetails.rating} • {driverDetails.experience}
+                  </ThemedText>
+                </View>
+              </View>
+              <View style={styles.contactBtns}>
+                <TouchableOpacity onPress={handleCallDriver} style={[styles.contactBtn, { backgroundColor: 'rgba(114,47,55,0.1)' }]}>
+                  <Ionicons name="call" size={18} color="#722F37" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleMessageDriver} style={[styles.contactBtn, { backgroundColor: 'rgba(59,130,246,0.1)' }]}>
+                  <Ionicons name="chatbubble" size={18} color="#3B82F6" />
+                </TouchableOpacity>
               </View>
             </View>
-            <View className="flex-row">
-              <TouchableOpacity
-                onPress={handleCallDriver}
-                className="bg-burgundy/10 p-3 rounded-full mr-2"
-              >
-                <Ionicons name="call" size={20} color="#722F37" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleMessageDriver}
-                className="bg-blue-100 p-3 rounded-full"
-              >
-                <Ionicons name="chatbubble" size={20} color="#3B82F6" />
-              </TouchableOpacity>
+
+            {/* Vehicle Info */}
+            <View style={[styles.vehicleRow, { borderTopColor: isDarkMode ? '#3A3A3A' : '#F0F0F0' }]}>
+              <Ionicons name="car" size={18} color={iconColor} />
+              <View style={{ marginLeft: 10, flex: 1 }}>
+                <ThemedText style={styles.vehicleText}>{driverDetails.vehicleInfo}</ThemedText>
+                <ThemedText style={styles.vehicleSubtext}>{driverDetails.location}</ThemedText>
+              </View>
             </View>
+
+            {/* Trip Details (for in-progress rides) */}
+            {rideStatus === 'in_progress' && (
+              <View style={[styles.tripSection, { borderTopColor: isDarkMode ? '#3A3A3A' : '#F0F0F0' }]}>
+                <ThemedText style={styles.sectionTitle}>Trip Details</ThemedText>
+                <View style={styles.tripRow}>
+                  <ThemedText style={styles.tripLabel}>Duration</ThemedText>
+                  <ThemedText style={styles.tripValue}>{formatDuration(tripDuration)}</ThemedText>
+                </View>
+                <View style={styles.tripRow}>
+                  <ThemedText style={styles.tripLabel}>Route</ThemedText>
+                  <ThemedText style={styles.tripValue}>Via US-101 N</ThemedText>
+                </View>
+                <View style={styles.tripRow}>
+                  <ThemedText style={styles.tripLabel}>Speed</ThemedText>
+                  <ThemedText style={styles.tripValue}>65 mph</ThemedText>
+                </View>
+                {/* In-progress update */}
+                <View style={[styles.updateBox, { backgroundColor: isDarkMode ? '#333' : '#F9FAFB' }]}>
+                  <ThemedText style={styles.updateLabel}>Latest update:</ThemedText>
+                  <ThemedText style={styles.updateText}>"Taking 101 to avoid traffic on 280. ETA updated."</ThemedText>
+                  <ThemedText style={styles.updateTime}>2 min ago</ThemedText>
+                </View>
+              </View>
+            )}
           </View>
 
-          {rideStatus === 'in_progress' && (
-            <View className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
-              <ThemedText variant="small" className="text-gray-600">Latest update:</ThemedText>
-              <ThemedText>"Taking 101 to avoid traffic on 280. ETA updated."</ThemedText>
-              <ThemedText variant="small" className="text-gray-500 text-right mt-1">2 min ago</ThemedText>
-            </View>
-          )}
-
-          <View className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-3">
-            <View className="flex-row items-center">
-              <Ionicons name="car" size={20} color={iconColor} />
-              <View className="ml-3 flex-1">
-                <ThemedText>{driverDetails.vehicleInfo}</ThemedText>
-                <ThemedText variant="small" className="text-gray-600">
-                  Parked at: {driverDetails.location}
-                </ThemedText>
-              </View>
-            </View>
-          </View>
-        </ThemedCard>
-
-        {/* Trip Details (for in-progress rides) */}
-        {rideStatus === 'in_progress' && (
-          <ThemedCard variant="elevated" className="mx-6 mb-4">
-            <ThemedText variant="h3" className="mb-3">Trip Details</ThemedText>
-            <View className="space-y-2">
-              <View className="flex-row justify-between">
-                <ThemedText variant="small" className="text-gray-600">Started</ThemedText>
-                <ThemedText variant="small">2:35 PM</ThemedText>
-              </View>
-              <View className="flex-row justify-between">
-                <ThemedText variant="small" className="text-gray-600">Route</ThemedText>
-                <ThemedText variant="small">Via US-101 N</ThemedText>
-              </View>
-              <View className="flex-row justify-between">
-                <ThemedText variant="small" className="text-gray-600">Speed</ThemedText>
-                <ThemedText variant="small">65 mph</ThemedText>
-              </View>
-            </View>
-          </ThemedCard>
-        )}
-
-        {/* Safety & Actions */}
-        <View className="px-6 py-4">
-          <TouchableOpacity 
-            onPress={handleShareTrip}
-            className="flex-row items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl mb-3"
+          {/* Start Navigation Button */}
+          <TouchableOpacity
+            onPress={handleStartNavigation}
+            style={styles.navigationBtn}
+            activeOpacity={0.85}
           >
-            <View className="flex-row items-center">
-              <Ionicons name="shield-checkmark" size={24} color="#3B82F6" />
-              <ThemedText className="ml-3">Share Trip with Contact</ThemedText>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#3B82F6" />
+            <Ionicons name="navigate" size={20} color="#FFFFFF" />
+            <ThemedText style={styles.navigationBtnText}>Start Navigation</ThemedText>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            onPress={handleSOS}
-            className="flex-row items-center justify-between p-4 bg-burgundy/10 dark:bg-burgundy/20 rounded-xl mb-3"
-          >
-            <View className="flex-row items-center">
-              <Ionicons name="warning" size={24} color="#722F37" />
-              <ThemedText className="ml-3">SOS Emergency</ThemedText>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#722F37" />
-          </TouchableOpacity>
+          {/* Safety Actions */}
+          <View style={styles.safetySection}>
+            <TouchableOpacity onPress={handleShareTrip} style={[styles.safetyRow, { backgroundColor: isDarkMode ? '#1E293B' : '#EFF6FF' }]}>
+              <View style={styles.safetyLeft}>
+                <Ionicons name="shield-checkmark" size={20} color="#3B82F6" />
+                <ThemedText style={styles.safetyText}>Share Trip with Contact</ThemedText>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#3B82F6" />
+            </TouchableOpacity>
 
-          <TouchableOpacity 
-            onPress={() => Linking.openURL('tel:1091')}
-            className="flex-row items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl mb-4"
-          >
-            <View className="flex-row items-center">
-              <Ionicons name="call" size={24} color="#3B82F6" />
-              <ThemedText className="ml-3">Emergency Assistance</ThemedText>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#3B82F6" />
-          </TouchableOpacity>
+            <TouchableOpacity onPress={handleSOS} style={[styles.safetyRow, { backgroundColor: isDarkMode ? '#2D1B1E' : '#FEF2F2' }]}>
+              <View style={styles.safetyLeft}>
+                <Ionicons name="warning" size={20} color="#DC2626" />
+                <ThemedText style={styles.safetyText}>SOS Emergency</ThemedText>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#DC2626" />
+            </TouchableOpacity>
 
-          {/* Action Buttons */}
-          <View className="flex-row justify-between mb-3">
-            <TouchableOpacity
-              onPress={() => Alert.alert('Report Issue', 'This would open issue reporting')}
-              className="flex-1 py-3 border border-gray-300 rounded-xl"
-            >
-              <ThemedText className="text-center text-gray-600">Report Issue</ThemedText>
+            <TouchableOpacity onPress={() => Linking.openURL('tel:1091')} style={[styles.safetyRow, { backgroundColor: isDarkMode ? '#1E293B' : '#EFF6FF' }]}>
+              <View style={styles.safetyLeft}>
+                <Ionicons name="call" size={20} color="#3B82F6" />
+                <ThemedText style={styles.safetyText}>Emergency Assistance</ThemedText>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#3B82F6" />
             </TouchableOpacity>
           </View>
 
-          {rideStatus === 'driver_coming' || rideStatus === 'driver_arrived' ? (
-            <SlideToCancel onSlideComplete={handleSlideComplete} />
-          ) : (
-            <TouchableOpacity
-              onPress={handleEndTrip}
-              className="py-3 bg-burgundy rounded-xl"
-            >
-              <ThemedText className="text-center text-white">End Trip</ThemedText>
-            </TouchableOpacity>
-          )}
+          {/* Cancel / End Trip */}
+          <View style={styles.actionSection}>
+            {rideStatus === 'driver_coming' || rideStatus === 'driver_arrived' ? (
+              <SlideToCancel onSlideComplete={handleSlideComplete} />
+            ) : (
+              <TouchableOpacity onPress={handleEndTrip} style={styles.endTripBtn}>
+                <ThemedText style={styles.endTripBtnText}>End Trip</ThemedText>
+              </TouchableOpacity>
+            )}
           </View>
 
           {rideStatus === 'in_progress' && (
-            <ThemedText variant="small" className="text-center text-gray-500 mt-2">
+            <ThemedText style={styles.flexiNote}>
               🎵 For Flexi-Hire rides only
             </ThemedText>
           )}
 
-        {/* Bottom Spacing */}
-        <View className="px-6">
-          <View className="h-6" />
-        </View>
-      </ScrollView>
+          {/* Bottom safe area spacing */}
+          <View style={{ height: 30 }} />
+        </ScrollView>
+      </View>
 
       <CancelReasonModal
         visible={showCancelReasonModal}
@@ -481,15 +497,310 @@ export default function RideTrackingScreen() {
         onCancel={handleCancelConfirmed}
         onDismiss={() => setShowCancelReasonModal(false)}
       />
-      </ThemedView>
-    </SafeAreaView>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+
+  // Floating Header
+  headerSafeArea: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  headerBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  headerBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  durationText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6B7280',
+    marginTop: 2,
+  },
+
+  // Bottom Panel
+  bottomPanel: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: BOTTOM_PANEL_HEIGHT,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  dragHandle: {
+    width: 40,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#D1D5DB',
+    alignSelf: 'center',
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  bottomScrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 4,
+  },
+
+  // Cards
+  card: {
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+  },
+  cardSubtitle: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
+  bikerSection: {
+    padding: 10,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  tripSection: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+  },
+
+  // Biker Info
+  bikerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  bikerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+    backgroundColor: '#BD8C5E',
+  },
+  bikerAvatarPlaceholder: {
+    backgroundColor: '#DBEAFE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nameRatingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  bikerName: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  ratingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  ratingText: {
+    fontSize: 12,
+    marginLeft: 3,
+    color: '#6B7280',
+  },
+  bikerEta: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+
+  // Driver Details
+  driverRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  driverAvatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    marginRight: 12,
+    backgroundColor: '#BD8C5E',
+  },
+  driverName: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  driverMeta: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginLeft: 4,
+  },
+  contactBtns: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  contactBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  vehicleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+  },
+  vehicleText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  vehicleSubtext: {
+    fontSize: 11,
+    color: '#6B7280',
+    marginTop: 1,
+  },
+
+  // Trip Details
+  tripRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  tripLabel: {
+    fontSize: 13,
+    color: '#6B7280',
+  },
+  tripValue: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  updateBox: {
+    marginTop: 8,
+    padding: 10,
+    borderRadius: 10,
+  },
+  updateLabel: {
+    fontSize: 11,
+    color: '#6B7280',
+  },
+  updateText: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  updateTime: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    textAlign: 'right',
+    marginTop: 4,
+  },
+
+  // Navigation Button
+  navigationBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#3B82F6',
+    paddingVertical: 14,
+    borderRadius: 14,
+    marginBottom: 12,
+    gap: 8,
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  navigationBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+
+  // Safety Section
+  safetySection: {
+    gap: 8,
+    marginBottom: 12,
+  },
+  safetyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+    borderRadius: 12,
+  },
+  safetyLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  safetyText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+
+  // Action Section
+  actionSection: {
+    marginBottom: 8,
+  },
+  endTripBtn: {
+    backgroundColor: '#722F37',
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  endTripBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  flexiNote: {
+    fontSize: 12,
+    textAlign: 'center',
+    color: '#9CA3AF',
+    marginTop: 4,
+  },
+});
 
 // SOS Emergency Screen Component
 const SOSScreen = ({ onClose }: { onClose: () => void }) => {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
-  
+
   const emergencyContacts = [
     { icon: 'call', title: 'CALL EMERGENCY', subtitle: '(Police: 100)', color: '#722F37' },
     { icon: 'medical', title: 'MEDICAL EMERGENCY', subtitle: '(Ambulance: 108)', color: '#722F37' },
@@ -541,7 +852,7 @@ const SOSScreen = ({ onClose }: { onClose: () => void }) => {
           </ThemedText>
         </View>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={onClose}
           className="mt-4 p-3 bg-blue-600 rounded-xl"
         >
@@ -571,8 +882,8 @@ const ShareTripScreen = ({ onClose }: { onClose: () => void }) => {
   ];
 
   const toggleContact = (contactId: string) => {
-    setSelectedContacts(prev => 
-      prev.includes(contactId) 
+    setSelectedContacts(prev =>
+      prev.includes(contactId)
         ? prev.filter(id => id !== contactId)
         : [...prev, contactId]
     );
@@ -599,11 +910,10 @@ const ShareTripScreen = ({ onClose }: { onClose: () => void }) => {
             onPress={() => toggleContact(contact.id)}
             className="flex-row items-center p-3 mb-2 border border-gray-200 rounded-xl"
           >
-            <View className={`w-6 h-6 rounded border-2 mr-3 ${
-              selectedContacts.includes(contact.id) 
-                ? 'bg-burgundy border-burgundy' 
-                : 'border-gray-400'
-            }`}>
+            <View className={`w-6 h-6 rounded border-2 mr-3 ${selectedContacts.includes(contact.id)
+              ? 'bg-burgundy border-burgundy'
+              : 'border-gray-400'
+              }`}>
               {selectedContacts.includes(contact.id) && (
                 <Ionicons name="checkmark" size={18} color="white" />
               )}

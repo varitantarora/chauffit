@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, TouchableOpacity, Alert, Linking } from 'react-native';
+import { View, TouchableOpacity, Alert, Linking, ScrollView, Dimensions, Platform, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,11 +13,14 @@ import { useAuthStore } from '../../../store/authStore';
 import { Location } from '../../../types/navigation';
 import DriverRidesApiService, { DriverRideDetail } from '../../../services/api/DriverRidesApiService';
 
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const BOTTOM_PANEL_HEIGHT = SCREEN_HEIGHT * 0.40;
+
 export default function ActiveJobScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const jobId = params.jobId as string;
-  
+
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const {
     activeJob,
@@ -28,9 +31,9 @@ export default function ActiveJobScreen() {
     cancelJob,
     completeRideFromAPI
   } = useJobStore();
-  
+
   const { addJobEarnings } = useEarningsStore();
-  
+
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
   const rideStartTimeRef = useRef<Date | null>(null);
   const [rideDuration, setRideDuration] = useState(0);
@@ -93,7 +96,7 @@ export default function ActiveJobScreen() {
     const detailsRefresh = setInterval(() => {
       syncRideDetails();
     }, 15000);
-    
+
     return () => {
       mounted = false;
       if (timer) clearInterval(timer);
@@ -107,8 +110,8 @@ export default function ActiveJobScreen() {
 
   const startRideTimer = () => {
     const interval = setInterval(() => {
-      setRideDuration((prev) => {
-        if (!rideStartTimeRef.current) return prev + 1;
+      setRideDuration(() => {
+        if (!rideStartTimeRef.current) return 0; // Wait for real start time from backend
         return getDurationSeconds(rideStartTimeRef.current);
       });
     }, 1000);
@@ -124,7 +127,7 @@ export default function ActiveJobScreen() {
         longitude: 77.0266 + (Math.random() - 0.5) * 0.01,
         address: 'Current Location'
       };
-      
+
       setCurrentLocation(mockLocation);
       updateCurrentLocation(mockLocation);
     }, 5000);
@@ -136,7 +139,7 @@ export default function ActiveJobScreen() {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    
+
     if (hours > 0) {
       return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
@@ -158,7 +161,6 @@ export default function ActiveJobScreen() {
   };
 
   const showRatingDialog = () => {
-    // In a real app, you would show a proper rating dialog
     Alert.alert(
       'Rate Customer',
       'How was your experience with this customer?',
@@ -189,22 +191,20 @@ export default function ActiveJobScreen() {
     setIsCompleting(true);
 
     try {
-      const toNumber = (value: any): number | null => {
+      const toNum = (value: any): number | null => {
         if (value === null || value === undefined || value === '') return null;
         const parsed = Number(value);
         return Number.isFinite(parsed) ? parsed : null;
       };
 
-      // Calculate trip details
-      const actualDuration = Math.floor(rideDuration / 60); // Convert to minutes
-      const actualDistance = toNumber(
+      const actualDuration = Math.floor(rideDuration / 60);
+      const actualDistance = toNum(
         (rideDetails as any)?.actual_distance_km ??
         (rideDetails as any)?.estimated_distance_km ??
         (activeJob as any)?.distance
       ) || 0;
-      const tips = toNumber((rideDetails as any)?.tip_amount) || 0;
+      const tips = toNum((rideDetails as any)?.tip_amount) || 0;
 
-      // Call backend API to complete the ride
       const success = await completeRideFromAPI(activeJob.id, {
         dropoff_lat: currentLocation?.latitude?.toString() || '0',
         dropoff_long: currentLocation?.longitude?.toString() || '0',
@@ -218,17 +218,15 @@ export default function ActiveJobScreen() {
         return;
       }
 
-      // Add earnings locally
       addJobEarnings(activeJob.fare, tips, actualDistance, actualDuration);
-
-      // Complete the job locally
       completeJob(tips, customerRating);
 
       Alert.alert(
         'Ride Completed!',
         `Great job! You earned ₹${(
-          toNumber((rideDetails as any)?.net_earnings) ??
-          toNumber((rideDetails as any)?.driver_earnings_breakdown?.net_earnings) ??
+          toNum((rideDetails as any)?.net_earnings) ??
+          toNum((rideDetails as any)?.driver_earnings_breakdown?.net_earnings) ??
+          activeJob.net_earnings ??
           activeJob.fare
         ).toLocaleString('en-IN')} for this trip.`,
         [
@@ -281,7 +279,7 @@ export default function ActiveJobScreen() {
 
   const handleCallCustomer = () => {
     if (!activeJob?.customerPhone) return;
-    
+
     const phoneNumber = activeJob.customerPhone.replace(/\s/g, '');
     Linking.openURL(`tel:${phoneNumber}`);
   };
@@ -302,6 +300,37 @@ export default function ActiveJobScreen() {
         }
       ]
     );
+  };
+
+  const handleStartNavigation = () => {
+    const dropoff = activeJob?.dropoffLocation;
+    if (!dropoff?.latitude || !dropoff?.longitude) {
+      Alert.alert('Navigation', 'Destination coordinates are not available yet.');
+      return;
+    }
+
+    const { latitude, longitude } = dropoff;
+    const label = encodeURIComponent(dropoff.address || dropoff.name || 'Destination');
+
+    if (Platform.OS === 'ios') {
+      const appleMapsUrl = `maps://app?daddr=${latitude},${longitude}&dirflg=d`;
+      Linking.canOpenURL(appleMapsUrl).then((supported) => {
+        if (supported) {
+          Linking.openURL(appleMapsUrl);
+        } else {
+          Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}&destination_place_id=${label}`);
+        }
+      });
+    } else {
+      const googleMapsUrl = `google.navigation:q=${latitude},${longitude}`;
+      Linking.canOpenURL(googleMapsUrl).then((supported) => {
+        if (supported) {
+          Linking.openURL(googleMapsUrl);
+        } else {
+          Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`);
+        }
+      });
+    }
   };
 
   if (!activeJob) {
@@ -346,7 +375,8 @@ export default function ActiveJobScreen() {
   const yourEarnings = toNumber(
     breakdown.net_earnings ??
     backendData.net_earnings ??
-    backendData.driver_earnings
+    backendData.driver_earnings ??
+    activeJob.net_earnings
   );
   const otherFees = Array.isArray(breakdown.other_fees) ? breakdown.other_fees : [];
   const displayDistance = toNumber(
@@ -356,22 +386,41 @@ export default function ActiveJobScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1">
-      <ThemedView className="flex-1">
-        {/* Header */}
-        <View className="flex-row items-center justify-between p-4 border-b border-border dark:border-darkBorder">
-          <View className="flex-row items-center">
-            <View className="w-3 h-3 bg-success rounded-full mr-2" />
-            <View>
+    <View style={styles.container}>
+      {/* Full-Screen Map Background */}
+      <View style={StyleSheet.absoluteFillObject}>
+        <RouteMap
+          pickupLocation={activeJob.pickupLocation}
+          dropoffLocation={activeJob.dropoffLocation}
+          currentLocation={currentLocation || undefined}
+          route={activeJob.route}
+          eta={activeJob.eta}
+          mapHeight={SCREEN_HEIGHT}
+          showCurrentLocation={true}
+          onLocationUpdate={updateCurrentLocation}
+        />
+      </View>
+
+      {/* Floating Header Overlay */}
+      <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
+        <View
+          className="border border-border dark:border-darkBorder"
+          style={[styles.headerBar, { backgroundColor: isDarkMode ? 'rgba(30,30,30,0.92)' : 'rgba(255,255,255,0.92)' }]}
+        >
+          <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
+          </TouchableOpacity>
+          <View className="items-center flex-1">
+            <View className="flex-row items-center">
+              <View className="w-3 h-3 bg-success rounded-full mr-2" />
               <ThemedText variant="title" className="font-bold">
                 Ride in Progress
               </ThemedText>
-              <ThemedText variant="caption" className="text-success">
-                Duration: {formatDuration(rideDuration)}
-              </ThemedText>
             </View>
+            <ThemedText variant="caption" className="text-success">
+              Duration: {formatDuration(rideDuration)}
+            </ThemedText>
           </View>
-          
           <TouchableOpacity
             onPress={handleEmergency}
             className="w-10 h-10 bg-danger rounded-full items-center justify-center"
@@ -380,25 +429,24 @@ export default function ActiveJobScreen() {
             <Ionicons name="warning" size={20} color="white" />
           </TouchableOpacity>
         </View>
+      </SafeAreaView>
 
-        {/* Map */}
-        <View className="flex-1">
-          <RouteMap
-            pickupLocation={activeJob.pickupLocation}
-            dropoffLocation={activeJob.dropoffLocation}
-            currentLocation={currentLocation || undefined}
-            route={activeJob.route}
-            eta={activeJob.eta}
-            mapHeight={350}
-            showCurrentLocation={true}
-            onLocationUpdate={updateCurrentLocation}
-          />
-        </View>
+      {/* Bottom Panel */}
+      <View
+        className="bg-surface dark:bg-darkSurface"
+        style={styles.bottomPanel}
+      >
+        {/* Drag Handle */}
+        <View style={styles.dragHandle} />
 
-        {/* Trip Info */}
-        <View className="p-4">
-          {/* Customer Info Card */}
-          <ThemedCard className="p-4 mb-4">
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 4 }}
+          bounces={false}
+        >
+          {/* Single Unified Card — All Details */}
+          <ThemedCard variant="elevated" className="p-4 mb-3">
+            {/* Customer Info Section */}
             <View className="flex-row items-center justify-between mb-3">
               <View className="flex-row items-center flex-1">
                 <View className="w-12 h-12 bg-secondary/20 rounded-full items-center justify-center mr-4">
@@ -415,7 +463,7 @@ export default function ActiveJobScreen() {
                   </ThemedText>
                 </View>
               </View>
-              
+
               <TouchableOpacity
                 onPress={handleCallCustomer}
                 className="w-10 h-10 bg-secondary/20 rounded-full items-center justify-center"
@@ -424,7 +472,52 @@ export default function ActiveJobScreen() {
                 <Ionicons name="call" size={20} color="#bd8c5e" />
               </TouchableOpacity>
             </View>
-            
+
+            {/* Destination Section */}
+            {activeJob.dropoffLocation && (
+              <View className="border-t border-border dark:border-darkBorder pt-3 mb-3">
+                <View className="flex-row items-center mb-2">
+                  <Ionicons name="flag" size={16} color="#ef4444" />
+                  <ThemedText variant="caption" className="text-secondary uppercase font-semibold ml-2">
+                    DESTINATION
+                  </ThemedText>
+                </View>
+                <ThemedText className="font-bold text-lg">
+                  {activeJob.dropoffLocation.name || activeJob.dropoffLocation.address}
+                </ThemedText>
+                {activeJob.dropoffLocation.name && (
+                  <ThemedText variant="caption" className="text-secondary">
+                    {activeJob.dropoffLocation.address}
+                  </ThemedText>
+                )}
+              </View>
+            )}
+
+            {/* Trip Stats Section */}
+            <View className="border-t border-border dark:border-darkBorder pt-3 mb-3">
+              <View className="flex-row justify-around">
+                <View className="items-center">
+                  <ThemedText className="font-bold text-lg">
+                    {formatDuration(rideDuration)}
+                  </ThemedText>
+                  <ThemedText variant="caption">Duration</ThemedText>
+                </View>
+                <View className="items-center">
+                  <ThemedText className="font-bold text-lg">
+                    {displayDistance === null ? 'NA' : `${displayDistance} km`}
+                  </ThemedText>
+                  <ThemedText variant="caption">Distance</ThemedText>
+                </View>
+                <View className="items-center">
+                  <ThemedText className="font-bold text-lg text-burgundy">
+                    {formatMoney(yourEarnings)}
+                  </ThemedText>
+                  <ThemedText variant="caption">Earnings</ThemedText>
+                </View>
+              </View>
+            </View>
+
+            {/* Fare Breakdown Section */}
             <View className="border-t border-border dark:border-darkBorder pt-3">
               <View className="flex-row justify-between items-center mb-1">
                 <ThemedText variant="caption" className="text-secondary">
@@ -472,7 +565,7 @@ export default function ActiveJobScreen() {
                   </View>
                 );
               })}
-              <View className="flex-row justify-between items-center">
+              <View className="flex-row justify-between items-center mt-1">
                 <ThemedText variant="caption" className="text-secondary">
                   Your Earnings
                 </ThemedText>
@@ -483,52 +576,21 @@ export default function ActiveJobScreen() {
             </View>
           </ThemedCard>
 
-          {/* Destination Info */}
-          {activeJob.dropoffLocation && (
-            <ThemedCard className="p-4 mb-4">
-              <View className="flex-row items-center mb-2">
-                <Ionicons name="flag" size={16} color="#ef4444" />
-                <ThemedText variant="caption" className="text-secondary uppercase font-semibold ml-2">
-                  DESTINATION
-                </ThemedText>
-              </View>
-              <ThemedText className="font-bold text-lg">
-                {activeJob.dropoffLocation.name || activeJob.dropoffLocation.address}
-              </ThemedText>
-              {activeJob.dropoffLocation.name && (
-                <ThemedText variant="caption" className="text-secondary">
-                  {activeJob.dropoffLocation.address}
-                </ThemedText>
-              )}
-            </ThemedCard>
-          )}
-
-          {/* Trip Stats */}
-          <ThemedCard className="p-4 mb-4">
-            <View className="flex-row justify-around">
-              <View className="items-center">
-                <ThemedText className="font-bold text-lg">
-                  {formatDuration(rideDuration)}
-                </ThemedText>
-                <ThemedText variant="caption">Duration</ThemedText>
-              </View>
-              <View className="items-center">
-                <ThemedText className="font-bold text-lg">
-                  {displayDistance === null ? 'NA' : `${displayDistance} km`}
-                </ThemedText>
-                <ThemedText variant="caption">Distance</ThemedText>
-              </View>
-              <View className="items-center">
-                <ThemedText className="font-bold text-lg text-burgundy">
-                  {formatMoney(yourEarnings)}
-                </ThemedText>
-                <ThemedText variant="caption">Your Earnings</ThemedText>
-              </View>
-            </View>
-          </ThemedCard>
+          {/* Navigate Button */}
+          <TouchableOpacity
+            onPress={handleStartNavigation}
+            className="flex-row items-center justify-center py-4 bg-blue-500 rounded-xl mb-3"
+            style={styles.navBtnShadow}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="navigate" size={20} color="white" />
+            <ThemedText className="text-white font-bold ml-2">
+              Navigate to Destination
+            </ThemedText>
+          </TouchableOpacity>
 
           {/* Action Buttons */}
-          <View className="flex-row space-x-3">
+          <View className="flex-row space-x-3 mb-3">
             <TouchableOpacity
               onPress={handleCancelRide}
               className="flex-1 py-4 items-center border border-danger/30 rounded-lg"
@@ -538,21 +600,20 @@ export default function ActiveJobScreen() {
                 Cancel Ride
               </ThemedText>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               onPress={handleCompleteRide}
               disabled={isCompleting}
-              className={`flex-2 py-4 items-center rounded-lg ${
-                isCompleting ? 'bg-gray-400' : 'bg-success'
-              }`}
+              className={`py-4 items-center rounded-lg ${isCompleting ? 'bg-gray-400' : 'bg-success'
+                }`}
               style={{ flex: 2 }}
               activeOpacity={0.7}
             >
               <View className="flex-row items-center">
-                <Ionicons 
-                  name={isCompleting ? "hourglass" : "checkmark-circle"} 
-                  size={20} 
-                  color="white" 
+                <Ionicons
+                  name={isCompleting ? "hourglass" : "checkmark-circle"}
+                  size={20}
+                  color="white"
                 />
                 <ThemedText className="text-white font-semibold ml-2">
                   {isCompleting ? 'Completing...' : 'Complete Ride'}
@@ -564,7 +625,7 @@ export default function ActiveJobScreen() {
           {/* Emergency Contact */}
           <TouchableOpacity
             onPress={handleEmergency}
-            className="mt-3 py-3 items-center bg-danger/10 border border-danger/20 rounded-lg"
+            className="py-3 items-center bg-danger/10 border border-danger/20 rounded-lg mb-3"
             activeOpacity={0.7}
           >
             <View className="flex-row items-center">
@@ -574,8 +635,68 @@ export default function ActiveJobScreen() {
               </ThemedText>
             </View>
           </TouchableOpacity>
-        </View>
-      </ThemedView>
-    </SafeAreaView>
+
+          {/* Bottom safe area spacing */}
+          <View style={{ height: 30 }} />
+        </ScrollView>
+      </View>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  headerSafeArea: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  headerBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  bottomPanel: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: BOTTOM_PANEL_HEIGHT,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  dragHandle: {
+    width: 40,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#D1D5DB',
+    alignSelf: 'center',
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  navBtnShadow: {
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+});

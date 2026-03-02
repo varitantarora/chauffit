@@ -17,10 +17,10 @@ export default function JobAcceptScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const jobId = params.jobId as string;
-  
+
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const { pendingRequests, acceptedJobs, activeJob, acceptRideFromAPI, declineJob, lastAcceptError } = useJobStore();
-  
+
   const [isAccepting, setIsAccepting] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [job, setJob] = useState<JobRequest | null>(null);
@@ -124,9 +124,9 @@ export default function JobAcceptScreen() {
     const now = new Date().getTime();
     const expiry = new Date(job.expiresAt).getTime();
     const remaining = Math.max(0, Math.floor((expiry - now) / 1000));
-    
+
     setTimeLeft(remaining);
-    
+
     if (remaining === 0) {
       Alert.alert(
         'Request Expired',
@@ -138,9 +138,9 @@ export default function JobAcceptScreen() {
 
   const handleAccept = async () => {
     if (!job) return;
-    
+
     setIsAccepting(true);
-    
+
     try {
       const success = await acceptRideFromAPI(job.id);
       if (success) {
@@ -170,7 +170,7 @@ export default function JobAcceptScreen() {
 
   const handleDecline = () => {
     if (!job) return;
-    
+
     Alert.alert(
       'Decline Ride?',
       'Are you sure you want to decline this ride request?',
@@ -190,7 +190,7 @@ export default function JobAcceptScreen() {
 
   const handleCallCustomer = () => {
     if (!job?.customerPhone) return;
-    
+
     const phoneNumber = job.customerPhone.replace(/\s/g, '');
     Linking.openURL(`tel:${phoneNumber}`);
   };
@@ -277,7 +277,8 @@ export default function JobAcceptScreen() {
   const yourEarnings = toNumber(
     breakdown.net_earnings ??
     backendData.net_earnings ??
-    backendData.driver_earnings
+    backendData.driver_earnings ??
+    job.net_earnings
   );
   const otherFees = Array.isArray(breakdown.other_fees) ? breakdown.other_fees : [];
 
@@ -307,14 +308,14 @@ export default function JobAcceptScreen() {
           <View className="px-4 pt-4">
             <ThemedCard className="p-4 mb-4">
               <View className="flex-row items-center mb-3">
-                <View 
+                <View
                   className="w-12 h-12 rounded-full items-center justify-center mr-4"
                   style={{ backgroundColor: serviceDetails.color + '20' }}
                 >
-                  <Ionicons 
-                    name={serviceDetails.icon as any} 
-                    size={24} 
-                    color={serviceDetails.color} 
+                  <Ionicons
+                    name={serviceDetails.icon as any}
+                    size={24}
+                    color={serviceDetails.color}
                   />
                 </View>
                 <View className="flex-1">
@@ -334,7 +335,7 @@ export default function JobAcceptScreen() {
                   </ThemedText>
                 </View>
               </View>
-              
+
               <View className="border-t border-border dark:border-darkBorder pt-3">
                 <ThemedText variant="caption" className="text-secondary mb-1">
                   SCHEDULED TIME
@@ -371,7 +372,7 @@ export default function JobAcceptScreen() {
                   </ThemedText>
                 </TouchableOpacity>
               </View>
-              
+
               <View className="flex-row items-center">
                 <View className="w-12 h-12 bg-secondary/20 rounded-full items-center justify-center mr-4">
                   <ThemedText className="font-bold text-secondary text-lg">
@@ -385,11 +386,11 @@ export default function JobAcceptScreen() {
                   <View className="flex-row items-center">
                     <View className="flex-row items-center mr-3">
                       {[1, 2, 3, 4, 5].map((star) => (
-                        <Ionicons 
-                          key={star} 
-                          name={star <= job.customerRating ? "star" : "star-outline"} 
-                          size={14} 
-                          color="#fbbf24" 
+                        <Ionicons
+                          key={star}
+                          name={star <= job.customerRating ? "star" : "star-outline"}
+                          size={14}
+                          color="#fbbf24"
                         />
                       ))}
                       <ThemedText variant="caption" className="ml-2">
@@ -411,7 +412,7 @@ export default function JobAcceptScreen() {
               <ThemedText variant="title" className="font-bold mb-4">
                 Route Details
               </ThemedText>
-              
+
               <View className="space-y-4">
                 <View className="flex-row items-start">
                   <View className="w-4 h-4 bg-success rounded-full mt-1 mr-3" />
@@ -429,7 +430,7 @@ export default function JobAcceptScreen() {
                     )}
                   </View>
                 </View>
-                
+
                 {job.dropoffLocation && (
                   <View className="flex-row items-start">
                     <View className="w-4 h-4 border-2 border-danger rounded-full mt-1 mr-3" />
@@ -485,7 +486,7 @@ export default function JobAcceptScreen() {
               <ThemedText variant="title" className="font-bold mb-3">
                 Trip Summary
               </ThemedText>
-              
+
               <View className="space-y-2">
                 <View className="flex-row justify-between">
                   <ThemedText>Distance:</ThemedText>
@@ -567,15 +568,14 @@ export default function JobAcceptScreen() {
                     Decline
                   </ThemedText>
                 </TouchableOpacity>
-                
+
                 <TouchableOpacity
                   onPress={handleAccept}
                   disabled={isAccepting || timeLeft === 0}
-                  className={`flex-2 py-4 items-center rounded-lg ${
-                    isAccepting || timeLeft === 0 
-                      ? 'bg-gray-400' 
+                  className={`flex-2 py-4 items-center rounded-lg ${isAccepting || timeLeft === 0
+                      ? 'bg-gray-400'
                       : 'bg-burgundy'
-                  }`}
+                    }`}
                   style={{ flex: 2 }}
                   activeOpacity={0.7}
                 >

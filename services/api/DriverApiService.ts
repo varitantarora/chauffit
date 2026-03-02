@@ -751,6 +751,23 @@ class DriverApiService {
     }
   }
 
+  /**
+   * Request Training Retake
+   * POST /api/v1/drivers/training/request-retake/
+   *
+   * Request to retake training after failing. Must be at least 7 days since the failed session.
+   */
+  async requestRetakeTraining(): Promise<ApiResponse<{ message: string }>> {
+    try {
+      return await BaseApiService.post<{ message: string }>(`${this.basePath}/training/request-retake/`, {});
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to request retake training',
+      };
+    }
+  }
+
   // =========================================================================
   // LEGACY METHODS (Deprecated - Use new methods above)
   // =========================================================================

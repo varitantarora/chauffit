@@ -18,6 +18,9 @@ import AdminApiService, {
   AdminInsurancePlan,
   AdminAmenity,
   RevenueData,
+  AdminTrainingBatch,
+  CreateTrainingBatchRequest,
+  MarkTrainingResultsRequest,
 } from '../services/api/AdminApiService';
 
 interface AdminState {
@@ -106,6 +109,12 @@ interface AdminState {
   revenueLoading: boolean;
   revenueError: string | null;
 
+  // Training Batches
+  trainingBatches: AdminTrainingBatch[];
+  trainingBatchesLoading: boolean;
+  trainingBatchesError: string | null;
+  selectedTrainingBatch: AdminTrainingBatch | null;
+
   // Actions
   fetchDashboard: () => Promise<void>;
   fetchUsers: (params?: { user_type?: string; status?: string }) => Promise<void>;
@@ -114,9 +123,11 @@ interface AdminState {
   fetchDrivers: () => Promise<void>;
   fetchPendingDrivers: () => Promise<void>;
   verifyDriver: (id: string, isApproved: boolean, rejectionReason?: string) => Promise<boolean>;
+  updateDriverStatus: (id: string, status: string) => Promise<boolean>;
   fetchBikers: () => Promise<void>;
   fetchPendingBikers: () => Promise<void>;
   verifyBiker: (id: string, isApproved: boolean, rejectionReason?: string) => Promise<boolean>;
+  updateBikerStatus: (id: string, status: string) => Promise<boolean>;
   fetchRides: (params?: { status?: string; search?: string }) => Promise<void>;
   fetchRideDetail: (id: string) => Promise<AdminRideDetail | null>;
   dispatchRide: (id: string, driverId: string) => Promise<boolean>;
@@ -139,6 +150,11 @@ interface AdminState {
   updateAmenity: (id: string, data: Partial<AdminAmenity>) => Promise<boolean>;
   deleteAmenity: (id: string) => Promise<boolean>;
   fetchRevenue: (date?: string) => Promise<void>;
+  fetchTrainingBatches: () => Promise<void>;
+  fetchTrainingBatch: (id: string) => Promise<AdminTrainingBatch | null>;
+  createTrainingBatch: (data: CreateTrainingBatchRequest) => Promise<boolean>;
+  autoAssignBatch: (id: string) => Promise<boolean>;
+  markTrainingResults: (id: string, results: MarkTrainingResultsRequest[]) => Promise<boolean>;
 }
 
 export const useAdminStore = create<AdminState>((set, get) => ({
@@ -205,6 +221,11 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   revenue: null,
   revenueLoading: false,
   revenueError: null,
+
+  trainingBatches: [],
+  trainingBatchesLoading: false,
+  trainingBatchesError: null,
+  selectedTrainingBatch: null,
 
   fetchDashboard: async () => {
     set({ dashboardLoading: true, dashboardError: null });
@@ -282,6 +303,16 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     return false;
   },
 
+  updateDriverStatus: async (id, status) => {
+    const res = await AdminApiService.updateDriverStatus(id, status);
+    if (res.success) {
+      get().fetchDrivers();
+      get().fetchDashboard();
+      return true;
+    }
+    return false;
+  },
+
   fetchBikers: async () => {
     set({ bikersLoading: true, bikersError: null });
     const res = await AdminApiService.getBikers();
@@ -311,6 +342,16 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     });
     if (res.success) {
       get().fetchPendingBikers();
+      get().fetchDashboard();
+      return true;
+    }
+    return false;
+  },
+
+  updateBikerStatus: async (id, status) => {
+    const res = await AdminApiService.updateBikerStatus(id, status);
+    if (res.success) {
+      get().fetchBikers();
       get().fetchDashboard();
       return true;
     }
@@ -593,5 +634,52 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     } else {
       set({ revenueError: res.error || 'Failed to fetch revenue', revenueLoading: false });
     }
+  },
+
+  fetchTrainingBatches: async () => {
+    set({ trainingBatchesLoading: true, trainingBatchesError: null });
+    const res = await AdminApiService.getTrainingBatches();
+    if (res.success && res.data) {
+      const batches = Array.isArray(res.data) ? res.data : (res.data as any).results || [];
+      set({ trainingBatches: batches, trainingBatchesLoading: false });
+    } else {
+      set({ trainingBatchesError: res.error || 'Failed to fetch training batches', trainingBatchesLoading: false });
+    }
+  },
+
+  fetchTrainingBatch: async (id) => {
+    const res = await AdminApiService.getTrainingBatch(id);
+    if (res.success && res.data) {
+      set({ selectedTrainingBatch: res.data });
+      return res.data;
+    }
+    return null;
+  },
+
+  createTrainingBatch: async (data) => {
+    const res = await AdminApiService.createTrainingBatch(data);
+    if (res.success) {
+      get().fetchTrainingBatches();
+      return true;
+    }
+    return false;
+  },
+
+  autoAssignBatch: async (id) => {
+    const res = await AdminApiService.autoAssignBatch(id);
+    if (res.success) {
+      get().fetchTrainingBatch(id);
+      return true;
+    }
+    return false;
+  },
+
+  markTrainingResults: async (id, results) => {
+    const res = await AdminApiService.markTrainingResults(id, results);
+    if (res.success) {
+      get().fetchTrainingBatch(id);
+      return true;
+    }
+    return false;
   },
 }));

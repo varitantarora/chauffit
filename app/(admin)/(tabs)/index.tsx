@@ -27,6 +27,7 @@ export default function AdminDashboard() {
     { title: 'Revenue', icon: 'cash' as const, count: dashboard?.total_revenue ? `₹${dashboard.total_revenue}` : '₹0', route: '/(admin)/revenue' },
     { title: 'Pending Drivers', icon: 'car' as const, count: dashboard?.pending_driver_verifications || 0, route: '/(admin)/drivers-pending' },
     { title: 'Pending Bikers', icon: 'bicycle' as const, count: dashboard?.pending_biker_verifications || 0, route: '/(admin)/bikers-pending' },
+    { title: 'Training Batches', icon: 'school' as const, count: '0', route: '/(admin)/training-batches' },
     { title: 'Open Disputes', icon: 'warning' as const, count: dashboard?.open_disputes || 0, route: '/(admin)/disputes' },
     { title: 'Payments', icon: 'card' as const, count: dashboard?.total_payments || 0, route: '/(admin)/payments' },
   ];

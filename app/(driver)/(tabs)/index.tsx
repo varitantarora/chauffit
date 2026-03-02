@@ -211,7 +211,7 @@ export default function DriverHomeScreen() {
                     </View>
                     <View className="items-end">
                       <ThemedText className="font-bold text-burgundy text-xl">
-                        ₹{activeJob.fare.toLocaleString('en-IN')}
+                        ₹{(activeJob.net_earnings || activeJob.fare).toLocaleString('en-IN')}
                       </ThemedText>
                       <ThemedText variant="caption" className="text-secondary">
                         {t('tapToManage')}
@@ -465,7 +465,7 @@ export default function DriverHomeScreen() {
                     </View>
                     <View className="items-end">
                       <ThemedText className="font-bold text-burgundy">
-                        ₹{((job.fare || 0) + (job.tips || 0)).toLocaleString('en-IN')}
+                        ₹{((job.net_earnings || job.fare || 0) + (job.tips || 0)).toLocaleString('en-IN')}
                       </ThemedText>
                       {job.rating && (
                         <View className="flex-row items-center mt-1">

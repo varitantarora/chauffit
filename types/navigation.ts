@@ -177,6 +177,7 @@ export interface JobRequest {
   estimatedDistance: number; // in km
   serviceType: 'hourly' | 'trip' | 'airport' | 'outstation';
   fare: number;
+  net_earnings?: number;
   vehicleType: string;
   specialRequests?: string;
   status: 'pending' | 'accepted' | 'declined' | 'expired';
@@ -199,6 +200,7 @@ export interface ActiveJob {
   actualDistance?: number;
   actualDuration?: number;
   fare: number;
+  net_earnings?: number;
   tips?: number;
   route?: Location[];
   eta?: string;
@@ -219,6 +221,7 @@ export interface JobHistory {
   duration: number; // in minutes
   distance: number; // in km
   fare: number;
+  net_earnings?: number;
   tips: number;
   rating?: number;
   customerRating?: number;

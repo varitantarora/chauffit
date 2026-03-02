@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View, Alert, Modal, TextInput, TouchableOpacity, Linking } from 'react-native';
+import { ScrollView, View, Alert, Modal, TextInput, TouchableOpacity, Linking, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -151,6 +151,13 @@ export default function DriverVerification() {
                       <ThemedText className="font-semibold capitalize">{doc.document_type.replace(/_/g, ' ')}</ThemedText>
                       <StatusBadge status={doc.verification_status as any} />
                     </View>
+                    {doc.document_url && (
+                      <Image
+                        source={{ uri: doc.document_url }}
+                        style={{ width: '100%', height: 200, borderRadius: 8, marginBottom: 12 }}
+                        resizeMode="contain"
+                      />
+                    )}
                     {doc.document_number && <ThemedText variant="tiny">Number: {doc.document_number}</ThemedText>}
                     {doc.expiry_date && <ThemedText variant="tiny">Expires: {new Date(doc.expiry_date).toLocaleDateString()}</ThemedText>}
                     {doc.rejection_reason && <ThemedText variant="tiny" className="text-red-500 mt-1">Rejection: {doc.rejection_reason}</ThemedText>}

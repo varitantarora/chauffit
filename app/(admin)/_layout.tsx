@@ -20,6 +20,10 @@ export default function AdminLayout() {
       <Stack.Screen name="insurance-management" />
       <Stack.Screen name="amenities-management" />
       <Stack.Screen name="revenue" />
+      <Stack.Screen name="training-batches" />
+      <Stack.Screen name="training-batch-detail" />
+      <Stack.Screen name="all-drivers" />
+      <Stack.Screen name="all-bikers" />
     </Stack>
   );
 }

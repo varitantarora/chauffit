@@ -56,8 +56,8 @@ export default function BackgroundCheckScreen() {
         };
       case 'verified_ready_for_training':
         return {
-          title: 'Verified!',
-          subtitle: 'Your documents have been verified. Awaiting training assignment.',
+          title: 'Documents Verified!',
+          subtitle: 'Your documents have been approved. Training is being scheduled for you.',
           icon: 'checkmark-circle' as const,
           color: '#10B981',
         };
@@ -181,6 +181,38 @@ export default function BackgroundCheckScreen() {
                 onPress={() => router.push('/(driver)/onboarding/documents')}
                 className="mb-6"
               />
+            )}
+
+            {/* Training Pending Card - shown when verified_ready_for_training */}
+            {driverOnboardingStatus === 'verified_ready_for_training' && (
+              <ThemedCard className="p-4 mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                <View className="flex-row items-start">
+                  <Ionicons name="school" size={24} color="#10B981" />
+                  <View className="ml-3 flex-1">
+                    <ThemedText className="font-bold text-green-700 dark:text-green-300 mb-1">
+                      🎓 TRAINING PENDING
+                    </ThemedText>
+                    <ThemedText variant="secondary" className="text-sm">
+                      Your training session is being assigned. We'll notify you once scheduled.
+                    </ThemedText>
+                  </View>
+                </View>
+              </ThemedCard>
+            )}
+
+            {/* Original Documents Reminder - shown when verified_ready_for_training */}
+            {driverOnboardingStatus === 'verified_ready_for_training' && (
+              <ThemedCard className="p-4 mb-6">
+                <View className="flex-row items-start">
+                  <Ionicons name="document-text" size={24} color="#BD8C5E" />
+                  <View className="ml-3 flex-1">
+                    <ThemedText className="font-bold mb-1">📄 Bring Original Documents</ThemedText>
+                    <ThemedText variant="secondary" className="text-sm">
+                      Please keep your original Driving License and Aadhaar Card ready for the training session verification.
+                    </ThemedText>
+                  </View>
+                </View>
+              </ThemedCard>
             )}
 
             {/* Timeline */}

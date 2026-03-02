@@ -91,6 +91,7 @@ const mockJobRequests: JobRequest[] = [
     estimatedDistance: 25,
     serviceType: 'airport',
     fare: 2850,
+    net_earnings: 2280,
     vehicleType: 'sedan',
     status: 'pending',
     expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour from now
@@ -119,6 +120,7 @@ const mockJobRequests: JobRequest[] = [
     estimatedDistance: 12,
     serviceType: 'trip',
     fare: 1500,
+    net_earnings: 1200,
     vehicleType: 'sedan',
     specialRequests: 'Please call upon arrival',
     status: 'pending',
@@ -148,6 +150,7 @@ const mockJobRequests: JobRequest[] = [
     estimatedDistance: 28,
     serviceType: 'trip',
     fare: 3200,
+    net_earnings: 2560,
     vehicleType: 'sedan',
     specialRequests: 'AC required, prefer faster route',
     status: 'pending',
@@ -177,6 +180,7 @@ const mockJobRequests: JobRequest[] = [
     estimatedDistance: 8,
     serviceType: 'sightseeing',
     fare: 1200,
+    net_earnings: 960,
     vehicleType: 'hatchback',
     specialRequests: 'Tourist trip, please drive slowly for photos',
     status: 'pending',
@@ -206,6 +210,7 @@ const mockJobRequests: JobRequest[] = [
     estimatedDistance: 18,
     serviceType: 'trip',
     fare: 2100,
+    net_earnings: 1680,
     vehicleType: 'suv',
     specialRequests: 'Family trip with luggage, need spacious vehicle',
     status: 'pending',
@@ -386,6 +391,17 @@ const mapBookingToActiveJob = (
     ...(bookingWithExtras as any).driver_earnings_breakdown !== undefined ? { driver_earnings_breakdown: (bookingWithExtras as any).driver_earnings_breakdown } : {},
     ...(bookingWithExtras as any).earnings !== undefined ? { earnings: (bookingWithExtras as any).earnings } : {},
   };
+
+  // Set the primary net_earnings field from the extracted values
+  if ((mapping as any).net_earnings !== undefined) {
+    mapping.net_earnings = parseFloat(String((mapping as any).net_earnings));
+  } else if ((mapping as any).driver_earnings_breakdown?.net_earnings !== undefined) {
+    mapping.net_earnings = parseFloat(String((mapping as any).driver_earnings_breakdown.net_earnings));
+  } else if ((mapping as any).earnings?.net_earnings !== undefined) {
+    mapping.net_earnings = parseFloat(String((mapping as any).earnings.net_earnings));
+  }
+
+  return mapping;
 };
 
 // Helper function to map BookingDetail to JobRequest
@@ -395,7 +411,7 @@ const mapBookingToJobRequest = (booking: BookingDetail, status: JobRequest['stat
     ? booking.customer_details
     : null;
 
-  return {
+  const mapping: JobRequest = {
     id: booking.id,
     customerId: customerDetails?.id || booking.customer || '',
     customerName: customerDetails?.name || 'Customer',
@@ -431,6 +447,19 @@ const mapBookingToJobRequest = (booking: BookingDetail, status: JobRequest['stat
     ...(booking as any).driver_earnings_breakdown !== undefined ? { driver_earnings_breakdown: (booking as any).driver_earnings_breakdown } : {},
     ...(booking as any).earnings !== undefined ? { earnings: (booking as any).earnings } : {},
   };
+
+  // Try to use estimated_earnings from PendingRide if available
+  if ((booking as any).estimated_earnings !== undefined) {
+    mapping.net_earnings = parseFloat(String((booking as any).estimated_earnings));
+  } else if ((mapping as any).net_earnings !== undefined) {
+    mapping.net_earnings = parseFloat(String((mapping as any).net_earnings));
+  } else if ((mapping as any).driver_earnings_breakdown?.net_earnings !== undefined) {
+    mapping.net_earnings = parseFloat(String((mapping as any).driver_earnings_breakdown.net_earnings));
+  } else if ((mapping as any).earnings?.net_earnings !== undefined) {
+    mapping.net_earnings = parseFloat(String((mapping as any).earnings.net_earnings));
+  }
+
+  return mapping;
 };
 
 // Helper function to map BookingDetail to JobHistory
@@ -440,7 +469,7 @@ const mapBookingToJobHistory = (booking: BookingDetail): JobHistory => {
     ? booking.customer_details
     : null;
 
-  return {
+  const mapping: JobHistory = {
     id: booking.id,
     customerId: customerDetails?.id || booking.customer || '',
     customerName: customerDetails?.name || 'Customer',
@@ -462,7 +491,9 @@ const mapBookingToJobHistory = (booking: BookingDetail): JobHistory => {
     fare: parseFloat(String(booking.actual_fare || booking.estimated_fare)) || 0,
     tips: 0,
     rating: undefined,
-    status: 'completed',
+    customerRating: customerDetails?.overall_rating ?? undefined,
+    status: booking.booking_status === 'trip_completed' ? 'completed' : 'cancelled',
+    // Earnings breakdown fields
     ...(booking as any).tip_amount !== undefined ? { tip_amount: (booking as any).tip_amount } : {},
     ...(booking as any).bonus_amount !== undefined ? { bonus_amount: (booking as any).bonus_amount } : {},
     ...(booking as any).platform_fee !== undefined ? { platform_fee: (booking as any).platform_fee } : {},
@@ -471,6 +502,17 @@ const mapBookingToJobHistory = (booking: BookingDetail): JobHistory => {
     ...(booking as any).driver_earnings_breakdown !== undefined ? { driver_earnings_breakdown: (booking as any).driver_earnings_breakdown } : {},
     ...(booking as any).earnings !== undefined ? { earnings: (booking as any).earnings } : {},
   };
+
+  // Set the primary net_earnings field from the extracted values
+  if ((mapping as any).net_earnings !== undefined) {
+    mapping.net_earnings = parseFloat(String((mapping as any).net_earnings));
+  } else if ((mapping as any).driver_earnings_breakdown?.net_earnings !== undefined) {
+    mapping.net_earnings = parseFloat(String((mapping as any).driver_earnings_breakdown.net_earnings));
+  } else if ((mapping as any).earnings?.net_earnings !== undefined) {
+    mapping.net_earnings = parseFloat(String((mapping as any).earnings.net_earnings));
+  }
+
+  return mapping;
 };
 
 const mockJobHistory: JobHistory[] = [
@@ -494,6 +536,7 @@ const mockJobHistory: JobHistory[] = [
     duration: 45,
     distance: 25,
     fare: 2850,
+    net_earnings: 2280,
     tips: 200,
     rating: 5,
     customerRating: 4.8,
@@ -520,6 +563,7 @@ const mockJobHistory: JobHistory[] = [
     duration: 25,
     distance: 12,
     fare: 1500,
+    net_earnings: 1200,
     tips: 100,
     rating: 4,
     customerRating: 4.9,
@@ -556,7 +600,7 @@ export const useJobStore = create<JobState>((set, get) => ({
   acceptJob: (requestId) => {
     const state = get();
     const request = state.pendingRequests.find(req => req.id === requestId);
-    
+
     if (request) {
       const activeJob: ActiveJob = {
         id: `active_${Date.now()}`,
@@ -569,6 +613,7 @@ export const useJobStore = create<JobState>((set, get) => ({
         currentLocation: state.currentLocation || undefined,
         status: 'accepted',
         fare: request.fare,
+        net_earnings: request.net_earnings,
         route: [],
         eta: '15 min',
         lastLocationUpdate: new Date()
@@ -582,7 +627,7 @@ export const useJobStore = create<JobState>((set, get) => ({
   },
 
   declineJob: (requestId) => set((state) => ({
-    pendingRequests: state.pendingRequests.map(req => 
+    pendingRequests: state.pendingRequests.map(req =>
       req.id === requestId ? { ...req, status: 'declined' } : req
     ).filter(req => req.status !== 'declined')
   })),
@@ -625,6 +670,7 @@ export const useJobStore = create<JobState>((set, get) => ({
         duration: state.activeJob.actualDuration || 0,
         distance: state.activeJob.actualDistance || 0,
         fare: state.activeJob.fare,
+        net_earnings: state.activeJob.net_earnings,
         tips,
         rating,
         status: 'completed'

@@ -147,14 +147,37 @@ export default function AdminSettings() {
     color: colors.textPrimary,
   };
 
-  const menuItems = [
-    { title: 'Pending Driver Verifications', icon: 'car' as const, count: dashboard?.pending_driver_verifications || 0, route: '/(admin)/drivers-pending' },
-    { title: 'Pending Biker Verifications', icon: 'bicycle' as const, count: dashboard?.pending_biker_verifications || 0, route: '/(admin)/bikers-pending' },
-    { title: 'Payments', icon: 'card' as const, count: dashboard?.total_payments || 0, route: '/(admin)/payments' },
-    { title: 'Biker Tasks', icon: 'list' as const, route: '/(admin)/tasks' },
-    { title: 'Disputes', icon: 'warning' as const, count: dashboard?.open_disputes || 0, route: '/(admin)/disputes' },
-    { title: 'Insurance Plans', icon: 'shield-checkmark' as const, route: '/(admin)/insurance-management' },
-    { title: 'Amenities', icon: 'cafe' as const, route: '/(admin)/amenities-management' },
+  // Organized menu sections
+  const menuSections = [
+    {
+      title: '1. Driver Management',
+      items: [
+        { subtitle: '1.1 Driver Document Verifications', icon: 'car' as const, count: dashboard?.pending_driver_verifications || 0, route: '/(admin)/drivers-pending' },
+        { subtitle: '1.2 Driver Training Management', icon: 'school' as const, route: '/(admin)/training-batches' },
+        { subtitle: '1.3 Overall Driver Status Management', icon: 'settings' as const, route: '/(admin)/all-drivers' },
+      ],
+    },
+    {
+      title: '2. Biker Management',
+      items: [
+        { subtitle: '2.1 Biker Document Verification', icon: 'bicycle' as const, count: dashboard?.pending_biker_verifications || 0, route: '/(admin)/bikers-pending' },
+        { subtitle: '2.2 Overall Biker Status Management', icon: 'settings' as const, route: '/(admin)/all-bikers' },
+      ],
+    },
+    {
+      title: '3. Other Services',
+      items: [
+        { subtitle: '3.1 Insurance Plans', icon: 'shield-checkmark' as const, route: '/(admin)/insurance-management' },
+        { subtitle: '3.2 Amenities', icon: 'cafe' as const, route: '/(admin)/amenities-management' },
+      ],
+    },
+    {
+      title: '4. Support',
+      items: [
+        { subtitle: '4.1 Payments and Refunds', icon: 'card' as const, count: dashboard?.total_payments || 0, route: '/(admin)/payments' },
+        { subtitle: '4.2 Disputes / Inquiries', icon: 'warning' as const, count: dashboard?.open_disputes || 0, route: '/(admin)/disputes' },
+      ],
+    },
   ];
 
   return (
@@ -165,33 +188,37 @@ export default function AdminSettings() {
       >
         <ThemedText variant="h2" className="mt-4 mb-6">Settings</ThemedText>
 
-        {/* Management Sections */}
-        <ThemedText variant="h3" className="mb-3">Management</ThemedText>
-        <View className="mb-6">
-          {menuItems.map((item) => (
-            <Pressable
-              key={item.title}
-              onPress={() => router.push(item.route as any)}
-              className="flex-row items-center p-4 mb-2 rounded-2xl border bg-surface dark:bg-darkSurface border-border dark:border-darkBorder"
-            >
-              <View className="w-9 h-9 rounded-full items-center justify-center mr-3" style={{ backgroundColor: colors.burgundy + '15' }}>
-                <Ionicons name={item.icon} size={18} color={colors.burgundy} />
-              </View>
-              <ThemedText className="flex-1">{item.title}</ThemedText>
-              {item.count !== undefined && (
-                <View className="bg-burgundy px-2.5 py-0.5 rounded-full mr-2">
-                  <ThemedText variant="tiny" className="text-white font-semibold">{item.count}</ThemedText>
-                </View>
-              )}
-              <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
-            </Pressable>
-          ))}
-        </View>
+        {/* Organized Menu Sections */}
+        {menuSections.map((section) => (
+          <View key={section.title} className="mb-6">
+            <ThemedText variant="h3" className="mb-3">{section.title}</ThemedText>
+            <View>
+              {section.items.map((item) => (
+                <Pressable
+                  key={item.subtitle}
+                  onPress={() => router.push(item.route as any)}
+                  className="flex-row items-center p-4 mb-2 rounded-2xl border bg-surface dark:bg-darkSurface border-border dark:border-darkBorder"
+                >
+                  <View className="w-9 h-9 rounded-full items-center justify-center mr-3" style={{ backgroundColor: colors.burgundy + '15' }}>
+                    <Ionicons name={item.icon} size={18} color={colors.burgundy} />
+                  </View>
+                  <ThemedText className="flex-1">{item.subtitle}</ThemedText>
+                  {item.count !== undefined && (
+                    <View className="bg-burgundy px-2.5 py-0.5 rounded-full mr-2">
+                      <ThemedText variant="tiny" className="text-white font-semibold">{item.count}</ThemedText>
+                    </View>
+                  )}
+                  <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        ))}
 
         {/* ============================================================ */}
-        {/* Pricing / Fare Settings                                      */}
+        {/* 5. Pricing / Fare Settings                                    */}
         {/* ============================================================ */}
-        <ThemedText variant="h3" className="mb-3">Pricing / Fare Settings</ThemedText>
+        <ThemedText variant="h3" className="mb-3">5. Pricing / Fare Settings</ThemedText>
 
         {pricingLoading && !activeRateCard && (
           <View className="items-center py-8">
@@ -215,9 +242,9 @@ export default function AdminSettings() {
 
         {activeRateCard && (
           <>
-            {/* Rate Card Info */}
+            {/* 5.1 Rate Card Info */}
             <View className="p-4 rounded-2xl border bg-surface dark:bg-darkSurface border-border dark:border-darkBorder mb-4">
-              <ThemedText variant="h4" className="mb-3">Rate Card</ThemedText>
+              <ThemedText variant="h4" className="mb-3">5.1 Rate Card</ThemedText>
 
               <View className="flex-row gap-3 mb-3">
                 <View className="flex-1">
@@ -351,9 +378,9 @@ export default function AdminSettings() {
               </View>
             )}
 
-            {/* Hourly Hire Settings */}
+            {/* 5.2 Hourly Hire Settings */}
             <View className="p-4 rounded-2xl border bg-surface dark:bg-darkSurface border-border dark:border-darkBorder mb-4">
-              <ThemedText variant="h4" className="mb-3">Hourly Hire Settings</ThemedText>
+              <ThemedText variant="h4" className="mb-3">5.2 Hourly Hire Settings</ThemedText>
 
               {/* Operational controls */}
               <View className="flex-row items-center justify-between mb-3">

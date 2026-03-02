@@ -280,7 +280,8 @@ export default function CompletedRideScreen() {
   const yourEarnings = toNumber(
     breakdown.net_earnings ??
     backendData.net_earnings ??
-    backendData.driver_earnings
+    backendData.driver_earnings ??
+    job.net_earnings
   );
   const otherFees = Array.isArray(breakdown.other_fees) ? breakdown.other_fees : [];
   const isAlreadyRated = typeof job.rating === 'number' && job.rating > 0;
@@ -317,15 +318,15 @@ export default function CompletedRideScreen() {
           <View className="px-4 pt-4">
             <ThemedCard className="p-4 mb-4 bg-gradient-to-r from-success/5 to-success/10">
               <View className="flex-row items-center justify-between mb-4">
-                  <ThemedText variant="title" className="font-bold">
-                    Earnings Details
+                <ThemedText variant="title" className="font-bold">
+                  Earnings Details
+                </ThemedText>
+                <View className="bg-success/20 px-3 py-1 rounded-full">
+                  <ThemedText className="text-success font-bold text-sm">
+                    {formatMoney(yourEarnings)}
                   </ThemedText>
-                  <View className="bg-success/20 px-3 py-1 rounded-full">
-                    <ThemedText className="text-success font-bold text-sm">
-                      {formatMoney(yourEarnings)}
-                    </ThemedText>
-                  </View>
                 </View>
+              </View>
 
               <View className="space-y-3">
                 <View className="flex-row justify-between items-center">
@@ -612,9 +613,9 @@ export default function CompletedRideScreen() {
                   {customerRating > 0 && (
                     <ThemedText className="text-center mb-4">
                       {customerRating === 1 ? 'Poor' :
-                       customerRating === 2 ? 'Fair' :
-                       customerRating === 3 ? 'Good' :
-                       customerRating === 4 ? 'Very Good' : 'Excellent'}
+                        customerRating === 2 ? 'Fair' :
+                          customerRating === 3 ? 'Good' :
+                            customerRating === 4 ? 'Very Good' : 'Excellent'}
                     </ThemedText>
                   )}
 
