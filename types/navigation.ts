@@ -42,6 +42,11 @@ export interface BookingDetails {
   customerId: string;
   chauffeurId?: string;
   chauffeurName?: string;
+  driverRating?: number;
+  driverType?: string;
+  trainingStatus?: string | null;
+  trainingStatusDisplay?: string | null;
+  driverTier?: string | null;
   carId?: string;
   duration: string;
   startTime: Date;

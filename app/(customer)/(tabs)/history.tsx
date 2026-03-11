@@ -18,6 +18,11 @@ interface MappedBooking {
   customerId: string;
   chauffeurId: string;
   chauffeurName: string;
+  driverRating?: number;
+  driverType?: string;
+  trainingStatus?: string | null;
+  trainingStatusDisplay?: string | null;
+  driverTier?: string | null;
   duration: string;
   carId: string;
   pickupLocation: {
@@ -45,14 +50,29 @@ interface MappedBooking {
 
 // Map API booking to store booking format
 const mapApiBookingToStore = (apiBooking: CustomerRide): MappedBooking => {
-  // Extract driver details from embedded data
-  const driverDetails = apiBooking.driver ? apiBooking.driver : null;
+  // Backend sends driver info under driver_details (from BookingDetailSerializer)
+  // driver_details has: id, name, mobile, overall_rating, total_rides
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const driverDetails: any = apiBooking.driver_details || apiBooking.driver || null;
+
+  // Resolve driver name - driver_details uses `name`, DriverInfo uses `full_name`
+  const driverName: string | null = driverDetails?.name || driverDetails?.full_name || null;
+  // Resolve driver rating - driver_details uses `overall_rating`, DriverInfo uses `average_rating`
+  const driverRating: number | undefined =
+    driverDetails?.overall_rating != null ? Number(driverDetails.overall_rating)
+    : driverDetails?.average_rating != null ? Number(driverDetails.average_rating)
+    : undefined;
 
   return {
     id: apiBooking.id,
     customerId: apiBooking.id, // apiBooking doesn't have customerId, using id as placeholder
-    chauffeurId: apiBooking.driver?.id || '',
-    chauffeurName: driverDetails?.full_name || 'Finding driver...',
+    chauffeurId: driverDetails?.id || '',
+    chauffeurName: driverName || 'Finding driver...',
+    driverRating: driverRating != null ? Number(driverRating) : undefined,
+    driverType: apiBooking.car?.vehicle_type || apiBooking.trip_type,
+    trainingStatus: driverDetails?.training_status ?? null,
+    trainingStatusDisplay: driverDetails?.training_status_display ?? null,
+    driverTier: driverDetails?.driver_tier ?? null,
     duration: apiBooking.trip_type,
     pickupLocation: {
       address: apiBooking.pickup_address,

@@ -186,6 +186,20 @@ export const BookingCard: React.FC<BookingCardProps> = ({
       booking.paymentStatus !== 'completed';
   };
 
+  const formatDateTime = (dateValue: Date | string): string => {
+    const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return 'Unavailable';
+    const datePart = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    const timePart = date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+    return `${datePart}  ${timePart}`;
+  };
+
+  const driverRating = booking.driverRating;
+  const driverType = booking.driverType;
+  const labelColor = isDarkMode ? '#999' : '#777';
+  const accentColor = '#BD8C5E';
+  const statusColor = getStatusColor();
+
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -194,7 +208,6 @@ export const BookingCard: React.FC<BookingCardProps> = ({
         marginBottom: 16,
         borderRadius: 16,
         backgroundColor: isDarkMode ? '#2C2C2C' : '#FDFCFA',
-        // Receipt-style shadow
         shadowColor: isDarkMode ? '#000' : '#720C17',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: isDarkMode ? 0.3 : 0.08,
@@ -204,69 +217,114 @@ export const BookingCard: React.FC<BookingCardProps> = ({
       }}
     >
       {/* Top accent strip */}
-      <View
-        style={{
-          height: 3,
-          backgroundColor: getStatusColor(),
-        }}
-      />
+      <View style={{ height: 3, backgroundColor: statusColor }} />
 
-      {/* Header section */}
-      <View style={{ padding: 16, paddingBottom: 0 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-            <View
-              style={{
-                width: 10,
-                height: 10,
-                borderRadius: 5,
-                backgroundColor: getStatusColor(),
-                marginRight: 10,
-              }}
-            />
-            <ThemedText style={{ fontSize: 16, fontWeight: '700' }}>
-              {getTripTypeLabel(booking?.duration)}
-            </ThemedText>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Ionicons name={getStatusIcon() as any} size={14} color={getStatusColor()} />
-            <ThemedText style={{ fontSize: 12, fontWeight: '600', color: getStatusColor() }}>
-              {getStatusText()}
-            </ThemedText>
-          </View>
+      {/* Header: Trip type + Ride Status badge */}
+      <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: statusColor, marginRight: 8 }} />
+          <ThemedText style={{ fontSize: 16, fontWeight: '700' }}>
+            {getTripTypeLabel(booking?.duration)}
+          </ThemedText>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: statusColor + '18' }}>
+          <Ionicons name={getStatusIcon() as any} size={13} color={statusColor} />
+          <ThemedText style={{ fontSize: 12, fontWeight: '700', color: statusColor }}>
+            {getStatusText()}
+          </ThemedText>
         </View>
       </View>
 
       {/* Dashed tear-off separator */}
       <DashedSeparator isDarkMode={isDarkMode} />
 
-      {/* Booking Details - receipt body */}
-      <View style={{ paddingHorizontal: 16 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-          <Ionicons name="calendar" size={14} color="#BD8C5E" />
-          <ThemedText style={{ marginLeft: 8, fontSize: 13, color: isDarkMode ? '#999' : '#666' }}>
-            {formatDate(booking.startTime)}
-          </ThemedText>
-        </View>
+      {/* Body: Trip details */}
+      <View style={{ paddingHorizontal: 16, paddingBottom: 4 }}>
 
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 }}>
-          <Ionicons name="location" size={14} color="#BD8C5E" style={{ marginTop: 2 }} />
-          <ThemedText style={{ marginLeft: 8, fontSize: 13, color: isDarkMode ? '#999' : '#666', flex: 1 }}>
-            {booking.pickupLocation?.address || 'Location not available'}
-          </ThemedText>
-        </View>
-
-        {booking.id && (
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-            <Ionicons name="document-text" size={14} color="#BD8C5E" />
-            <ThemedText style={{ marginLeft: 8, fontSize: 12, color: isDarkMode ? '#999' : '#666', fontFamily: 'monospace' }}>
-              #{booking.id.slice(-6).toUpperCase()}
+        {/* Date & Time */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+          <View style={{ width: 28, alignItems: 'center' }}>
+            <Ionicons name="calendar-outline" size={15} color={accentColor} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <ThemedText style={{ fontSize: 10, color: labelColor, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 1 }}>Date & Time</ThemedText>
+            <ThemedText style={{ fontSize: 13, fontWeight: '500' }}>
+              {formatDateTime(booking.startTime)}
             </ThemedText>
           </View>
-        )}
+        </View>
+
+        {/* Pickup */}
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 }}>
+          <View style={{ width: 28, alignItems: 'center', marginTop: 2 }}>
+            <Ionicons name="radio-button-on" size={15} color="#10B981" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <ThemedText style={{ fontSize: 10, color: labelColor, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 1 }}>Pickup</ThemedText>
+            <ThemedText style={{ fontSize: 13, fontWeight: '500', lineHeight: 18 }}>
+              {booking.pickupLocation?.address || 'Not available'}
+            </ThemedText>
+          </View>
+        </View>
+
+        {/* Drop */}
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 }}>
+          <View style={{ width: 28, alignItems: 'center', marginTop: 2 }}>
+            <Ionicons name="location" size={15} color="#EF4444" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <ThemedText style={{ fontSize: 10, color: labelColor, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 1 }}>Drop</ThemedText>
+            <ThemedText style={{ fontSize: 13, fontWeight: '500', lineHeight: 18 }}>
+              {booking.dropLocation?.address || 'Not specified'}
+            </ThemedText>
+          </View>
+        </View>
+
+        {/* Driver Name + Tier + Rating + Training Status */}
+        {booking.chauffeurName && booking.chauffeurName !== 'Finding driver...' ? (
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 }}>
+            <View style={{ width: 28, alignItems: 'center', marginTop: 2 }}>
+              <Ionicons name="person-circle-outline" size={15} color={accentColor} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <ThemedText style={{ fontSize: 10, color: labelColor, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 1 }}>Driver</ThemedText>
+              {/* Name + Tier on same line */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
+                <ThemedText style={{ fontSize: 13, fontWeight: '600' }}>{booking.chauffeurName}</ThemedText>
+                {booking.driverTier ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#8B5CF618', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 }}>
+                    <Ionicons name="trophy-outline" size={11} color="#8B5CF6" />
+                    <ThemedText style={{ fontSize: 11, fontWeight: '600', color: '#8B5CF6', marginLeft: 2 }}>
+                      {booking.driverTier.charAt(0).toUpperCase() + booking.driverTier.slice(1)}
+                    </ThemedText>
+                  </View>
+                ) : null}
+              </View>
+              {/* Rating + Training Status on second line */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+                {driverRating != null && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F59E0B18', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 }}>
+                    <Ionicons name="star" size={11} color="#F59E0B" />
+                    <ThemedText style={{ fontSize: 12, fontWeight: '700', color: '#F59E0B', marginLeft: 2 }}>
+                      {driverRating.toFixed(1)}
+                    </ThemedText>
+                  </View>
+                )}
+                {booking.trainingStatusDisplay ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#10B98118', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 }}>
+                    <Ionicons name="ribbon-outline" size={11} color="#10B981" />
+                    <ThemedText style={{ fontSize: 11, fontWeight: '600', color: '#10B981', marginLeft: 2 }}>
+                      {booking.trainingStatusDisplay}
+                    </ThemedText>
+                  </View>
+                ) : null}
+              </View>
+            </View>
+          </View>
+        ) : null}
       </View>
 
-      {/* Amount section - receipt total line */}
+      {/* Total Fare + Payment Status */}
       <View
         style={{
           flexDirection: 'row',
@@ -281,8 +339,8 @@ export const BookingCard: React.FC<BookingCardProps> = ({
         }}
       >
         <View>
-          <ThemedText style={{ fontSize: 11, color: isDarkMode ? '#999' : '#888', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            Total Amount
+          <ThemedText style={{ fontSize: 11, color: labelColor, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            Total Fare
           </ThemedText>
           <ThemedText style={{ fontSize: 18, fontWeight: '800', color: isDarkMode ? '#BD8C5E' : '#720C17' }}>
             ₹{((booking.totalAmount || 0) * 1.18).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -290,7 +348,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
         </View>
 
         <View style={{ alignItems: 'flex-end' }}>
-          <ThemedText style={{ fontSize: 11, color: isDarkMode ? '#999' : '#888', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          <ThemedText style={{ fontSize: 11, color: labelColor, textTransform: 'uppercase', letterSpacing: 0.5 }}>
             Payment
           </ThemedText>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -332,7 +390,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
 
       {/* Barcode element */}
       <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
-        <BarcodeElement bookingId={booking.id} isDarkMode={isDarkMode} />
+        <BarcodeElement bookingId={booking.id ?? ''} isDarkMode={isDarkMode} />
       </View>
 
       {/* Actions */}

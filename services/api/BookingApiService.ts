@@ -61,6 +61,22 @@ export interface StopDetail extends Stop {
 export type PaymentStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'refunded';
 
 /**
+ * Driver Details (embedded as driver_details in ride list/detail responses)
+ * Note: Backend serializer sends driver info under driver_details with `name` and `overall_rating`
+ */
+export interface DriverDetailsInfo {
+  id: string;
+  name: string;
+  mobile: string;
+  profile_picture?: string | null;
+  overall_rating?: number | null;
+  total_rides?: number | null;
+  training_status?: string | null;
+  training_status_display?: string | null;
+  driver_tier?: string | null;
+}
+
+/**
  * Driver Info (embedded in ride response)
  */
 export interface DriverInfo {
@@ -85,6 +101,32 @@ export interface CarInfo {
 }
 
 /**
+ * Amenity Info (nested inside BookingAmenityDetail)
+ */
+export interface AmenityInfo {
+  id: string;
+  name: string;
+  description?: string;
+  category: string;
+  price: string;
+  available_segments?: string[];
+  image_url?: string | null;
+}
+
+/**
+ * Booking Amenity Detail (included in booking response when amenities are selected)
+ */
+export interface BookingAmenityDetail {
+  id: string;
+  amenity: AmenityInfo;
+  quantity: number;
+  unit_price: string;
+  total_price: string;
+  status: string;
+  created_at: string;
+}
+
+/**
  * Customer Ride - Basic response for list endpoints
  */
 export interface CustomerRide {
@@ -105,9 +147,12 @@ export interface CustomerRide {
   updated_at?: string;
   scheduled_at?: string;
   driver?: DriverInfo;
+  driver_details?: DriverDetailsInfo | null;
   car?: CarInfo;
   rating?: number;
   insurance?: InsuranceInfo;
+  amenities?: BookingAmenityDetail[];
+  amenities_total?: string | null;
   priority_type?: string;
   loyalty_discount_pct?: number;
   multi_stop_discount_pct?: number;

@@ -235,121 +235,8 @@ export default function RideDetailsScreen() {
             </ThemedText>
           </View>
 
-          {/* Fare Summary Card */}
+          {/* 1. Route Details Card */}
           <View className="px-4 pt-4">
-            <ThemedCard className="p-4 mb-4">
-              <View className="flex-row items-center justify-between mb-4">
-                <ThemedText variant="title" className="font-bold">
-                  Fare Summary
-                </ThemedText>
-                <View
-                  className="px-3 py-1 rounded-full"
-                  style={{ backgroundColor: needsPayment ? '#F59E0B20' : '#10B98120' }}
-                >
-                  <ThemedText
-                    className="font-bold text-sm"
-                    style={{ color: needsPayment ? '#F59E0B' : '#10B981' }}
-                  >
-                    {needsPayment ? 'Payment Pending' : ride.payment_status === 'completed' ? 'Paid' : ride.payment_status}
-                  </ThemedText>
-                </View>
-              </View>
-
-              <View className="space-y-2">
-                {actualFare !== null && (
-                  <DetailRow label="Actual Fare" value={formatMoney(actualFare)} />
-                )}
-                {actualFare === null && (
-                  <DetailRow label="Estimated Fare" value={formatMoney(estimatedFare)} />
-                )}
-                <DetailRow label="GST (18%)" value={formatMoney(gstAmount)} />
-                <View className="border-t border-border dark:border-darkBorder my-2" />
-                <View className="flex-row justify-between items-center">
-                  <ThemedText className="font-bold text-lg">Total Amount</ThemedText>
-                  <ThemedText className="font-bold text-lg text-burgundy dark:text-secondary">
-                    {formatMoney(totalAmount)}
-                  </ThemedText>
-                </View>
-              </View>
-
-              {needsPayment && (
-                <View className="mt-4">
-                  <PrimaryButton
-                    title={payingNow ? 'Processing...' : 'Pay Now'}
-                    onPress={handlePayNow}
-                    disabled={payingNow}
-                  />
-                </View>
-              )}
-            </ThemedCard>
-          </View>
-
-          {/* Driver & Vehicle Card */}
-          {ride.driver && ride.driver.full_name && (
-            <View className="px-4">
-              <ThemedCard className="p-4 mb-4">
-                <ThemedText variant="title" className="font-bold mb-3">
-                  Chauffeur & Vehicle
-                </ThemedText>
-
-                <View className="flex-row items-center mb-4">
-                  <View className="w-12 h-12 bg-secondary/20 rounded-full items-center justify-center mr-4">
-                    <ThemedText className="font-bold text-secondary text-lg">
-                      {ride.driver.full_name.charAt(0).toUpperCase()}
-                    </ThemedText>
-                  </View>
-                  <View className="flex-1">
-                    <ThemedText className="font-semibold text-lg">
-                      {ride.driver.full_name}
-                    </ThemedText>
-                    {ride.driver.average_rating != null && ride.driver.average_rating > 0 && (
-                      <View className="flex-row items-center mt-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Ionicons
-                            key={star}
-                            name={star <= Math.round(ride.driver!.average_rating!) ? 'star' : 'star-outline'}
-                            size={14}
-                            color="#fbbf24"
-                          />
-                        ))}
-                        <ThemedText variant="caption" className="ml-2">
-                          {ride.driver.average_rating.toFixed(1)}
-                        </ThemedText>
-                      </View>
-                    )}
-                  </View>
-                </View>
-
-                {ride.car && (
-                  <View className="bg-surface dark:bg-darkSurface p-3 rounded-lg">
-                    <View className="flex-row items-center mb-1">
-                      <Ionicons name="car" size={16} color="#BD8C5E" />
-                      <ThemedText className="ml-2 font-semibold">
-                        {ride.car.make} {ride.car.model}
-                      </ThemedText>
-                    </View>
-                    <View className="flex-row items-center justify-between mt-1">
-                      <View className="flex-row items-center">
-                        <View
-                          className="w-3 h-3 rounded-full mr-2 border border-border"
-                          style={{ backgroundColor: ride.car.color.toLowerCase() }}
-                        />
-                        <ThemedText variant="caption" className="text-textSecondary">
-                          {ride.car.color}
-                        </ThemedText>
-                      </View>
-                      <ThemedText variant="caption" className="font-mono text-textSecondary">
-                        {ride.car.plate_number}
-                      </ThemedText>
-                    </View>
-                  </View>
-                )}
-              </ThemedCard>
-            </View>
-          )}
-
-          {/* Route Details Card */}
-          <View className="px-4">
             <ThemedCard className="p-4 mb-4">
               <ThemedText variant="title" className="font-bold mb-4">
                 Route Details
@@ -385,7 +272,105 @@ export default function RideDetailsScreen() {
             </ThemedCard>
           </View>
 
-          {/* Map */}
+          {/* 2. Driver Details Card */}
+          {(ride.driver?.full_name || ride.driver_details?.name) && (
+            <View className="px-4">
+              <ThemedCard className="p-4 mb-4">
+                <ThemedText variant="title" className="font-bold mb-3">
+                  Driver Details
+                </ThemedText>
+
+                <View className="flex-row items-center mb-4">
+                  <View className="w-12 h-12 bg-secondary/20 rounded-full items-center justify-center mr-4">
+                    <ThemedText className="font-bold text-secondary text-lg">
+                      {(ride.driver_details?.name || ride.driver?.full_name || '?').charAt(0).toUpperCase()}
+                    </ThemedText>
+                  </View>
+                  <View className="flex-1">
+                    <ThemedText className="font-semibold text-lg">
+                      {ride.driver_details?.name || ride.driver?.full_name}
+                    </ThemedText>
+                    {/* Rating */}
+                    {(() => {
+                      const rating = ride.driver_details?.overall_rating ?? ride.driver?.average_rating;
+                      return rating != null && rating > 0 ? (
+                        <View className="flex-row items-center mt-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Ionicons
+                              key={star}
+                              name={star <= Math.round(rating!) ? 'star' : 'star-outline'}
+                              size={14}
+                              color="#fbbf24"
+                            />
+                          ))}
+                          <ThemedText variant="caption" className="ml-2">
+                            {rating!.toFixed(1)}
+                          </ThemedText>
+                        </View>
+                      ) : null;
+                    })()}
+                  </View>
+                </View>
+
+                {/* Training Status & Tier badges */}
+                {ride.driver_details && (ride.driver_details.training_status_display || ride.driver_details.driver_tier) && (
+                  <View className="flex-row flex-wrap gap-2 mb-3">
+                    {ride.driver_details.training_status_display && (
+                      <View className="bg-blue-100 dark:bg-blue-900/30 px-3 py-1 rounded-full">
+                        <ThemedText variant="caption" className="text-blue-700 dark:text-blue-400 font-semibold">
+                          {ride.driver_details.training_status_display}
+                        </ThemedText>
+                      </View>
+                    )}
+                    {ride.driver_details.driver_tier && (
+                      <View className="bg-secondary/10 px-3 py-1 rounded-full">
+                        <ThemedText variant="caption" className="text-secondary font-semibold capitalize">
+                          {ride.driver_details.driver_tier} Tier
+                        </ThemedText>
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                {/* Total rides */}
+                {ride.driver_details?.total_rides != null && ride.driver_details.total_rides > 0 && (
+                  <View className="flex-row items-center mb-3">
+                    <Ionicons name="car-outline" size={14} color="#6B7280" />
+                    <ThemedText variant="caption" className="text-textSecondary ml-1">
+                      {ride.driver_details.total_rides} rides completed
+                    </ThemedText>
+                  </View>
+                )}
+
+                {ride.car && (
+                  <View className="bg-surface dark:bg-darkSurface p-3 rounded-lg">
+                    <View className="flex-row items-center mb-1">
+                      <Ionicons name="car" size={16} color="#BD8C5E" />
+                      <ThemedText className="ml-2 font-semibold">
+                        {ride.car.make} {ride.car.model}
+                      </ThemedText>
+                    </View>
+                    <View className="flex-row items-center justify-between mt-1">
+                      <View className="flex-row items-center">
+                        <View
+                          className="w-3 h-3 rounded-full mr-2 border border-border"
+                          style={{ backgroundColor: ride.car.color?.toLowerCase() || 'transparent' }}
+                        />
+                        <ThemedText variant="caption" className="text-textSecondary">
+                          {ride.car.color || 'N/A'}
+                        </ThemedText>
+                      </View>
+                      <ThemedText variant="caption" className="font-mono text-textSecondary">
+                        {ride.car.plate_number}
+                      </ThemedText>
+                    </View>
+                  </View>
+                )}
+              </ThemedCard>
+            </View>
+          )}
+
+          {/* 3. Map */}
           {ride.pickup_lat && ride.pickup_long && (() => {
             const pickupLat = parseFloat(String(ride.pickup_lat));
             const pickupLng = parseFloat(String(ride.pickup_long));
@@ -441,11 +426,60 @@ export default function RideDetailsScreen() {
             );
           })()}
 
-          {/* Trip Info Card */}
+          {/* 4. Fare Breakdown Card */}
+          <View className="px-4">
+            <ThemedCard className="p-4 mb-4">
+              <View className="flex-row items-center justify-between mb-4">
+                <ThemedText variant="title" className="font-bold">
+                  Fare Breakdown
+                </ThemedText>
+                <View
+                  className="px-3 py-1 rounded-full"
+                  style={{ backgroundColor: needsPayment ? '#F59E0B20' : '#10B98120' }}
+                >
+                  <ThemedText
+                    className="font-bold text-sm"
+                    style={{ color: needsPayment ? '#F59E0B' : '#10B981' }}
+                  >
+                    {needsPayment ? 'Payment Pending' : ride.payment_status === 'completed' ? 'Paid' : ride.payment_status}
+                  </ThemedText>
+                </View>
+              </View>
+
+              <View className="space-y-2">
+                {actualFare !== null && (
+                  <DetailRow label="Actual Fare" value={formatMoney(actualFare)} />
+                )}
+                {actualFare === null && (
+                  <DetailRow label="Estimated Fare" value={formatMoney(estimatedFare)} />
+                )}
+                <DetailRow label="GST (18%)" value={formatMoney(gstAmount)} />
+                <View className="border-t border-border dark:border-darkBorder my-2" />
+                <View className="flex-row justify-between items-center">
+                  <ThemedText className="font-bold text-lg">Total Amount</ThemedText>
+                  <ThemedText className="font-bold text-lg text-burgundy dark:text-secondary">
+                    {formatMoney(totalAmount)}
+                  </ThemedText>
+                </View>
+              </View>
+
+              {needsPayment && (
+                <View className="mt-4">
+                  <PrimaryButton
+                    title={payingNow ? 'Processing...' : 'Pay Now'}
+                    onPress={handlePayNow}
+                    disabled={payingNow}
+                  />
+                </View>
+              )}
+            </ThemedCard>
+          </View>
+
+          {/* 5. Trip Details Card */}
           <View className="px-4">
             <ThemedCard className="p-4 mb-4">
               <ThemedText variant="title" className="font-bold mb-3">
-                Trip Information
+                Trip Details
               </ThemedText>
               <View className="space-y-1">
                 <DetailRow label="Trip Type" value={getTripTypeLabel(ride.trip_type)} />
@@ -461,7 +495,7 @@ export default function RideDetailsScreen() {
             </ThemedCard>
           </View>
 
-          {/* Insurance Card */}
+          {/* 6. Insurance Card */}
           <View className="px-4">
             <ThemedCard className="p-4 mb-4">
               <View className="flex-row items-center mb-3">
@@ -522,6 +556,62 @@ export default function RideDetailsScreen() {
                 <View className="flex-row items-center">
                   <ThemedText variant="caption" className="text-textSecondary">
                     No insurance was added for this trip.
+                  </ThemedText>
+                </View>
+              )}
+            </ThemedCard>
+          </View>
+
+          {/* 7. Amenities Card */}
+          <View className="px-4">
+            <ThemedCard className="p-4 mb-4">
+              <View className="flex-row items-center mb-3">
+                <Ionicons
+                  name={ride.amenities && ride.amenities.length > 0 ? 'sparkles' : 'sparkles-outline'}
+                  size={20}
+                  color={ride.amenities && ride.amenities.length > 0 ? '#BD8C5E' : '#9CA3AF'}
+                />
+                <ThemedText variant="title" className="font-bold ml-2">
+                  Amenities
+                </ThemedText>
+              </View>
+
+              {ride.amenities && ride.amenities.length > 0 ? (
+                <View>
+                  <View className="space-y-3">
+                    {ride.amenities.map((item) => (
+                      <View
+                        key={item.id}
+                        className="bg-surface dark:bg-darkSurface p-3 rounded-lg flex-row items-center justify-between"
+                      >
+                        <View className="flex-1">
+                          <ThemedText className="font-semibold">
+                            {item.amenity.name}
+                          </ThemedText>
+                          <ThemedText variant="caption" className="text-textSecondary capitalize">
+                            {item.amenity.category} · Qty: {item.quantity}
+                          </ThemedText>
+                        </View>
+                        <ThemedText className="font-bold text-secondary">
+                          {formatMoney(item.total_price)}
+                        </ThemedText>
+                      </View>
+                    ))}
+                  </View>
+
+                  {ride.amenities_total && (
+                    <View className="flex-row justify-between items-center mt-3 pt-3 border-t border-border dark:border-darkBorder">
+                      <ThemedText className="font-semibold">Amenities Total</ThemedText>
+                      <ThemedText className="font-bold text-secondary">
+                        {formatMoney(ride.amenities_total)}
+                      </ThemedText>
+                    </View>
+                  )}
+                </View>
+              ) : (
+                <View className="flex-row items-center">
+                  <ThemedText variant="caption" className="text-textSecondary">
+                    No amenities were added for this trip.
                   </ThemedText>
                 </View>
               )}
