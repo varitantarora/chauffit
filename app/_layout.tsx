@@ -6,6 +6,13 @@ import React, { useEffect, useRef } from 'react';
 import { useI18nStore } from '../store/i18nStore';
 import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync } from '../services/NotificationService';
+import { LogBox } from 'react-native';
+
+// Suppress Expo Go push notification warning on Android
+LogBox.ignoreLogs([
+  'expo-notifications: Android Push notifications (remote notifications)',
+  '`expo-notifications` functionality is not fully supported in Expo Go'
+]);
 
 export default function RootLayout() {
   console.log('🏠 RootLayout rendering...');
