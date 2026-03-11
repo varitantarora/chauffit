@@ -692,7 +692,39 @@ export const useJobStore = create<JobState>((set, get) => ({
   })),
 
   // Online status
-  setOnlineStatus: (isOnline) => set({ isOnline }),
+  setOnlineStatus: async (isOnline) => {
+    // 1. Optimistic update
+    set({ isOnline });
+    
+    // 2. Call API
+    try {
+      const state = get();
+      const payload: { is_online: boolean; latitude?: string; longitude?: string } = {
+        is_online: isOnline,
+      };
+      
+      if (state.currentLocation) {
+        payload.latitude = state.currentLocation.latitude.toString();
+        payload.longitude = state.currentLocation.longitude.toString();
+      }
+      
+      // We need to import DriverApiService at the top of the file, but to avoid circular dependencies
+      // or missing imports if not already imported, let's require it inline or assume it's imported.
+      // Actually, let's just make the API call. We'll import it at the top of the file in another replacement.
+      const DriverApiService = (await import('../services/api/DriverApiService')).default;
+      const response = await DriverApiService.updateStatus(payload);
+      
+      if (!response.success) {
+        // Revert optimistic update on failure
+        set({ isOnline: !isOnline, lastApiError: response.error || 'Failed to update online status' });
+        console.error('[JobStore] Failed to update online status on backend:', response.error);
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      set({ isOnline: !isOnline, lastApiError: error instanceof Error ? error.message : 'Unknown error updating status' });
+      console.error('[JobStore] Error updating online status on backend:', error);
+    }
+  },
 
   // Location management
   setCurrentLocation: (location) => set({ currentLocation: location }),

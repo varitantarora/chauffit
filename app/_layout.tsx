@@ -2,16 +2,47 @@ import '../global.css';
 import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useI18nStore } from '../store/i18nStore';
+import * as Notifications from 'expo-notifications';
+import { registerForPushNotificationsAsync } from '../services/NotificationService';
 
 export default function RootLayout() {
   console.log('🏠 RootLayout rendering...');
 
   // Initialize language preference from AsyncStorage
   const initLanguage = useI18nStore((state) => state.initLanguage);
+  
+  // Notification refs
+  const notificationListener = useRef<Notifications.Subscription>();
+  const responseListener = useRef<Notifications.Subscription>();
+
   useEffect(() => {
     initLanguage();
+
+    // Register for push notifications
+    registerForPushNotificationsAsync().then((token: string | undefined) => {
+      console.log('Registered for push notifications, token:', token);
+    });
+
+    // This listener is fired whenever a notification is received while the app is foregrounded
+    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+      console.log('Notification received:', notification);
+    });
+
+    // This listener is fired whenever a user taps on or interacts with a notification 
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('Notification response received:', response);
+    });
+
+    return () => {
+      if (notificationListener.current) {
+        notificationListener.current.remove();
+      }
+      if (responseListener.current) {
+        responseListener.current.remove();
+      }
+    };
   }, []);
   
   return (
