@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Alert, TextInput } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Alert, TextInput, Platform, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { format } from 'date-fns';
 import { ThemedView } from '../../../components/common/ThemedView';
 import { ThemedCard } from '../../../components/common/ThemedCard';
 import { ThemedText } from '../../../components/common/ThemedText';
 import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { useAuthStore } from '../../../store/authStore';
+import DriverApiService from '../../../services/api/DriverApiService';
 
 export default function DriverRegistrationScreen() {
   const router = useRouter();
@@ -23,16 +26,51 @@ export default function DriverRegistrationScreen() {
   const placeholderColor = isDarkMode ? '#9ca3af' : '#9ca3af';
 
   const [formData, setFormData] = useState({
-    applicationType: 'driver', // 'driver' or 'biker'
-    dateOfBirth: '',
+    applicationType: 'driver',
+    licenseNumber: '',
+    licenseExpiryDate: '',
+    aadharNumber: '',
     experience: '',
     transmissionType: '',
     uniformSize: '',
   });
 
-  const handleContinue = () => {
-    if (!formData.dateOfBirth) {
-      Alert.alert('Missing Information', 'Please enter your date of birth.');
+  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
+  const [licenseExpiry, setLicenseExpiry] = useState<Date | null>(null);
+  const [showDobPicker, setShowDobPicker] = useState(false);
+  const [showExpiryPicker, setShowExpiryPicker] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const parseExperience = (exp: string): number => {
+    switch (exp) {
+      case '0-2': return 2;
+      case '3-5': return 5;
+      case '6-10': return 10;
+      case '10+': return 12;
+      default: return 0;
+    }
+  };
+
+  const handleContinue = async () => {
+    // Validate all required fields
+    if (!dateOfBirth) {
+      Alert.alert('Missing Information', 'Please select your date of birth.');
+      return;
+    }
+    if (!formData.licenseNumber.trim()) {
+      Alert.alert('Missing Information', 'Please enter your license number.');
+      return;
+    }
+    if (!licenseExpiry) {
+      Alert.alert('Missing Information', 'Please select your license expiry date.');
+      return;
+    }
+    if (!formData.aadharNumber.trim() || formData.aadharNumber.length !== 12) {
+      Alert.alert('Missing Information', 'Please enter a valid 12-digit Aadhaar number.');
+      return;
+    }
+    if (!formData.experience) {
+      Alert.alert('Missing Information', 'Please select your years of experience.');
       return;
     }
     if (!formData.transmissionType) {
@@ -43,7 +81,33 @@ export default function DriverRegistrationScreen() {
       Alert.alert('Missing Information', 'Please select your uniform size.');
       return;
     }
-    router.push('/(driver)/onboarding/documents');
+
+    setLoading(true);
+    try {
+      const expYears = parseExperience(formData.experience);
+      const licenseExpiryStr = format(licenseExpiry, 'yyyy-MM-dd');
+
+      const response = await DriverApiService.createProfile({
+        license_number: formData.licenseNumber,
+        license_expiry_date: licenseExpiryStr,
+        aadhar_number: formData.aadharNumber,
+        years_of_experience: expYears,
+        transmission_type: formData.transmissionType as any,
+        uniform_size: formData.uniformSize as any,
+        city: 'Gurgaon',
+      });
+
+      if (!response.success) {
+        Alert.alert('Error', response.error || 'Failed to save profile. Please try again.');
+        return;
+      }
+
+      router.push('/(driver)/onboarding/documents');
+    } catch (e) {
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -120,15 +184,58 @@ export default function DriverRegistrationScreen() {
                 </View>
               </View>
 
+              {/* Date of Birth Picker */}
               <View>
                 <ThemedText className="mb-2">Date of Birth *</ThemedText>
+                <TouchableOpacity onPress={() => setShowDobPicker(true)}>
+                  <View className={`p-4 rounded-xl border ${inputClass} items-center justify-between flex-row`}>
+                    <ThemedText>
+                      {dateOfBirth ? format(dateOfBirth, 'dd/MM/yyyy') : 'Select date'}
+                    </ThemedText>
+                    <Ionicons name="calendar-outline" size={20} color={isDarkMode ? '#d1d5db' : '#6b7280'} />
+                  </View>
+                </TouchableOpacity>
+              </View>
+
+              {/* License Number */}
+              <View>
+                <ThemedText className="mb-2">License Number *</ThemedText>
                 <TextInput
                   className={`p-4 rounded-xl border ${inputClass}`}
-                  placeholder="DD/MM/YYYY"
+                  placeholder="e.g., DL01AA1234"
                   placeholderTextColor={placeholderColor}
-                  value={formData.dateOfBirth}
-                  onChangeText={(text) => setFormData({...formData, dateOfBirth: text})}
-                  keyboardType="numbers-and-punctuation"
+                  value={formData.licenseNumber}
+                  onChangeText={(text) => setFormData({...formData, licenseNumber: text})}
+                />
+              </View>
+
+              {/* License Expiry Date Picker */}
+              <View>
+                <ThemedText className="mb-2">License Expiry Date *</ThemedText>
+                <TouchableOpacity onPress={() => setShowExpiryPicker(true)}>
+                  <View className={`p-4 rounded-xl border ${inputClass} items-center justify-between flex-row`}>
+                    <ThemedText>
+                      {licenseExpiry ? format(licenseExpiry, 'dd/MM/yyyy') : 'Select date'}
+                    </ThemedText>
+                    <Ionicons name="calendar-outline" size={20} color={isDarkMode ? '#d1d5db' : '#6b7280'} />
+                  </View>
+                </TouchableOpacity>
+              </View>
+
+              {/* Aadhaar Number */}
+              <View>
+                <ThemedText className="mb-2">Aadhaar Number * (12 digits)</ThemedText>
+                <TextInput
+                  className={`p-4 rounded-xl border ${inputClass}`}
+                  placeholder="e.g., 123456789012"
+                  placeholderTextColor={placeholderColor}
+                  value={formData.aadharNumber}
+                  onChangeText={(text) => {
+                    const digits = text.replace(/[^0-9]/g, '').slice(0, 12);
+                    setFormData({...formData, aadharNumber: digits});
+                  }}
+                  keyboardType="numeric"
+                  maxLength={12}
                 />
               </View>
             </View>
@@ -221,10 +328,95 @@ export default function DriverRegistrationScreen() {
             <PrimaryButton
               title="CONTINUE"
               onPress={handleContinue}
+              loading={loading}
               className="mb-6"
             />
           </View>
         </ScrollView>
+
+        {/* Date of Birth Picker */}
+        {showDobPicker && (
+          Platform.OS === 'ios' ? (
+            <Modal transparent animationType="slide">
+              <View className="flex-1 justify-end bg-black/50">
+                <ThemedView className="rounded-t-3xl">
+                  <View className="flex-row justify-between items-center p-4 border-b border-gray-300 dark:border-gray-700">
+                    <TouchableOpacity onPress={() => setShowDobPicker(false)}>
+                      <ThemedText className="text-burgundy font-bold">Cancel</ThemedText>
+                    </TouchableOpacity>
+                    <ThemedText className="font-bold">Select Date</ThemedText>
+                    <TouchableOpacity onPress={() => setShowDobPicker(false)}>
+                      <ThemedText className="text-burgundy font-bold">Done</ThemedText>
+                    </TouchableOpacity>
+                  </View>
+                  <DateTimePicker
+                    value={dateOfBirth || new Date(2000, 0, 1)}
+                    mode="date"
+                    display="spinner"
+                    textColor={isDarkMode ? '#ffffff' : '#000000'}
+                    maximumDate={new Date(new Date().setFullYear(new Date().getFullYear() - 18))}
+                    onChange={(event, date) => {
+                      if (date) setDateOfBirth(date);
+                    }}
+                  />
+                </ThemedView>
+              </View>
+            </Modal>
+          ) : (
+            <DateTimePicker
+              value={dateOfBirth || new Date(2000, 0, 1)}
+              mode="date"
+              display="default"
+              maximumDate={new Date(new Date().setFullYear(new Date().getFullYear() - 18))}
+              onChange={(event, date) => {
+                setShowDobPicker(false);
+                if (date) setDateOfBirth(date);
+              }}
+            />
+          )
+        )}
+
+        {/* License Expiry Date Picker */}
+        {showExpiryPicker && (
+          Platform.OS === 'ios' ? (
+            <Modal transparent animationType="slide">
+              <View className="flex-1 justify-end bg-black/50">
+                <ThemedView className="rounded-t-3xl">
+                  <View className="flex-row justify-between items-center p-4 border-b border-gray-300 dark:border-gray-700">
+                    <TouchableOpacity onPress={() => setShowExpiryPicker(false)}>
+                      <ThemedText className="text-burgundy font-bold">Cancel</ThemedText>
+                    </TouchableOpacity>
+                    <ThemedText className="font-bold">Select Date</ThemedText>
+                    <TouchableOpacity onPress={() => setShowExpiryPicker(false)}>
+                      <ThemedText className="text-burgundy font-bold">Done</ThemedText>
+                    </TouchableOpacity>
+                  </View>
+                  <DateTimePicker
+                    value={licenseExpiry || new Date()}
+                    mode="date"
+                    display="spinner"
+                    textColor={isDarkMode ? '#ffffff' : '#000000'}
+                    minimumDate={new Date()}
+                    onChange={(event, date) => {
+                      if (date) setLicenseExpiry(date);
+                    }}
+                  />
+                </ThemedView>
+              </View>
+            </Modal>
+          ) : (
+            <DateTimePicker
+              value={licenseExpiry || new Date()}
+              mode="date"
+              display="default"
+              minimumDate={new Date()}
+              onChange={(event, date) => {
+                setShowExpiryPicker(false);
+                if (date) setLicenseExpiry(date);
+              }}
+            />
+          )
+        )}
       </ThemedView>
     </SafeAreaView>
   );

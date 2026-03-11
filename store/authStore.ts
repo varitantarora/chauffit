@@ -3,6 +3,7 @@ import { User, UserRole } from '../types/navigation';
 import AuthApiService, { User as ApiUser } from '../services/api/AuthApiService';
 import BaseApiService from '../services/api/BaseApiService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { TrainingSession } from '../services/api/DriverApiService';
 
 interface AuthState {
   user: User | null;
@@ -23,6 +24,9 @@ interface AuthState {
 
   // Driver onboarding status for routing
   driverOnboardingStatus: string | null;
+
+  // Training session (populated after training is completed)
+  trainingSession: TrainingSession | null;
 
   // User metadata from login/profile API
   userType: UserRole | null; // User type from API (user_type field)
@@ -82,6 +86,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   bikerIsOnline: false, // Biker online status
   driverIsOnline: false, // Driver online status
   driverOnboardingStatus: null, // Driver onboarding status for routing
+  trainingSession: null, // Training session for certificate
   userType: null, // User type from API (user_type field)
   userCreatedAt: null, // Account creation date from API
   userIsVerified: false, // Account verification status from API
@@ -255,6 +260,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         bikerIsOnline: false,
         driverIsOnline: false,
         driverOnboardingStatus: null,
+        trainingSession: null,
         userType: null,
         userCreatedAt: null,
         userIsVerified: false,
@@ -270,6 +276,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         bikerIsOnline: false,
         driverIsOnline: false,
         driverOnboardingStatus: null,
+        trainingSession: null,
         userType: null,
         userCreatedAt: null,
         userIsVerified: false,
@@ -415,7 +422,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const DriverApiService = (await import('../services/api/DriverApiService')).default;
       const response = await DriverApiService.getOnboardingStatus();
       if (response.success && response.data) {
-        set({ driverOnboardingStatus: response.data.current_status });
+        set({
+          driverOnboardingStatus: response.data.current_status,
+          trainingSession: response.data.training_session ?? null,
+        });
       }
     } catch (error) {
       console.error('Failed to fetch driver onboarding status:', error);

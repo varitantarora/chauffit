@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, ScrollView, Alert } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, ScrollView, Alert, Linking, Platform, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,12 +9,14 @@ import { ThemedText } from '../../../components/common/ThemedText';
 import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { useAuthStore } from '../../../store/authStore';
 import DriverApiService, { TrainingSession } from '../../../services/api/DriverApiService';
+import UniversalMapView, { MapMarker } from '../../../components/shared/MapView';
 
 export default function TrainingScheduledScreen() {
   const router = useRouter();
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const [session, setSession] = useState<TrainingSession | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [rescheduling, setRescheduling] = useState(false);
   const [canReschedule, setCanReschedule] = useState(true);
 
@@ -22,8 +24,8 @@ export default function TrainingScheduledScreen() {
     loadTraining();
   }, []);
 
-  const loadTraining = async () => {
-    setLoading(true);
+  const loadTraining = async (silent = false) => {
+    if (!silent) setLoading(true);
     const response = await DriverApiService.getTrainingSchedule();
     if (response.success && response.data) {
       setSession(response.data);
@@ -35,7 +37,7 @@ export default function TrainingScheduledScreen() {
       const hoursUntil = (trainingStart.getTime() - now.getTime()) / (1000 * 60 * 60);
       setCanReschedule(hoursUntil > 3);
     }
-    setLoading(false);
+    if (!silent) setLoading(false);
   };
 
   const handleReschedule = async () => {
@@ -73,6 +75,45 @@ export default function TrainingScheduledScreen() {
     );
   };
 
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadTraining(true);
+    const { fetchDriverOnboardingStatus } = useAuthStore.getState();
+    await fetchDriverOnboardingStatus();
+    const newStatus = useAuthStore.getState().driverOnboardingStatus;
+    if (newStatus === 'certified') {
+      router.replace('/(driver)/onboarding/onboarding-complete');
+    } else if (newStatus === 'active') {
+      router.replace('/(driver)/(tabs)');
+    }
+    setRefreshing(false);
+  }, []);
+
+  const handleOpenNavigation = useCallback(() => {
+    if (!session?.batch?.location_lat || !session?.batch?.location_long) return;
+    const lat = parseFloat(session.batch.location_lat);
+    const lng = parseFloat(session.batch.location_long);
+    if (Platform.OS === 'ios') {
+      const appleMapsUrl = `maps://app?daddr=${lat},${lng}&dirflg=d`;
+      Linking.canOpenURL(appleMapsUrl).then((supported) => {
+        if (supported) {
+          Linking.openURL(appleMapsUrl);
+        } else {
+          Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
+        }
+      });
+    } else {
+      const googleMapsUrl = `google.navigation:q=${lat},${lng}`;
+      Linking.canOpenURL(googleMapsUrl).then((supported) => {
+        if (supported) {
+          Linking.openURL(googleMapsUrl);
+        } else {
+          Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
+        }
+      });
+    }
+  }, [session?.batch?.location_lat, session?.batch?.location_long]);
+
   if (loading) {
     return (
       <SafeAreaView className="flex-1">
@@ -88,7 +129,27 @@ export default function TrainingScheduledScreen() {
   return (
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
-        <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Top-right refresh button */}
+        <View className="flex-row justify-end px-4 pt-2">
+          <TouchableOpacity onPress={handleRefresh} disabled={refreshing}>
+            {refreshing ? (
+              <ActivityIndicator size="small" color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
+            ) : (
+              <Ionicons name="refresh" size={24} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
+            )}
+          </TouchableOpacity>
+        </View>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={['#BD8C5E']}
+              tintColor="#BD8C5E"
+            />
+          }
+        >
           {/* Header */}
           <View className="px-6 pt-8 pb-6 items-center">
             <View className="w-16 h-16 bg-burgundy rounded-full items-center justify-center mb-4">
@@ -138,12 +199,59 @@ export default function TrainingScheduledScreen() {
                   </ThemedText>
                 </ThemedCard>
 
-                {/* Map placeholder */}
+                {/* Map — Training Venue */}
                 <ThemedCard className="mb-4 overflow-hidden">
-                  <View className="h-48 bg-gray-200 dark:bg-gray-700 items-center justify-center">
-                    <Ionicons name="map" size={48} color="#BD8C5E" />
-                    <ThemedText variant="secondary" className="mt-2">Map View</ThemedText>
-                  </View>
+                  {batch.location_lat && batch.location_long ? (
+                    <View style={{ position: 'relative' }}>
+                      <UniversalMapView
+                        initialRegion={{
+                          latitude: parseFloat(batch.location_lat),
+                          longitude: parseFloat(batch.location_long),
+                          latitudeDelta: 0.01,
+                          longitudeDelta: 0.01,
+                        }}
+                        markers={[{
+                          id: 'training-venue',
+                          coordinate: {
+                            latitude: parseFloat(batch.location_lat),
+                            longitude: parseFloat(batch.location_long),
+                          },
+                          title: batch.location_name,
+                          description: batch.location_address,
+                          type: 'pickup',
+                        }]}
+                        showUserLocation={false}
+                        style={{ height: 192 }}
+                      />
+                      {/* Navigate button overlay */}
+                      <TouchableOpacity
+                        onPress={handleOpenNavigation}
+                        style={{
+                          position: 'absolute',
+                          bottom: 12,
+                          right: 12,
+                          backgroundColor: '#BD8C5E',
+                          borderRadius: 24,
+                          width: 44,
+                          height: 44,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          shadowColor: '#000',
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.25,
+                          shadowRadius: 4,
+                          elevation: 4,
+                        }}
+                      >
+                        <Ionicons name="navigate" size={22} color="white" />
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <View className="h-48 bg-gray-200 dark:bg-gray-700 items-center justify-center">
+                      <Ionicons name="map" size={48} color="#BD8C5E" />
+                      <ThemedText variant="secondary" className="mt-2">Location not available</ThemedText>
+                    </View>
+                  )}
                 </ThemedCard>
               </>
             )}

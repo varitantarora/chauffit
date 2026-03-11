@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,14 +16,16 @@ interface DocumentStatus {
   name: string;
   icon: string;
   uploaded: boolean;
-  status: 'pending' | 'uploaded' | 'verified' | 'rejected';
+  status: 'pending' | 'uploaded' | 'verified' | 'rejected' | 'approved';
   apiType: DriverDocumentType;
+  serverId?: string;
 }
 
 export default function DocumentUploadScreen() {
   const router = useRouter();
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
-  
+
+  const [isLoading, setIsLoading] = useState(true);
   const [documents, setDocuments] = useState<DocumentStatus[]>([
     {
       id: 'license_front',
@@ -63,6 +65,42 @@ export default function DocumentUploadScreen() {
     taken: false,
     status: 'pending'
   });
+
+  // Hydrate documents on mount
+  useEffect(() => {
+    const loadDocuments = async () => {
+      setIsLoading(true);
+      const response = await DriverApiService.getDocuments();
+      if (response.success && response.data) {
+        const uploadedDocs = response.data;
+        // Map server documents to local state
+        setDocuments(prev =>
+          prev.map(doc => {
+            const found = uploadedDocs.find(u => u.document_type === doc.apiType);
+            if (found) {
+              return {
+                ...doc,
+                uploaded: true,
+                status: found.verification_status === 'approved' ? 'verified' : found.verification_status,
+                serverId: found.id,
+              };
+            }
+            return doc;
+          })
+        );
+        // Load live selfie if available
+        const selfieDoc = uploadedDocs.find(u => u.document_type === 'live_selfie');
+        if (selfieDoc) {
+          setLiveSelfie({
+            taken: true,
+            status: selfieDoc.verification_status === 'approved' ? 'verified' : selfieDoc.verification_status,
+          });
+        }
+      }
+      setIsLoading(false);
+    };
+    loadDocuments();
+  }, []);
 
   const pickFromCamera = async (docId: string) => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -115,7 +153,7 @@ export default function DocumentUploadScreen() {
 
       if (response.success) {
         setDocuments(docs => docs.map(doc =>
-          doc.id === docId ? { ...doc, uploaded: true, status: 'uploaded' } : doc
+          doc.id === docId ? { ...doc, uploaded: true, status: 'pending' } : doc
         ));
         Alert.alert('Document Uploaded', 'Document uploaded successfully! It will be reviewed shortly.');
       } else {
@@ -165,9 +203,9 @@ export default function DocumentUploadScreen() {
         };
 
         const response = await DriverApiService.uploadDocument(documentRequest);
-        
+
         if (response.success) {
-          setLiveSelfie({ taken: true, status: 'uploaded' });
+          setLiveSelfie({ taken: true, status: 'pending' });
           Alert.alert('Photo Captured', 'Live selfie captured successfully!');
         } else {
           Alert.alert('Upload Failed', response.error || 'Please try again later.');
@@ -180,18 +218,37 @@ export default function DocumentUploadScreen() {
   };
 
   const handleSubmit = () => {
-    const allUploaded = documents.every(doc => doc.uploaded) && liveSelfie.taken;
-    if (!allUploaded) {
-      Alert.alert('Missing Documents', 'Please upload all required documents and take a live selfie.');
+    const uploadedCount = documents.filter(doc => doc.uploaded).length;
+    const totalDocs = documents.length;
+
+    // Block if no documents uploaded at all
+    if (uploadedCount === 0 && !liveSelfie.taken) {
+      Alert.alert('Missing Documents', 'Please upload at least one document or take a live selfie to continue.');
       return;
     }
+
     router.push('/(driver)/onboarding/background-check');
+  };
+
+  const getSubmitButtonTitle = () => {
+    const uploadedCount = documents.filter(doc => doc.uploaded).length;
+    const totalDocs = documents.length;
+
+    if (uploadedCount === 0 && !liveSelfie.taken) {
+      return 'Upload Documents to Continue';
+    }
+    if (uploadedCount === totalDocs && liveSelfie.taken) {
+      return 'Submit for Review';
+    }
+    return 'Save & Continue';
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'pending': return 'text-warning';
       case 'uploaded': return 'text-warning';
       case 'verified': return 'text-success';
+      case 'approved': return 'text-success';
       case 'rejected': return 'text-danger';
       default: return 'text-gray-500';
     }
@@ -199,10 +256,23 @@ export default function DocumentUploadScreen() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
+      case 'pending': return 'time';
       case 'uploaded': return 'time';
       case 'verified': return 'checkmark-circle';
+      case 'approved': return 'checkmark-circle';
       case 'rejected': return 'close-circle';
       default: return 'time';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'pending': return 'Pending Review';
+      case 'uploaded': return 'Pending Review';
+      case 'verified': return 'Verified ✓';
+      case 'approved': return 'Verified ✓';
+      case 'rejected': return 'Rejected — Retake';
+      default: return 'Pending';
     }
   };
 
@@ -246,27 +316,44 @@ export default function DocumentUploadScreen() {
                       <Ionicons name={doc.icon as any} size={20} color="#BD8C5E" />
                       <ThemedText className="font-semibold ml-3">{doc.name}</ThemedText>
                     </View>
-                    <Ionicons 
-                      name={getStatusIcon(doc.status) as any} 
-                      size={20} 
-                      color={doc.status === 'uploaded' ? '#f59e0b' : doc.status === 'verified' ? '#10b981' : '#6b7280'} 
-                    />
+                    {isLoading ? (
+                      <ActivityIndicator size="small" color="#BD8C5E" />
+                    ) : (
+                      <Ionicons
+                        name={getStatusIcon(doc.status) as any}
+                        size={20}
+                        color={
+                          doc.status === 'pending' || doc.status === 'uploaded' ? '#f59e0b' :
+                          doc.status === 'verified' || doc.status === 'approved' ? '#10b981' :
+                          '#ef4444'
+                        }
+                      />
+                    )}
                   </View>
-                  
-                  {!doc.uploaded ? (
+
+                  {isLoading ? (
+                    <View className="items-center py-6">
+                      <ActivityIndicator size="large" color="#BD8C5E" />
+                    </View>
+                  ) : !doc.uploaded || doc.status === 'rejected' ? (
                     <TouchableOpacity
                       onPress={() => handleUploadDocument(doc.id)}
                       className="flex-row items-center justify-center py-3 border-2 border-dashed border-secondary rounded-lg bg-secondary/5"
                     >
                       <Ionicons name="camera" size={16} color="#BD8C5E" />
                       <ThemedText className="text-secondary font-semibold ml-2">
-                        Upload Photo
+                        {doc.status === 'rejected' ? 'Retake Photo' : 'Upload Photo'}
                       </ThemedText>
                     </TouchableOpacity>
                   ) : (
-                    <View className="flex-row items-center py-2">
-                      <ThemedText className={`font-semibold ${getStatusColor(doc.status)}`}>
-                        Status: {doc.status === 'uploaded' ? '⏳ Pending' : `✅ ${doc.status}`}
+                    <View className="flex-row items-center py-2 px-3 bg-opacity-10 rounded-lg" style={{backgroundColor: doc.status === 'verified' || doc.status === 'approved' ? '#10b98120' : '#f59e0b20'}}>
+                      <Ionicons
+                        name={getStatusIcon(doc.status) as any}
+                        size={16}
+                        color={doc.status === 'verified' || doc.status === 'approved' ? '#10b981' : '#f59e0b'}
+                      />
+                      <ThemedText className={`font-semibold ml-2 ${getStatusColor(doc.status)}`}>
+                        {getStatusLabel(doc.status)}
                       </ThemedText>
                     </View>
                   )}
@@ -281,7 +368,11 @@ export default function DocumentUploadScreen() {
             </View>
 
             <ThemedCard className="p-4 mb-6">
-              {!liveSelfie.taken ? (
+              {isLoading ? (
+                <View className="items-center py-6">
+                  <ActivityIndicator size="large" color="#BD8C5E" />
+                </View>
+              ) : !liveSelfie.taken || liveSelfie.status === 'rejected' ? (
                 <TouchableOpacity
                   onPress={handleTakeSelfie}
                   className="items-center py-6"
@@ -289,16 +380,22 @@ export default function DocumentUploadScreen() {
                   <View className="w-16 h-16 bg-burgundy/10 rounded-full items-center justify-center mb-3">
                     <Ionicons name="camera" size={32} color="#720C17" />
                   </View>
-                  <ThemedText className="font-bold text-burgundy">Take Live Selfie</ThemedText>
+                  <ThemedText className="font-bold text-burgundy">
+                    {liveSelfie.status === 'rejected' ? 'Retake Live Selfie' : 'Take Live Selfie'}
+                  </ThemedText>
                   <ThemedText variant="caption" className="text-secondary text-center mt-1">
                     For identity verification
                   </ThemedText>
                 </TouchableOpacity>
               ) : (
-                <View className="items-center py-4">
-                  <Ionicons name="checkmark-circle" size={32} color="#10b981" />
-                  <ThemedText className="font-semibold text-success mt-2">
-                    Live selfie captured successfully
+                <View className="items-center py-4 px-3 bg-opacity-10 rounded-lg" style={{backgroundColor: liveSelfie.status === 'verified' || liveSelfie.status === 'approved' ? '#10b98120' : '#f59e0b20'}}>
+                  <Ionicons
+                    name={getStatusIcon(liveSelfie.status) as any}
+                    size={32}
+                    color={liveSelfie.status === 'verified' || liveSelfie.status === 'approved' ? '#10b981' : '#f59e0b'}
+                  />
+                  <ThemedText className="font-semibold mt-2" style={{color: liveSelfie.status === 'verified' || liveSelfie.status === 'approved' ? '#10b981' : '#f59e0b'}}>
+                    {getStatusLabel(liveSelfie.status)}
                   </ThemedText>
                 </View>
               )}
@@ -306,9 +403,10 @@ export default function DocumentUploadScreen() {
 
             {/* Submit Button */}
             <PrimaryButton
-              title="Submit Documents"
+              title={getSubmitButtonTitle()}
               onPress={handleSubmit}
               className="mb-6"
+              disabled={isLoading}
             />
           </View>
         </ScrollView>

@@ -59,6 +59,9 @@ function getDriverRoute(status: string | null): string {
       return '/(driver)/onboarding/registration';
 
     case 'registered':
+      // Profile created, documents need to be uploaded
+      return '/(driver)/onboarding/documents';
+
     case 'verification_in_progress':
     case 'verification_failed':
     case 'verified_ready_for_training':

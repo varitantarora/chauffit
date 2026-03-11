@@ -320,6 +320,7 @@ export interface AdminTrainingSession {
   driver_name: string;
   result: 'pending' | 'pass' | 'fail' | 'absent';
   notes?: string;
+  attendance_marked?: boolean;
 }
 
 export interface AdminTrainingBatch {
@@ -335,6 +336,7 @@ export interface AdminTrainingBatch {
   spots_remaining: number;
   is_active: boolean;
   sessions?: AdminTrainingSession[];
+  sessions_count?: string;
   created_at: string;
 }
 

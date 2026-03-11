@@ -24,7 +24,10 @@
       "Bash(python3:*)",
       "Bash(npx expo-modules-autolinking:*)",
       "Bash(npx react-native config:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(npx expo install @react-native-community/datetimepicker)",
+      "Bash(npm run build 2>&1 | head -50)",
+      "Bash(npm run 2>&1 | grep -A 20 \"available scripts\")"
     ],
     "deny": [],
     "ask": []

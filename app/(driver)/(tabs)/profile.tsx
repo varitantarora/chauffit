@@ -535,6 +535,27 @@ export default function DriverProfile() {
                     <Ionicons name="chevron-forward" size={20} color={isDarkMode ? '#9ca3af' : '#6b7280'} />
                   </TouchableOpacity>
 
+                  {/* Training Certificate — only for certified/active drivers */}
+                  {(driverProfile?.current_status === 'certified' || driverProfile?.current_status === 'active') && (
+                    <TouchableOpacity
+                      onPress={() => router.push('/(driver)/training-certificate' as any)}
+                      className="flex-row justify-between items-center p-4 bg-surface dark:bg-darkSurface rounded-xl mb-3"
+                    >
+                      <View className="flex-row items-center">
+                        <Ionicons name="ribbon" size={20} color="#BD8C5E" />
+                        <ThemedText className="ml-3">Training Certificate</ThemedText>
+                      </View>
+                      <View className="flex-row items-center">
+                        <View className="bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded-full mr-2">
+                          <ThemedText className="text-green-700 dark:text-green-300 text-xs font-semibold">
+                            Certified ✓
+                          </ThemedText>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color={isDarkMode ? '#9ca3af' : '#6b7280'} />
+                      </View>
+                    </TouchableOpacity>
+                  )}
+
                   <TouchableOpacity
                     onPress={() => router.push('/(driver)/notifications')}
                     className="flex-row justify-between items-center p-4 bg-surface dark:bg-darkSurface rounded-xl mb-3"

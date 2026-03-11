@@ -668,7 +668,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   autoAssignBatch: async (id) => {
     const res = await AdminApiService.autoAssignBatch(id);
     if (res.success) {
-      get().fetchTrainingBatch(id);
+      await get().fetchTrainingBatch(id);
       return true;
     }
     return false;
