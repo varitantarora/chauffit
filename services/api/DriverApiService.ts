@@ -449,9 +449,9 @@ class DriverApiService {
   }
 
   // Partial update driver profile
-  async patchProfile(id: string, data: Partial<DriverProfileRequest>): Promise<ApiResponse<DriverProfile>> {
+  async patchProfile(id: string, data: any): Promise<ApiResponse<DriverProfile>> {
     try {
-      const isFormData = !!(data.license_photo_front || data.license_photo_back || data.aadhar_photo || data.aadhar_photo_back);
+      const isFormData = !!(data.license_photo_front || data.license_photo_back || data.aadhar_photo || data.aadhar_photo_back || data.profile_picture);
 
       if (isFormData) {
         const formData = new FormData();

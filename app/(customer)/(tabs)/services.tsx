@@ -318,7 +318,7 @@ export default function ServicesScreen() {
           </View>
 
           {/* Main Service Buttons - Standardized Icon Grid */}
-          <View className="px-3 mb-6">
+          <View className="px-3 mb-6 pt-6">
             <View className="flex-row flex-wrap">
               {mainServices.map((service) => (
                 <View key={service.id} className="w-1/4 px-1 mb-2">

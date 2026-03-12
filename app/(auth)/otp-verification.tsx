@@ -49,6 +49,12 @@ export default function OTPVerification() {
     // Focus first input on mount
     setTimeout(() => {
       inputRefs.current[0]?.focus();
+      if (Platform.OS === 'android') {
+        // Ensure keyboard opens on Android
+        setTimeout(() => {
+          inputRefs.current[0]?.focus();
+        }, 200);
+      }
     }, 300);
   }, []);
 
@@ -69,6 +75,13 @@ export default function OTPVerification() {
 
   const focusInput = () => {
     inputRefs.current[0]?.focus();
+    // Ensure keyboard opens on Android and iOS
+    if (Platform.OS === 'android') {
+      Keyboard.dismiss();
+      setTimeout(() => {
+        inputRefs.current[0]?.focus();
+      }, 100);
+    }
   };
 
   const handleVerifyOTP = async () => {
@@ -294,13 +307,13 @@ export default function OTPVerification() {
 
           {/* OTP Input Container */}
           <Pressable onPress={focusInput} className="flex-row justify-between mb-8 px-4 relative">
-            {/* Hidden Real Input */}
+            {/* Hidden Real Input - covers entire input area */}
             <TextInput
               ref={(ref) => { inputRefs.current[0] = ref; }}
               style={{
                 position: 'absolute',
-                width: 1,
-                height: 1,
+                width: '100%',
+                height: '100%',
                 opacity: 0,
               }}
               value={otp.join('')}
@@ -309,6 +322,9 @@ export default function OTPVerification() {
               maxLength={OTP_LENGTH}
               textContentType="oneTimeCode"
               autoFocus
+              editable={true}
+              caretHidden={false}
+              pointerEvents="auto"
             />
 
             {/* Visual Boxes */}
