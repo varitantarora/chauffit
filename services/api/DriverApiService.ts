@@ -592,6 +592,30 @@ class DriverApiService {
     }
   }
 
+  // Send Aadhaar OTP for verification
+  async sendAadhaarOtp(data: { aadhar_number: string }): Promise<ApiResponse<any>> {
+    try {
+      return await BaseApiService.post('/drivers/aadhaar/send-otp/', data);
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to send OTP',
+      };
+    }
+  }
+
+  // Verify Aadhaar OTP
+  async verifyAadhaarOtp(data: { aadhar_number: string; otp: string }): Promise<ApiResponse<any>> {
+    try {
+      return await BaseApiService.post('/drivers/aadhaar/verify-otp/', data);
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to verify OTP',
+      };
+    }
+  }
+
   // =========================================================================
   // EARNINGS API METHODS - Based on API Contract v1.0.0
   // =========================================================================

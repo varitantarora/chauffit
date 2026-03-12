@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Alert, ActivityIndicator, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -66,6 +66,19 @@ export default function DocumentUploadScreen() {
     status: 'pending'
   });
 
+  // DL number
+  const [dlNumber, setDlNumber] = useState('');
+
+  // Aadhaar OTP flow
+  const [aadhaarNumber, setAadhaarNumber] = useState('');
+  const [aadhaarOtpSent, setAadhaarOtpSent] = useState(false);
+  const [aadhaarOtp, setAadhaarOtp] = useState('');
+  const [aadhaarVerified, setAadhaarVerified] = useState(false);
+  const [aadhaarVerifyLoading, setAadhaarVerifyLoading] = useState(false);
+  const [aadhaarOtpTimer, setAadhaarOtpTimer] = useState(300); // 5 minutes
+  const [aadhaarCanResend, setAadhaarCanResend] = useState(false);
+  const [rejectionReasons, setRejectionReasons] = useState<Record<string, string>>({});
+
   // Hydrate documents on mount
   useEffect(() => {
     const loadDocuments = async () => {
@@ -78,6 +91,10 @@ export default function DocumentUploadScreen() {
           prev.map(doc => {
             const found = uploadedDocs.find(u => u.document_type === doc.apiType);
             if (found) {
+              // Capture rejection reason if present
+              if (found.rejection_reason) {
+                setRejectionReasons(prev => ({ ...prev, [doc.id]: found.rejection_reason! }));
+              }
               return {
                 ...doc,
                 uploaded: true,
@@ -96,11 +113,26 @@ export default function DocumentUploadScreen() {
             status: selfieDoc.verification_status === 'approved' ? 'verified' : selfieDoc.verification_status,
           });
         }
+        // If aadhaar docs are approved, mark as verified
+        const aadhaarFront = uploadedDocs.find(u => u.document_type === 'aadhaar_front');
+        if (aadhaarFront?.verification_status === 'approved') setAadhaarVerified(true);
       }
       setIsLoading(false);
     };
     loadDocuments();
   }, []);
+
+  // Aadhaar OTP timer
+  useEffect(() => {
+    if (!aadhaarOtpSent || aadhaarVerified) return;
+    const interval = setInterval(() => {
+      setAadhaarOtpTimer(prev => {
+        if (prev <= 1) { setAadhaarCanResend(true); clearInterval(interval); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [aadhaarOtpSent, aadhaarVerified]);
 
   const pickFromCamera = async (docId: string) => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -147,6 +179,7 @@ export default function DocumentUploadScreen() {
           name: `${docId}_${Date.now()}.jpg`,
           type: 'image/jpeg',
         } as any,
+        ...(doc.apiType === 'driving_license_front' && dlNumber ? { document_number: dlNumber } : {}),
       };
 
       const response = await DriverApiService.uploadDocument(documentRequest);
@@ -162,6 +195,40 @@ export default function DocumentUploadScreen() {
     } catch (error) {
       Alert.alert('Upload Failed', 'Please try again later.');
       console.error('Error uploading document:', error);
+    }
+  };
+
+  const handleSendAadhaarOtp = async () => {
+    if (aadhaarNumber.length !== 12) {
+      Alert.alert('Invalid', 'Aadhaar number must be exactly 12 digits');
+      return;
+    }
+    setAadhaarVerifyLoading(true);
+    const res = await DriverApiService.sendAadhaarOtp({ aadhar_number: aadhaarNumber });
+    setAadhaarVerifyLoading(false);
+    if (res.success) {
+      setAadhaarOtpSent(true);
+      setAadhaarOtpTimer(300);
+      setAadhaarCanResend(false);
+    } else {
+      Alert.alert('Error', res.error || 'Failed to send OTP');
+    }
+  };
+
+  const handleVerifyAadhaarOtp = async () => {
+    if (aadhaarOtp.length !== 6) {
+      Alert.alert('Invalid', 'Enter 6-digit OTP');
+      return;
+    }
+    setAadhaarVerifyLoading(true);
+    const res = await DriverApiService.verifyAadhaarOtp({ aadhar_number: aadhaarNumber, otp: aadhaarOtp });
+    setAadhaarVerifyLoading(false);
+    if (res.success) {
+      setAadhaarVerified(true);
+      Alert.alert('Success', 'Aadhaar verified successfully!');
+    } else {
+      Alert.alert('Error', res.error || 'Invalid OTP. Try again.');
+      setAadhaarOtp('');
     }
   };
 
@@ -276,6 +343,12 @@ export default function DocumentUploadScreen() {
     }
   };
 
+  const formatOtpTimer = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   return (
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
@@ -309,57 +382,202 @@ export default function DocumentUploadScreen() {
 
             {/* Documents List */}
             <View className="space-y-4 mb-6">
-              {documents.map((doc) => (
-                <ThemedCard key={doc.id} className="p-4">
-                  <View className="flex-row items-center justify-between mb-3">
-                    <View className="flex-row items-center flex-1">
-                      <Ionicons name={doc.icon as any} size={20} color="#BD8C5E" />
-                      <ThemedText className="font-semibold ml-3">{doc.name}</ThemedText>
+              {documents.filter(doc => !['aadhaar_front', 'aadhaar_back'].includes(doc.id)).map((doc) => (
+                <View key={doc.id}>
+                  <ThemedCard className="p-4">
+                    <View className="flex-row items-center justify-between mb-3">
+                      <View className="flex-row items-center flex-1">
+                        <Ionicons name={doc.icon as any} size={20} color="#BD8C5E" />
+                        <ThemedText className="font-semibold ml-3">{doc.name}</ThemedText>
+                      </View>
+                      {isLoading ? (
+                        <ActivityIndicator size="small" color="#BD8C5E" />
+                      ) : (
+                        <Ionicons
+                          name={getStatusIcon(doc.status) as any}
+                          size={20}
+                          color={
+                            doc.status === 'pending' || doc.status === 'uploaded' ? '#f59e0b' :
+                            doc.status === 'verified' || doc.status === 'approved' ? '#10b981' :
+                            '#ef4444'
+                          }
+                        />
+                      )}
                     </View>
-                    {isLoading ? (
-                      <ActivityIndicator size="small" color="#BD8C5E" />
-                    ) : (
-                      <Ionicons
-                        name={getStatusIcon(doc.status) as any}
-                        size={20}
-                        color={
-                          doc.status === 'pending' || doc.status === 'uploaded' ? '#f59e0b' :
-                          doc.status === 'verified' || doc.status === 'approved' ? '#10b981' :
-                          '#ef4444'
-                        }
-                      />
-                    )}
-                  </View>
 
-                  {isLoading ? (
-                    <View className="items-center py-6">
-                      <ActivityIndicator size="large" color="#BD8C5E" />
-                    </View>
-                  ) : !doc.uploaded || doc.status === 'rejected' ? (
-                    <TouchableOpacity
-                      onPress={() => handleUploadDocument(doc.id)}
-                      className="flex-row items-center justify-center py-3 border-2 border-dashed border-secondary rounded-lg bg-secondary/5"
-                    >
-                      <Ionicons name="camera" size={16} color="#BD8C5E" />
-                      <ThemedText className="text-secondary font-semibold ml-2">
-                        {doc.status === 'rejected' ? 'Retake Photo' : 'Upload Photo'}
+                    {isLoading ? (
+                      <View className="items-center py-6">
+                        <ActivityIndicator size="large" color="#BD8C5E" />
+                      </View>
+                    ) : !doc.uploaded || doc.status === 'rejected' ? (
+                      <TouchableOpacity
+                        onPress={() => handleUploadDocument(doc.id)}
+                        className="flex-row items-center justify-center py-3 border-2 border-dashed border-secondary rounded-lg bg-secondary/5"
+                      >
+                        <Ionicons name="camera" size={16} color="#BD8C5E" />
+                        <ThemedText className="text-secondary font-semibold ml-2">
+                          {doc.status === 'rejected' ? 'Retake Photo' : 'Upload Photo'}
+                        </ThemedText>
+                      </TouchableOpacity>
+                    ) : (
+                      <View className="flex-row items-center py-2 px-3 bg-opacity-10 rounded-lg" style={{backgroundColor: doc.status === 'verified' || doc.status === 'approved' ? '#10b98120' : '#f59e0b20'}}>
+                        <Ionicons
+                          name={getStatusIcon(doc.status) as any}
+                          size={16}
+                          color={doc.status === 'verified' || doc.status === 'approved' ? '#10b981' : '#f59e0b'}
+                        />
+                        <ThemedText className={`font-semibold ml-2 ${getStatusColor(doc.status)}`}>
+                          {getStatusLabel(doc.status)}
+                        </ThemedText>
+                      </View>
+                    )}
+
+                    {doc.status === 'rejected' && rejectionReasons[doc.id] && (
+                      <ThemedText variant="caption" className="text-danger mt-3">
+                        Reason: {rejectionReasons[doc.id]}
                       </ThemedText>
-                    </TouchableOpacity>
-                  ) : (
-                    <View className="flex-row items-center py-2 px-3 bg-opacity-10 rounded-lg" style={{backgroundColor: doc.status === 'verified' || doc.status === 'approved' ? '#10b98120' : '#f59e0b20'}}>
-                      <Ionicons
-                        name={getStatusIcon(doc.status) as any}
-                        size={16}
-                        color={doc.status === 'verified' || doc.status === 'approved' ? '#10b981' : '#f59e0b'}
-                      />
-                      <ThemedText className={`font-semibold ml-2 ${getStatusColor(doc.status)}`}>
-                        {getStatusLabel(doc.status)}
-                      </ThemedText>
-                    </View>
+                    )}
+                  </ThemedCard>
+
+                  {doc.id === 'license_front' && !doc.uploaded && (
+                    <TextInput
+                      placeholder="License Number (e.g. MH01 2024 1234567)"
+                      value={dlNumber}
+                      onChangeText={text => setDlNumber(text.toUpperCase())}
+                      maxLength={20}
+                      autoCapitalize="characters"
+                      className="mt-3 px-4 py-3 border border-border dark:border-darkBorder rounded-lg text-text dark:text-darkText bg-background dark:bg-darkBackground"
+                      placeholderTextColor="#BD8C5E"
+                    />
                   )}
-                </ThemedCard>
+                </View>
               ))}
             </View>
+
+            {/* Aadhaar Verification Section */}
+            <View className="flex-row items-center mb-4">
+              <Ionicons name="id-card" size={20} color="#BD8C5E" />
+              <ThemedText className="font-bold ml-2">AADHAAR VERIFICATION</ThemedText>
+            </View>
+
+            <ThemedCard className="p-4 mb-6">
+              {isLoading ? (
+                <View className="items-center py-6">
+                  <ActivityIndicator size="large" color="#BD8C5E" />
+                </View>
+              ) : aadhaarVerified ? (
+                <View className="items-center py-4 px-3 bg-opacity-10 rounded-lg" style={{backgroundColor: '#10b98120'}}>
+                  <Ionicons name="checkmark-circle" size={32} color="#10b981" />
+                  <ThemedText className="font-semibold mt-2 text-success">Aadhaar Verified ✓</ThemedText>
+                </View>
+              ) : (
+                <View className="space-y-4">
+                  {/* Aadhaar Number Input */}
+                  <TextInput
+                    placeholder="Aadhaar Number (12 digits)"
+                    value={aadhaarNumber}
+                    onChangeText={text => setAadhaarNumber(text.replace(/\D/g, '').slice(0, 12))}
+                    maxLength={12}
+                    keyboardType="number-pad"
+                    className="px-4 py-3 border border-border dark:border-darkBorder rounded-lg text-text dark:text-darkText bg-background dark:bg-darkBackground"
+                    placeholderTextColor="#BD8C5E"
+                    editable={!aadhaarOtpSent}
+                  />
+
+                  {/* Aadhaar Front & Back Upload */}
+                  {[
+                    { id: 'aadhaar_front', name: 'Aadhaar Card (Front)' },
+                    { id: 'aadhaar_back', name: 'Aadhaar Card (Back)' },
+                  ].map(({ id, name }) => {
+                    const doc = documents.find(d => d.id === id);
+                    if (!doc) return null;
+                    return (
+                      <View key={id}>
+                        <ThemedText className="font-semibold text-sm mb-2">{name}</ThemedText>
+                        {!doc.uploaded || doc.status === 'rejected' ? (
+                          <TouchableOpacity
+                            onPress={() => handleUploadDocument(doc.id)}
+                            className="flex-row items-center justify-center py-3 border-2 border-dashed border-secondary rounded-lg bg-secondary/5"
+                          >
+                            <Ionicons name="camera" size={16} color="#BD8C5E" />
+                            <ThemedText className="text-secondary font-semibold ml-2">
+                              {doc.status === 'rejected' ? 'Retake Photo' : 'Upload Photo'}
+                            </ThemedText>
+                          </TouchableOpacity>
+                        ) : (
+                          <View className="flex-row items-center py-2 px-3 bg-opacity-10 rounded-lg" style={{backgroundColor: doc.status === 'verified' || doc.status === 'approved' ? '#10b98120' : '#f59e0b20'}}>
+                            <Ionicons
+                              name={getStatusIcon(doc.status) as any}
+                              size={16}
+                              color={doc.status === 'verified' || doc.status === 'approved' ? '#10b981' : '#f59e0b'}
+                            />
+                            <ThemedText className={`font-semibold ml-2 ${getStatusColor(doc.status)}`}>
+                              {getStatusLabel(doc.status)}
+                            </ThemedText>
+                          </View>
+                        )}
+                        {doc.status === 'rejected' && rejectionReasons[doc.id] && (
+                          <ThemedText variant="caption" className="text-danger mt-2">
+                            Reason: {rejectionReasons[doc.id]}
+                          </ThemedText>
+                        )}
+                      </View>
+                    );
+                  })}
+
+                  {/* Send OTP Button */}
+                  {!aadhaarOtpSent && (
+                    <PrimaryButton
+                      title="Send Verification OTP"
+                      onPress={handleSendAadhaarOtp}
+                      disabled={
+                        aadhaarNumber.length !== 12 ||
+                        !documents.find(d => d.id === 'aadhaar_front')?.uploaded ||
+                        !documents.find(d => d.id === 'aadhaar_back')?.uploaded ||
+                        aadhaarVerifyLoading
+                      }
+                      className="mt-2"
+                    />
+                  )}
+
+                  {/* OTP Input Section */}
+                  {aadhaarOtpSent && !aadhaarVerified && (
+                    <View className="space-y-3 pt-3 border-t border-border dark:border-darkBorder">
+                      <View>
+                        <ThemedText className="font-semibold text-sm mb-2">Enter OTP</ThemedText>
+                        <View className="flex-row items-center">
+                          <TextInput
+                            placeholder="000000"
+                            value={aadhaarOtp}
+                            onChangeText={text => setAadhaarOtp(text.replace(/\D/g, '').slice(0, 6))}
+                            maxLength={6}
+                            keyboardType="number-pad"
+                            textContentType="oneTimeCode"
+                            className="flex-1 px-4 py-3 border border-border dark:border-darkBorder rounded-lg text-text dark:text-darkText bg-background dark:bg-darkBackground"
+                            placeholderTextColor="#BD8C5E"
+                          />
+                          <ThemedText className="ml-3 font-semibold text-secondary">
+                            {formatOtpTimer(aadhaarOtpTimer)}
+                          </ThemedText>
+                        </View>
+                      </View>
+
+                      {aadhaarCanResend && (
+                        <TouchableOpacity onPress={handleSendAadhaarOtp}>
+                          <ThemedText className="text-secondary font-semibold text-sm">Resend OTP</ThemedText>
+                        </TouchableOpacity>
+                      )}
+
+                      <PrimaryButton
+                        title="Verify Aadhaar"
+                        onPress={handleVerifyAadhaarOtp}
+                        disabled={aadhaarOtp.length !== 6 || aadhaarVerifyLoading}
+                      />
+                    </View>
+                  )}
+                </View>
+              )}
+            </ThemedCard>
 
             {/* Live Photo Capture */}
             <View className="flex-row items-center mb-4">
