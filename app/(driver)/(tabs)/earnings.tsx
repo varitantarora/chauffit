@@ -51,7 +51,7 @@ export default function EarningsScreen() {
     return start;
   };
 
-  const periodLabel = selectedPeriod === 'daily' ? 'Today' : selectedPeriod === 'weekly' ? 'This Week' : 'This Month';
+  const periodLabel = selectedPeriod === 'daily' ? t('today') : selectedPeriod === 'weekly' ? t('thisWeek') : t('thisMonth');
 
   const periodRows = React.useMemo(() => {
     const start = getPeriodStart(selectedPeriod);
@@ -281,10 +281,10 @@ export default function EarningsScreen() {
                     }`}
                 >
                   <ThemedText
-                    className={`text-center capitalize font-semibold ${selectedPeriod === period ? 'text-white' : 'text-textPrimary dark:text-darkTextPrimary'
+                    className={`text-center font-semibold ${selectedPeriod === period ? 'text-white' : 'text-textPrimary dark:text-darkTextPrimary'
                       }`}
                   >
-                    {period}
+                    {t(period as 'daily' | 'weekly' | 'monthly')}
                   </ThemedText>
                 </TouchableOpacity>
               ))}
@@ -310,7 +310,7 @@ export default function EarningsScreen() {
             <View className="flex-row flex-wrap -mx-2">
               <View className="w-1/2 px-2 mb-4">
                 <EarningsCard
-                  title={`${periodLabel} Earnings`}
+                  title={`${periodLabel} ${t('earnings')}`}
                   amount={periodEarnings}
                   icon="today"
                   iconColor="#10b981"
@@ -321,16 +321,16 @@ export default function EarningsScreen() {
               </View>
               <View className="w-1/2 px-2 mb-4">
                 <EarningsCard
-                  title="Pending Amount"
+                  title={t('pendingAmount')}
                   amount={periodPendingAmount}
-                  subtitle={`${selectedPeriod.charAt(0).toUpperCase() + selectedPeriod.slice(1)} pending`}
+                  subtitle={`${t(selectedPeriod as 'daily' | 'weekly' | 'monthly')} ${t('pending')}`}
                   icon="time"
                   iconColor="#f59e0b"
                 />
               </View>
               <View className="w-1/2 px-2 mb-4">
                 <EarningsCard
-                  title="Avg per Ride"
+                  title={t('avgPerRide')}
                   amount={Math.round(periodAvgPerRide)}
                   icon="car"
                   iconColor="#3b82f6"
@@ -338,9 +338,9 @@ export default function EarningsScreen() {
               </View>
               <View className="w-1/2 px-2 mb-4">
                 <EarningsCard
-                  title="Avg per Hour"
+                  title={t('avgPerHour')}
                   amount={Math.round(periodAvgPerHour)}
-                  subtitle={periodHours > 0 ? undefined : 'Insufficient hourly data'}
+                  subtitle={periodHours > 0 ? undefined : t('insufficientHourlyData')}
                   icon="speedometer"
                   iconColor="#8b5cf6"
                 />
@@ -352,7 +352,7 @@ export default function EarningsScreen() {
           <View className="px-6 mb-6">
             <View className="flex-row justify-between items-center mb-4">
               <ThemedText variant="title" className="text-lg font-bold">
-                {selectedPeriod.charAt(0).toUpperCase() + selectedPeriod.slice(1)} Breakdown
+                {t(selectedPeriod as 'daily' | 'weekly' | 'monthly')} {t('breakdown')}
               </ThemedText>
             </View>
 
@@ -361,7 +361,7 @@ export default function EarningsScreen() {
                 <View className="items-center py-2">
                   <ActivityIndicator size="small" color="#BD8C5E" />
                   <ThemedText variant="caption" className="mt-2 text-secondary">
-                    Loading daily breakdown...
+                    {t('loadingDailyBreakdown')}
                   </ThemedText>
                 </View>
               </ThemedCard>
@@ -373,9 +373,9 @@ export default function EarningsScreen() {
 
                 let dateLabel = '';
                 if (isToday) {
-                  dateLabel = 'Today';
+                  dateLabel = t('today');
                 } else if (isYesterday) {
-                  dateLabel = 'Yesterday';
+                  dateLabel = t('yesterday');
                 } else {
                   dateLabel = date.toLocaleDateString('en-IN', {
                     weekday: 'short',
@@ -390,7 +390,7 @@ export default function EarningsScreen() {
                       <View>
                         <ThemedText className="font-semibold">{dateLabel}</ThemedText>
                         <ThemedText variant="caption">
-                          {day.trips} trip{day.trips !== 1 ? 's' : ''} completed
+                          {day.trips} {day.trips !== 1 ? t('tripsCompleted') : t('trip')} {t('completed')}
                         </ThemedText>
                       </View>
                       <ThemedText className={`font-bold text-lg ${isToday ? 'text-burgundy' : ''}`}>
@@ -404,7 +404,7 @@ export default function EarningsScreen() {
               <ThemedCard className="p-4">
                 <View className="items-center py-2">
                   <ThemedText className="text-center text-secondary">
-                    No daily earnings data available
+                    {t('noDailyEarningsData')}
                   </ThemedText>
                 </View>
               </ThemedCard>
@@ -414,7 +414,7 @@ export default function EarningsScreen() {
           {/* Bonuses & Incentives */}
           <View className="px-6 mb-6">
             <ThemedText variant="title" className="text-lg font-bold mb-4">
-              Bonuses & Incentives
+              {t('bonusesAndIncentives')}
             </ThemedText>
 
             {loadingBonuses ? (
@@ -422,7 +422,7 @@ export default function EarningsScreen() {
                 <View className="items-center py-2">
                   <ActivityIndicator size="small" color="#BD8C5E" />
                   <ThemedText variant="caption" className="mt-2 text-secondary">
-                    Loading bonuses...
+                    {t('loadingBonuses')}
                   </ThemedText>
                 </View>
               </ThemedCard>
@@ -437,7 +437,7 @@ export default function EarningsScreen() {
                       </ThemedText>
                       {bonus.earnedAt && (
                         <ThemedText variant="caption" className="text-secondary mt-1">
-                          Earned: {new Date(bonus.earnedAt).toLocaleDateString('en-IN', {
+                          {t('earned')} {new Date(bonus.earnedAt).toLocaleDateString('en-IN', {
                             month: 'short',
                             day: 'numeric',
                             year: 'numeric'
@@ -457,7 +457,7 @@ export default function EarningsScreen() {
               <ThemedCard className="p-4">
                 <View className="items-center py-2">
                   <ThemedText className="text-center text-secondary">
-                    No bonuses or incentives available
+                    {t('noBonusesOrIncentives')}
                   </ThemedText>
                 </View>
               </ThemedCard>
@@ -467,14 +467,14 @@ export default function EarningsScreen() {
           {/* Performance Metrics */}
           <View className="px-6 mb-6">
             <ThemedText variant="title" className="text-lg font-bold mb-4">
-              Performance Metrics
+              {t('performanceMetrics')}
             </ThemedText>
             <ThemedCard className="p-4">
               {loadingStats ? (
                 <View className="py-4 items-center">
                   <ActivityIndicator size="small" color="#BD8C5E" />
                   <ThemedText variant="caption" className="mt-2 text-textSecondary">
-                    Loading stats...
+                    {t('loadingStats')}
                   </ThemedText>
                 </View>
               ) : stats?.lifetime ? (
@@ -509,7 +509,7 @@ export default function EarningsScreen() {
                   <View className="flex-row justify-between mb-3">
                     <View className="flex-row items-center">
                       <Ionicons name="checkmark-circle" size={20} color="#bd8c5e" />
-                      <ThemedText className="ml-2">Completion Rate</ThemedText>
+                      <ThemedText className="ml-2">{t('completionRate')}</ThemedText>
                     </View>
                     <ThemedText className="font-semibold">
                       {stats.lifetime.completion_rate > 0 ? `${stats.lifetime.completion_rate.toFixed(1)}%` : 'N/A'}
@@ -518,16 +518,16 @@ export default function EarningsScreen() {
                   <View className="flex-row justify-between mb-3">
                     <View className="flex-row items-center">
                       <Ionicons name="navigate" size={20} color="#bd8c5e" />
-                      <ThemedText className="ml-2">Distance Covered</ThemedText>
+                      <ThemedText className="ml-2">{t('distanceCovered')}</ThemedText>
                     </View>
                     <ThemedText className="font-semibold">
-                      {stats.lifetime.distance_covered_km > 0 ? `${stats.lifetime.distance_covered_km.toFixed(1)} km` : 'N/A'}
+                      {stats.lifetime.distance_covered_km > 0 ? `${stats.lifetime.distance_covered_km.toFixed(1)} ${t('km')}` : 'N/A'}
                     </ThemedText>
                   </View>
                   <View className="flex-row justify-between">
                     <View className="flex-row items-center">
                       <Ionicons name="car" size={20} color="#bd8c5e" />
-                      <ThemedText className="ml-2">Total Rides</ThemedText>
+                      <ThemedText className="ml-2">{t('totalRides')}</ThemedText>
                     </View>
                     <ThemedText className="font-semibold">
                       {stats.lifetime.trips > 0 ? stats.lifetime.trips.toLocaleString('en-IN') : 'N/A'}
@@ -537,7 +537,7 @@ export default function EarningsScreen() {
               ) : (
                 <View className="py-4">
                   <ThemedText className="text-center text-textSecondary">
-                    No stats available
+                    {t('noStatsAvailable')}
                   </ThemedText>
                 </View>
               )}

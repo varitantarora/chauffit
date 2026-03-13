@@ -238,7 +238,7 @@ export default function DriverProfile() {
       <SafeAreaView className="flex-1">
         <ThemedView className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#BD8C5E" />
-          <ThemedText className="mt-4">Loading profile...</ThemedText>
+          <ThemedText className="mt-4">{t('loadingProfile')}</ThemedText>
         </ThemedView>
       </SafeAreaView>
     );
@@ -322,7 +322,7 @@ export default function DriverProfile() {
                     color={userIsVerified ? '#10b981' : '#6b7280'}
                   />
                   <ThemedText className={`font-semibold ml-2 ${userIsVerified ? 'text-success' : 'text-secondary'}`}>
-                    {userIsVerified ? 'Verified Driver' : 'Pending Verification'}
+                    {userIsVerified ? t('verifiedDriver') : t('pendingVerification')}
                   </ThemedText>
                 </View>
               </View>
@@ -343,13 +343,13 @@ export default function DriverProfile() {
                     <ThemedText className="text-2xl font-bold">
                       {displayCompletedTrips}
                     </ThemedText>
-                    <ThemedText variant="caption">Rides</ThemedText>
+                    <ThemedText variant="caption">{t('rides')}</ThemedText>
                   </View>
                   <View className="items-center">
                     <ThemedText className="text-2xl font-bold text-success">
                       ₹{(earnings?.totalEarnings ?? 0).toLocaleString('en-IN')}
                     </ThemedText>
-                    <ThemedText variant="caption">Total Earned</ThemedText>
+                    <ThemedText variant="caption">{t('totalEarned')}</ThemedText>
                   </View>
                 </View>
               </View>
@@ -364,10 +364,10 @@ export default function DriverProfile() {
                   <Ionicons name="information-circle" size={20} color="#BD8C5E" />
                   <View className="flex-1 ml-3">
                     <ThemedText className="font-semibold text-secondary mb-1">
-                      Complete Your Profile
+                      {t('completeYourProfile')}
                     </ThemedText>
                     <ThemedText variant="small" className="text-textSecondary">
-                      Add your license and ID details to start receiving ride requests.
+                      {t('addLicenseAndIdDetails')}
                     </ThemedText>
                   </View>
                 </View>
@@ -376,7 +376,7 @@ export default function DriverProfile() {
                   className="mt-3 bg-secondary px-4 py-2 rounded-lg self-start"
                 >
                   <ThemedText className="text-white font-semibold">
-                    Complete Profile
+                    {t('completeProfile')}
                   </ThemedText>
                 </TouchableOpacity>
               </ThemedCard>
@@ -391,10 +391,10 @@ export default function DriverProfile() {
                   <View className={`w-4 h-4 rounded-full mr-3 ${isOnline ? 'bg-success' : 'bg-gray-400'}`} />
                   <View>
                     <ThemedText className="font-bold">
-                      {isOnline ? 'Online' : 'Offline'}
+                      {isOnline ? t('online') : t('offline')}
                     </ThemedText>
                     <ThemedText variant="caption">
-                      {isOnline ? 'Available for rides' : 'Not receiving requests'}
+                      {isOnline ? t('availableForRides') : t('notReceivingRequests')}
                     </ThemedText>
                   </View>
                 </View>
@@ -408,7 +408,7 @@ export default function DriverProfile() {
                     <ActivityIndicator size="small" color={isOnline ? '#ef4444' : '#10b981'} />
                   ) : (
                     <ThemedText className={`font-semibold ${isOnline ? 'text-danger' : 'text-success'}`}>
-                      {isOnline ? 'Go Offline' : 'Go Online'}
+                      {isOnline ? t('goOffline') : t('goOnline')}
                     </ThemedText>
                   )}
                 </TouchableOpacity>
@@ -420,10 +420,10 @@ export default function DriverProfile() {
           <View className="px-6 mb-6">
             <View className={`flex-row bg-surface dark:bg-darkSurface rounded-xl p-1`}>
               {[
-                { key: 'profile', label: 'Profile' },
-                { key: 'documents', label: 'Documents' },
-                { key: 'rides', label: 'Rides' },
-                { key: 'stats', label: 'Stats' }
+                { key: 'profile', label: t('profile') },
+                { key: 'documents', label: t('documents') },
+                { key: 'rides', label: t('rides') },
+                { key: 'stats', label: t('stats') }
               ].map((tab) => (
                 <TouchableOpacity
                   key={tab.key}
@@ -477,7 +477,7 @@ export default function DriverProfile() {
                     ) : (
                       <View className="items-center py-2">
                         <ThemedText variant="secondary" className="text-center">
-                          Complete your profile to see detailed information
+                          {t('completeYourProfile')} {t('viewAll')}
                         </ThemedText>
                       </View>
                     )}
@@ -543,12 +543,12 @@ export default function DriverProfile() {
                     >
                       <View className="flex-row items-center">
                         <Ionicons name="ribbon" size={20} color="#BD8C5E" />
-                        <ThemedText className="ml-3">Training Certificate</ThemedText>
+                        <ThemedText className="ml-3">{t('trainingCertificate')}</ThemedText>
                       </View>
                       <View className="flex-row items-center">
                         <View className="bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded-full mr-2">
                           <ThemedText className="text-green-700 dark:text-green-300 text-xs font-semibold">
-                            Certified ✓
+                            {t('certified')}
                           </ThemedText>
                         </View>
                         <Ionicons name="chevron-forward" size={20} color={isDarkMode ? '#9ca3af' : '#6b7280'} />
@@ -607,9 +607,9 @@ export default function DriverProfile() {
                 <View className="mb-4">
                   <View className="flex-row bg-surface dark:bg-darkSurface rounded-xl p-1">
                     {[
-                      { key: 'accepted' as RidesTabType, label: 'Accepted' },
-                      { key: 'in-progress' as RidesTabType, label: 'In Progress' },
-                      { key: 'completed' as RidesTabType, label: 'Completed' }
+                      { key: 'accepted' as RidesTabType, label: t('accepted') },
+                      { key: 'in-progress' as RidesTabType, label: t('inProgress') },
+                      { key: 'completed' as RidesTabType, label: t('completed') }
                     ].map((tab) => (
                       <TouchableOpacity
                         key={tab.key}
@@ -635,7 +635,7 @@ export default function DriverProfile() {
                       {loadingAccepted ? (
                         <View className="items-center py-16">
                           <ActivityIndicator size="large" color="#BD8C5E" />
-                          <ThemedText className="mt-4 text-textSecondary">Loading accepted rides...</ThemedText>
+                          <ThemedText className="mt-4 text-textSecondary">{t('loadingAcceptedRides')}</ThemedText>
                         </View>
                       ) : acceptedJobs.length > 0 ? (
                         acceptedJobs.map((job) => (
@@ -649,10 +649,10 @@ export default function DriverProfile() {
                         <ThemedCard className="p-8 items-center">
                           <Ionicons name="checkmark-circle" size={48} color="#bd8c5e" />
                           <ThemedText variant="title" className="mt-4 mb-2">
-                            No Accepted Rides
+                            {t('noAcceptedRides')}
                           </ThemedText>
                           <ThemedText variant="secondary" className="text-center">
-                            Rides you accept will appear here
+                            {t('ridesYouAccept')}
                           </ThemedText>
                         </ThemedCard>
                       )}
@@ -664,7 +664,7 @@ export default function DriverProfile() {
                       {loadingInProgress ? (
                         <View className="items-center py-16">
                           <ActivityIndicator size="large" color="#BD8C5E" />
-                          <ThemedText className="mt-4 text-textSecondary">Loading active rides...</ThemedText>
+                          <ThemedText className="mt-4 text-textSecondary">{t('loadingActiveRides')}</ThemedText>
                         </View>
                       ) : inProgressJobs.length > 0 ? (
                         inProgressJobs.map((job) => (
@@ -678,10 +678,10 @@ export default function DriverProfile() {
                         <ThemedCard className="p-8 items-center">
                           <Ionicons name="car" size={48} color="#bd8c5e" />
                           <ThemedText variant="title" className="mt-4 mb-2">
-                            No Active Rides
+                            {t('noActiveRides')}
                           </ThemedText>
                           <ThemedText variant="secondary" className="text-center">
-                            You have no rides in progress
+                            {t('youHaveNoRidesInProgress')}
                           </ThemedText>
                         </ThemedCard>
                       )}
@@ -693,7 +693,7 @@ export default function DriverProfile() {
                       {loadingCompleted ? (
                         <View className="items-center py-16">
                           <ActivityIndicator size="large" color="#BD8C5E" />
-                          <ThemedText className="mt-4 text-textSecondary">Loading completed rides...</ThemedText>
+                          <ThemedText className="mt-4 text-textSecondary">{t('loadingCompletedRides')}</ThemedText>
                         </View>
                       ) : completedJobs.length > 0 ? (
                         completedJobs.map((job) => (
@@ -707,10 +707,10 @@ export default function DriverProfile() {
                         <ThemedCard className="p-8 items-center">
                           <Ionicons name="ribbon" size={48} color="#bd8c5e" />
                           <ThemedText variant="title" className="mt-4 mb-2">
-                            No Completed Rides
+                            {t('noCompletedRides')}
                           </ThemedText>
                           <ThemedText variant="secondary" className="text-center">
-                            Your completed ride history will appear here
+                            {t('yourCompletedRideHistory')}
                           </ThemedText>
                         </ThemedCard>
                       )}
@@ -725,7 +725,7 @@ export default function DriverProfile() {
                 {/* Detailed Stats */}
                 <ThemedCard className="p-4 mb-4">
                   <ThemedText variant="title" className="font-bold mb-4">
-                    Career Statistics
+                    {t('careerStatistics')}
                   </ThemedText>
 
                   <View className="space-y-3">
@@ -742,21 +742,21 @@ export default function DriverProfile() {
                     </View>
 
                     <View className="flex-row justify-between">
-                      <ThemedText>Total Earnings:</ThemedText>
+                      <ThemedText>{t('totalEarnings')}:</ThemedText>
                       <ThemedText className="font-semibold text-burgundy">
                         ₹{driverStats.totalEarnings.toLocaleString('en-IN')}
                       </ThemedText>
                     </View>
 
                     <View className="flex-row justify-between">
-                      <ThemedText>Total Rides:</ThemedText>
+                      <ThemedText>{t('totalRides')}:</ThemedText>
                       <ThemedText className="font-semibold">
                         {driverStats.totalRides}
                       </ThemedText>
                     </View>
 
                     <View className="flex-row justify-between">
-                      <ThemedText>Average Rating:</ThemedText>
+                      <ThemedText>{t('averageRating')}:</ThemedText>
                       <View className="flex-row items-center">
                         <Ionicons name="star" size={16} color="#fbbf24" />
                         <ThemedText className="font-semibold ml-1">
@@ -770,7 +770,7 @@ export default function DriverProfile() {
                 {/* Recent Reviews */}
                 <ThemedCard className="p-4 mb-4">
                   <ThemedText variant="title" className="font-bold mb-4">
-                    Recent Reviews
+                    {t('recentReviews')}
                   </ThemedText>
 
                   {jobHistory.filter(job => job.customerComment).slice(0, 3).map((job) => (
@@ -808,7 +808,7 @@ export default function DriverProfile() {
 
                   {jobHistory.filter(job => job.customerComment).length === 0 && (
                     <ThemedText variant="secondary" className="text-center">
-                      No reviews yet. Complete rides to receive customer feedback.
+                      {t('noReviewsYet')}
                     </ThemedText>
                   )}
                 </ThemedCard>

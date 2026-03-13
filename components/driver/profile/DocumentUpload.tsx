@@ -34,16 +34,12 @@ export function DocumentUpload({
 
   const getDocumentIcon = (type: DriverDocument['type']) => {
     switch (type) {
-      case 'license':
+      case 'license_front':
+      case 'license_back':
         return 'card';
-      case 'insurance':
-        return 'shield-checkmark';
-      case 'registration':
-        return 'document-text';
-      case 'permit':
-        return 'ribbon';
-      case 'passport':
-        return 'airplane';
+      case 'aadhaar_front':
+      case 'aadhaar_back':
+        return 'finger-print';
       default:
         return 'document';
     }
@@ -83,18 +79,16 @@ export function DocumentUpload({
   };
 
   // Map local document type to API document type
-  const mapLocalTypeToApi = (localType: DriverDocument['type']): 'police_verification' | 'address_proof' | 'passport' | 'insurance' | 'other' => {
+  const mapLocalTypeToApi = (localType: DriverDocument['type']): 'driving_license_front' | 'driving_license_back' | 'aadhaar_front' | 'aadhaar_back' | 'other' => {
     switch (localType) {
-      case 'license':
-        return 'other';
-      case 'insurance':
-        return 'insurance';
-      case 'registration':
-        return 'other';
-      case 'permit':
-        return 'police_verification';
-      case 'passport':
-        return 'passport';
+      case 'license_front':
+        return 'driving_license_front';
+      case 'license_back':
+        return 'driving_license_back';
+      case 'aadhaar_front':
+        return 'aadhaar_front';
+      case 'aadhaar_back':
+        return 'aadhaar_back';
       default:
         return 'other';
     }
@@ -412,15 +406,16 @@ export function DocumentsList({ documents: apiDocuments = [], onRefresh }: Docum
 
   const mapApiDocumentTypeToLocal = (apiType: string): DriverDocument['type'] => {
     switch (apiType) {
-      case 'police_verification':
-      case 'address_proof':
-        return 'permit';
-      case 'insurance':
-        return 'insurance';
-      case 'passport':
-        return 'passport';
+      case 'driving_license_front':
+        return 'license_front';
+      case 'driving_license_back':
+        return 'license_back';
+      case 'aadhaar_front':
+        return 'aadhaar_front';
+      case 'aadhaar_back':
+        return 'aadhaar_back';
       default:
-        return 'license';
+        return 'other';
     }
   };
   
@@ -446,28 +441,28 @@ export function DocumentsList({ documents: apiDocuments = [], onRefresh }: Docum
   
   const requiredDocuments = [
     {
-      type: 'license' as const,
-      title: 'Driving License',
-      description: 'Upload your valid Indian driving license',
+      type: 'license_front' as const,
+      title: 'Driving License - Front',
+      description: 'Upload the front side of your driving license',
       required: true
     },
     {
-      type: 'insurance' as const,
-      title: 'Insurance Certificate',
-      description: 'Valid vehicle insurance certificate',
+      type: 'license_back' as const,
+      title: 'Driving License - Back',
+      description: 'Upload the back side of your driving license',
       required: true
     },
     {
-      type: 'registration' as const,
-      title: 'Vehicle Registration',
-      description: 'RC book of your registered vehicle',
+      type: 'aadhaar_front' as const,
+      title: 'Aadhaar Card - Front',
+      description: 'Upload the front side of your Aadhaar card',
       required: true
     },
     {
-      type: 'permit' as const,
-      title: 'Commercial Permit',
-      description: 'Commercial driving permit (if applicable)',
-      required: false
+      type: 'aadhaar_back' as const,
+      title: 'Aadhaar Card - Back',
+      description: 'Upload the back side of your Aadhaar card',
+      required: true
     }
   ];
 

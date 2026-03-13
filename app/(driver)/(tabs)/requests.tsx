@@ -13,19 +13,19 @@ import { useI18nStore } from '../../../store/i18nStore';
 
 type TabType = 'pending' | 'accepted' | 'in-progress' | 'completed';
 
-// Tab labels for display
-const TAB_LABELS: Record<TabType, string> = {
-  'pending': 'Pending',
-  'accepted': 'Accepted',
-  'in-progress': 'Active',
-  'completed': 'Completed',
-};
-
 export default function RideRequestsScreen() {
   const router = useRouter();
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const user = useAuthStore((state) => state.user);
   const t = useI18nStore((state) => state.t);
+
+  // Tab labels for display - using translations
+  const TAB_LABELS: Record<TabType, string> = {
+    'pending': t('pending'),
+    'accepted': t('accepted'),
+    'in-progress': t('active'),
+    'completed': t('completed'),
+  };
 
   const {
     pendingRequests,
@@ -105,11 +105,11 @@ export default function RideRequestsScreen() {
           params: { jobId }
         });
       } else {
-        Alert.alert('Error', lastAcceptError || 'Failed to accept ride. Please try again.');
+        Alert.alert(t('error'), lastAcceptError || t('failedToAcceptRide'));
         await fetchTabData(activeTab);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to accept ride. Please try again.');
+      Alert.alert(t('error'), t('failedToAcceptRide'));
     } finally {
       setProcessing(null);
     }
@@ -218,32 +218,32 @@ export default function RideRequestsScreen() {
       case 'pending':
         return {
           icon: 'car',
-          title: 'No Pending Requests',
-          subtitle: 'New ride requests will appear here. Make sure you\'re online to receive requests.'
+          title: t('noPendingRequests'),
+          subtitle: t('newRideRequestsWillAppear')
         };
       case 'accepted':
         return {
           icon: 'checkmark-circle',
-          title: 'No Accepted Rides',
-          subtitle: 'Rides you accept will appear here once you confirm them.'
+          title: t('noAcceptedRides'),
+          subtitle: t('noAcceptedRidesMessage')
         };
       case 'in-progress':
         return {
           icon: 'navigate',
-          title: 'No Active Rides',
-          subtitle: 'Your currently active rides will appear here.'
+          title: t('noActiveRides'),
+          subtitle: t('yourCurrentlyActiveRides')
         };
       case 'completed':
         return {
           icon: 'ribbon',
-          title: 'No Completed Rides',
-          subtitle: 'Your completed ride history will appear here.'
+          title: t('noCompletedRides'),
+          subtitle: t('noCompletedRidesMessage')
         };
       default:
         return {
           icon: 'car',
-          title: 'No Rides',
-          subtitle: 'No rides found.'
+          title: t('noRides'),
+          subtitle: t('noRidesFound')
         };
     }
   };
@@ -289,7 +289,7 @@ export default function RideRequestsScreen() {
                   <View className="flex-row items-center flex-1">
                     <View className="w-3 h-3 bg-success rounded-full mr-3" />
                     <View>
-                      <ThemedText className="font-bold">Active Ride</ThemedText>
+                      <ThemedText className="font-bold">{t('activeRide')}</ThemedText>
                       <ThemedText variant="caption" className="text-success capitalize">
                         {activeJob.status.replace('_', ' ')}
                       </ThemedText>
@@ -299,7 +299,7 @@ export default function RideRequestsScreen() {
                     onPress={() => router.push(`/(driver)/job/active?jobId=${activeJob.id}`)}
                     className="bg-success px-4 py-2 rounded-lg"
                   >
-                    <ThemedText className="text-white font-semibold">View</ThemedText>
+                    <ThemedText className="text-white font-semibold">{t('view')}</ThemedText>
                   </TouchableOpacity>
                 </View>
               </ThemedCard>
@@ -321,23 +321,23 @@ export default function RideRequestsScreen() {
             {isLoading() ? (
               <View className="items-center py-16">
                 <Ionicons name="car" size={40} color={iconColor} />
-                <ThemedText className="mt-4 text-textSecondary">Loading rides...</ThemedText>
+                <ThemedText className="mt-4 text-textSecondary">{t('loadingProfile')}</ThemedText>
               </View>
             ) : hasError() && getCurrentJobs().length === 0 ? (
               // Error State
               <ThemedCard className="p-8 items-center border border-danger/30">
                 <Ionicons name="alert-circle" size={48} color="#ef4444" />
                 <ThemedText variant="title" className="mt-4 mb-2 text-danger">
-                  Unable to Load Rides
+                  {t('error')}
                 </ThemedText>
                 <ThemedText variant="secondary" className="text-center text-textSecondary px-8 mb-4">
-                  {lastApiError || 'An error occurred while fetching rides. Please try again.'}
+                  {lastApiError || t('failedToFetchRides')}
                 </ThemedText>
                 <TouchableOpacity
                   onPress={() => fetchTabData(activeTab)}
                   className="bg-burgundy px-6 py-3 rounded-xl"
                 >
-                  <ThemedText className="text-white font-semibold">Retry</ThemedText>
+                  <ThemedText className="text-white font-semibold">{t('retry')}</ThemedText>
                 </TouchableOpacity>
               </ThemedCard>
             ) : getCurrentJobs().length > 0 ? (

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '../../common/ThemedText';
+import { useI18nStore } from '../../../store/i18nStore';
 import { TrainingSession } from '../../../services/api/DriverApiService';
 
 interface TrainingCertificateProps {
@@ -17,6 +18,7 @@ export function TrainingCertificate({
   trainingSession,
   isDarkMode = false,
 }: TrainingCertificateProps) {
+  const t = useI18nStore((state) => state.t);
   const batch = trainingSession.batch;
 
   const formattedDate = batch?.date
@@ -74,7 +76,7 @@ export function TrainingCertificate({
 
           <ThemedText style={[styles.brandName, { color: burgundy }]}>CHAUFFIT</ThemedText>
           <ThemedText style={[styles.subBrand, { color: textSecondary }]}>
-            Professional Driver Services
+            {t('professionalDriverServices')}
           </ThemedText>
         </View>
 
@@ -84,10 +86,10 @@ export function TrainingCertificate({
         {/* Certificate title */}
         <View style={styles.titleSection}>
           <ThemedText style={[styles.certLabel, { color: textSecondary }]}>
-            CERTIFICATE OF COMPLETION
+            {t('certificateOfCompletion')}
           </ThemedText>
           <ThemedText style={[styles.certSubLabel, { color: textPrimary }]}>
-            This certifies that
+            {t('thisCertifiesThat')}
           </ThemedText>
         </View>
 
@@ -103,9 +105,9 @@ export function TrainingCertificate({
 
         {/* Completion text */}
         <ThemedText style={[styles.completionText, { color: textPrimary }]}>
-          has successfully completed the{'\n'}
+          {t('hasSuccessfullyCompleted')}{'\n'}
           <ThemedText style={{ fontWeight: '700', color: burgundy }}>
-            Chauffit Professional Driver Training
+            {t('chauffitProfessionalDriverTraining')}
           </ThemedText>
         </ThemedText>
 
@@ -120,7 +122,7 @@ export function TrainingCertificate({
               <Ionicons name="calendar" size={16} color={gold} />
             </View>
             <ThemedText style={[styles.detailLabel, { color: textSecondary }]}>
-              DATE OF TRAINING
+              {t('dateOfTraining')}
             </ThemedText>
             <ThemedText style={[styles.detailValue, { color: textPrimary }]}>
               {formattedDate}
@@ -141,7 +143,7 @@ export function TrainingCertificate({
               <Ionicons name="location" size={16} color={gold} />
             </View>
             <ThemedText style={[styles.detailLabel, { color: textSecondary }]}>
-              LOCATION
+              {t('location')}
             </ThemedText>
             <ThemedText style={[styles.detailValue, { color: textPrimary }]} numberOfLines={2}>
               {batch?.location_name ?? 'N/A'}
@@ -165,7 +167,7 @@ export function TrainingCertificate({
           {/* Issue date */}
           <View style={styles.footerLeft}>
             <ThemedText style={[styles.footerLabel, { color: textSecondary }]}>
-              ISSUED ON
+              {t('issuedOn')}
             </ThemedText>
             <ThemedText style={[styles.footerValue, { color: textPrimary }]}>
               {issuedDate}
@@ -176,14 +178,14 @@ export function TrainingCertificate({
           <View style={[styles.certifiedBadge, { backgroundColor: `${burgundy}15`, borderColor: burgundy }]}>
             <Ionicons name="shield-checkmark" size={14} color={burgundy} />
             <ThemedText style={[styles.certifiedText, { color: burgundy }]}>
-              CERTIFIED
+              {t('certified')}
             </ThemedText>
           </View>
 
           {/* Certificate ID */}
           <View style={styles.footerRight}>
             <ThemedText style={[styles.footerLabel, { color: textSecondary }]}>
-              CERT. ID
+              {t('certId')}
             </ThemedText>
             <ThemedText style={[styles.footerValue, { color: textPrimary }]}>
               #{String(trainingSession.id).substring(0, 8).toUpperCase()}

@@ -27,7 +27,9 @@
       "Bash(cat:*)",
       "Bash(npx expo install @react-native-community/datetimepicker)",
       "Bash(npm run build 2>&1 | head -50)",
-      "Bash(npm run 2>&1 | grep -A 20 \"available scripts\")"
+      "Bash(npm run 2>&1 | grep -A 20 \"available scripts\")",
+      "Bash(git restore --staged CLAUDE.md \"Docs/Chauffit API.yaml\" Docs/razorpay-backend-requirements.md local_setup.md && git status)",
+      "Bash(git commit -m \"$\\(cat <<'EOF'\nImplement driver document verification improvements\n\n- Add DL license number text input for driving license front upload\n  - Auto-uppercase, max 20 chars, sent as document_number to API\n- Implement Aadhaar OTP verification flow\n  - New sendAadhaarOtp\\(\\) and verifyAadhaarOtp\\(\\) methods in DriverApiService\n  - Full inline OTP UI with 5-minute timer and resend functionality\n  - OTP input with SMS autofill support via textContentType\n  - Verified badge display when Aadhaar is confirmed\n- Add rejection reason display for all rejected documents\n  - Shows rejection_reason text from API response\n- Reorganize Aadhaar documents into grouped verification card\n  - Captures both front/back photos within verification section\n  - Proper state hydration on mount for approved Aadhaar\n\nCo-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ],
     "deny": [],
     "ask": []

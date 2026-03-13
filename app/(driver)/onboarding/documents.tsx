@@ -9,6 +9,7 @@ import { ThemedText } from '../../../components/common/ThemedText';
 import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { useAuthStore } from '../../../store/authStore';
 import DriverApiService, { DriverDocumentRequest, DriverDocumentType } from '../../../services/api/DriverApiService';
+import { AADHAAR_API_VERIFICATION_ENABLED } from '../../../constants/VerificationConfig';
 import * as ImagePicker from 'expo-image-picker';
 
 interface DocumentStatus {
@@ -180,6 +181,7 @@ export default function DocumentUploadScreen() {
           type: 'image/jpeg',
         } as any,
         ...(doc.apiType === 'driving_license_front' && dlNumber ? { document_number: dlNumber } : {}),
+        ...(doc.apiType === 'aadhaar_front' && aadhaarNumber && !AADHAAR_API_VERIFICATION_ENABLED ? { document_number: aadhaarNumber } : {}),
       };
 
       const response = await DriverApiService.uploadDocument(documentRequest);
@@ -454,37 +456,155 @@ export default function DocumentUploadScreen() {
               ))}
             </View>
 
-            {/* Aadhaar Verification Section */}
-            <View className="flex-row items-center mb-4">
-              <Ionicons name="id-card" size={20} color="#BD8C5E" />
-              <ThemedText className="font-bold ml-2">AADHAAR VERIFICATION</ThemedText>
-            </View>
-
-            <ThemedCard className="p-4 mb-6">
-              {isLoading ? (
-                <View className="items-center py-6">
-                  <ActivityIndicator size="large" color="#BD8C5E" />
+            {/* Aadhaar Section - Conditional based on config */}
+            {AADHAAR_API_VERIFICATION_ENABLED ? (
+              <>
+                {/* OTP Mode */}
+                <View className="flex-row items-center mb-4">
+                  <Ionicons name="id-card" size={20} color="#BD8C5E" />
+                  <ThemedText className="font-bold ml-2">AADHAAR VERIFICATION</ThemedText>
                 </View>
-              ) : aadhaarVerified ? (
-                <View className="items-center py-4 px-3 bg-opacity-10 rounded-lg" style={{backgroundColor: '#10b98120'}}>
-                  <Ionicons name="checkmark-circle" size={32} color="#10b981" />
-                  <ThemedText className="font-semibold mt-2 text-success">Aadhaar Verified ✓</ThemedText>
-                </View>
-              ) : (
-                <View className="space-y-4">
-                  {/* Aadhaar Number Input */}
-                  <TextInput
-                    placeholder="Aadhaar Number (12 digits)"
-                    value={aadhaarNumber}
-                    onChangeText={text => setAadhaarNumber(text.replace(/\D/g, '').slice(0, 12))}
-                    maxLength={12}
-                    keyboardType="number-pad"
-                    className="px-4 py-3 border border-border dark:border-darkBorder rounded-lg text-text dark:text-darkText bg-background dark:bg-darkBackground"
-                    placeholderTextColor="#BD8C5E"
-                    editable={!aadhaarOtpSent}
-                  />
 
-                  {/* Aadhaar Front & Back Upload */}
+                <ThemedCard className="p-4 mb-6">
+                  {isLoading ? (
+                    <View className="items-center py-6">
+                      <ActivityIndicator size="large" color="#BD8C5E" />
+                    </View>
+                  ) : aadhaarVerified ? (
+                    <View className="items-center py-4 px-3 bg-opacity-10 rounded-lg" style={{backgroundColor: '#10b98120'}}>
+                      <Ionicons name="checkmark-circle" size={32} color="#10b981" />
+                      <ThemedText className="font-semibold mt-2 text-success">Aadhaar Verified ✓</ThemedText>
+                    </View>
+                  ) : (
+                    <View className="space-y-4">
+                      {/* Aadhaar Number Input */}
+                      <TextInput
+                        placeholder="Aadhaar Number (12 digits)"
+                        value={aadhaarNumber}
+                        onChangeText={text => setAadhaarNumber(text.replace(/\D/g, '').slice(0, 12))}
+                        maxLength={12}
+                        keyboardType="number-pad"
+                        className="px-4 py-3 border border-border dark:border-darkBorder rounded-lg text-text dark:text-darkText bg-background dark:bg-darkBackground"
+                        placeholderTextColor="#BD8C5E"
+                        editable={!aadhaarOtpSent}
+                      />
+
+                      {/* Aadhaar Front & Back Upload */}
+                      {[
+                        { id: 'aadhaar_front', name: 'Aadhaar Card (Front)' },
+                        { id: 'aadhaar_back', name: 'Aadhaar Card (Back)' },
+                      ].map(({ id, name }) => {
+                        const doc = documents.find(d => d.id === id);
+                        if (!doc) return null;
+                        return (
+                          <View key={id}>
+                            <ThemedText className="font-semibold text-sm mb-2">{name}</ThemedText>
+                            {!doc.uploaded || doc.status === 'rejected' ? (
+                              <TouchableOpacity
+                                onPress={() => handleUploadDocument(doc.id)}
+                                className="flex-row items-center justify-center py-3 border-2 border-dashed border-secondary rounded-lg bg-secondary/5"
+                              >
+                                <Ionicons name="camera" size={16} color="#BD8C5E" />
+                                <ThemedText className="text-secondary font-semibold ml-2">
+                                  {doc.status === 'rejected' ? 'Retake Photo' : 'Upload Photo'}
+                                </ThemedText>
+                              </TouchableOpacity>
+                            ) : (
+                              <View className="flex-row items-center py-2 px-3 bg-opacity-10 rounded-lg" style={{backgroundColor: doc.status === 'verified' || doc.status === 'approved' ? '#10b98120' : '#f59e0b20'}}>
+                                <Ionicons
+                                  name={getStatusIcon(doc.status) as any}
+                                  size={16}
+                                  color={doc.status === 'verified' || doc.status === 'approved' ? '#10b981' : '#f59e0b'}
+                                />
+                                <ThemedText className={`font-semibold ml-2 ${getStatusColor(doc.status)}`}>
+                                  {getStatusLabel(doc.status)}
+                                </ThemedText>
+                              </View>
+                            )}
+                            {doc.status === 'rejected' && rejectionReasons[doc.id] && (
+                              <ThemedText variant="caption" className="text-danger mt-2">
+                                Reason: {rejectionReasons[doc.id]}
+                              </ThemedText>
+                            )}
+                          </View>
+                        );
+                      })}
+
+                      {/* Send OTP Button */}
+                      {!aadhaarOtpSent && (
+                        <PrimaryButton
+                          title="Send Verification OTP"
+                          onPress={handleSendAadhaarOtp}
+                          disabled={
+                            aadhaarNumber.length !== 12 ||
+                            !documents.find(d => d.id === 'aadhaar_front')?.uploaded ||
+                            !documents.find(d => d.id === 'aadhaar_back')?.uploaded ||
+                            aadhaarVerifyLoading
+                          }
+                          className="mt-2"
+                        />
+                      )}
+
+                      {/* OTP Input Section */}
+                      {aadhaarOtpSent && !aadhaarVerified && (
+                        <View className="space-y-3 pt-3 border-t border-border dark:border-darkBorder">
+                          <View>
+                            <ThemedText className="font-semibold text-sm mb-2">Enter OTP</ThemedText>
+                            <View className="flex-row items-center">
+                              <TextInput
+                                placeholder="000000"
+                                value={aadhaarOtp}
+                                onChangeText={text => setAadhaarOtp(text.replace(/\D/g, '').slice(0, 6))}
+                                maxLength={6}
+                                keyboardType="number-pad"
+                                textContentType="oneTimeCode"
+                                className="flex-1 px-4 py-3 border border-border dark:border-darkBorder rounded-lg text-text dark:text-darkText bg-background dark:bg-darkBackground"
+                                placeholderTextColor="#BD8C5E"
+                              />
+                              <ThemedText className="ml-3 font-semibold text-secondary">
+                                {formatOtpTimer(aadhaarOtpTimer)}
+                              </ThemedText>
+                            </View>
+                          </View>
+
+                          {aadhaarCanResend && (
+                            <TouchableOpacity onPress={handleSendAadhaarOtp}>
+                              <ThemedText className="text-secondary font-semibold text-sm">Resend OTP</ThemedText>
+                            </TouchableOpacity>
+                          )}
+
+                          <PrimaryButton
+                            title="Verify Aadhaar"
+                            onPress={handleVerifyAadhaarOtp}
+                            disabled={aadhaarOtp.length !== 6 || aadhaarVerifyLoading}
+                          />
+                        </View>
+                      )}
+                    </View>
+                  )}
+                </ThemedCard>
+              </>
+            ) : (
+              <>
+                {/* Manual Mode - Photo Upload Only */}
+                <View className="flex-row items-center mb-4">
+                  <Ionicons name="id-card" size={20} color="#BD8C5E" />
+                  <ThemedText className="font-bold ml-2">AADHAAR CARD</ThemedText>
+                </View>
+
+                {/* Aadhaar Number Input */}
+                <TextInput
+                  placeholder="Aadhaar Number (12 digits)"
+                  value={aadhaarNumber}
+                  onChangeText={text => setAadhaarNumber(text.replace(/\D/g, '').slice(0, 12))}
+                  maxLength={12}
+                  keyboardType="number-pad"
+                  className="mb-4 px-4 py-3 border border-border dark:border-darkBorder rounded-lg text-text dark:text-darkText bg-background dark:bg-darkBackground"
+                  placeholderTextColor="#BD8C5E"
+                />
+
+                {/* Aadhaar Front & Back as simple upload cards */}
+                <View className="space-y-4 mb-6">
                   {[
                     { id: 'aadhaar_front', name: 'Aadhaar Card (Front)' },
                     { id: 'aadhaar_back', name: 'Aadhaar Card (Back)' },
@@ -492,8 +612,26 @@ export default function DocumentUploadScreen() {
                     const doc = documents.find(d => d.id === id);
                     if (!doc) return null;
                     return (
-                      <View key={id}>
-                        <ThemedText className="font-semibold text-sm mb-2">{name}</ThemedText>
+                      <ThemedCard key={id} className="p-4">
+                        <View className="flex-row items-center justify-between mb-3">
+                          <View className="flex-row items-center flex-1">
+                            <Ionicons name="id-card" size={20} color="#BD8C5E" />
+                            <ThemedText className="font-semibold ml-3">{name}</ThemedText>
+                          </View>
+                          {isLoading ? (
+                            <ActivityIndicator size="small" color="#BD8C5E" />
+                          ) : (
+                            <Ionicons
+                              name={getStatusIcon(doc.status) as any}
+                              size={20}
+                              color={
+                                doc.status === 'pending' || doc.status === 'uploaded' ? '#f59e0b' :
+                                doc.status === 'verified' || doc.status === 'approved' ? '#10b981' :
+                                '#ef4444'
+                              }
+                            />
+                          )}
+                        </View>
                         {!doc.uploaded || doc.status === 'rejected' ? (
                           <TouchableOpacity
                             onPress={() => handleUploadDocument(doc.id)}
@@ -505,7 +643,7 @@ export default function DocumentUploadScreen() {
                             </ThemedText>
                           </TouchableOpacity>
                         ) : (
-                          <View className="flex-row items-center py-2 px-3 bg-opacity-10 rounded-lg" style={{backgroundColor: doc.status === 'verified' || doc.status === 'approved' ? '#10b98120' : '#f59e0b20'}}>
+                          <View className="flex-row items-center py-2 px-3 rounded-lg" style={{backgroundColor: doc.status === 'verified' || doc.status === 'approved' ? '#10b98120' : '#f59e0b20'}}>
                             <Ionicons
                               name={getStatusIcon(doc.status) as any}
                               size={16}
@@ -517,67 +655,16 @@ export default function DocumentUploadScreen() {
                           </View>
                         )}
                         {doc.status === 'rejected' && rejectionReasons[doc.id] && (
-                          <ThemedText variant="caption" className="text-danger mt-2">
+                          <ThemedText variant="caption" className="text-danger mt-3">
                             Reason: {rejectionReasons[doc.id]}
                           </ThemedText>
                         )}
-                      </View>
+                      </ThemedCard>
                     );
                   })}
-
-                  {/* Send OTP Button */}
-                  {!aadhaarOtpSent && (
-                    <PrimaryButton
-                      title="Send Verification OTP"
-                      onPress={handleSendAadhaarOtp}
-                      disabled={
-                        aadhaarNumber.length !== 12 ||
-                        !documents.find(d => d.id === 'aadhaar_front')?.uploaded ||
-                        !documents.find(d => d.id === 'aadhaar_back')?.uploaded ||
-                        aadhaarVerifyLoading
-                      }
-                      className="mt-2"
-                    />
-                  )}
-
-                  {/* OTP Input Section */}
-                  {aadhaarOtpSent && !aadhaarVerified && (
-                    <View className="space-y-3 pt-3 border-t border-border dark:border-darkBorder">
-                      <View>
-                        <ThemedText className="font-semibold text-sm mb-2">Enter OTP</ThemedText>
-                        <View className="flex-row items-center">
-                          <TextInput
-                            placeholder="000000"
-                            value={aadhaarOtp}
-                            onChangeText={text => setAadhaarOtp(text.replace(/\D/g, '').slice(0, 6))}
-                            maxLength={6}
-                            keyboardType="number-pad"
-                            textContentType="oneTimeCode"
-                            className="flex-1 px-4 py-3 border border-border dark:border-darkBorder rounded-lg text-text dark:text-darkText bg-background dark:bg-darkBackground"
-                            placeholderTextColor="#BD8C5E"
-                          />
-                          <ThemedText className="ml-3 font-semibold text-secondary">
-                            {formatOtpTimer(aadhaarOtpTimer)}
-                          </ThemedText>
-                        </View>
-                      </View>
-
-                      {aadhaarCanResend && (
-                        <TouchableOpacity onPress={handleSendAadhaarOtp}>
-                          <ThemedText className="text-secondary font-semibold text-sm">Resend OTP</ThemedText>
-                        </TouchableOpacity>
-                      )}
-
-                      <PrimaryButton
-                        title="Verify Aadhaar"
-                        onPress={handleVerifyAadhaarOtp}
-                        disabled={aadhaarOtp.length !== 6 || aadhaarVerifyLoading}
-                      />
-                    </View>
-                  )}
                 </View>
-              )}
-            </ThemedCard>
+              </>
+            )}
 
             {/* Live Photo Capture */}
             <View className="flex-row items-center mb-4">

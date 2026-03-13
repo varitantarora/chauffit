@@ -7,6 +7,7 @@ import { ThemedView } from '../../components/common/ThemedView';
 import { ThemedText } from '../../components/common/ThemedText';
 import { TrainingCertificate } from '../../components/driver/profile/TrainingCertificate';
 import { useAuthStore } from '../../store/authStore';
+import { useI18nStore } from '../../store/i18nStore';
 import DriverApiService, { TrainingSession } from '../../services/api/DriverApiService';
 
 export default function TrainingCertificateScreen() {
@@ -15,6 +16,7 @@ export default function TrainingCertificateScreen() {
   const user = useAuthStore((state) => state.user);
   const storedTrainingSession = useAuthStore((state) => state.trainingSession);
   const fetchDriverOnboardingStatus = useAuthStore((state) => state.fetchDriverOnboardingStatus);
+  const t = useI18nStore((state) => state.t);
 
   const [trainingSession, setTrainingSession] = useState<TrainingSession | null>(
     storedTrainingSession
@@ -79,7 +81,7 @@ export default function TrainingCertificateScreen() {
             />
           </TouchableOpacity>
           <ThemedText style={{ fontSize: 18, fontWeight: '700', flex: 1 }}>
-            Training Certificate
+            {t('trainingCertificate')}
           </ThemedText>
           <View
             style={{
@@ -93,7 +95,7 @@ export default function TrainingCertificateScreen() {
           >
             <Ionicons name="shield-checkmark" size={14} color="#10B981" />
             <ThemedText style={{ fontSize: 12, color: '#10B981', fontWeight: '700', marginLeft: 4 }}>
-              PASSED
+              {t('passed')}
             </ThemedText>
           </View>
         </View>
@@ -106,7 +108,7 @@ export default function TrainingCertificateScreen() {
             <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 60 }}>
               <ActivityIndicator size="large" color="#BD8C5E" />
               <ThemedText style={{ marginTop: 16, color: '#BD8C5E' }}>
-                Loading certificate...
+                {t('loadingCertificate')}
               </ThemedText>
             </View>
           ) : trainingSession ? (
@@ -136,7 +138,7 @@ export default function TrainingCertificateScreen() {
                 <ThemedText
                   style={{ fontSize: 13, marginLeft: 10, flex: 1, color: isDarkMode ? '#86efac' : '#166534' }}
                 >
-                  This certificate is your official proof of completing the Chauffit Professional Driver Training programme.
+                  {t('certificateInfo')}
                 </ThemedText>
               </View>
             </>
@@ -144,10 +146,10 @@ export default function TrainingCertificateScreen() {
             <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 60 }}>
               <Ionicons name="document-outline" size={56} color="#BD8C5E" />
               <ThemedText style={{ marginTop: 16, fontWeight: '700', fontSize: 16 }}>
-                Certificate Not Available
+                {t('certificateNotAvailable')}
               </ThemedText>
               <ThemedText style={{ marginTop: 8, color: '#6b7280', textAlign: 'center' }}>
-                Your certificate will appear here once your training result has been recorded.
+                {t('certificateWillAppear')}
               </ThemedText>
             </View>
           )}

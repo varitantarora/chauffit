@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedCard } from '../../common/ThemedCard';
 import { ThemedText } from '../../common/ThemedText';
 import { useAuthStore } from '../../../store/authStore';
+import { useI18nStore } from '../../../store/i18nStore';
 
 interface EarningsCardProps {
   title: string;
@@ -17,11 +18,11 @@ interface EarningsCardProps {
   trendDirection?: 'up' | 'down' | 'neutral';
 }
 
-export function EarningsCard({ 
-  title, 
-  amount, 
-  subtitle, 
-  icon, 
+export function EarningsCard({
+  title,
+  amount,
+  subtitle,
+  icon,
   iconColor = '#bd8c5e',
   onPress,
   showTrend = false,
@@ -29,6 +30,7 @@ export function EarningsCard({
   trendDirection = 'neutral'
 }: EarningsCardProps) {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const t = useI18nStore((state) => state.t);
 
   const getTrendIcon = () => {
     switch (trendDirection) {
@@ -94,13 +96,13 @@ export function EarningsCard({
                   size={14} 
                   color={getTrendColor()} 
                 />
-                <ThemedText 
-                  variant="caption" 
+                <ThemedText
+                  variant="caption"
                   className="ml-1"
                   style={{ color: getTrendColor() }}
                 >
                   {trendDirection === 'up' ? '+' : trendDirection === 'down' ? '-' : ''}
-                  {Math.abs(trendValue)}% vs last week
+                  {Math.abs(trendValue)}{t('vsLastWeek')}
                 </ThemedText>
               </View>
             )}
@@ -122,6 +124,7 @@ export function EarningsCard({
 // Earnings summary card with multiple metrics
 export function EarningsSummaryCard({ onViewDetails }: { onViewDetails?: () => void }) {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const t = useI18nStore((state) => state.t);
   const { useEarningsStore } = require('../../../store/earningsStore');
   const { earnings } = useEarningsStore();
 
@@ -129,11 +132,11 @@ export function EarningsSummaryCard({ onViewDetails }: { onViewDetails?: () => v
     <ThemedCard className="mb-4 p-4">
       <View className="flex-row items-center justify-between mb-4">
         <ThemedText variant="title" className="text-lg font-bold">
-          Earnings Overview
+          {t('earningsOverview')}
         </ThemedText>
         {onViewDetails && (
           <TouchableOpacity onPress={onViewDetails}>
-            <ThemedText className="text-burgundy">View Details</ThemedText>
+            <ThemedText className="text-burgundy">{t('viewDetails')}</ThemedText>
           </TouchableOpacity>
         )}
       </View>
@@ -143,19 +146,19 @@ export function EarningsSummaryCard({ onViewDetails }: { onViewDetails?: () => v
           <ThemedText className="text-2xl font-bold text-burgundy">
             ₹{(earnings.todayEarnings || 0).toLocaleString('en-IN')}
           </ThemedText>
-          <ThemedText variant="caption">Today</ThemedText>
+          <ThemedText variant="caption">{t('today')}</ThemedText>
         </View>
         <View className="flex-1 items-center">
           <ThemedText className="text-2xl font-bold">
             ₹{(earnings.weeklyEarnings || 0).toLocaleString('en-IN')}
           </ThemedText>
-          <ThemedText variant="caption">This Week</ThemedText>
+          <ThemedText variant="caption">{t('thisWeek')}</ThemedText>
         </View>
         <View className="flex-1 items-center">
           <ThemedText className="text-2xl font-bold">
             ₹{(earnings.monthlyEarnings || 0).toLocaleString('en-IN')}
           </ThemedText>
-          <ThemedText variant="caption">This Month</ThemedText>
+          <ThemedText variant="caption">{t('thisMonth')}</ThemedText>
         </View>
       </View>
 
@@ -165,7 +168,7 @@ export function EarningsSummaryCard({ onViewDetails }: { onViewDetails?: () => v
             <View className="flex-row items-center">
               <Ionicons name="time" size={16} color="#f59e0b" />
               <ThemedText variant="caption" className="text-warning font-semibold ml-2">
-                Pending Settlement
+                {t('pendingSettlement')}
               </ThemedText>
             </View>
             <ThemedText className="font-bold text-warning">
@@ -196,6 +199,7 @@ export function WeeklyProgressCard({
   onlineHours = 0,
   onlineHoursTarget = 50
 }: WeeklyProgressCardProps) {
+  const t = useI18nStore((state) => state.t);
   // Use real data from props, fall back to store values
   const { useEarningsStore } = require('../../../store/earningsStore');
   const { earnings, weeklyTarget: storeWeeklyTarget } = useEarningsStore();
@@ -211,13 +215,13 @@ export function WeeklyProgressCard({
   return (
     <ThemedCard className="mb-4 p-4">
       <ThemedText variant="title" className="text-lg font-bold mb-4">
-        Weekly Progress
+        {t('weeklyProgress')}
       </ThemedText>
-      
+
       {/* Earnings Progress */}
       <View className="mb-4">
         <View className="flex-row justify-between items-center mb-2">
-          <ThemedText className="font-semibold">Earnings</ThemedText>
+          <ThemedText className="font-semibold">{t('earnings')}</ThemedText>
           <ThemedText className="font-bold">
             ₹{Math.round(actualEarnings).toLocaleString('en-IN')} / ₹{actualTarget.toLocaleString('en-IN')}
           </ThemedText>
@@ -229,14 +233,14 @@ export function WeeklyProgressCard({
           />
         </View>
         <ThemedText variant="caption" className="text-right">
-          {Math.round(earningsProgress)}% complete
+          {Math.round(earningsProgress)}{t('percentComplete')}
         </ThemedText>
       </View>
 
       {/* Rides Progress */}
       <View className="mb-4">
         <View className="flex-row justify-between items-center mb-2">
-          <ThemedText className="font-semibold">Rides</ThemedText>
+          <ThemedText className="font-semibold">{t('rides')}</ThemedText>
           <ThemedText className="font-bold">
             {weeklyRides} / {weeklyRidesTarget}
           </ThemedText>
@@ -248,14 +252,14 @@ export function WeeklyProgressCard({
           />
         </View>
         <ThemedText variant="caption" className="text-right">
-          {weeklyRidesTarget > 0 ? Math.round(ridesProgress) : 0}% complete
+          {weeklyRidesTarget > 0 ? Math.round(ridesProgress) : 0}{t('percentComplete')}
         </ThemedText>
       </View>
 
       {/* Hours Progress */}
       <View>
         <View className="flex-row justify-between items-center mb-2">
-          <ThemedText className="font-semibold">Online Hours</ThemedText>
+          <ThemedText className="font-semibold">{t('onlineHours')}</ThemedText>
           <ThemedText className="font-bold">
             {onlineHours}h / {onlineHoursTarget}h
           </ThemedText>
@@ -267,7 +271,7 @@ export function WeeklyProgressCard({
           />
         </View>
         <ThemedText variant="caption" className="text-right">
-          {onlineHoursTarget > 0 ? Math.round(hoursProgress) : 0}% complete
+          {onlineHoursTarget > 0 ? Math.round(hoursProgress) : 0}{t('percentComplete')}
         </ThemedText>
       </View>
     </ThemedCard>

@@ -117,7 +117,7 @@ export interface DriverProfile extends User {
 
 export interface DriverDocument {
   id: string;
-  type: 'license' | 'insurance' | 'registration' | 'permit' | 'passport' | 'other';
+  type: 'license_front' | 'license_back' | 'aadhaar_front' | 'aadhaar_back' | 'other';
   number: string;
   imageUrl: string;
   expiryDate?: Date;

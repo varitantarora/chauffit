@@ -97,9 +97,9 @@ export default function DriverHomeScreen() {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return t('goodMorning');
+    if (hour < 17) return t('goodAfternoon');
+    return t('goodEvening');
   };
 
   // Weekly goals - using real data from API
@@ -142,18 +142,6 @@ export default function DriverHomeScreen() {
       icon: 'cash',
       color: '#3b82f6',
       action: () => router.push('/(driver)/(tabs)/earnings')
-    },
-    {
-      title: t('vehicle'),
-      icon: 'car-sport',
-      color: '#f59e0b',
-      action: () => console.log('Vehicle details')
-    },
-    {
-      title: t('navigation'),
-      icon: 'navigate',
-      color: '#8b5cf6',
-      action: () => console.log('Open navigation')
     }
   ];
 
@@ -236,7 +224,7 @@ export default function DriverHomeScreen() {
                       <View className="w-4 h-4 bg-warning rounded-full mr-3" />
                       <View>
                         <ThemedText className="font-bold text-lg">
-                          {pendingCount} New Request{pendingCount > 1 ? 's' : ''}
+                          {pendingCount} {pendingCount > 1 ? t('newRequests') : t('newRequest')}
                         </ThemedText>
                         <ThemedText variant="secondary">
                           {t('tapToViewRides')}
@@ -323,7 +311,7 @@ export default function DriverHomeScreen() {
                   <ThemedText variant="title" className="text-2xl font-bold">
                     {todayStats.hours}h
                   </ThemedText>
-                  <ThemedText variant="caption">Online</ThemedText>
+                  <ThemedText variant="caption">{t('onlineStatus')}</ThemedText>
                 </View>
                 {/* Driving Score - Circular UI */}
                 <View className="items-center">
@@ -453,7 +441,7 @@ export default function DriverHomeScreen() {
                     <View className="ml-3 flex-1">
                       <ThemedText className="font-semibold">{job.customerName}</ThemedText>
                       <ThemedText variant="caption">
-                        Completed • {new Date(job.date).toLocaleString('en-IN', {
+                        {t('completed')} • {new Date(job.date).toLocaleString('en-IN', {
                           hour: '2-digit',
                           minute: '2-digit',
                           hour12: true
@@ -500,11 +488,11 @@ export default function DriverHomeScreen() {
                 <View className="flex-row items-center">
                   <Ionicons name="information-circle" size={20} color="#720c17" />
                   <ThemedText className="ml-2 font-semibold text-secondary">
-                    You're currently offline
+                    {t('youreCurrentlyOffline')}
                   </ThemedText>
                 </View>
                 <ThemedText variant="secondary" className="mt-1">
-                  Turn on your online status to start receiving ride requests and earning money.
+                  {t('turnOnYourOnlineStatus')}
                 </ThemedText>
               </View>
             )}
