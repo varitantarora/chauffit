@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { useCarStore } from '../../store/carStore';
 import { useBookingStore } from '../../store/bookingStore';
+import { useConfigStore } from '../../store/configStore';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { CustomerCar } from '../../types/navigation';
 import BookingApiService, {
@@ -66,6 +67,9 @@ export default function BookRideScreen() {
   const user = useAuthStore((state) => state.user);
   const { cars, defaultCar, loadUserCars, isLoading: isCarsLoading } = useCarStore();
   const { createBooking } = useBookingStore();
+  const getConfigValue = useConfigStore((state) => state.getConfigValue);
+  const fetchConfigs = useConfigStore((state) => state.fetchConfigs);
+  const insuranceEnabled = getConfigValue('insurance_enabled') !== 'false';
 
   const [pickupLocation, setPickupLocation] = useState<BookingLocation>({
     address: '',
@@ -75,7 +79,7 @@ export default function BookRideScreen() {
   const [dropLocation, setDropLocation] = useState<BookingLocation | null>(null);
   const [selectedCar, setSelectedCar] = useState<CustomerCar | null>(null);
   const [tripType, setTripType] = useState<TripType>('one_way');
-  const [hourlyHours, setHourlyHours] = useState<number>(1);
+  const [hourlyHours, setHourlyHours] = useState<number>(2);
   const [scheduleOption, setScheduleOption] = useState<ScheduleOption>('now');
   const [scheduledDate, setScheduledDate] = useState<Date | null>(null);
   const [scheduledTime, setScheduledTime] = useState<string>('');
@@ -141,6 +145,10 @@ export default function BookRideScreen() {
       fetchLoyaltyProfile();
     }
   }, [user?.id, loadUserCars]);
+
+  useEffect(() => {
+    fetchConfigs();
+  }, []);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -262,7 +270,8 @@ export default function BookRideScreen() {
     pickupLocation?.address, pickupLocation?.latitude, pickupLocation?.longitude,
     dropLocation?.address, dropLocation?.latitude, dropLocation?.longitude,
     selectedCar?.id, tripType, scheduleOption, scheduledDate,
-    selectedInsurancePlanId, hourlyHours, stops,
+    // selectedInsurancePlanId removed - it's updated by fare estimate response, creating a loop
+    hourlyHours, stops,
   ]);
 
   const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
@@ -940,22 +949,32 @@ export default function BookRideScreen() {
                     { id: 'round_trip' as TripType, label: 'Round-trip' },
                     { id: 'hourly' as TripType, label: 'Hourly' },
                     { id: 'multi_stop' as TripType, label: 'Multi-stop' },
-                  ]).map((type) => (
-                    <TouchableOpacity
-                      key={type.id}
-                      onPress={() => setTripType(type.id)}
-                      className={`flex-1 p-2 rounded-lg border ${tripType === type.id ? 'bg-burgundy border-burgundy' : inputClass
-                        }`}
-                    >
-                      <ThemedText
-                        variant="small"
-                        className={`text-center ${tripType === type.id ? 'text-white' : ''
-                          }`}
+                  ]).map((type) => {
+                    const isSelected = tripType === type.id;
+                    return (
+                      <TouchableOpacity
+                        key={type.id}
+                        onPress={() => setTripType(type.id)}
+                        activeOpacity={0.7}
+                        className={
+                          isSelected 
+                            ? 'flex-1 p-2 rounded-lg border bg-burgundy border-burgundy' 
+                            : `flex-1 p-2 rounded-lg border ${isDarkMode ? 'bg-darkSurface border-darkBorder' : 'bg-white border-gray-200'}`
+                        }
                       >
-                        {type.label}
-                      </ThemedText>
-                    </TouchableOpacity>
-                  ))}
+                        <ThemedText
+                          variant="small"
+                          className={
+                            isSelected 
+                              ? 'text-center text-white font-medium' 
+                              : `text-center ${isDarkMode ? 'text-darkText' : 'text-textPrimary'}`
+                          }
+                        >
+                          {type.label}
+                        </ThemedText>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               </View>
 
@@ -1200,16 +1219,16 @@ export default function BookRideScreen() {
                   </ThemedText>
                   <View className="flex-row items-center justify-between p-3 rounded-xl border border-gray-200 dark:border-darkBorder">
                     <TouchableOpacity
-                      onPress={() => setHourlyHours(Math.max(1, hourlyHours - 1))}
+                      onPress={() => setHourlyHours(Math.max(2, hourlyHours - 2))}
                       className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 items-center justify-center"
                     >
                       <Ionicons name="remove" size={20} color={isDarkMode ? '#fff' : '#333'} />
                     </TouchableOpacity>
                     <ThemedText variant="h2" className="mx-4">
-                      {hourlyHours} {hourlyHours === 1 ? 'hour' : 'hours'}
+                      {hourlyHours} hours
                     </ThemedText>
                     <TouchableOpacity
-                      onPress={() => setHourlyHours(Math.min(12, hourlyHours + 1))}
+                      onPress={() => setHourlyHours(Math.min(8, hourlyHours + 2))}
                       className="w-10 h-10 rounded-full bg-burgundy items-center justify-center"
                     >
                       <Ionicons name="add" size={20} color="white" />
@@ -1219,38 +1238,40 @@ export default function BookRideScreen() {
               )}
 
               {/* Trip Insurance Banner */}
-              <TouchableOpacity
-                onPress={openInsuranceModal}
-                className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-700"
-                activeOpacity={0.8}
-              >
-                <View className="flex-row items-center justify-between">
-                  <View className="flex-row items-center flex-1">
-                    <View className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 rounded-full items-center justify-center mr-3">
-                      <Ionicons
-                        name={selectedInsurancePlanId ? 'shield-checkmark' : 'shield-outline'}
-                        size={20}
-                        color="#3B82F6"
-                      />
+              {insuranceEnabled && (
+                <TouchableOpacity
+                  onPress={openInsuranceModal}
+                  className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-700"
+                  activeOpacity={0.8}
+                >
+                  <View className="flex-row items-center justify-between">
+                    <View className="flex-row items-center flex-1">
+                      <View className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 rounded-full items-center justify-center mr-3">
+                        <Ionicons
+                          name={selectedInsurancePlanId ? 'shield-checkmark' : 'shield-outline'}
+                          size={20}
+                          color="#3B82F6"
+                        />
+                      </View>
+                      <View className="flex-1">
+                        <ThemedText variant="small" className="font-semibold">
+                          {selectedInsurancePlanId ? selectedInsuranceName : 'Add Trip Insurance'}
+                        </ThemedText>
+                        <ThemedText variant="tiny" className="text-gray-500">
+                          {selectedInsurancePlanId
+                            ? `₹${selectedInsurancePremium} · Tap to change`
+                            : 'Protect your car during the trip'}
+                        </ThemedText>
+                      </View>
                     </View>
-                    <View className="flex-1">
-                      <ThemedText variant="small" className="font-semibold">
-                        {selectedInsurancePlanId ? selectedInsuranceName : 'Add Trip Insurance'}
-                      </ThemedText>
-                      <ThemedText variant="tiny" className="text-gray-500">
-                        {selectedInsurancePlanId
-                          ? `₹${selectedInsurancePremium} · Tap to change`
-                          : 'Protect your car during the trip'}
-                      </ThemedText>
-                    </View>
+                    <Ionicons
+                      name={selectedInsurancePlanId ? 'checkmark-circle' : 'chevron-forward'}
+                      size={22}
+                      color={selectedInsurancePlanId ? '#10B981' : '#3B82F6'}
+                    />
                   </View>
-                  <Ionicons
-                    name={selectedInsurancePlanId ? 'checkmark-circle' : 'chevron-forward'}
-                    size={22}
-                    color={selectedInsurancePlanId ? '#10B981' : '#3B82F6'}
-                  />
-                </View>
-              </TouchableOpacity>
+                </TouchableOpacity>
+              )}
 
               {/* Amenities Banner */}
               <TouchableOpacity
@@ -1757,36 +1778,38 @@ export default function BookRideScreen() {
                     </View>
 
                     {/* Insurance Selection */}
-                    <TouchableOpacity
-                      onPress={() => {
-                        setShowFareModal(false);
-                        openInsuranceModal();
-                      }}
-                      className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800"
-                    >
-                      <View className="flex-row items-center justify-between">
-                        <View className="flex-row items-center">
-                          <View className="w-10 h-10 bg-blue-100 rounded-full items-center justify-center mr-3">
-                            <Ionicons name="shield-checkmark" size={20} color="#3B82F6" />
+                    {insuranceEnabled && (
+                      <TouchableOpacity
+                        onPress={() => {
+                          setShowFareModal(false);
+                          openInsuranceModal();
+                        }}
+                        className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800"
+                      >
+                        <View className="flex-row items-center justify-between">
+                          <View className="flex-row items-center">
+                            <View className="w-10 h-10 bg-blue-100 rounded-full items-center justify-center mr-3">
+                              <Ionicons name="shield-checkmark" size={20} color="#3B82F6" />
+                            </View>
+                            <View>
+                              <ThemedText variant="small" className="font-semibold">
+                                {selectedInsurancePlanId ? 'Insurance Added' : 'Add Trip Insurance'}
+                              </ThemedText>
+                              <ThemedText variant="tiny" className="text-gray-500">
+                                {selectedInsurancePlanId
+                                  ? `₹${selectedInsurancePremium} for trip coverage`
+                                  : 'Protect your journey from unexpected damages'}
+                              </ThemedText>
+                            </View>
                           </View>
-                          <View>
-                            <ThemedText variant="small" className="font-semibold">
-                              {selectedInsurancePlanId ? 'Insurance Added' : 'Add Trip Insurance'}
-                            </ThemedText>
-                            <ThemedText variant="tiny" className="text-gray-500">
-                              {selectedInsurancePlanId
-                                ? `₹${selectedInsurancePremium} for trip coverage`
-                                : 'Protect your journey from unexpected damages'}
-                            </ThemedText>
-                          </View>
+                          <Ionicons
+                            name={selectedInsurancePlanId ? "checkmark-circle" : "chevron-forward"}
+                            size={24}
+                            color={selectedInsurancePlanId ? "#10B981" : "#3B82F6"}
+                          />
                         </View>
-                        <Ionicons
-                          name={selectedInsurancePlanId ? "checkmark-circle" : "chevron-forward"}
-                          size={24}
-                          color={selectedInsurancePlanId ? "#10B981" : "#3B82F6"}
-                        />
-                      </View>
-                    </TouchableOpacity>
+                      </TouchableOpacity>
+                    )}
 
                     {/* Amenities Selection in Fare Modal */}
                     <TouchableOpacity
@@ -1838,7 +1861,7 @@ export default function BookRideScreen() {
 
         {/* Insurance Selection Modal */}
         <Modal
-          visible={showInsuranceModal}
+          visible={insuranceEnabled && showInsuranceModal}
           transparent
           animationType="slide"
           onRequestClose={() => setShowInsuranceModal(false)}

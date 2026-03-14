@@ -7,6 +7,7 @@ import { ThemedText } from '../../../components/common/ThemedText';
 import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../store/authStore';
+import { useConfigStore } from '../../../store/configStore';
 import { useRouter } from 'expo-router';
 import BookingApiService, { CustomerRide } from '../../../services/api/BookingApiService';
 import BlogApiService, { BlogListItem } from '../../../services/api/BlogApiService';
@@ -20,6 +21,7 @@ export default function CustomerHomeScreen() {
   const user = useAuthStore((state) => state.user);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const router = useRouter();
+  const fetchConfigs = useConfigStore((state) => state.fetchConfigs);
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [showAnimation, setShowAnimation] = useState(true);
@@ -87,6 +89,7 @@ export default function CustomerHomeScreen() {
   useEffect(() => {
     fetchRecentActivity();
     fetchBlogs();
+    fetchConfigs();
   }, [fetchRecentActivity, fetchBlogs]);
 
   const destinationRef = useRef<TextInput>(null);

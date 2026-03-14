@@ -178,6 +178,12 @@ export default function AdminSettings() {
         { subtitle: '4.2 Disputes / Inquiries', icon: 'warning' as const, count: dashboard?.open_disputes || 0, route: '/(admin)/disputes' },
       ],
     },
+    {
+      title: '6. App Config / Feature Flags',
+      items: [
+        { subtitle: '6.1 App Config / Feature Flags', icon: 'toggle' as const, route: '/(admin)/config-management' },
+      ],
+    },
   ];
 
   return (

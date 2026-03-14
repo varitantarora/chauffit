@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { ScrollView, View, Pressable, RefreshControl, TextInput, Modal, Switch, Alert } from 'react-native';
+import { ScrollView, View, Pressable, RefreshControl, TextInput, Modal, Switch, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import { ThemedText } from '../../components/common/ThemedText';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { useAdminStore } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
+import { useConfigStore } from '../../store/configStore';
 import { LightColors, DarkColors } from '../../constants/Colors';
 import { AdminInsurancePlan } from '../../services/api/AdminApiService';
 
@@ -56,15 +57,30 @@ export default function InsuranceManagement() {
         updateInsurancePlan,
         deleteInsurancePlan,
     } = useAdminStore();
+    const fetchConfigs = useConfigStore((state) => state.fetchConfigs);
+    const getConfigValue = useConfigStore((state) => state.getConfigValue);
+    const updateConfig = useConfigStore((state) => state.updateConfig);
+    const configsLoading = useConfigStore((state) => state.configsLoading);
+    const configs = useConfigStore((state) => state.configs);
 
     const [modalVisible, setModalVisible] = useState(false);
     const [editingPlan, setEditingPlan] = useState<AdminInsurancePlan | null>(null);
     const [form, setForm] = useState<PlanFormData>(EMPTY_FORM);
     const [saving, setSaving] = useState(false);
+    const [insuranceFeatureEnabled, setInsuranceFeatureEnabled] = useState(true);
+    const [togglingFeature, setTogglingFeature] = useState(false);
 
     useEffect(() => {
         fetchInsurancePlans();
+        fetchConfigs();
     }, []);
+
+    useEffect(() => {
+        const val = getConfigValue('insurance_enabled');
+        if (val !== null) {
+            setInsuranceFeatureEnabled(val !== 'false');
+        }
+    }, [configs]);
 
     const onRefresh = useCallback(() => {
         fetchInsurancePlans();
@@ -150,6 +166,17 @@ export default function InsuranceManagement() {
 
     const updateField = (field: keyof PlanFormData, value: string | boolean) => {
         setForm((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleToggleInsuranceFeature = async (value: boolean) => {
+        setInsuranceFeatureEnabled(value);
+        setTogglingFeature(true);
+        const success = await updateConfig('insurance_enabled', { value: String(value) });
+        if (!success) {
+            setInsuranceFeatureEnabled(!value);
+            Alert.alert('Error', 'Failed to update insurance feature flag.');
+        }
+        setTogglingFeature(false);
     };
 
     const renderPlanCard = (plan: AdminInsurancePlan) => {
@@ -299,6 +326,27 @@ export default function InsuranceManagement() {
                     />
                 }
             >
+                {/* Insurance Feature Toggle */}
+                <View className="p-4 mb-4 rounded-2xl border bg-surface dark:bg-darkSurface border-border dark:border-darkBorder">
+                    <View className="flex-row items-center justify-between">
+                        <View className="flex-1 mr-4">
+                            <ThemedText className="font-semibold mb-1">Insurance Feature</ThemedText>
+                            <ThemedText variant="tiny" style={{ color: colors.textSecondary }}>
+                                Show/hide insurance option for customers globally
+                            </ThemedText>
+                        </View>
+                        {togglingFeature || configsLoading ? (
+                            <ActivityIndicator size="small" color={colors.burgundy} />
+                        ) : (
+                            <Switch
+                                value={insuranceFeatureEnabled}
+                                onValueChange={handleToggleInsuranceFeature}
+                                trackColor={{ true: colors.burgundy }}
+                            />
+                        )}
+                    </View>
+                </View>
+
                 {insurancePlans.length > 0 ? (
                     insurancePlans
                         .sort((a, b) => a.display_order - b.display_order)

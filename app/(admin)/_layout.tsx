@@ -24,6 +24,7 @@ export default function AdminLayout() {
       <Stack.Screen name="training-batch-detail" />
       <Stack.Screen name="all-drivers" />
       <Stack.Screen name="all-bikers" />
+      <Stack.Screen name="config-management" />
     </Stack>
   );
 }

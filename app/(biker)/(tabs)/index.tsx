@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../store/authStore';
 import { useTaskStore } from '../../../store/taskStore';
 import { useBikerEarningsStore } from '../../../store/bikerEarningsStore';
+import { useConfigStore } from '../../../store/configStore';
 import { TaskCard } from '../../../components/biker/task/TaskCard';
 import { ResponseTimer } from '../../../components/biker/emergency/ResponseTimer';
 import { IncentiveTracker } from '../../../components/biker/earnings/IncentiveTracker';
@@ -21,6 +22,7 @@ export default function BikerHomeScreen() {
   const user = useAuthStore((state) => state.user);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const t = useI18nStore((state) => state.t);
+  const fetchConfigs = useConfigStore((state) => state.fetchConfigs);
 
   // Task store state
   const availableTasks = useTaskStore((state) => state.availableTasks);
@@ -190,6 +192,8 @@ export default function BikerHomeScreen() {
     initializeOnlineStatus();
     fetchStats();
     fetchEarnings();
+    // TODO: fetchConfigs() disabled - backend /meta/configs/ returns 404
+    // fetchConfigs();
   }, []);
 
   const handleToggleOnline = async (value: boolean) => {

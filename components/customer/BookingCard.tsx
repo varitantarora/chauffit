@@ -28,34 +28,6 @@ const mapApiStatusToCardStatus = (apiStatus: string): string => {
   return apiStatus;
 };
 
-// Generate a simple barcode-like pattern from booking ID
-const BarcodeElement: React.FC<{ bookingId: string; isDarkMode: boolean }> = ({ bookingId, isDarkMode }) => {
-  // Use last 12 chars of ID to generate bar widths
-  const chars = (bookingId || '000000000000').slice(-12);
-  const bars: number[] = [];
-  for (let i = 0; i < chars.length; i++) {
-    const code = chars.charCodeAt(i);
-    bars.push(code % 2 === 0 ? 2 : 1);
-    bars.push(0); // gap
-  }
-
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 24, marginTop: 8 }}>
-      {bars.map((width, i) => (
-        <View
-          key={i}
-          style={{
-            width: width === 0 ? 1 : width,
-            height: width === 0 ? 0 : 20,
-            backgroundColor: width === 0 ? 'transparent' : (isDarkMode ? 'rgba(217,209,198,0.3)' : 'rgba(0,0,0,0.15)'),
-            marginHorizontal: width === 0 ? 1 : 0,
-          }}
-        />
-      ))}
-    </View>
-  );
-};
-
 // Dashed line separator (tear-off effect)
 const DashedSeparator: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => (
   <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 12, overflow: 'hidden' }}>
@@ -387,11 +359,6 @@ export const BookingCard: React.FC<BookingCardProps> = ({
           </ThemedText>
         </View>
       ) : null}
-
-      {/* Barcode element */}
-      <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
-        <BarcodeElement bookingId={booking.id ?? ''} isDarkMode={isDarkMode} />
-      </View>
 
       {/* Actions */}
       {showActions && canTrack() && (

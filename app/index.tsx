@@ -16,7 +16,7 @@ export default function Index() {
   // Initialize auth on mount
   useEffect(() => {
     initializeAuth();
-  }, [initializeAuth]);
+  }, []);
 
   // Show loading screen while checking authentication
   if (isInitializing) {

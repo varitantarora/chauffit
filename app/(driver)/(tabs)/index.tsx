@@ -10,6 +10,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { useAuthStore } from '../../../store/authStore';
 import { useJobStore } from '../../../store/jobStore';
 import { useEarningsStore } from '../../../store/earningsStore';
+import { useConfigStore } from '../../../store/configStore';
 import { useRouter } from 'expo-router';
 import DriverApiService, { DriverStats } from '../../../services/api/DriverApiService';
 import { useI18nStore } from '../../../store/i18nStore';
@@ -19,6 +20,7 @@ export default function DriverHomeScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const t = useI18nStore((state) => state.t);
   const router = useRouter();
+  const fetchConfigs = useConfigStore((state) => state.fetchConfigs);
 
   const {
     isOnline,
@@ -68,6 +70,8 @@ export default function DriverHomeScreen() {
     fetchStats();
     fetchEarningsData();
     fetchPendingRequestsFromAPI();
+    // TODO: fetchConfigs() disabled - backend /meta/configs/ returns 404
+    // fetchConfigs();
   }, []);
 
   // Fetch pending requests from API
