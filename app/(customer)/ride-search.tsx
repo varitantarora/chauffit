@@ -7,8 +7,11 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
+  ScrollView,
+  Modal,
 } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE, LatLng } from 'react-native-maps';
+import MapViewDirections from 'react-native-maps-directions';
 import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -19,6 +22,7 @@ import {
 } from '../../components/customer/GooglePlacesAutocomplete';
 import { useAuthStore } from '../../store/authStore';
 import { useCarStore } from '../../store/carStore';
+import { CustomerCar } from '../../types/navigation';
 import { useBookingStore } from '../../store/bookingStore';
 import BookingApiService, { FareEstimateResponse } from '../../services/api/BookingApiService';
 import { DarkMapStyle } from '../../constants/MapStyles';
@@ -61,10 +65,48 @@ export default function RideSearchScreen() {
   const [isCalculatingFare, setIsCalculatingFare] = useState(false);
   const [fareError, setFareError] = useState<string | null>(null);
   const [isBooking, setIsBooking] = useState(false);
+  const [selectedCar, setSelectedCar] = useState<CustomerCar | null>(null);
+  const [showVehicleModal, setShowVehicleModal] = useState(false);
+
+  const [routeCoords, setRouteCoords] = useState<LatLng[]>([]);
+  const [displayCoords, setDisplayCoords] = useState<LatLng[]>([]);
+  const routeAnimRef = useRef<NodeJS.Timeout | null>(null);
+  const routeRestartRef = useRef<NodeJS.Timeout | null>(null);
 
   const mapRef = useRef<MapView>(null);
   const fareCardAnim = useRef(new Animated.Value(200)).current;
   const fareDebounceRef = useRef<NodeJS.Timeout | undefined>(undefined);
+
+  const startRouteAnimation = (coords: LatLng[]) => {
+    if (routeAnimRef.current) clearInterval(routeAnimRef.current);
+    if (routeRestartRef.current) clearTimeout(routeRestartRef.current);
+
+    let index = 0;
+    const step = Math.max(1, Math.floor(coords.length / 40));
+    setDisplayCoords([]);
+
+    routeAnimRef.current = setInterval(() => {
+      index += step;
+      if (index >= coords.length) {
+        setDisplayCoords(coords);
+        clearInterval(routeAnimRef.current!);
+        routeAnimRef.current = null;
+        routeRestartRef.current = setTimeout(() => {
+          startRouteAnimation(coords);
+        }, 2000);
+      } else {
+        setDisplayCoords(coords.slice(0, index));
+      }
+    }, 16);
+  };
+
+  // Cleanup route animation on unmount
+  useEffect(() => {
+    return () => {
+      if (routeAnimRef.current) clearInterval(routeAnimRef.current);
+      if (routeRestartRef.current) clearTimeout(routeRestartRef.current);
+    };
+  }, []);
 
   // Load cars on mount
   useEffect(() => {
@@ -72,6 +114,13 @@ export default function RideSearchScreen() {
       loadUserCars(user.id);
     }
   }, [user?.id]);
+
+  // Auto-select car when cars load
+  useEffect(() => {
+    if (!selectedCar && (defaultCar || cars.length > 0)) {
+      setSelectedCar(defaultCar || cars[0]);
+    }
+  }, [defaultCar, cars]);
 
   // GPS auto-fill on mount
   const hasCoords = params.initialPickupLat && Number(params.initialPickupLat) !== 28.6139;
@@ -124,7 +173,7 @@ export default function RideSearchScreen() {
   useEffect(() => {
     if (!pickupLocation.address || !dropLocation) return;
 
-    const vehicleId = defaultCar?.id || cars[0]?.id;
+    const vehicleId = selectedCar?.id || defaultCar?.id || cars[0]?.id;
 
     if (!vehicleId) {
       if (isCarsLoading) return; // Still loading — effect will re-run when cars resolve
@@ -140,6 +189,16 @@ export default function RideSearchScreen() {
       return;
     }
 
+    // Slide card up immediately (shows loading spinner while API is in-flight)
+    setIsCalculatingFare(true);
+    setFareError(null);
+    Animated.spring(fareCardAnim, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 60,
+      friction: 10,
+    }).start();
+
     if (fareDebounceRef.current) clearTimeout(fareDebounceRef.current);
 
     fareDebounceRef.current = setTimeout(() => {
@@ -149,51 +208,33 @@ export default function RideSearchScreen() {
     return () => {
       if (fareDebounceRef.current) clearTimeout(fareDebounceRef.current);
     };
-  }, [pickupLocation, dropLocation, defaultCar, cars, isCarsLoading]);
+  }, [pickupLocation, dropLocation, selectedCar, defaultCar, cars, isCarsLoading]);
 
   const calculateFare = async (vehicleId: string) => {
     if (!dropLocation) return;
-    setIsCalculatingFare(true);
-    setFareError(null);
+    const fmt = (n: number) => parseFloat(n.toFixed(6));
     try {
       const response = await BookingApiService.getFareEstimate({
         vehicle_id: vehicleId,
-        from_lat: pickupLocation.latitude,
-        from_long: pickupLocation.longitude,
+        from_lat: fmt(pickupLocation.latitude),
+        from_long: fmt(pickupLocation.longitude),
         from_address: pickupLocation.address,
-        to_lat: dropLocation.latitude,
-        to_long: dropLocation.longitude,
+        to_lat: fmt(dropLocation.latitude),
+        to_long: fmt(dropLocation.longitude),
         to_address: dropLocation.address,
         type: 'one_way',
         when: 'now',
       });
       if (response.success && response.data) {
         setFareEstimate(response.data);
-        Animated.spring(fareCardAnim, {
-          toValue: 0,
-          useNativeDriver: true,
-          tension: 60,
-          friction: 10,
-        }).start();
+        setFareError(null);
       } else {
         setFareError(response.error || 'Failed to get fare estimate');
         setFareEstimate(null);
-        Animated.spring(fareCardAnim, {
-          toValue: 0,
-          useNativeDriver: true,
-          tension: 60,
-          friction: 10,
-        }).start();
       }
     } catch {
       setFareError('Failed to calculate fare. Please try again.');
       setFareEstimate(null);
-      Animated.spring(fareCardAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        tension: 60,
-        friction: 10,
-      }).start();
     } finally {
       setIsCalculatingFare(false);
     }
@@ -217,22 +258,13 @@ export default function RideSearchScreen() {
       if (fieldType === 'pickup') {
         setPickupLocation(newLocation);
       } else {
+        // Reset route when new drop is chosen
+        if (routeAnimRef.current) clearInterval(routeAnimRef.current);
+        if (routeRestartRef.current) clearTimeout(routeRestartRef.current);
+        setRouteCoords([]);
+        setDisplayCoords([]);
+
         setDropLocation(newLocation);
-        // Animate map to fit both markers
-        setTimeout(() => {
-          if (mapRef.current) {
-            mapRef.current.fitToCoordinates(
-              [
-                { latitude: pickupLocation.latitude, longitude: pickupLocation.longitude },
-                { latitude: details.lat, longitude: details.lng },
-              ],
-              {
-                edgePadding: { top: 220, bottom: 320, left: 60, right: 60 },
-                animated: true,
-              }
-            );
-          }
-        }, 200);
         // Reset fare card when new destination is chosen
         fareCardAnim.setValue(200);
         setFareEstimate(null);
@@ -269,7 +301,7 @@ export default function RideSearchScreen() {
   };
 
   const handleConfirmBooking = async () => {
-    const vehicleId = defaultCar?.id || cars[0]?.id;
+    const vehicleId = selectedCar?.id || defaultCar?.id || cars[0]?.id;
     if (!vehicleId) {
       Alert.alert(
         'No Vehicle Found',
@@ -326,7 +358,7 @@ export default function RideSearchScreen() {
           status: 'pending' as const,
           paymentMethod: 'upi',
           paymentStatus: 'pending' as const,
-          vehicleType: (defaultCar as any)?.vehicleType || 'luxury_sedan',
+          vehicleType: selectedCar?.vehicleType || (defaultCar as any)?.vehicleType || 'luxury_sedan',
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -354,7 +386,13 @@ export default function RideSearchScreen() {
     }
   };
 
-  const showFareCard = !!dropLocation && (isCalculatingFare || !!fareEstimate || !!fareError);
+  const selectVehicle = (car: CustomerCar) => {
+    setSelectedCar(car);
+    setShowVehicleModal(false);
+  };
+
+  // Card is always mounted when drop is set so the Animated.View exists before animation fires
+  const showFareCard = !!dropLocation;
 
   const renderFareBreakdown = () => {
     const bd = fareEstimate?.fare_breakdown;
@@ -435,6 +473,46 @@ export default function RideSearchScreen() {
             pinColor="#ef4444"
           />
         )}
+        {dropLocation && (
+          <MapViewDirections
+            origin={{ latitude: pickupLocation.latitude, longitude: pickupLocation.longitude }}
+            destination={{ latitude: dropLocation.latitude, longitude: dropLocation.longitude }}
+            apikey={appConfig.googlePlacesApiKey}
+            strokeWidth={0}
+            onReady={(result) => {
+              const coords = result.coordinates;
+              setRouteCoords(coords);
+              startRouteAnimation(coords);
+              if (mapRef.current && coords.length > 1) {
+                mapRef.current.fitToCoordinates(coords, {
+                  edgePadding: { top: 160, bottom: 360, left: 60, right: 60 },
+                  animated: true,
+                });
+              }
+            }}
+            onError={(err) => console.warn('Route error:', err)}
+          />
+        )}
+        {/* Grey static base route — always full */}
+        {routeCoords.length > 1 && (
+          <Polyline
+            coordinates={routeCoords}
+            strokeColor={isDarkMode ? '#555555' : '#aaaaaa'}
+            strokeWidth={4}
+            lineCap="round"
+            lineJoin="round"
+          />
+        )}
+        {/* Dark animated line drawn progressively on top */}
+        {displayCoords.length > 1 && (
+          <Polyline
+            coordinates={displayCoords}
+            strokeColor={isDarkMode ? '#e0cfc0' : '#1a1a1a'}
+            strokeWidth={4}
+            lineCap="round"
+            lineJoin="round"
+          />
+        )}
       </MapView>
 
       {/* Back button */}
@@ -470,8 +548,8 @@ export default function RideSearchScreen() {
           right: 16,
           marginLeft: 48, // leave room for back button
           backgroundColor: cardBg,
-          borderRadius: 16,
-          padding: 16,
+          borderRadius: 14,
+          padding: 10,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.15,
@@ -481,7 +559,7 @@ export default function RideSearchScreen() {
         }}
       >
         {/* Pickup field */}
-        <View style={{ marginBottom: 8 }}>
+        <View style={{ marginBottom: 4 }}>
           <GooglePlacesAutocomplete
             placeholder="Pickup location"
             value={pickupLocation.address}
@@ -499,8 +577,8 @@ export default function RideSearchScreen() {
           style={{
             height: 1,
             backgroundColor: borderColor,
-            marginHorizontal: 8,
-            marginBottom: 8,
+            marginHorizontal: 6,
+            marginBottom: 4,
           }}
         />
 
@@ -526,6 +604,89 @@ export default function RideSearchScreen() {
         )}
       </View>
 
+      {/* Vehicle Selection Modal */}
+      <Modal
+        visible={showVehicleModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowVehicleModal(false)}
+      >
+        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View
+            style={{
+              backgroundColor: cardBg,
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+              padding: 24,
+              maxHeight: '70%',
+            }}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <Text style={{ color: textPrimary, fontSize: 18, fontWeight: '700' }}>Select Vehicle</Text>
+              <TouchableOpacity onPress={() => setShowVehicleModal(false)}>
+                <Ionicons name="close" size={24} color={textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
+              {isCarsLoading && (
+                <View style={{ paddingVertical: 32, alignItems: 'center' }}>
+                  <ActivityIndicator size="large" color={BrandColors.secondary} />
+                  <Text style={{ color: textSecondary, marginTop: 12 }}>Loading vehicles...</Text>
+                </View>
+              )}
+
+              {!isCarsLoading && cars.length === 0 && (
+                <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+                  <Ionicons name="car-outline" size={40} color="#999" />
+                  <Text style={{ color: textSecondary, marginTop: 12 }}>No vehicles added yet</Text>
+                  <TouchableOpacity
+                    onPress={() => { setShowVehicleModal(false); router.push('/(auth)/car-details'); }}
+                    style={{ marginTop: 16, backgroundColor: BrandColors.burgundy, paddingVertical: 10, paddingHorizontal: 20, borderRadius: 10 }}
+                  >
+                    <Text style={{ color: '#fff', fontWeight: '600' }}>Add Vehicle</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {!isCarsLoading && cars.map((car) => (
+                <TouchableOpacity
+                  key={car.id}
+                  onPress={() => selectVehicle(car)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    padding: 16,
+                    borderRadius: 12,
+                    marginBottom: 10,
+                    borderWidth: 1.5,
+                    borderColor: selectedCar?.id === car.id ? BrandColors.burgundy : (isDarkMode ? '#333' : '#e5e5e5'),
+                    backgroundColor: selectedCar?.id === car.id
+                      ? (isDarkMode ? 'rgba(114,12,23,0.15)' : 'rgba(114,12,23,0.06)')
+                      : 'transparent',
+                  }}
+                >
+                  <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: isDarkMode ? '#333' : '#f0e8e0', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                    <Ionicons name="car" size={22} color={BrandColors.secondary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: textPrimary, fontSize: 15, fontWeight: '600' }}>
+                      {car.make} {car.model}
+                    </Text>
+                    <Text style={{ color: textSecondary, fontSize: 13 }}>
+                      {car.color} · {car.registrationNumber}
+                    </Text>
+                  </View>
+                  {selectedCar?.id === car.id && (
+                    <Ionicons name="checkmark-circle" size={22} color={BrandColors.secondary} />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
       {/* Fare card (slides up from bottom) */}
       {showFareCard && (
         <Animated.View
@@ -542,9 +703,9 @@ export default function RideSearchScreen() {
               backgroundColor: cardBg,
               borderTopLeftRadius: 24,
               borderTopRightRadius: 24,
-              paddingTop: 20,
-              paddingHorizontal: 24,
-              paddingBottom: insets.bottom + 24,
+              paddingTop: 14,
+              paddingHorizontal: 20,
+              paddingBottom: insets.bottom + 16,
               shadowColor: '#000',
               shadowOffset: { width: 0, height: -4 },
               shadowOpacity: 0.12,
@@ -615,66 +776,72 @@ export default function RideSearchScreen() {
 
             {fareEstimate && !isCalculatingFare && (
               <>
-                {/* Fare headline */}
-                <View style={{ flexDirection: 'row', alignItems: 'baseline', marginBottom: 12 }}>
-                  <Text
-                    style={{
-                      fontSize: 32,
-                      fontWeight: '800',
-                      color: textPrimary,
-                    }}
-                  >
+                {/* Fare + distance + duration in one row */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                  <Text style={{ fontSize: 28, fontWeight: '800', color: textPrimary }}>
                     ₹{Math.round(Number(fareEstimate.estimated_fare))}
                   </Text>
                   {fareEstimate.pricing_factors?.is_night_surcharge && (
-                    <View style={{ marginLeft: 8, backgroundColor: '#1e3a5f', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
+                    <View style={{ backgroundColor: '#1e3a5f', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
                       <Text style={{ color: '#93c5fd', fontSize: 11, fontWeight: '700' }}>Night</Text>
                     </View>
                   )}
                   {fareEstimate.pricing_factors?.surge_active && (
-                    <View style={{ marginLeft: 6, backgroundColor: '#7f1d1d', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
+                    <View style={{ backgroundColor: '#7f1d1d', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
                       <Text style={{ color: '#fca5a5', fontSize: 11, fontWeight: '700' }}>Surge</Text>
                     </View>
                   )}
-                </View>
-
-                {/* Distance & duration pills */}
-                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
                   {fareEstimate.estimated_distance_km != null && (
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        backgroundColor: isDarkMode ? '#2a2a2a' : '#f5f5f5',
-                        paddingHorizontal: 12,
-                        paddingVertical: 6,
-                        borderRadius: 20,
-                      }}
-                    >
-                      <Ionicons name="navigate-outline" size={14} color={BrandColors.secondary} />
-                      <Text style={{ color: textPrimary, fontSize: 13, marginLeft: 5, fontWeight: '600' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: isDarkMode ? '#2a2a2a' : '#f5f5f5', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 }}>
+                      <Ionicons name="navigate-outline" size={13} color={BrandColors.secondary} />
+                      <Text style={{ color: textPrimary, fontSize: 12, marginLeft: 4, fontWeight: '600' }}>
                         {fareEstimate.estimated_distance_km.toFixed(1)} km
                       </Text>
                     </View>
                   )}
                   {fareEstimate.estimated_duration_minutes != null && (
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        backgroundColor: isDarkMode ? '#2a2a2a' : '#f5f5f5',
-                        paddingHorizontal: 12,
-                        paddingVertical: 6,
-                        borderRadius: 20,
-                      }}
-                    >
-                      <Ionicons name="time-outline" size={14} color={BrandColors.secondary} />
-                      <Text style={{ color: textPrimary, fontSize: 13, marginLeft: 5, fontWeight: '600' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: isDarkMode ? '#2a2a2a' : '#f5f5f5', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 }}>
+                      <Ionicons name="time-outline" size={13} color={BrandColors.secondary} />
+                      <Text style={{ color: textPrimary, fontSize: 12, marginLeft: 4, fontWeight: '600' }}>
                         {fareEstimate.estimated_duration_minutes} min
                       </Text>
                     </View>
                   )}
                 </View>
+
+                {/* Car selector */}
+                <TouchableOpacity
+                  onPress={() => setShowVehicleModal(true)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    backgroundColor: isDarkMode ? '#2a2a2a' : '#f5f5f5',
+                    borderRadius: 12,
+                    paddingHorizontal: 14,
+                    paddingVertical: 12,
+                    marginBottom: 16,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="car" size={20} color={BrandColors.secondary} />
+                    {selectedCar ? (
+                      <View style={{ marginLeft: 10 }}>
+                        <Text style={{ color: textPrimary, fontSize: 14, fontWeight: '600' }}>
+                          {selectedCar.make} {selectedCar.model}
+                        </Text>
+                        <Text style={{ color: textSecondary, fontSize: 12 }}>
+                          {selectedCar.color} · {selectedCar.registrationNumber}
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text style={{ color: textSecondary, fontSize: 14, marginLeft: 10 }}>
+                        Choose car
+                      </Text>
+                    )}
+                  </View>
+                  <Ionicons name="chevron-down" size={18} color={textSecondary} />
+                </TouchableOpacity>
 
                 {/* Fare breakdown */}
                 {renderFareBreakdown()}

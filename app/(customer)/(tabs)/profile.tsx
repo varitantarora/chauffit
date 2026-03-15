@@ -421,6 +421,18 @@ export default function Profile() {
                 <Ionicons name="chevron-forward" size={20} color={BrandColors.burgundy} />
               </ThemedCard>
             </TouchableOpacity>
+
+            <TouchableOpacity className="mb-3" onPress={() => router.push('/(customer)/terms-and-conditions')} activeOpacity={1}>
+              <ThemedCard className="flex-row justify-between items-center py-4">
+                <View className="flex-row items-center flex-1">
+                  <View className="w-10 h-10 bg-secondary/10 rounded-full items-center justify-center mr-3">
+                    <Ionicons name="document-text" size={20} color={BrandColors.secondary} />
+                  </View>
+                  <ThemedText>Terms and Conditions</ThemedText>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={BrandColors.burgundy} />
+              </ThemedCard>
+            </TouchableOpacity>
           </View>
           
           {/* Logout */}

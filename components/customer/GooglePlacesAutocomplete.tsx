@@ -158,13 +158,13 @@ export function GooglePlacesAutocomplete({
     <View>
       {/* Input Field */}
       <View
-        className={`flex-row items-center p-3 rounded-xl border ${inputClass} ${
+        className={`flex-row items-center px-2 py-1.5 rounded-xl border ${inputClass} ${
           shouldShowDropdown ? 'border-b-0 rounded-b-none' : ''
         }`}
       >
-        <Ionicons name={icon as any} size={20} color={iconColor} />
+        <Ionicons name={icon as any} size={16} color={iconColor} />
         <TextInput
-          className={`flex-1 ml-3 text-base ${isDarkMode ? 'text-darkText' : 'text-textPrimary dark:text-darkText'}`}
+          className={`flex-1 ml-2 text-sm ${isDarkMode ? 'text-darkText' : 'text-textPrimary dark:text-darkText'}`}
           placeholder={placeholder}
           value={query}
           onChangeText={handleTextChange}
@@ -183,7 +183,7 @@ export function GooglePlacesAutocomplete({
         />
         {query.length > 0 && (
           <TouchableOpacity onPress={handleClear}>
-            <Ionicons name="close-circle" size={20} color="#999" />
+            <Ionicons name="close-circle" size={16} color="#999" />
           </TouchableOpacity>
         )}
       </View>
