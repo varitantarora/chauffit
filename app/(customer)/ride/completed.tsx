@@ -8,6 +8,7 @@ import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { useAuthStore } from '../../../store/authStore';
 import { useBookingStore } from '../../../store/bookingStore';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { BrandColors } from '../../../constants/Colors';
 
 export default function RideCompleted() {
   const [rating, setRating] = useState(0);
@@ -81,12 +82,12 @@ export default function RideCompleted() {
           {/* Header */}
           <View className="items-center py-8">
             <View className="w-24 h-24 bg-success/20 rounded-full items-center justify-center mb-4">
-              <Ionicons name="checkmark-circle" size={48} color="#10B981" />
+              <Ionicons name="checkmark-circle" size={48} color={BrandColors.success} />
             </View>
             <ThemedText variant="h1" className="text-center mb-2">
               Ride Completed!
             </ThemedText>
-            <ThemedText variant="body" className="text-center text-textSecondary">
+            <ThemedText variant="body" className="text-center text-textSecondary dark:text-darkTextSecondary">
               Thank you for using Chauffit
             </ThemedText>
           </View>
@@ -101,7 +102,7 @@ export default function RideCompleted() {
             
             <View className="space-y-3">
               <View className="flex-row justify-between">
-                <ThemedText variant="body" className="text-textSecondary">
+                <ThemedText variant="body" className="text-textSecondary dark:text-darkTextSecondary">
                   Duration
                 </ThemedText>
                 <ThemedText variant="body" className="font-semibold">
@@ -110,7 +111,7 @@ export default function RideCompleted() {
               </View>
               
               <View className="flex-row justify-between">
-                <ThemedText variant="body" className="text-textSecondary">
+                <ThemedText variant="body" className="text-textSecondary dark:text-darkTextSecondary">
                   Date & Time
                 </ThemedText>
                 <ThemedText variant="body" className="font-semibold">
@@ -124,7 +125,7 @@ export default function RideCompleted() {
               </View>
               
               <View className="flex-row justify-between">
-                <ThemedText variant="body" className="text-textSecondary">
+                <ThemedText variant="body" className="text-textSecondary dark:text-darkTextSecondary">
                   Booking ID
                 </ThemedText>
                 <ThemedText variant="body" className="font-semibold font-mono">
@@ -161,11 +162,11 @@ export default function RideCompleted() {
                           key={index}
                           name={index < Math.floor(chauffeur.rating) ? 'star' : 'star-outline'}
                           size={12}
-                          color="#BD8C5E"
+                          color={BrandColors.secondary}
                         />
                       ))}
                     </View>
-                    <ThemedText variant="small" className="text-textSecondary">
+                    <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                       {chauffeur.rating} • {chauffeur.experience}y exp
                     </ThemedText>
                   </View>
@@ -194,7 +195,7 @@ export default function RideCompleted() {
                     <Ionicons
                       name={index < rating ? 'star' : 'star-outline'}
                       size={32}
-                      color="#BD8C5E"
+                      color={BrandColors.secondary}
                     />
                   </TouchableOpacity>
                 ))}
@@ -216,7 +217,7 @@ export default function RideCompleted() {
                 className={`p-4 rounded-xl border text-base ${
                   isDarkMode 
                     ? 'bg-darkSurface text-darkText border-darkBorder' 
-                    : 'bg-surface text-textPrimary border-border'
+                    : 'bg-surface text-textPrimary dark:text-darkText border-border'
                 }`}
                 placeholder="Share your experience..."
                 placeholderTextColor={iconColor}
@@ -262,7 +263,7 @@ export default function RideCompleted() {
                       <ThemedText 
                         variant="small" 
                         className={`font-semibold ${
-                          tipAmount === preset ? 'text-secondary' : 'text-textSecondary'
+                          tipAmount === preset ? 'text-secondary' : 'text-textSecondary dark:text-darkTextSecondary'
                         }`}
                       >
                         ₹{preset}
@@ -274,7 +275,7 @@ export default function RideCompleted() {
                 <View className={`flex-row items-center p-3 rounded-xl border ${
                   isDarkMode ? 'bg-darkSurface border-darkBorder' : 'bg-surface border-border'
                 }`}>
-                  <ThemedText className="text-textSecondary mr-2">₹</ThemedText>
+                  <ThemedText className="text-textSecondary dark:text-darkTextSecondary mr-2">₹</ThemedText>
                   <TextInput
                     className="flex-1 text-base"
                     placeholder="Custom amount"
@@ -298,7 +299,7 @@ export default function RideCompleted() {
             
             <View className="space-y-3">
               <View className="flex-row justify-between">
-                <ThemedText variant="body" className="text-textSecondary">
+                <ThemedText variant="body" className="text-textSecondary dark:text-darkTextSecondary">
                   Service Charge
                 </ThemedText>
                 <ThemedText variant="body">
@@ -307,7 +308,7 @@ export default function RideCompleted() {
               </View>
               
               <View className="flex-row justify-between">
-                <ThemedText variant="body" className="text-textSecondary">
+                <ThemedText variant="body" className="text-textSecondary dark:text-darkTextSecondary">
                   Taxes & Fees (18%)
                 </ThemedText>
                 <ThemedText variant="body">
@@ -317,7 +318,7 @@ export default function RideCompleted() {
               
               {tipAmount > 0 && (
                 <View className="flex-row justify-between">
-                  <ThemedText variant="body" className="text-textSecondary">
+                  <ThemedText variant="body" className="text-textSecondary dark:text-darkTextSecondary">
                     Tip
                   </ThemedText>
                   <ThemedText variant="body">

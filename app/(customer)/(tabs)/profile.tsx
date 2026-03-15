@@ -12,7 +12,7 @@ import { useLoyaltyStore } from '../../../store/loyaltyStore';
 import LoyaltyApiService from '../../../services/api/LoyaltyApiService';
 import { useRouter } from 'expo-router';
 import { appConfig } from '../../../config/env';
-import { LightColors, DarkColors, useThemeColors } from '../../../constants/Colors';
+import { LightColors, DarkColors, useThemeColors, BrandColors} from '../../../constants/Colors';
 
 export default function Profile() {
   const user = useAuthStore((state) => state.user);
@@ -148,13 +148,13 @@ export default function Profile() {
           {/* Header */}
           <View
             style={{
-              backgroundColor: '#720C17',
+              backgroundColor: '#541201',
               paddingHorizontal: 24,
               paddingTop: 16,
               paddingBottom: 20,
               borderBottomLeftRadius: 24,
               borderBottomRightRadius: 24,
-              shadowColor: '#720C17',
+              shadowColor: '#541201',
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.25,
               shadowRadius: 8,
@@ -178,7 +178,7 @@ export default function Profile() {
                 <Image
                   source={{ uri: getImageUrl(user.avatar) || undefined }}
                   className="w-24 h-24 rounded-full mb-4"
-                  style={{ backgroundColor: '#BD8C5E' }}
+                  style={{ backgroundColor: BrandColors.secondary }}
                 />
               ) : (
                 <View className="w-24 h-24 bg-secondary rounded-full items-center justify-center mb-4">
@@ -220,24 +220,24 @@ export default function Profile() {
                         color={
                           loyaltyProfile
                             ? LoyaltyApiService.getTierColor(loyaltyProfile.tier)
-                            : '#BD8C5E'
+                            : BrandColors.secondary
                         }
                       />
                     </View>
                     <View className="flex-1">
                       <ThemedText variant="h3">Loyalty & Rewards</ThemedText>
-                      <ThemedText variant="small" className="text-textSecondary">
+                      <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                         {loyaltyProfile
                           ? `${LoyaltyApiService.getTierLabel(loyaltyProfile.tier)} • ₹${Number(loyaltyProfile.credit_balance).toFixed(0)} credits`
                           : 'View your tier and credits'}
                       </ThemedText>
                     </View>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color="#720C17" />
+                  <Ionicons name="chevron-forward" size={20} color={BrandColors.burgundy} />
                 </View>
                 {loyaltyProfile && loyaltyProfile.discount_percentage > 0 && (
                   <View className="mt-3 p-2 bg-green-50 rounded-xl flex-row items-center">
-                    <Ionicons name="pricetag" size={14} color="#10B981" />
+                    <Ionicons name="pricetag" size={14} color={BrandColors.success} />
                     <ThemedText variant="tiny" className="ml-2 text-green-700 font-semibold">
                       {loyaltyProfile.discount_percentage}% loyalty discount active
                     </ThemedText>
@@ -255,7 +255,7 @@ export default function Profile() {
                 onPress={handleAddCar}
                 className="flex-row items-center"
               >
-                <Ionicons name="add-circle" size={20} color="#BD8C5E" />
+                <Ionicons name="add-circle" size={20} color={BrandColors.secondary} />
                 <ThemedText className="ml-1 text-secondary font-semibold">Add Car</ThemedText>
               </TouchableOpacity>
             </View>
@@ -265,7 +265,7 @@ export default function Profile() {
                 <ThemedCard key={car.id} className="mb-3">
                   <View className="flex-row items-center">
                     <View className="w-12 h-12 bg-secondary/20 rounded-full items-center justify-center mr-3">
-                      <Ionicons name="car-sport" size={24} color="#BD8C5E" />
+                      <Ionicons name="car-sport" size={24} color={BrandColors.secondary} />
                     </View>
                     
                     <View className="flex-1">
@@ -281,7 +281,7 @@ export default function Profile() {
                           </View>
                         )}
                       </View>
-                      <ThemedText variant="small" className="text-textSecondary">
+                      <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                         {car.color} • {car.year} • {car.registrationNumber}
                       </ThemedText>
                     </View>
@@ -291,7 +291,7 @@ export default function Profile() {
                         onPress={() => handleDeleteCar(car.id)}
                         className="p-2"
                       >
-                        <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                        <Ionicons name="trash-outline" size={20} color={BrandColors.danger} />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -305,7 +305,7 @@ export default function Profile() {
                 <ThemedText variant="body" className="font-semibold mb-1">
                   No Cars Added
                 </ThemedText>
-                <ThemedText variant="small" className="text-textSecondary text-center mb-4">
+                <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary text-center mb-4">
                   Add your car details to start booking rides
                 </ThemedText>
                 <TouchableOpacity
@@ -325,7 +325,7 @@ export default function Profile() {
             <ThemedCard variant="elevated" className="p-4">
               <View className="flex-row items-center mb-3">
                 <View className="w-10 h-10 bg-secondary/10 rounded-full items-center justify-center mr-3">
-                  <Ionicons name="car" size={20} color="#BD8C5E" />
+                  <Ionicons name="car" size={20} color={BrandColors.secondary} />
                 </View>
                 <View className="flex-1">
                   <ThemedText variant="h3">Start Earning</ThemedText>
@@ -364,7 +364,7 @@ export default function Profile() {
               <ThemedCard className="flex-row justify-between items-center py-4">
                 <View className="flex-row items-center flex-1">
                   <View className="w-10 h-10 bg-secondary/10 rounded-full items-center justify-center mr-3">
-                    <Ionicons name={isDarkMode ? "moon" : "sunny"} size={20} color="#BD8C5E" />
+                    <Ionicons name={isDarkMode ? "moon" : "sunny"} size={20} color={BrandColors.secondary} />
                   </View>
                   <ThemedText>Dark Mode</ThemedText>
                 </View>
@@ -378,11 +378,11 @@ export default function Profile() {
               <ThemedCard className="flex-row justify-between items-center py-4">
                 <View className="flex-row items-center flex-1">
                   <View className="w-10 h-10 bg-secondary/10 rounded-full items-center justify-center mr-3">
-                    <Ionicons name="notifications" size={20} color="#BD8C5E" />
+                    <Ionicons name="notifications" size={20} color={BrandColors.secondary} />
                   </View>
                   <ThemedText>Notifications</ThemedText>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#720C17" />
+                <Ionicons name="chevron-forward" size={20} color={BrandColors.burgundy} />
               </ThemedCard>
             </TouchableOpacity>
             
@@ -390,11 +390,11 @@ export default function Profile() {
               <ThemedCard className="flex-row justify-between items-center py-4">
                 <View className="flex-row items-center flex-1">
                   <View className="w-10 h-10 bg-secondary/10 rounded-full items-center justify-center mr-3">
-                    <Ionicons name="card" size={20} color="#BD8C5E" />
+                    <Ionicons name="card" size={20} color={BrandColors.secondary} />
                   </View>
                   <ThemedText>Payment Methods</ThemedText>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#720C17" />
+                <Ionicons name="chevron-forward" size={20} color={BrandColors.burgundy} />
               </ThemedCard>
             </TouchableOpacity>
             
@@ -402,11 +402,11 @@ export default function Profile() {
               <ThemedCard className="flex-row justify-between items-center py-4">
                 <View className="flex-row items-center flex-1">
                   <View className="w-10 h-10 bg-secondary/10 rounded-full items-center justify-center mr-3">
-                    <Ionicons name="time" size={20} color="#BD8C5E" />
+                    <Ionicons name="time" size={20} color={BrandColors.secondary} />
                   </View>
                   <ThemedText>Ride History</ThemedText>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#720C17" />
+                <Ionicons name="chevron-forward" size={20} color={BrandColors.burgundy} />
               </ThemedCard>
             </TouchableOpacity>
             
@@ -414,11 +414,11 @@ export default function Profile() {
               <ThemedCard className="flex-row justify-between items-center py-4">
                 <View className="flex-row items-center flex-1">
                   <View className="w-10 h-10 bg-secondary/10 rounded-full items-center justify-center mr-3">
-                    <Ionicons name="help-circle" size={20} color="#BD8C5E" />
+                    <Ionicons name="help-circle" size={20} color={BrandColors.secondary} />
                   </View>
                   <ThemedText>Support</ThemedText>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#720C17" />
+                <Ionicons name="chevron-forward" size={20} color={BrandColors.burgundy} />
               </ThemedCard>
             </TouchableOpacity>
           </View>

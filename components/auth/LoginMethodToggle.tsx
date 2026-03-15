@@ -21,7 +21,7 @@ export const LoginMethodToggle = React.memo(({ loginMethod, onMethodChange, isDa
       >
         <ThemedText 
           className={`text-center font-semibold ${
-            loginMethod === 'phone' ? 'text-burgundy' : 'text-textSecondary'
+            loginMethod === 'phone' ? 'text-burgundy' : 'text-textSecondary dark:text-darkTextSecondary'
           }`}
         >
           Phone
@@ -38,7 +38,7 @@ export const LoginMethodToggle = React.memo(({ loginMethod, onMethodChange, isDa
       >
         <ThemedText 
           className={`text-center font-semibold ${
-            loginMethod === 'email' ? 'text-burgundy' : 'text-textSecondary'
+            loginMethod === 'email' ? 'text-burgundy' : 'text-textSecondary dark:text-darkTextSecondary'
           }`}
         >
           Email

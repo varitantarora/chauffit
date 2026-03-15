@@ -311,7 +311,7 @@ const EmergencyButton: React.FC<EmergencyButtonProps> = ({
                   {countdown}
                 </Text>
               </View>
-              <Text className="text-center text-gray-600 mb-6">
+              <Text className="text-center text-textSecondary dark:text-darkTextSecondary mb-6">
                 Emergency alert will be sent in {countdown} seconds
               </Text>
               <TouchableOpacity
@@ -327,7 +327,7 @@ const EmergencyButton: React.FC<EmergencyButtonProps> = ({
               <Text className="text-xl font-bold text-red-600 mb-4 text-center">
                 Emergency Activated
               </Text>
-              <Text className="text-center text-gray-600 mb-6">
+              <Text className="text-center text-textSecondary dark:text-darkTextSecondary mb-6">
                 Your emergency contacts have been notified. Choose an action:
               </Text>
               
@@ -379,7 +379,7 @@ const EmergencyButton: React.FC<EmergencyButtonProps> = ({
                 className="bg-gray-300 p-3 rounded-lg mt-4"
                 onPress={() => setShowModal(false)}
               >
-                <Text className="text-gray-700 font-medium text-center">
+                <Text className="text-textPrimary dark:text-darkText font-medium text-center">
                   Close
                 </Text>
               </TouchableOpacity>

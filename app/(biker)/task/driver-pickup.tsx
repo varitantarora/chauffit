@@ -13,6 +13,7 @@ import { useTaskStore } from '../../../store/taskStore';
 import { useAuthStore } from '../../../store/authStore';
 import { useBikerEarningsStore } from '../../../store/bikerEarningsStore';
 import { BikerTask } from '../../../types/navigation';
+import { BrandColors } from '../../../constants/Colors';
 
 type PickupStep = 'navigate' | 'locate_driver' | 'assist_driver' | 'transport' | 'completed';
 
@@ -219,7 +220,7 @@ export default function DriverPickupScreen() {
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center flex-1">
                     <View className="bg-danger/10 p-3 rounded-full mr-3">
-                      <Ionicons name="car" size={24} color="#EF4444" />
+                      <Ionicons name="car" size={24} color={BrandColors.danger} />
                     </View>
                     <View>
                       <ThemedText className="font-bold text-lg">{task.driverName}</ThemedText>

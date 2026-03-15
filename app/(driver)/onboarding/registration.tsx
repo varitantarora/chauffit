@@ -19,10 +19,10 @@ export default function DriverRegistrationScreen() {
 
   const inputClass = isDarkMode
     ? 'bg-gray-800 border-gray-600 text-white'
-    : 'bg-white border-gray-300 text-gray-900';
+    : 'bg-white border-border dark:border-darkBorder text-textPrimary dark:text-darkText';
   const disabledClass = isDarkMode
     ? 'bg-gray-700 border-gray-600'
-    : 'bg-gray-100 border-gray-200';
+    : 'bg-gray-100 dark:bg-darkSurface border-border dark:border-darkBorder';
   const placeholderColor = isDarkMode ? '#9ca3af' : '#9ca3af';
 
   const [formData, setFormData] = useState({
@@ -267,7 +267,7 @@ export default function DriverRegistrationScreen() {
             <ThemedCard className="p-4 mb-6">
               <ThemedText className="font-bold mb-4">City:</ThemedText>
               <View className={`p-4 rounded-xl border ${disabledClass}`}>
-                <ThemedText className="text-gray-500">Gurgaon (Pilot)</ThemedText>
+                <ThemedText className="text-textSecondary dark:text-darkTextSecondary">Gurgaon (Pilot)</ThemedText>
               </View>
             </ThemedCard>
 

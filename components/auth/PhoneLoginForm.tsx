@@ -24,7 +24,7 @@ export const PhoneLoginForm = React.memo(({
   return (
     <>
       <View className={`flex-row items-center p-4 rounded-xl border mb-6 ${inputClass}`}>
-        <ThemedText className="text-textSecondary mr-2">+91</ThemedText>
+        <ThemedText className="text-textSecondary dark:text-darkTextSecondary mr-2">+91</ThemedText>
         <TextInput
           className="flex-1 text-base"
           placeholder="Enter phone number"

@@ -10,6 +10,7 @@ import { useAuthStore } from '../../../store/authStore';
 import { useBookingStore } from '../../../store/bookingStore';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { DarkMapStyle } from '../../../constants/MapStyles';
+import { BrandColors } from '../../../constants/Colors';
 
 export default function RideTracking() {
   const [mapRegion, setMapRegion] = useState({
@@ -101,15 +102,15 @@ export default function RideTracking() {
   const getStatusColor = () => {
     switch (activeRideTracking?.status) {
       case 'driver_coming':
-        return '#F59E0B';
+        return BrandColors.warning;
       case 'driver_arrived':
-        return '#10B981';
+        return BrandColors.success;
       case 'ride_started':
         return '#3B82F6';
       case 'ride_completed':
-        return '#10B981';
+        return BrandColors.success;
       default:
-        return '#BD8C5E';
+        return BrandColors.secondary;
     }
   };
 
@@ -185,7 +186,7 @@ export default function RideTracking() {
                   latitude: point.latitude,
                   longitude: point.longitude,
                 }))}
-                strokeColor="#BD8C5E"
+                strokeColor={BrandColors.secondary}
                 strokeWidth={4}
               />
             )}
@@ -207,7 +208,7 @@ export default function RideTracking() {
                       {getStatusText()}
                     </ThemedText>
                   </View>
-                  <ThemedText variant="small" className="text-textSecondary">
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                     ETA: {activeRideTracking?.eta || '5 mins'}
                   </ThemedText>
                 </View>
@@ -239,7 +240,7 @@ export default function RideTracking() {
               isDarkMode ? 'bg-darkSurface' : 'bg-white'
             } rounded-full items-center justify-center shadow-lg`}
           >
-            <Ionicons name="locate" size={24} color="#720C17" />
+            <Ionicons name="locate" size={24} color={BrandColors.burgundy} />
           </TouchableOpacity>
 
           {/* SOS Button */}
@@ -275,11 +276,11 @@ export default function RideTracking() {
                         key={index}
                         name={index < Math.floor(chauffeur.rating) ? 'star' : 'star-outline'}
                         size={12}
-                        color="#BD8C5E"
+                        color={BrandColors.secondary}
                       />
                     ))}
                   </View>
-                  <ThemedText variant="small" className="text-textSecondary">
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                     {chauffeur.rating} • {chauffeur.experience}y exp
                   </ThemedText>
                 </View>
@@ -301,7 +302,7 @@ export default function RideTracking() {
               <TouchableOpacity
                 className="flex-1 border-2 border-burgundy rounded-xl py-4 flex-row items-center justify-center"
               >
-                <Ionicons name="chatbubble" size={20} color="#720C17" />
+                <Ionicons name="chatbubble" size={20} color={BrandColors.burgundy} />
                 <ThemedText className="text-burgundy font-semibold ml-2">
                   Message
                 </ThemedText>

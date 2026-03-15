@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '../common/ThemedText';
 import { useAuthStore } from '../../store/authStore';
 import { Chauffeur } from '../../types/navigation';
+import { BrandColors } from '../../constants/Colors';
 
 interface DriverCardProps {
   driver: Chauffeur;
@@ -44,7 +45,7 @@ export const DriverCard: React.FC<DriverCardProps> = ({
         key={index}
         name={index < Math.floor(rating) ? 'star' : index < rating ? 'star-half' : 'star-outline'}
         size={14}
-        color="#BD8C5E"
+        color={BrandColors.secondary}
       />
     ));
   };
@@ -87,13 +88,13 @@ export const DriverCard: React.FC<DriverCardProps> = ({
             <View className="flex-row mr-3">
               {renderStars(driver.rating)}
             </View>
-            <ThemedText variant="small" className="text-textSecondary">
+            <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
               {driver.rating} • {driver.experience}y exp
             </ThemedText>
           </View>
           
           <View className="flex-row items-center">
-            <Ionicons name="time" size={14} color="#BD8C5E" />
+            <Ionicons name="time" size={14} color={BrandColors.secondary} />
             <ThemedText variant="small" className="ml-1 font-semibold text-secondary">
               Arriving in {driver.eta}
             </ThemedText>
@@ -151,7 +152,7 @@ export const DriverCard: React.FC<DriverCardProps> = ({
             onPress={handleMessage}
             className="flex-1 border-2 border-burgundy rounded-xl py-3 flex-row items-center justify-center"
           >
-            <Ionicons name="chatbubble" size={18} color="#720C17" />
+            <Ionicons name="chatbubble" size={18} color={BrandColors.burgundy} />
             <ThemedText className="text-burgundy font-semibold ml-2">
               Message
             </ThemedText>

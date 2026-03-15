@@ -100,7 +100,7 @@ export default function EmailLogin() {
 
   const inputClass = isDarkMode 
     ? 'bg-darkSurface text-darkText border-darkBorder' 
-    : 'bg-white text-textPrimary border-border';
+    : 'bg-white text-textPrimary dark:text-darkText border-border';
 
   const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
 
@@ -113,16 +113,16 @@ export default function EmailLogin() {
             onPress={() => setLanguage('EN')}
             className="px-2"
           >
-            <Text className={`font-semibold ${language === 'EN' ? 'text-burgundy' : 'text-gray-500'}`}>
+            <Text className={`font-semibold ${language === 'EN' ? 'text-burgundy' : 'text-textSecondary dark:text-darkTextSecondary'}`}>
               EN
             </Text>
           </TouchableOpacity>
-          <Text className="text-gray-400 mx-1">|</Text>
+          <Text className="text-textSecondary dark:text-darkTextSecondary mx-1">|</Text>
           <TouchableOpacity
             onPress={() => setLanguage('HI')}
             className="px-2"
           >
-            <Text className={`font-semibold ${language === 'HI' ? 'text-burgundy' : 'text-gray-500'}`}>
+            <Text className={`font-semibold ${language === 'HI' ? 'text-burgundy' : 'text-textSecondary dark:text-darkTextSecondary'}`}>
               हि
             </Text>
           </TouchableOpacity>
@@ -139,7 +139,7 @@ export default function EmailLogin() {
           <ThemedText variant="h1" className="text-center mb-2">
             {t.welcome}
           </ThemedText>
-          <ThemedText variant="small" className="text-center text-textSecondary">
+          <ThemedText variant="small" className="text-center text-textSecondary dark:text-darkTextSecondary">
             {t.tagline}
           </ThemedText>
         </View>
@@ -150,7 +150,7 @@ export default function EmailLogin() {
             onPress={() => router.replace('/(auth)/phone-login')}
             className="flex-1 py-3 px-4 rounded-lg"
           >
-            <ThemedText className="text-center font-semibold text-textSecondary">
+            <ThemedText className="text-center font-semibold text-textSecondary dark:text-darkTextSecondary">
               {t.phone}
             </ThemedText>
           </TouchableOpacity>
@@ -189,7 +189,7 @@ export default function EmailLogin() {
         {/* Divider */}
         <View className="flex-row items-center my-6">
           <View className={`flex-1 h-px ${isDarkMode ? 'bg-darkBorder' : 'bg-gray-300'}`} />
-          <ThemedText variant="small" className="mx-4 text-textSecondary">
+          <ThemedText variant="small" className="mx-4 text-textSecondary dark:text-darkTextSecondary">
             {t.orContinue}
           </ThemedText>
           <View className={`flex-1 h-px ${isDarkMode ? 'bg-darkBorder' : 'bg-gray-300'}`} />
@@ -201,7 +201,7 @@ export default function EmailLogin() {
           <TouchableOpacity
             onPress={() => Alert.alert('Google Sign In', 'Google sign in will be implemented')}
             className={`flex-1 flex-row items-center justify-center py-3 px-4 rounded-xl border ${
-              isDarkMode ? 'border-darkBorder bg-darkSurface' : 'border-gray-300 bg-white'
+              isDarkMode ? 'border-darkBorder bg-darkSurface' : 'border-border dark:border-darkBorder bg-white'
             }`}
           >
             <GoogleIcon width={20} height={20} />
@@ -212,7 +212,7 @@ export default function EmailLogin() {
           <TouchableOpacity
             onPress={() => Alert.alert('Apple Sign In', 'Apple sign in will be implemented')}
             className={`flex-1 flex-row items-center justify-center py-3 px-4 rounded-xl border ${
-              isDarkMode ? 'border-darkBorder bg-darkSurface' : 'border-gray-300 bg-white'
+              isDarkMode ? 'border-darkBorder bg-darkSurface' : 'border-border dark:border-darkBorder bg-white'
             }`}
           >
             <Ionicons
@@ -236,7 +236,7 @@ export default function EmailLogin() {
 
         {/* Help Text */}
         <View className="mt-8 px-4">
-          <ThemedText variant="tiny" className="text-center text-textSecondary leading-5">
+          <ThemedText variant="tiny" className="text-center text-textSecondary dark:text-darkTextSecondary leading-5">
             {t.termsText}
           </ThemedText>
         </View>

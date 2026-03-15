@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Modal, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { ThemedText } from '../common/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
+import { BrandColors, LightColors } from '../../constants/Colors';
 
 const CANCEL_REASONS = [
   'Change of plans',
@@ -51,7 +52,7 @@ const CancelReasonModal = ({ visible, bookingId, onCancel, onDismiss }: CancelRe
               Why are you cancelling?
             </ThemedText>
             <TouchableOpacity onPress={onDismiss} disabled={isSubmitting}>
-              <Ionicons name="close" size={24} color="#6B7280" />
+              <Ionicons name="close" size={24} color={LightColors.placeholder} />
             </TouchableOpacity>
           </View>
 
@@ -69,8 +70,8 @@ const CancelReasonModal = ({ visible, bookingId, onCancel, onDismiss }: CancelRe
                 marginBottom: 8,
                 borderRadius: 12,
                 borderWidth: 1.5,
-                borderColor: selectedReason === reason ? '#DC2626' : '#E5E7EB',
-                backgroundColor: selectedReason === reason ? '#FEF2F2' : 'white',
+                borderColor: selectedReason === reason ? BrandColors.danger : LightColors.border,
+                backgroundColor: selectedReason === reason ? '#FEF2F2' : BrandColors.white,
               }}
             >
               <View style={{
@@ -78,7 +79,7 @@ const CancelReasonModal = ({ visible, bookingId, onCancel, onDismiss }: CancelRe
                 height: 22,
                 borderRadius: 11,
                 borderWidth: 2,
-                borderColor: selectedReason === reason ? '#DC2626' : '#D1D5DB',
+                borderColor: selectedReason === reason ? BrandColors.danger : '#D1D5DB',
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginRight: 12,
@@ -88,7 +89,7 @@ const CancelReasonModal = ({ visible, bookingId, onCancel, onDismiss }: CancelRe
                     width: 12,
                     height: 12,
                     borderRadius: 6,
-                    backgroundColor: '#DC2626',
+                    backgroundColor: BrandColors.danger,
                   }} />
                 )}
               </View>
@@ -100,14 +101,14 @@ const CancelReasonModal = ({ visible, bookingId, onCancel, onDismiss }: CancelRe
           {selectedReason === 'Other' && (
             <TextInput
               placeholder="Please specify your reason..."
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={LightColors.placeholder}
               value={otherText}
               onChangeText={setOtherText}
               multiline
               editable={!isSubmitting}
               style={{
                 borderWidth: 1,
-                borderColor: '#E5E7EB',
+                borderColor: LightColors.border,
                 borderRadius: 12,
                 padding: 12,
                 marginBottom: 8,
@@ -125,7 +126,7 @@ const CancelReasonModal = ({ visible, bookingId, onCancel, onDismiss }: CancelRe
               onPress={handleConfirm}
               disabled={!selectedReason || isSubmitting}
               style={{
-                backgroundColor: !selectedReason || isSubmitting ? '#FCA5A5' : '#DC2626',
+                backgroundColor: !selectedReason || isSubmitting ? '#FCA5A5' : BrandColors.danger,
                 paddingVertical: 16,
                 borderRadius: 14,
                 alignItems: 'center',
@@ -148,10 +149,10 @@ const CancelReasonModal = ({ visible, bookingId, onCancel, onDismiss }: CancelRe
                 borderRadius: 14,
                 alignItems: 'center',
                 borderWidth: 1,
-                borderColor: '#E5E7EB',
+                borderColor: LightColors.border,
               }}
             >
-              <ThemedText style={{ color: '#6B7280', fontWeight: '600', fontSize: 15 }}>
+              <ThemedText style={{ color: LightColors.placeholder, fontWeight: '600', fontSize: 15 }}>
                 Go Back
               </ThemedText>
             </TouchableOpacity>

@@ -41,6 +41,7 @@ import {
 } from '../../components/customer/GooglePlacesAutocomplete';
 import UniversalMapView, { MapMarker, MapRoute } from '../../components/shared/MapView';
 import { appConfig } from '../../config/env';
+import { BrandColors } from '../../constants/Colors';
 
 interface BookingLocation {
   address: string;
@@ -69,7 +70,7 @@ export default function BookRideScreen() {
   const { createBooking } = useBookingStore();
   const getConfigValue = useConfigStore((state) => state.getConfigValue);
   const fetchConfigs = useConfigStore((state) => state.fetchConfigs);
-  const insuranceEnabled = getConfigValue('insurance_enabled') !== 'false';
+  const insuranceEnabled = getConfigValue('insurance_enabled') === 'true';
 
   const [pickupLocation, setPickupLocation] = useState<BookingLocation>({
     address: '',
@@ -274,10 +275,10 @@ export default function BookRideScreen() {
     hourlyHours, stops,
   ]);
 
-  const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
+  const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
   const inputClass = isDarkMode
     ? 'bg-darkSurface text-darkText border-darkBorder'
-    : 'bg-white text-textPrimary border-gray-200';
+    : 'bg-white text-textPrimary dark:text-darkText border-border dark:border-darkBorder';
 
   const getFavoriteIcon = (title: string): React.ComponentProps<typeof Ionicons>['name'] => {
     const t = title.toLowerCase();
@@ -524,21 +525,32 @@ export default function BookRideScreen() {
         return;
       }
 
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
+      // Phase 1: try instant cached location (home tab already fetched this)
+      let locationResult = await Location.getLastKnownPositionAsync();
+
+      // Treat as stale if older than 60 seconds
+      if (locationResult && Date.now() - locationResult.timestamp > 60_000) {
+        locationResult = null;
+      }
+
+      // Phase 2: fall back to fresh fetch with Balanced (WiFi/cell, ~1-2s)
+      if (!locationResult) {
+        locationResult = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+      }
 
       const reverse = await Location.reverseGeocodeAsync({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
+        latitude: locationResult.coords.latitude,
+        longitude: locationResult.coords.longitude,
       });
 
       const formattedAddress = reverse.length > 0 ? formatAddress(reverse[0]) : 'Current Location';
 
       setPickupLocation({
         address: formattedAddress,
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
+        latitude: locationResult.coords.latitude,
+        longitude: locationResult.coords.longitude,
         fullAddress: formattedAddress,
       });
     } catch (error) {
@@ -913,7 +925,7 @@ export default function BookRideScreen() {
     return {
       origin: { latitude: pickupLocation.latitude, longitude: pickupLocation.longitude },
       destination: { latitude: dropLocation.latitude, longitude: dropLocation.longitude },
-      strokeColor: '#BD8C5E',
+      strokeColor: BrandColors.secondary,
       strokeWidth: 4,
     };
   }, [pickupLocation, dropLocation]);
@@ -934,13 +946,13 @@ export default function BookRideScreen() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 100 }}>
           <View className="px-6 py-4">
             {/* Main Booking Card */}
             <ThemedCard variant="elevated" className="mb-4 p-4">
               {/* Trip Type */}
               <View className="mb-4">
-                <ThemedText variant="small" className="mb-2 text-gray-600 dark:text-gray-400">
+                <ThemedText variant="small" className="mb-2 text-gray-600 dark:text-darkTextSecondary">
                   Trip Type
                 </ThemedText>
                 <View className="flex-row justify-between gap-2">
@@ -959,7 +971,7 @@ export default function BookRideScreen() {
                         className={
                           isSelected 
                             ? 'flex-1 p-2 rounded-lg border bg-burgundy border-burgundy' 
-                            : `flex-1 p-2 rounded-lg border ${isDarkMode ? 'bg-darkSurface border-darkBorder' : 'bg-white border-gray-200'}`
+                            : `flex-1 p-2 rounded-lg border ${isDarkMode ? 'bg-darkSurface border-darkBorder' : 'bg-white border-border dark:border-darkBorder'}`
                         }
                       >
                         <ThemedText
@@ -967,7 +979,7 @@ export default function BookRideScreen() {
                           className={
                             isSelected 
                               ? 'text-center text-white font-medium' 
-                              : `text-center ${isDarkMode ? 'text-darkText' : 'text-textPrimary'}`
+                              : `text-center ${isDarkMode ? 'text-darkText' : 'text-textPrimary dark:text-darkText'}`
                           }
                         >
                           {type.label}
@@ -980,7 +992,7 @@ export default function BookRideScreen() {
 
               {/* From Location */}
               <View className="mb-4">
-                <ThemedText variant="small" className="mb-2 text-gray-600 dark:text-gray-400">
+                <ThemedText variant="small" className="mb-2 text-gray-600 dark:text-darkTextSecondary">
                   From
                 </ThemedText>
                 <GooglePlacesAutocomplete
@@ -990,28 +1002,16 @@ export default function BookRideScreen() {
                   isDarkMode={isDarkMode}
                   icon="location"
                   onPlaceSelected={(place) => handlePlaceSelected(place, 'pickup')}
+                  onUseCurrentLocation={handleUseCurrentLocation}
+                  isFetchingCurrentLocation={isFetchingCurrentLocation}
                 />
-                <TouchableOpacity
-                  className="mt-2 flex-row items-center justify-center rounded-xl border border-burgundy/30 bg-burgundy/10 px-4 py-3"
-                  onPress={handleUseCurrentLocation}
-                  disabled={isFetchingCurrentLocation}
-                >
-                  {isFetchingCurrentLocation ? (
-                    <ActivityIndicator size="small" color="#BD8C5E" />
-                  ) : (
-                    <Ionicons name="location" size={18} color={iconColor} />
-                  )}
-                  <ThemedText className="ml-2 text-burgundy">
-                    {isFetchingCurrentLocation ? 'Getting location...' : 'Use current location'}
-                  </ThemedText>
-                </TouchableOpacity>
               </View>
 
               {/* Multi-Stop Management */}
               {tripType === 'multi_stop' && (
                 <View className="mb-4">
                   <View className="flex-row items-center justify-between mb-3">
-                    <ThemedText variant="small" className="text-gray-600 dark:text-gray-400">
+                    <ThemedText variant="small" className="text-gray-600 dark:text-darkTextSecondary">
                       Stops ({stops.length})
                     </ThemedText>
                     {stops.length < 8 && (
@@ -1034,9 +1034,9 @@ export default function BookRideScreen() {
                   </View>
 
                   {stops.length === 0 && (
-                    <ThemedCard className="p-3 border border-dashed border-gray-300 items-center">
+                    <ThemedCard className="p-3 border border-dashed border-border dark:border-darkBorder items-center">
                       <Ionicons name="location-outline" size={24} color="#999" />
-                      <ThemedText variant="tiny" className="text-gray-500 mt-2 text-center">
+                      <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary mt-2 text-center">
                         Add at least one stop
                       </ThemedText>
                     </ThemedCard>
@@ -1050,10 +1050,10 @@ export default function BookRideScreen() {
                       >
                         <View className="flex-row items-center justify-between">
                           <View className="flex-1">
-                            <ThemedText variant="tiny" className="font-semibold text-gray-600 mb-1">
+                            <ThemedText variant="tiny" className="font-semibold text-textSecondary dark:text-darkTextSecondary mb-1">
                               Stop {stop.stop_number}
                             </ThemedText>
-                            <ThemedText variant="tiny" className={`${stop.address ? 'text-gray-700 dark:text-gray-300 font-medium' : 'text-gray-500 dark:text-gray-400 italic'}`}>
+                            <ThemedText variant="tiny" className={`${stop.address ? 'text-gray-700 dark:text-gray-300 font-medium' : 'text-gray-500 dark:text-darkTextSecondary italic'}`}>
                               {stop.address || 'Tap to set location'}
                             </ThemedText>
                           </View>
@@ -1065,7 +1065,7 @@ export default function BookRideScreen() {
                               }}
                               className="ml-2"
                             >
-                              <Ionicons name="close-circle" size={20} color="#EF4444" />
+                              <Ionicons name="close-circle" size={20} color={BrandColors.danger} />
                             </TouchableOpacity>
                           </View>
                         </View>
@@ -1123,7 +1123,7 @@ export default function BookRideScreen() {
 
               {/* To Location */}
               <View className="mb-4">
-                <ThemedText variant="small" className="mb-2 text-gray-600 dark:text-gray-400">
+                <ThemedText variant="small" className="mb-2 text-gray-600 dark:text-darkTextSecondary">
                   {tripType === 'round_trip' ? 'To (return point)' : 'To'}
                 </ThemedText>
                 <GooglePlacesAutocomplete
@@ -1138,7 +1138,7 @@ export default function BookRideScreen() {
 
               {/* Vehicle Selection */}
               <View className="mb-4">
-                <ThemedText variant="small" className="mb-2 text-gray-600 dark:text-gray-400">
+                <ThemedText variant="small" className="mb-2 text-gray-600 dark:text-darkTextSecondary">
                   Vehicle
                 </ThemedText>
                 <TouchableOpacity
@@ -1150,12 +1150,12 @@ export default function BookRideScreen() {
                     {selectedCar ? (
                       <View className="ml-3">
                         <ThemedText>{selectedCar.make} {selectedCar.model}</ThemedText>
-                        <ThemedText variant="tiny" className="text-gray-500">
+                        <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                           {selectedCar.color} • {selectedCar.registrationNumber}
                         </ThemedText>
                       </View>
                     ) : (
-                      <ThemedText className="ml-3 text-gray-500">Select vehicle</ThemedText>
+                      <ThemedText className="ml-3 text-textSecondary dark:text-darkTextSecondary">Select vehicle</ThemedText>
                     )}
                   </View>
                   <Ionicons name="chevron-down" size={20} color={iconColor} />
@@ -1164,7 +1164,7 @@ export default function BookRideScreen() {
 
               {/* When */}
               <View className="mb-4">
-                <ThemedText variant="small" className="mb-2 text-gray-600 dark:text-gray-400">
+                <ThemedText variant="small" className="mb-2 text-gray-600 dark:text-darkTextSecondary">
                   When
                 </ThemedText>
                 <View className="flex-row">
@@ -1200,12 +1200,12 @@ export default function BookRideScreen() {
 
                 {scheduleOption === 'schedule' && scheduledDate && scheduledTime && (
                   <View className="mt-2 p-3 bg-secondary/10 rounded-xl flex-row items-center">
-                    <Ionicons name="calendar" size={18} color="#BD8C5E" />
+                    <Ionicons name="calendar" size={18} color={BrandColors.secondary} />
                     <ThemedText variant="small" className="text-secondary ml-2 flex-1">
                       {formatScheduledDateTime()}
                     </ThemedText>
                     <TouchableOpacity onPress={() => setShowScheduleModal(true)}>
-                      <Ionicons name="pencil" size={16} color="#BD8C5E" />
+                      <Ionicons name="pencil" size={16} color={BrandColors.secondary} />
                     </TouchableOpacity>
                   </View>
                 )}
@@ -1214,7 +1214,7 @@ export default function BookRideScreen() {
               {/* Hourly Duration Selector */}
               {tripType === 'hourly' && (
                 <View className="mb-4">
-                  <ThemedText variant="small" className="mb-2 text-gray-600 dark:text-gray-400">
+                  <ThemedText variant="small" className="mb-2 text-gray-600 dark:text-darkTextSecondary">
                     Duration (hours)
                   </ThemedText>
                   <View className="flex-row items-center justify-between p-3 rounded-xl border border-gray-200 dark:border-darkBorder">
@@ -1250,14 +1250,14 @@ export default function BookRideScreen() {
                         <Ionicons
                           name={selectedInsurancePlanId ? 'shield-checkmark' : 'shield-outline'}
                           size={20}
-                          color="#3B82F6"
+                          color={BrandColors.info}
                         />
                       </View>
                       <View className="flex-1">
                         <ThemedText variant="small" className="font-semibold">
                           {selectedInsurancePlanId ? selectedInsuranceName : 'Add Trip Insurance'}
                         </ThemedText>
-                        <ThemedText variant="tiny" className="text-gray-500">
+                        <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                           {selectedInsurancePlanId
                             ? `₹${selectedInsurancePremium} · Tap to change`
                             : 'Protect your car during the trip'}
@@ -1267,7 +1267,7 @@ export default function BookRideScreen() {
                     <Ionicons
                       name={selectedInsurancePlanId ? 'checkmark-circle' : 'chevron-forward'}
                       size={22}
-                      color={selectedInsurancePlanId ? '#10B981' : '#3B82F6'}
+                      color={selectedInsurancePlanId ? BrandColors.success : BrandColors.info}
                     />
                   </View>
                 </TouchableOpacity>
@@ -1294,7 +1294,7 @@ export default function BookRideScreen() {
                           ? `${selectedAmenitiesCount} Amenit${selectedAmenitiesCount === 1 ? 'y' : 'ies'} Selected`
                           : 'Add Amenities'}
                       </ThemedText>
-                      <ThemedText variant="tiny" className="text-gray-500">
+                      <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                         {selectedAmenitiesCount > 0
                           ? `${formatFare(amenitiesTotal)} total · Tap to change`
                           : 'Customize your ride experience'}
@@ -1304,7 +1304,7 @@ export default function BookRideScreen() {
                   <Ionicons
                     name={selectedAmenitiesCount > 0 ? 'checkmark-circle' : 'chevron-forward'}
                     size={22}
-                    color={selectedAmenitiesCount > 0 ? '#10B981' : '#D97706'}
+                    color={selectedAmenitiesCount > 0 ? BrandColors.success : '#D97706'}
                   />
                 </View>
               </TouchableOpacity>
@@ -1312,8 +1312,8 @@ export default function BookRideScreen() {
               {/* Inline Fare Estimate */}
               {isCalculatingFare && !fareEstimate && (
                 <View className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl items-center">
-                  <ActivityIndicator size="small" color="#BD8C5E" />
-                  <ThemedText variant="small" className="mt-2 text-gray-500">Calculating fare...</ThemedText>
+                  <ActivityIndicator size="small" color={BrandColors.secondary} />
+                  <ThemedText variant="small" className="mt-2 text-textSecondary dark:text-darkTextSecondary">Calculating fare...</ThemedText>
                 </View>
               )}
 
@@ -1342,7 +1342,7 @@ export default function BookRideScreen() {
 
                   {/* Total Fare */}
                   <View className="items-center mb-3">
-                    <ThemedText variant="tiny" className="text-gray-500">Estimated Fare</ThemedText>
+                    <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Estimated Fare</ThemedText>
                     <ThemedText variant="h1" className="text-burgundy">
                       {formatFare(Number(fareEstimate.estimated_fare))}
                     </ThemedText>
@@ -1351,7 +1351,7 @@ export default function BookRideScreen() {
                   {/* Loyalty Discount Badge */}
                   {loyaltyProfile && loyaltyProfile.discount_percentage > 0 && (
                     <View className="flex-row items-center justify-center mb-3 bg-green-50 py-2 px-4 rounded-xl">
-                      <Ionicons name="star" size={14} color="#10B981" />
+                      <Ionicons name="star" size={14} color={BrandColors.success} />
                       <ThemedText variant="tiny" className="ml-2 text-green-700">
                         {loyaltyProfile.discount_percentage}% {LoyaltyApiService.getTierLabel(loyaltyProfile.tier)} discount already applied
                       </ThemedText>
@@ -1371,7 +1371,7 @@ export default function BookRideScreen() {
                       <Ionicons
                         name={showBreakdown ? 'chevron-up' : 'chevron-down'}
                         size={16}
-                        color="#BD8C5E"
+                        color={BrandColors.secondary}
                       />
                     </TouchableOpacity>
                   )}
@@ -1379,43 +1379,43 @@ export default function BookRideScreen() {
                   {showBreakdown && fareEstimate.fare_breakdown && (
                     <View className="border-t border-gray-200 dark:border-gray-700 pt-3 mb-2">
                       <View className="flex-row justify-between mb-1 px-2">
-                        <ThemedText variant="tiny" className="text-gray-500">Base fare</ThemedText>
-                        <ThemedText variant="tiny" className="text-gray-500">
+                        <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Base fare</ThemedText>
+                        <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                           {formatFare(parseFloat(fareEstimate.fare_breakdown.base_fare))}
                         </ThemedText>
                       </View>
                       <View className="flex-row justify-between mb-1 px-2">
-                        <ThemedText variant="tiny" className="text-gray-500">
+                        <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                           {fareEstimate.fare_breakdown.distance_km && fareEstimate.fare_breakdown.per_km_rate
                             ? `Distance (${parseFloat(fareEstimate.fare_breakdown.distance_km).toFixed(2)} km × ₹${fareEstimate.fare_breakdown.per_km_rate}/km)`
                             : 'Distance fare'}
                         </ThemedText>
-                        <ThemedText variant="tiny" className="text-gray-500">
+                        <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                           {formatFare(parseFloat(fareEstimate.fare_breakdown.distance_fare))}
                         </ThemedText>
                       </View>
                       {fareEstimate.fare_breakdown.time_fare !== undefined && parseFloat(fareEstimate.fare_breakdown.time_fare) > 0 && (
                         <View className="flex-row justify-between mb-1 px-2">
-                          <ThemedText variant="tiny" className="text-gray-500">Time fare</ThemedText>
-                          <ThemedText variant="tiny" className="text-gray-500">
+                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Time fare</ThemedText>
+                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                             {formatFare(parseFloat(fareEstimate.fare_breakdown.time_fare))}
                           </ThemedText>
                         </View>
                       )}
                       {fareEstimate.fare_breakdown.subtotal !== undefined && (
                         <View className="flex-row justify-between mb-1 px-2">
-                          <ThemedText variant="tiny" className="text-gray-500">Subtotal</ThemedText>
-                          <ThemedText variant="tiny" className="text-gray-500">
+                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Subtotal</ThemedText>
+                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                             {formatFare(parseFloat(fareEstimate.fare_breakdown.subtotal))}
                           </ThemedText>
                         </View>
                       )}
                       {fareEstimate.surge_multiplier !== undefined && fareEstimate.surge_multiplier > 1 && fareEstimate.fare_breakdown.surge_amount !== undefined && (
                         <View className="flex-row justify-between mb-1 px-2">
-                          <ThemedText variant="tiny" className="text-gray-500">
+                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                             Surge x{fareEstimate.surge_multiplier.toFixed(2)}
                           </ThemedText>
-                          <ThemedText variant="tiny" className="text-gray-500">
+                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                             {formatFare(parseFloat(fareEstimate.fare_breakdown.surge_amount))}
                           </ThemedText>
                         </View>
@@ -1440,8 +1440,8 @@ export default function BookRideScreen() {
                         <>
                           <View className="border-t border-gray-200 dark:border-gray-600 mt-1 mb-1 mx-2" />
                           <View className="flex-row justify-between mb-1 px-2">
-                            <ThemedText variant="tiny" className="text-gray-500 font-semibold">Total</ThemedText>
-                            <ThemedText variant="tiny" className="text-gray-500 font-semibold">
+                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary font-semibold">Total</ThemedText>
+                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary font-semibold">
                               {formatFare(parseFloat(fareEstimate.fare_breakdown.total))}
                             </ThemedText>
                           </View>
@@ -1450,7 +1450,7 @@ export default function BookRideScreen() {
                     </View>
                   )}
 
-                  <ThemedText variant="tiny" className="text-gray-400 text-center">
+                  <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary text-center">
                     *Final fare may vary based on actual route and traffic
                   </ThemedText>
                 </ThemedCard>
@@ -1480,7 +1480,7 @@ export default function BookRideScreen() {
               {isFetchingFavorites ? (
                 <ActivityIndicator size="small" color={iconColor} />
               ) : favoriteLocations.length === 0 ? (
-                <ThemedText variant="small" className="text-gray-400 text-center">
+                <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary text-center">
                   No saved places
                 </ThemedText>
               ) : (
@@ -1508,7 +1508,7 @@ export default function BookRideScreen() {
             {cars.length === 0 && (
               <ThemedCard className="mb-4 bg-yellow-50 dark:bg-yellow-900/20 p-4">
                 <View className="flex-row items-center">
-                  <Ionicons name="warning" size={20} color="#F59E0B" />
+                  <Ionicons name="warning" size={20} color={BrandColors.warning} />
                   <ThemedText variant="small" className="ml-2 text-yellow-700 dark:text-yellow-400">
                     No vehicles added. Please add a vehicle to book a chauffeur.
                   </ThemedText>
@@ -1544,15 +1544,15 @@ export default function BookRideScreen() {
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 50 }}>
                 {isCarsLoading && (
                   <View className="py-8 items-center">
-                    <ActivityIndicator size="large" color="#BD8C5E" />
-                    <ThemedText className="mt-3 text-gray-500">Loading vehicles...</ThemedText>
+                    <ActivityIndicator size="large" color={BrandColors.secondary} />
+                    <ThemedText className="mt-3 text-textSecondary dark:text-darkTextSecondary">Loading vehicles...</ThemedText>
                   </View>
                 )}
 
                 {!isCarsLoading && cars.length === 0 && (
                   <View className="py-6 items-center">
                     <Ionicons name="car-outline" size={40} color="#999" />
-                    <ThemedText className="mt-3 text-gray-600">No vehicles added yet</ThemedText>
+                    <ThemedText className="mt-3 text-textSecondary dark:text-darkTextSecondary">No vehicles added yet</ThemedText>
                     <PrimaryButton
                       title="Add Vehicle"
                       onPress={() => {
@@ -1575,18 +1575,18 @@ export default function BookRideScreen() {
                   >
                     <View className="flex-row items-center">
                       <View className="w-12 h-12 bg-secondary/20 rounded-full items-center justify-center mr-3">
-                        <Ionicons name="car" size={24} color="#BD8C5E" />
+                        <Ionicons name="car" size={24} color={BrandColors.secondary} />
                       </View>
                       <View className="flex-1">
                         <ThemedText variant="body" className="font-semibold">
                           {car.make} {car.model}
                         </ThemedText>
-                        <ThemedText variant="small" className="text-gray-500">
+                        <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                           {car.color} • {car.registrationNumber}
                         </ThemedText>
                       </View>
                       {selectedCar?.id === car.id && (
-                        <Ionicons name="checkmark-circle" size={24} color="#BD8C5E" />
+                        <Ionicons name="checkmark-circle" size={24} color={BrandColors.secondary} />
                       )}
                     </View>
                   </TouchableOpacity>
@@ -1632,16 +1632,16 @@ export default function BookRideScreen() {
                     {/* Trip Summary */}
                     <View className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                       <View className="flex-row items-center mb-2">
-                        <Ionicons name="location" size={16} color={isDarkMode ? '#BD8C5E' : '#666'} />
+                        <Ionicons name="location" size={16} color={isDarkMode ? BrandColors.secondary : '#666'} />
                         <ThemedText variant="small" className="ml-2 flex-1">
                           {pickupLocation.address}
                         </ThemedText>
                       </View>
                       <View className="flex-row items-center justify-center my-2">
-                        <Ionicons name="arrow-down" size={16} color={isDarkMode ? '#BD8C5E' : '#666'} />
+                        <Ionicons name="arrow-down" size={16} color={isDarkMode ? BrandColors.secondary : '#666'} />
                       </View>
                       <View className="flex-row items-center">
-                        <Ionicons name="navigate" size={16} color={isDarkMode ? '#BD8C5E' : '#666'} />
+                        <Ionicons name="navigate" size={16} color={isDarkMode ? BrandColors.secondary : '#666'} />
                         <ThemedText variant="small" className="ml-2 flex-1">
                           {dropLocation?.address}
                         </ThemedText>
@@ -1650,7 +1650,7 @@ export default function BookRideScreen() {
 
                     {/* Trip Details */}
                     <View className="flex-row justify-between mb-4 px-2">
-                      <ThemedText variant="small" className="text-gray-600">
+                      <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                         Trip Type
                       </ThemedText>
                       <ThemedText variant="small" className="font-semibold">
@@ -1658,7 +1658,7 @@ export default function BookRideScreen() {
                       </ThemedText>
                     </View>
                     <View className="flex-row justify-between mb-4 px-2">
-                      <ThemedText variant="small" className="text-gray-600">
+                      <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                         Distance
                       </ThemedText>
                       <ThemedText variant="small" className="font-semibold">
@@ -1668,7 +1668,7 @@ export default function BookRideScreen() {
                       </ThemedText>
                     </View>
                     <View className="flex-row justify-between mb-4 px-2">
-                      <ThemedText variant="small" className="text-gray-600">
+                      <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                         Duration
                       </ThemedText>
                       <ThemedText variant="small" className="font-semibold">
@@ -1678,14 +1678,14 @@ export default function BookRideScreen() {
                       </ThemedText>
                     </View>
                     <View className="flex-row justify-between mb-4 px-2">
-                      <ThemedText variant="small" className="text-gray-600">
+                      <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                         Vehicle
                       </ThemedText>
                       <View className="items-end">
                         <ThemedText variant="small" className="font-semibold">
                           {selectedCar?.make} {selectedCar?.model}
                         </ThemedText>
-                        <ThemedText variant="tiny" className="text-gray-500">
+                        <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                           {selectedCar?.registrationNumber}
                         </ThemedText>
                       </View>
@@ -1702,43 +1702,43 @@ export default function BookRideScreen() {
                       {fareEstimate.fare_breakdown && (
                         <>
                           <View className="flex-row justify-between mb-1 px-2">
-                            <ThemedText variant="tiny" className="text-gray-500">Base fare</ThemedText>
-                            <ThemedText variant="tiny" className="text-gray-500">
+                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Base fare</ThemedText>
+                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                               {formatFare(parseFloat(fareEstimate.fare_breakdown.base_fare))}
                             </ThemedText>
                           </View>
                           <View className="flex-row justify-between mb-1 px-2">
-                            <ThemedText variant="tiny" className="text-gray-500">
+                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                               {fareEstimate.fare_breakdown.distance_km && fareEstimate.fare_breakdown.per_km_rate
                                 ? `Distance (${parseFloat(fareEstimate.fare_breakdown.distance_km).toFixed(2)} km × ₹${fareEstimate.fare_breakdown.per_km_rate}/km)`
                                 : 'Distance fare'}
                             </ThemedText>
-                            <ThemedText variant="tiny" className="text-gray-500">
+                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                               {formatFare(parseFloat(fareEstimate.fare_breakdown.distance_fare))}
                             </ThemedText>
                           </View>
                           {fareEstimate.fare_breakdown.time_fare !== undefined && parseFloat(fareEstimate.fare_breakdown.time_fare) > 0 && (
                             <View className="flex-row justify-between mb-1 px-2">
-                              <ThemedText variant="tiny" className="text-gray-500">Time fare</ThemedText>
-                              <ThemedText variant="tiny" className="text-gray-500">
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Time fare</ThemedText>
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                                 {formatFare(parseFloat(fareEstimate.fare_breakdown.time_fare))}
                               </ThemedText>
                             </View>
                           )}
                           {fareEstimate.fare_breakdown.subtotal !== undefined && (
                             <View className="flex-row justify-between mb-1 px-2">
-                              <ThemedText variant="tiny" className="text-gray-500">Subtotal</ThemedText>
-                              <ThemedText variant="tiny" className="text-gray-500">
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Subtotal</ThemedText>
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                                 {formatFare(parseFloat(fareEstimate.fare_breakdown.subtotal))}
                               </ThemedText>
                             </View>
                           )}
                           {fareEstimate.surge_multiplier !== undefined && fareEstimate.surge_multiplier > 1 && fareEstimate.fare_breakdown.surge_amount !== undefined && (
                             <View className="flex-row justify-between mb-1 px-2">
-                              <ThemedText variant="tiny" className="text-gray-500">
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                                 Surge x{fareEstimate.surge_multiplier.toFixed(2)}
                               </ThemedText>
-                              <ThemedText variant="tiny" className="text-gray-500">
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                                 {formatFare(parseFloat(fareEstimate.fare_breakdown.surge_amount))}
                               </ThemedText>
                             </View>
@@ -1763,8 +1763,8 @@ export default function BookRideScreen() {
                             <>
                               <View className="border-t border-gray-200 dark:border-gray-600 mt-1 mb-1 mx-2" />
                               <View className="flex-row justify-between mb-1 px-2">
-                                <ThemedText variant="tiny" className="text-gray-500 font-semibold">Total</ThemedText>
-                                <ThemedText variant="tiny" className="text-gray-500 font-semibold">
+                                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary font-semibold">Total</ThemedText>
+                                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary font-semibold">
                                   {formatFare(parseFloat(fareEstimate.fare_breakdown.total))}
                                 </ThemedText>
                               </View>
@@ -1772,7 +1772,7 @@ export default function BookRideScreen() {
                           )}
                         </>
                       )}
-                      <ThemedText variant="tiny" className="text-gray-500 text-center">
+                      <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary text-center">
                         *Final fare may vary based on actual route and traffic
                       </ThemedText>
                     </View>
@@ -1789,13 +1789,13 @@ export default function BookRideScreen() {
                         <View className="flex-row items-center justify-between">
                           <View className="flex-row items-center">
                             <View className="w-10 h-10 bg-blue-100 rounded-full items-center justify-center mr-3">
-                              <Ionicons name="shield-checkmark" size={20} color="#3B82F6" />
+                              <Ionicons name="shield-checkmark" size={20} color={BrandColors.info} />
                             </View>
                             <View>
                               <ThemedText variant="small" className="font-semibold">
                                 {selectedInsurancePlanId ? 'Insurance Added' : 'Add Trip Insurance'}
                               </ThemedText>
-                              <ThemedText variant="tiny" className="text-gray-500">
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                                 {selectedInsurancePlanId
                                   ? `₹${selectedInsurancePremium} for trip coverage`
                                   : 'Protect your journey from unexpected damages'}
@@ -1805,7 +1805,7 @@ export default function BookRideScreen() {
                           <Ionicons
                             name={selectedInsurancePlanId ? "checkmark-circle" : "chevron-forward"}
                             size={24}
-                            color={selectedInsurancePlanId ? "#10B981" : "#3B82F6"}
+                            color={selectedInsurancePlanId ? BrandColors.success : BrandColors.info}
                           />
                         </View>
                       </TouchableOpacity>
@@ -1830,7 +1830,7 @@ export default function BookRideScreen() {
                                 ? `${selectedAmenitiesCount} Amenit${selectedAmenitiesCount === 1 ? 'y' : 'ies'} Added`
                                 : 'Add Amenities'}
                             </ThemedText>
-                            <ThemedText variant="tiny" className="text-gray-500">
+                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                               {selectedAmenitiesCount > 0
                                 ? `${formatFare(amenitiesTotal)} total`
                                 : 'Customize your ride experience'}
@@ -1840,7 +1840,7 @@ export default function BookRideScreen() {
                         <Ionicons
                           name={selectedAmenitiesCount > 0 ? "checkmark-circle" : "chevron-forward"}
                           size={24}
-                          color={selectedAmenitiesCount > 0 ? "#10B981" : "#D97706"}
+                          color={selectedAmenitiesCount > 0 ? BrandColors.success : "#D97706"}
                         />
                       </View>
                     </TouchableOpacity>
@@ -1880,8 +1880,8 @@ export default function BookRideScreen() {
                 {/* Loading */}
                 {isLoadingInsurance && (
                   <View className="py-8 items-center">
-                    <ActivityIndicator size="large" color="#BD8C5E" />
-                    <ThemedText className="mt-3 text-gray-500">Loading plans...</ThemedText>
+                    <ActivityIndicator size="large" color={BrandColors.secondary} />
+                    <ThemedText className="mt-3 text-textSecondary dark:text-darkTextSecondary">Loading plans...</ThemedText>
                   </View>
                 )}
 
@@ -1903,11 +1903,11 @@ export default function BookRideScreen() {
                       <View className="flex-row items-start justify-between mb-2">
                         <View className="flex-1">
                           <ThemedText variant="h3">{plan.name}</ThemedText>
-                          <ThemedText variant="tiny" className="text-gray-500 mt-1">{plan.description}</ThemedText>
+                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary mt-1">{plan.description}</ThemedText>
                         </View>
                         <View className="items-end ml-3">
                           <ThemedText variant="h3" className="text-blue-600 font-bold">₹{premium}</ThemedText>
-                          <View className={`w-6 h-6 rounded-full border-2 mt-1 items-center justify-center ${isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
+                          <View className={`w-6 h-6 rounded-full border-2 mt-1 items-center justify-center ${isSelected ? 'border-blue-500 bg-blue-500' : 'border-border dark:border-darkBorder'
                             }`}>
                             {isSelected && <Ionicons name="checkmark" size={14} color="white" />}
                           </View>
@@ -1915,7 +1915,7 @@ export default function BookRideScreen() {
                       </View>
                       {/* Coverage pill */}
                       <View className="flex-row items-center bg-blue-50 dark:bg-blue-900/10 rounded-lg px-2 py-1 mb-2 self-start">
-                        <Ionicons name="cash-outline" size={13} color="#3B82F6" />
+                        <Ionicons name="cash-outline" size={13} color={BrandColors.info} />
                         <ThemedText variant="tiny" className="ml-1 text-blue-700 dark:text-blue-400">
                           Coverage up to {coverage}
                         </ThemedText>
@@ -1924,8 +1924,8 @@ export default function BookRideScreen() {
                       <View className="flex-row flex-wrap mt-2">
                         {plan.coverage_details?.map((feat, i) => (
                           <View key={i} className="w-1/2 flex-row items-start mb-1 pr-2">
-                            <Ionicons name="checkmark-circle" size={14} color="#720C17" className="flex-shrink-0 mt-0.5" />
-                            <ThemedText variant="tiny" className="ml-1 text-gray-600 dark:text-gray-400 flex-1">{feat}</ThemedText>
+                            <Ionicons name="checkmark-circle" size={14} color={BrandColors.burgundy} className="flex-shrink-0 mt-0.5" />
+                            <ThemedText variant="tiny" className="ml-1 text-gray-600 dark:text-darkTextSecondary flex-1">{feat}</ThemedText>
                           </View>
                         ))}
                       </View>
@@ -1945,7 +1945,7 @@ export default function BookRideScreen() {
                 {/* Clear link */}
                 {tempSelectedPlanId && (
                   <TouchableOpacity onPress={clearInsurance} className="py-3 items-center">
-                    <ThemedText className="text-gray-500 text-center">Remove Insurance</ThemedText>
+                    <ThemedText className="text-textSecondary dark:text-darkTextSecondary text-center">Remove Insurance</ThemedText>
                   </TouchableOpacity>
                 )}
               </ScrollView>
@@ -1972,15 +1972,15 @@ export default function BookRideScreen() {
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 50 }}>
                 {isLoadingAmenities && (
                   <View className="py-8 items-center">
-                    <ActivityIndicator size="large" color="#BD8C5E" />
-                    <ThemedText className="mt-3 text-gray-500">Loading amenities...</ThemedText>
+                    <ActivityIndicator size="large" color={BrandColors.secondary} />
+                    <ThemedText className="mt-3 text-textSecondary dark:text-darkTextSecondary">Loading amenities...</ThemedText>
                   </View>
                 )}
 
                 {!isLoadingAmenities && availableAmenities.length === 0 && (
                   <View className="py-8 items-center">
                     <Ionicons name="cafe-outline" size={40} color="#999" />
-                    <ThemedText className="mt-3 text-gray-500">No amenities available</ThemedText>
+                    <ThemedText className="mt-3 text-textSecondary dark:text-darkTextSecondary">No amenities available</ThemedText>
                   </View>
                 )}
 
@@ -2015,14 +2015,14 @@ export default function BookRideScreen() {
                                 />
                                 <View className="ml-3 flex-1">
                                   <ThemedText variant="small" className="font-semibold">{amenity.name}</ThemedText>
-                                  <ThemedText variant="tiny" className="text-gray-500">{amenity.description}</ThemedText>
+                                  <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">{amenity.description}</ThemedText>
                                 </View>
                               </View>
                               <View className="items-end ml-2">
                                 <ThemedText variant="small" className="font-bold text-amber-600">
                                   {AmenityApiService.formatPrice(amenity.price)}
                                 </ThemedText>
-                                <View className={`w-5 h-5 rounded-full border-2 mt-1 items-center justify-center ${isSelected ? 'border-amber-500 bg-amber-500' : 'border-gray-300'
+                                <View className={`w-5 h-5 rounded-full border-2 mt-1 items-center justify-center ${isSelected ? 'border-amber-500 bg-amber-500' : 'border-border dark:border-darkBorder'
                                   }`}>
                                   {isSelected && <Ionicons name="checkmark" size={12} color="white" />}
                                 </View>
@@ -2031,7 +2031,7 @@ export default function BookRideScreen() {
 
                             {isSelected && (
                               <View className="flex-row items-center justify-between mt-2 pt-2 border-t border-amber-200 dark:border-amber-700">
-                                <ThemedText variant="tiny" className="text-gray-500">Quantity</ThemedText>
+                                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Quantity</ThemedText>
                                 <View className="flex-row items-center">
                                   <TouchableOpacity
                                     onPress={(e) => { e.stopPropagation(); updateAmenityQuantity(amenity.id, quantity - 1); }}
@@ -2065,7 +2065,7 @@ export default function BookRideScreen() {
                     {selectedAmenitiesCount > 0 && (
                       <View className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 mb-3">
                         <View className="flex-row justify-between items-center">
-                          <ThemedText variant="small" className="text-gray-600">
+                          <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                             {selectedAmenitiesCount} item{selectedAmenitiesCount !== 1 ? 's' : ''} selected
                           </ThemedText>
                           <ThemedText variant="h3" className="text-amber-600">
@@ -2087,7 +2087,7 @@ export default function BookRideScreen() {
                         }}
                         className="py-3 items-center"
                       >
-                        <ThemedText className="text-gray-500 text-center">Remove All Amenities</ThemedText>
+                        <ThemedText className="text-textSecondary dark:text-darkTextSecondary text-center">Remove All Amenities</ThemedText>
                       </TouchableOpacity>
                     )}
                   </>
@@ -2126,7 +2126,7 @@ export default function BookRideScreen() {
                     <Ionicons name="close" size={24} color={isDarkMode ? '#fff' : '#000'} />
                   </TouchableOpacity>
                 </View>
-                <ThemedText variant="small" className="mt-1 text-gray-500 dark:text-gray-400">
+                <ThemedText variant="small" className="mt-1 text-gray-500 dark:text-darkTextSecondary">
                   Select pickup date and time
                 </ThemedText>
               </View>
@@ -2135,13 +2135,13 @@ export default function BookRideScreen() {
                 <View className="p-6">
                   {/* Date Selection */}
                   <View className="mb-6">
-                    <ThemedText variant="small" className="mb-3 font-semibold text-gray-600 dark:text-gray-400">
+                    <ThemedText variant="small" className="mb-3 font-semibold text-gray-600 dark:text-darkTextSecondary">
                       SELECT DATE
                     </ThemedText>
 
                     {generateNext7Days().length === 0 ? (
                       <View className="p-6 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl items-center">
-                        <Ionicons name="moon" size={24} color="#F59E0B" />
+                        <Ionicons name="moon" size={24} color={BrandColors.warning} />
                         <ThemedText variant="small" className="text-yellow-700 dark:text-yellow-400 mt-2 text-center">
                           It's too late to schedule for today. Please check back tomorrow morning.
                         </ThemedText>
@@ -2164,7 +2164,7 @@ export default function BookRideScreen() {
                             >
                               <ThemedText
                                 variant="tiny"
-                                className={`${isSelected ? 'text-burgundy dark:text-secondary font-semibold' : 'text-gray-500'
+                                className={`${isSelected ? 'text-burgundy dark:text-secondary font-semibold' : 'text-textSecondary dark:text-darkTextSecondary'
                                   }`}
                               >
                                 {isToday ? 'Today' : day.dayName}
@@ -2177,7 +2177,7 @@ export default function BookRideScreen() {
                               </ThemedText>
                               <ThemedText
                                 variant="tiny"
-                                className={`${isSelected ? 'text-burgundy dark:text-secondary' : 'text-gray-400'}`}
+                                className={`${isSelected ? 'text-burgundy dark:text-secondary' : 'text-textSecondary dark:text-darkTextSecondary'}`}
                               >
                                 {day.month}
                               </ThemedText>
@@ -2191,7 +2191,7 @@ export default function BookRideScreen() {
                   {/* Time Selection */}
                   {generateNext7Days().length > 0 && (
                     <View className="mb-6">
-                      <ThemedText variant="small" className="mb-3 font-semibold text-gray-600 dark:text-gray-400">
+                      <ThemedText variant="small" className="mb-3 font-semibold text-gray-600 dark:text-darkTextSecondary">
                         SELECT TIME
                       </ThemedText>
 
@@ -2215,7 +2215,7 @@ export default function BookRideScreen() {
                               <ThemedText
                                 variant="body"
                                 className={`${isDisabled
-                                    ? 'text-gray-400'
+                                    ? 'text-textSecondary dark:text-darkTextSecondary'
                                     : isSelected
                                       ? 'text-burgundy dark:text-secondary font-semibold'
                                       : ''
@@ -2234,12 +2234,12 @@ export default function BookRideScreen() {
                   {scheduledDate && scheduledTime && (
                     <View className="bg-secondary/10 rounded-xl p-4 mb-4">
                       <View className="flex-row items-center">
-                        <Ionicons name="checkmark-circle" size={20} color="#BD8C5E" />
+                        <Ionicons name="checkmark-circle" size={20} color={BrandColors.secondary} />
                         <View className="flex-1 ml-3">
                           <ThemedText variant="small" className="font-semibold text-secondary">
                             Pickup Scheduled
                           </ThemedText>
-                          <ThemedText variant="tiny" className="text-textSecondary mt-0.5">
+                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary mt-0.5">
                             {formatScheduledDateTime()}
                           </ThemedText>
                         </View>
@@ -2280,7 +2280,7 @@ export default function BookRideScreen() {
               </View>
 
               {/* Name */}
-              <ThemedText variant="small" className="mb-1 text-gray-500">Name</ThemedText>
+              <ThemedText variant="small" className="mb-1 text-textSecondary dark:text-darkTextSecondary">Name</ThemedText>
               <TextInput
                 value={newPlaceTitle}
                 onChangeText={setNewPlaceTitle}
@@ -2290,7 +2290,7 @@ export default function BookRideScreen() {
               />
 
               {/* Address search */}
-              <ThemedText variant="small" className="mb-1 text-gray-500">Address</ThemedText>
+              <ThemedText variant="small" className="mb-1 text-textSecondary dark:text-darkTextSecondary">Address</ThemedText>
               <GooglePlacesAutocomplete
                 placeholder="Search address"
                 value={newPlaceAddress}
@@ -2312,7 +2312,7 @@ export default function BookRideScreen() {
               />
 
               {/* Type selector */}
-              <ThemedText variant="small" className="mt-4 mb-2 text-gray-500">Type</ThemedText>
+              <ThemedText variant="small" className="mt-4 mb-2 text-textSecondary dark:text-darkTextSecondary">Type</ThemedText>
               <View className="flex-row mb-6">
                 {(['home', 'work', 'favorite'] as LocationType[]).map((type) => {
                   const active = newPlaceType === type;
@@ -2328,11 +2328,11 @@ export default function BookRideScreen() {
                       <Ionicons
                         name={type === 'home' ? 'home' : type === 'work' ? 'business' : 'star'}
                         size={14}
-                        color={active ? '#BD8C5E' : isDarkMode ? '#9CA3AF' : '#6B7280'}
+                        color={active ? BrandColors.secondary : isDarkMode ? '#9CA3AF' : '#6B7280'}
                       />
                       <ThemedText
                         variant="tiny"
-                        className={`ml-1 capitalize ${active ? 'text-secondary font-semibold' : 'text-gray-500'}`}
+                        className={`ml-1 capitalize ${active ? 'text-secondary font-semibold' : 'text-textSecondary dark:text-darkTextSecondary'}`}
                       >
                         {type}
                       </ThemedText>
@@ -2372,7 +2372,7 @@ export default function BookRideScreen() {
                 {isFetchingFavorites ? (
                   <ActivityIndicator size="small" color={iconColor} className="mt-4" />
                 ) : favoriteLocations.length === 0 ? (
-                  <ThemedText variant="small" className="text-gray-400 text-center mt-4">
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary text-center mt-4">
                     No saved places
                   </ThemedText>
                 ) : (
@@ -2386,7 +2386,7 @@ export default function BookRideScreen() {
                         <Ionicons name={getFavoriteIcon(location.title)} size={20} color={iconColor} />
                         <View className="ml-3">
                           <ThemedText variant="body">{location.title}</ThemedText>
-                          <ThemedText variant="small" className="text-gray-500">
+                          <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                             {location.address}
                           </ThemedText>
                         </View>
@@ -2417,7 +2417,7 @@ export default function BookRideScreen() {
               </View>
 
               <ThemedText variant="h2" className="mb-1">Apply Credits</ThemedText>
-              <ThemedText variant="small" className="text-gray-500 mb-4">
+              <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary mb-4">
                 You have ₹{Number(loyaltyProfile?.credit_balance).toFixed(2)} credits available
               </ThemedText>
 
@@ -2444,7 +2444,7 @@ export default function BookRideScreen() {
 
               {/* Input */}
               <TextInput
-                className={`border border-gray-300 dark:border-darkBorder rounded-xl p-4 mb-4 text-lg ${isDarkMode ? 'bg-darkSurface text-darkText' : 'bg-white text-textPrimary'
+                className={`border border-gray-300 dark:border-darkBorder rounded-xl p-4 mb-4 text-lg ${isDarkMode ? 'bg-darkSurface text-darkText' : 'bg-white text-textPrimary dark:text-darkText'
                   }`}
                 placeholder="₹ Enter amount"
                 placeholderTextColor="#9CA3AF"
@@ -2474,7 +2474,7 @@ export default function BookRideScreen() {
                 }}
                 className="py-3 items-center"
               >
-                <ThemedText className="text-gray-500">Skip for now</ThemedText>
+                <ThemedText className="text-textSecondary dark:text-darkTextSecondary">Skip for now</ThemedText>
               </TouchableOpacity>
             </View>
           </View>

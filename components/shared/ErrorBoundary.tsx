@@ -196,11 +196,11 @@ ${errorInfo?.componentStack || 'No component stack available'}
               <Text className="text-xl font-bold text-black mt-4">
                 Something went wrong
               </Text>
-              <Text className="text-sm text-gray-600 mt-2 text-center">
+              <Text className="text-sm text-textSecondary dark:text-darkTextSecondary mt-2 text-center">
                 The app encountered an unexpected error. We apologize for the inconvenience.
               </Text>
               {errorId && (
-                <Text className="text-xs text-gray-500 mt-2">
+                <Text className="text-xs text-textSecondary dark:text-darkTextSecondary mt-2">
                   Error ID: {errorId}
                 </Text>
               )}
@@ -220,21 +220,21 @@ ${errorInfo?.componentStack || 'No component stack available'}
 
             <View className="flex-row space-x-2">
               <TouchableOpacity
-                className="flex-1 bg-gray-100 p-3 rounded-lg flex-row items-center justify-center"
+                className="flex-1 bg-gray-100 dark:bg-darkSurface p-3 rounded-lg flex-row items-center justify-center"
                 onPress={this.handleReportBug}
               >
                 <Ionicons name="bug" size={18} color={LightColors.textSecondary} />
-                <Text className="text-gray-700 font-medium ml-2 text-sm">
+                <Text className="text-textPrimary dark:text-darkText font-medium ml-2 text-sm">
                   Report Bug
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                className="flex-1 bg-gray-100 p-3 rounded-lg flex-row items-center justify-center"
+                className="flex-1 bg-gray-100 dark:bg-darkSurface p-3 rounded-lg flex-row items-center justify-center"
                 onPress={this.handleShareError}
               >
                 <Ionicons name="share" size={18} color={LightColors.textSecondary} />
-                <Text className="text-gray-700 font-medium ml-2 text-sm">
+                <Text className="text-textPrimary dark:text-darkText font-medium ml-2 text-sm">
                   Share Error
                 </Text>
               </TouchableOpacity>
@@ -245,18 +245,18 @@ ${errorInfo?.componentStack || 'No component stack available'}
           {this.props.showErrorDetails && error && (
             <View className="flex-1">
               <TouchableOpacity
-                className="px-4 py-2 bg-gray-50 border-t border-gray-200"
+                className="px-4 py-2 bg-gray-50 border-t border-border dark:border-darkBorder"
                 onPress={() => {
                   // Toggle error details visibility
                 }}
               >
-                <Text className="text-sm font-medium text-gray-700">
+                <Text className="text-sm font-medium text-textPrimary dark:text-darkText">
                   Show Error Details
                 </Text>
               </TouchableOpacity>
               
               <ScrollView className="flex-1 bg-gray-50 p-4">
-                <Text className="text-xs font-mono text-gray-600 leading-4">
+                <Text className="text-xs font-mono text-textSecondary dark:text-darkTextSecondary leading-4">
                   <Text className="font-bold">Error Message:</Text>{'\n'}
                   {error.message}
                   {'\n\n'}
@@ -275,8 +275,8 @@ ${errorInfo?.componentStack || 'No component stack available'}
           )}
 
           {/* Footer */}
-          <View className="p-4 bg-gray-50 border-t border-gray-200">
-            <Text className="text-xs text-gray-500 text-center">
+          <View className="p-4 bg-gray-50 border-t border-border dark:border-darkBorder">
+            <Text className="text-xs text-textSecondary dark:text-darkTextSecondary text-center">
               If this problem persists, please contact support or try restarting the app.
             </Text>
           </View>

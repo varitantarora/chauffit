@@ -15,6 +15,7 @@ import { useBikerEarningsStore } from '../../../store/bikerEarningsStore';
 import { BikerTask, TaskItem } from '../../../types/navigation';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
+import { BrandColors } from '../../../constants/Colors';
 
 type DeliveryStep = 'pickup' | 'in_transit' | 'delivery' | 'completed';
 
@@ -346,7 +347,7 @@ export default function DeliveryTaskScreen() {
                     <ThemedText className="font-semibold">
                       {currentStep === 'pickup' || currentStep === 'in_transit' ? 'Pickup Location' : 'Delivery Location'}
                     </ThemedText>
-                    <ThemedText variant="caption" className="text-textSecondary">
+                    <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">
                       {currentLocation.address}
                     </ThemedText>
                   </View>
@@ -369,11 +370,11 @@ export default function DeliveryTaskScreen() {
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center flex-1">
                     <View className="bg-secondary/10 p-2 rounded-full mr-3">
-                      <Ionicons name="person" size={20} color="#BD8C5E" />
+                      <Ionicons name="person" size={20} color={BrandColors.secondary} />
                     </View>
                     <View>
                       <ThemedText className="font-semibold">{task.customerName}</ThemedText>
-                      <ThemedText variant="caption" className="text-textSecondary">
+                      <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">
                         {currentStep === 'pickup' ? 'Pickup Contact' : 'Delivery Contact'}
                       </ThemedText>
                     </View>
@@ -437,7 +438,7 @@ export default function DeliveryTaskScreen() {
                   ) : (
                     <View className="items-center">
                       <Ionicons name="camera" size={32} color="#6B7280" />
-                      <ThemedText className="text-textSecondary font-semibold mt-2">
+                      <ThemedText className="text-textSecondary dark:text-darkTextSecondary font-semibold mt-2">
                         Take Photo
                       </ThemedText>
                       <ThemedText variant="caption" className="text-center mt-1">
@@ -477,12 +478,12 @@ export default function DeliveryTaskScreen() {
                     <View className="flex-1">
                       <ThemedText className={`font-semibold ${
                         isActive ? STEP_STYLES[step].progressTextClass :
-                        isCompleted ? 'text-success' : 'text-textSecondary'
+                        isCompleted ? 'text-success' : 'text-textSecondary dark:text-darkTextSecondary'
                       }`}>
                         {config.title}
                       </ThemedText>
                       {isActive && (
-                        <ThemedText variant="caption" className="text-textSecondary">
+                        <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">
                           Current step
                         </ThemedText>
                       )}
@@ -560,7 +561,7 @@ function DeliveryItem({
         </View>
         
         {item.description && (
-          <ThemedText variant="caption" className="text-textSecondary mt-1">
+          <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary mt-1">
             {item.description}
           </ThemedText>
         )}

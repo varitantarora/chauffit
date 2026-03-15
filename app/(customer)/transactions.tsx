@@ -7,6 +7,7 @@ import { ThemedText } from '../../components/common/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
+import { BrandColors, useThemeColors } from '../../constants/Colors';
 
 interface Transaction {
   id: string;
@@ -24,9 +25,10 @@ type FilterPeriod = 'all' | '7days' | '30days' | '90days' | '1year';
 export default function TransactionsScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const router = useRouter();
-  
-  const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
-  const backgroundColor = isDarkMode ? '#1a1a1a' : '#F5F5F0';
+  const colors = useThemeColors(isDarkMode);
+
+  const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
+  const backgroundColor = colors.altBackground;
 
   const [selectedPeriod, setSelectedPeriod] = useState<FilterPeriod>('30days');
 
@@ -140,11 +142,11 @@ export default function TransactionsScreen() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return '#10B981';
-      case 'pending': return '#F59E0B';
-      case 'failed': return '#EF4444';
-      case 'refunded': return '#3B82F6';
-      default: return '#6B7280';
+      case 'completed': return BrandColors.success;
+      case 'pending': return BrandColors.warning;
+      case 'failed': return BrandColors.danger;
+      case 'refunded': return BrandColors.info;
+      default: return colors.placeholder;
     }
   };
 
@@ -200,7 +202,7 @@ export default function TransactionsScreen() {
             {/* Summary Card */}
             <ThemedCard variant="elevated" className="mb-6 p-6">
               <View className="items-center">
-                <ThemedText variant="small" className="text-gray-600 mb-2">
+                <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary mb-2">
                   Total Spent ({filterOptions.find(f => f.id === selectedPeriod)?.label})
                 </ThemedText>
                 <ThemedText variant="h1" className="text-burgundy mb-4">
@@ -208,7 +210,7 @@ export default function TransactionsScreen() {
                 </ThemedText>
                 
                 <View className="flex-row items-center bg-gray-50 dark:bg-gray-800 px-4 py-2 rounded-full">
-                  <Ionicons name="trending-up" size={16} color="#10B981" />
+                  <Ionicons name="trending-up" size={16} color={BrandColors.success} />
                   <ThemedText variant="small" className="ml-2 text-green-600">
                     {filteredTransactions.filter(t => t.status === 'completed').length} completed rides
                   </ThemedText>
@@ -233,7 +235,7 @@ export default function TransactionsScreen() {
                   >
                     <ThemedText 
                       variant="small" 
-                      className={selectedPeriod === option.id ? 'text-white' : 'text-gray-600'}
+                      className={selectedPeriod === option.id ? 'text-white' : 'text-textSecondary dark:text-darkTextSecondary'}
                     >
                       {option.label}
                     </ThemedText>
@@ -290,15 +292,15 @@ export default function TransactionsScreen() {
                           </ThemedText>
                           
                           <View className="flex-row items-center justify-between">
-                            <ThemedText variant="small" className="text-gray-600">
+                            <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                               {formatDate(transaction.date)} • {formatTime(transaction.date)}
                             </ThemedText>
-                            <ThemedText variant="tiny" className="text-gray-500">
+                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                               {transaction.method}
                             </ThemedText>
                           </View>
                           
-                          <ThemedText variant="tiny" className="text-gray-400 mt-1">
+                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary mt-1">
                             ID: {transaction.transactionId}
                           </ThemedText>
                         </View>
@@ -309,12 +311,12 @@ export default function TransactionsScreen() {
               ) : (
                 <ThemedCard className="items-center py-8">
                   <View className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full items-center justify-center mb-4">
-                    <Ionicons name="receipt-outline" size={32} color="#6B7280" />
+                    <Ionicons name="receipt-outline" size={32} color={colors.placeholder} />
                   </View>
                   <ThemedText variant="h3" className="mb-2">
                     No Transactions Found
                   </ThemedText>
-                  <ThemedText variant="small" className="text-gray-600 text-center">
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary text-center">
                     No transactions found for the selected period.
                   </ThemedText>
                 </ThemedCard>
@@ -334,11 +336,11 @@ export default function TransactionsScreen() {
                 >
                   <View className="flex-row items-center">
                     <View className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full items-center justify-center mr-4">
-                      <Ionicons name="document-text" size={20} color="#10B981" />
+                      <Ionicons name="document-text" size={20} color={BrandColors.success} />
                     </View>
                     <ThemedText>Download as PDF</ThemedText>
                   </View>
-                  <Ionicons name="download" size={20} color="#BD8C5E" />
+                  <Ionicons name="download" size={20} color={BrandColors.secondary} />
                 </TouchableOpacity>
 
                 <TouchableOpacity 
@@ -347,11 +349,11 @@ export default function TransactionsScreen() {
                 >
                   <View className="flex-row items-center">
                     <View className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full items-center justify-center mr-4">
-                      <Ionicons name="mail" size={20} color="#3B82F6" />
+                      <Ionicons name="mail" size={20} color={BrandColors.info} />
                     </View>
                     <ThemedText>Email Statement</ThemedText>
                   </View>
-                  <Ionicons name="send" size={20} color="#BD8C5E" />
+                  <Ionicons name="send" size={20} color={BrandColors.secondary} />
                 </TouchableOpacity>
               </View>
             </ThemedCard>

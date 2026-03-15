@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '../common/ThemedText';
 import { useAuthStore } from '../../store/authStore';
 import { BookingDetails } from '../../types/navigation';
+import { BrandColors, useThemeColors } from '../../constants/Colors';
 
 interface BookingCardProps {
   booking: BookingDetails;
@@ -29,7 +30,11 @@ const mapApiStatusToCardStatus = (apiStatus: string): string => {
 };
 
 // Dashed line separator (tear-off effect)
-const DashedSeparator: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => (
+const DashedSeparator: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => {
+  const sepColors = isDarkMode
+    ? { notch: BrandColors.black, dash: 'rgba(74,74,74,0.8)' }
+    : { notch: BrandColors.white, dash: 'rgba(200,200,200,0.8)' };
+  return (
   <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 12, overflow: 'hidden' }}>
     {/* Left notch */}
     <View
@@ -38,7 +43,7 @@ const DashedSeparator: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => (
         height: 24,
         borderTopRightRadius: 12,
         borderBottomRightRadius: 12,
-        backgroundColor: isDarkMode ? '#1A1A1A' : '#FFFFFF',
+        backgroundColor: sepColors.notch,
         marginLeft: -20,
         marginRight: 8,
       }}
@@ -51,9 +56,7 @@ const DashedSeparator: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => (
           style={{
             flex: 1,
             height: 1,
-            backgroundColor: i % 2 === 0
-              ? (isDarkMode ? 'rgba(74,74,74,0.8)' : 'rgba(200,200,200,0.8)')
-              : 'transparent',
+            backgroundColor: i % 2 === 0 ? sepColors.dash : 'transparent',
           }}
         />
       ))}
@@ -65,13 +68,14 @@ const DashedSeparator: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => (
         height: 24,
         borderTopLeftRadius: 12,
         borderBottomLeftRadius: 12,
-        backgroundColor: isDarkMode ? '#1A1A1A' : '#FFFFFF',
+        backgroundColor: sepColors.notch,
         marginRight: -20,
         marginLeft: 8,
       }}
     />
   </View>
-);
+  );
+};
 
 export const BookingCard: React.FC<BookingCardProps> = ({
   booking,
@@ -84,6 +88,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
   loyaltyDiscountPct,
 }) => {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const colors = useThemeColors(isDarkMode);
 
   const formatDate = (dateValue: Date | string): string => {
     const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
@@ -99,12 +104,12 @@ export const BookingCard: React.FC<BookingCardProps> = ({
 
   const getStatusColor = () => {
     switch (cardStatus) {
-      case 'pending': return '#F59E0B';
-      case 'confirmed': return '#10B981';
-      case 'in_progress': return '#3B82F6';
-      case 'completed': return '#10B981';
-      case 'cancelled': return '#EF4444';
-      default: return '#6B7280';
+      case 'pending': return BrandColors.warning;
+      case 'confirmed': return BrandColors.success;
+      case 'in_progress': return BrandColors.info;
+      case 'completed': return BrandColors.success;
+      case 'cancelled': return BrandColors.danger;
+      default: return colors.placeholder;
     }
   };
 
@@ -168,8 +173,8 @@ export const BookingCard: React.FC<BookingCardProps> = ({
 
   const driverRating = booking.driverRating;
   const driverType = booking.driverType;
-  const labelColor = isDarkMode ? '#999' : '#777';
-  const accentColor = '#BD8C5E';
+  const labelColor = colors.textSecondary;
+  const accentColor = BrandColors.secondary;
   const statusColor = getStatusColor();
 
   return (
@@ -179,8 +184,8 @@ export const BookingCard: React.FC<BookingCardProps> = ({
       style={{
         marginBottom: 16,
         borderRadius: 16,
-        backgroundColor: isDarkMode ? '#2C2C2C' : '#FDFCFA',
-        shadowColor: isDarkMode ? '#000' : '#720C17',
+        backgroundColor: isDarkMode ? colors.card : '#FDFCFA',
+        shadowColor: isDarkMode ? BrandColors.black : BrandColors.burgundy,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: isDarkMode ? 0.3 : 0.08,
         shadowRadius: 8,
@@ -229,7 +234,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
         {/* Pickup */}
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 }}>
           <View style={{ width: 28, alignItems: 'center', marginTop: 2 }}>
-            <Ionicons name="radio-button-on" size={15} color="#10B981" />
+            <Ionicons name="radio-button-on" size={15} color={BrandColors.success} />
           </View>
           <View style={{ flex: 1 }}>
             <ThemedText style={{ fontSize: 10, color: labelColor, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 1 }}>Pickup</ThemedText>
@@ -242,7 +247,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
         {/* Drop */}
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 }}>
           <View style={{ width: 28, alignItems: 'center', marginTop: 2 }}>
-            <Ionicons name="location" size={15} color="#EF4444" />
+            <Ionicons name="location" size={15} color={BrandColors.danger} />
           </View>
           <View style={{ flex: 1 }}>
             <ThemedText style={{ fontSize: 10, color: labelColor, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 1 }}>Drop</ThemedText>
@@ -276,16 +281,16 @@ export const BookingCard: React.FC<BookingCardProps> = ({
               <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
                 {driverRating != null && (
                   <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F59E0B18', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 }}>
-                    <Ionicons name="star" size={11} color="#F59E0B" />
-                    <ThemedText style={{ fontSize: 12, fontWeight: '700', color: '#F59E0B', marginLeft: 2 }}>
+                    <Ionicons name="star" size={11} color={BrandColors.warning} />
+                    <ThemedText style={{ fontSize: 12, fontWeight: '700', color: BrandColors.warning, marginLeft: 2 }}>
                       {driverRating.toFixed(1)}
                     </ThemedText>
                   </View>
                 )}
                 {booking.trainingStatusDisplay ? (
                   <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#10B98118', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 }}>
-                    <Ionicons name="ribbon-outline" size={11} color="#10B981" />
-                    <ThemedText style={{ fontSize: 11, fontWeight: '600', color: '#10B981', marginLeft: 2 }}>
+                    <Ionicons name="ribbon-outline" size={11} color={BrandColors.success} />
+                    <ThemedText style={{ fontSize: 11, fontWeight: '600', color: BrandColors.success, marginLeft: 2 }}>
                       {booking.trainingStatusDisplay}
                     </ThemedText>
                   </View>
@@ -314,7 +319,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
           <ThemedText style={{ fontSize: 11, color: labelColor, textTransform: 'uppercase', letterSpacing: 0.5 }}>
             Total Fare
           </ThemedText>
-          <ThemedText style={{ fontSize: 18, fontWeight: '800', color: isDarkMode ? '#BD8C5E' : '#720C17' }}>
+          <ThemedText style={{ fontSize: 18, fontWeight: '800', color: isDarkMode ? BrandColors.secondary : BrandColors.burgundy }}>
             ₹{((booking.totalAmount || 0) * 1.18).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </ThemedText>
         </View>
@@ -331,14 +336,14 @@ export const BookingCard: React.FC<BookingCardProps> = ({
                   <Ionicons
                     name={isPaid ? 'checkmark-circle' : 'time'}
                     size={14}
-                    color={isPaid ? '#10B981' : '#F59E0B'}
+                    color={isPaid ? BrandColors.success : BrandColors.warning}
                   />
                   <ThemedText
                     style={{
                       marginLeft: 4,
                       fontSize: 13,
                       fontWeight: '600',
-                      color: isPaid ? '#10B981' : '#F59E0B',
+                      color: isPaid ? BrandColors.success : BrandColors.warning,
                     }}
                   >
                     {isPaid ? 'Paid' : 'Pending'}
@@ -353,8 +358,8 @@ export const BookingCard: React.FC<BookingCardProps> = ({
       {/* Loyalty Discount Badge */}
       {loyaltyDiscountPct && loyaltyDiscountPct > 0 ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 }}>
-          <Ionicons name="star" size={12} color="#10B981" />
-          <ThemedText style={{ marginLeft: 4, fontSize: 11, color: '#10B981', fontWeight: '600' }}>
+          <Ionicons name="star" size={12} color={BrandColors.success} />
+          <ThemedText style={{ marginLeft: 4, fontSize: 11, color: BrandColors.success, fontWeight: '600' }}>
             {loyaltyDiscountPct}% loyalty discount applied
           </ThemedText>
         </View>
@@ -372,15 +377,15 @@ export const BookingCard: React.FC<BookingCardProps> = ({
         }}>
           <TouchableOpacity
             onPress={onTrack}
-            style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: isDarkMode ? '#D9D1C6' : '#D9D1C6' }}
+            style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: BrandColors.primary }}
           >
-            <ThemedText style={{ textAlign: 'center', fontWeight: '600', color: '#720C17' }}>
+            <ThemedText style={{ textAlign: 'center', fontWeight: '600', color: BrandColors.burgundy }}>
               {booking.status === 'trip_started' ? 'View Live' : 'Track Ride'}
             </ThemedText>
           </TouchableOpacity>
           {onViewDetails && (
             <TouchableOpacity onPress={onViewDetails} style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8 }}>
-              <ThemedText style={{ textAlign: 'center', fontWeight: '600', color: isDarkMode ? '#999' : '#666' }}>
+              <ThemedText style={{ textAlign: 'center', fontWeight: '600', color: colors.textSecondary }}>
                 Details
               </ThemedText>
             </TouchableOpacity>
@@ -399,16 +404,16 @@ export const BookingCard: React.FC<BookingCardProps> = ({
         }}>
           {onViewDetails && (
             <TouchableOpacity onPress={onViewDetails} style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8 }}>
-              <ThemedText style={{ textAlign: 'center', fontWeight: '600', color: isDarkMode ? '#999' : '#666' }}>
+              <ThemedText style={{ textAlign: 'center', fontWeight: '600', color: colors.textSecondary }}>
                 Details
               </ThemedText>
             </TouchableOpacity>
           )}
           <TouchableOpacity
             onPress={onCancel}
-            style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: isDarkMode ? '#D9D1C6' : '#D9D1C6' }}
+            style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: BrandColors.primary }}
           >
-            <ThemedText style={{ textAlign: 'center', fontWeight: '600', color: '#720C17' }}>
+            <ThemedText style={{ textAlign: 'center', fontWeight: '600', color: BrandColors.burgundy }}>
               Cancel Booking
             </ThemedText>
           </TouchableOpacity>
@@ -426,20 +431,20 @@ export const BookingCard: React.FC<BookingCardProps> = ({
         }}>
           {onViewDetails && (
             <TouchableOpacity onPress={onViewDetails} style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8 }}>
-              <ThemedText style={{ textAlign: 'center', fontWeight: '600', color: isDarkMode ? '#999' : '#666' }}>
+              <ThemedText style={{ textAlign: 'center', fontWeight: '600', color: colors.textSecondary }}>
                 View Details
               </ThemedText>
             </TouchableOpacity>
           )}
           {needsPayment() && onPayNow ? (
-            <TouchableOpacity onPress={onPayNow} style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: '#720C17' }}>
-              <ThemedText style={{ textAlign: 'center', fontWeight: '600', color: '#fff' }}>
+            <TouchableOpacity onPress={onPayNow} style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: BrandColors.burgundy }}>
+              <ThemedText style={{ textAlign: 'center', fontWeight: '600', color: BrandColors.white }}>
                 Pay Now
               </ThemedText>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: isDarkMode ? '#D9D1C6' : '#D9D1C6' }}>
-              <ThemedText style={{ textAlign: 'center', fontWeight: '600', color: '#720C17' }}>
+            <TouchableOpacity style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: BrandColors.primary }}>
+              <ThemedText style={{ textAlign: 'center', fontWeight: '600', color: BrandColors.burgundy }}>
                 Book Again
               </ThemedText>
             </TouchableOpacity>
@@ -458,9 +463,9 @@ export const BookingCard: React.FC<BookingCardProps> = ({
         }}>
           <TouchableOpacity
             onPress={onViewDetails}
-            style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: isDarkMode ? '#D9D1C6' : '#D9D1C6' }}
+            style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: BrandColors.primary }}
           >
-            <ThemedText style={{ textAlign: 'center', fontWeight: '600', color: '#720C17' }}>
+            <ThemedText style={{ textAlign: 'center', fontWeight: '600', color: BrandColors.burgundy }}>
               View Details
             </ThemedText>
           </TouchableOpacity>

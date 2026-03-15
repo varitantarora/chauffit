@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
+import { BrandColors } from '../constants/Colors';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -86,7 +87,7 @@ export default function OnboardingScreen() {
           onPress={handleSkip}
           className="px-4 py-2"
         >
-          <Text className="text-gray-600 font-bold text-base">Skip</Text>
+          <Text className="text-textSecondary dark:text-darkTextSecondary font-bold text-base">Skip</Text>
         </TouchableOpacity>
       </View>
 
@@ -120,10 +121,10 @@ export default function OnboardingScreen() {
 
             {/* Text Content */}
             <View className="items-center px-4 mb-8">
-              <Text className="text-3xl font-bold text-gray-900 text-center mb-4">
+              <Text className="text-3xl font-bold text-textPrimary dark:text-darkText text-center mb-4">
                 {slide.title}
               </Text>
-              <Text className="text-base text-gray-600 text-center leading-6 px-4">
+              <Text className="text-base text-textSecondary dark:text-darkTextSecondary text-center leading-6 px-4">
                 {slide.subtitle}
               </Text>
             </View>
@@ -136,10 +137,10 @@ export default function OnboardingScreen() {
           className="flex-1 items-center justify-center px-8"
         >
           <View className="items-center px-4 mb-8">
-            <Text className="text-3xl font-bold text-gray-900 text-center mb-4">
+            <Text className="text-3xl font-bold text-textPrimary dark:text-darkText text-center mb-4">
               Choose Your Theme
             </Text>
-            <Text className="text-base text-gray-600 text-center leading-6 px-4 mb-8">
+            <Text className="text-base text-textSecondary dark:text-darkTextSecondary text-center leading-6 px-4 mb-8">
               Select your preferred appearance. You can change this later in Settings.
             </Text>
 
@@ -158,7 +159,7 @@ export default function OnboardingScreen() {
                     padding: 16,
                     borderRadius: 16,
                     borderWidth: 2,
-                    borderColor: selectedTheme === option.key ? '#720C17' : '#e5e5e5',
+                    borderColor: selectedTheme === option.key ? BrandColors.burgundy : '#e5e5e5',
                     backgroundColor: selectedTheme === option.key ? 'rgba(114,12,23,0.05)' : '#fff',
                     marginBottom: 12,
                   }}
@@ -173,7 +174,7 @@ export default function OnboardingScreen() {
                     </Text>
                   </View>
                   {selectedTheme === option.key && (
-                    <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#720C17', alignItems: 'center', justifyContent: 'center' }}>
+                    <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: BrandColors.burgundy, alignItems: 'center', justifyContent: 'center' }}>
                       <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>✓</Text>
                     </View>
                   )}
@@ -231,7 +232,7 @@ export default function OnboardingScreen() {
               }}
               className="px-6 py-3"
             >
-              <Text className="text-gray-600 font-medium text-base">Back</Text>
+              <Text className="text-textSecondary dark:text-darkTextSecondary font-medium text-base">Back</Text>
             </TouchableOpacity>
 
             <TouchableOpacity

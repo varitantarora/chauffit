@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../store/authStore';
-import { LightColors, DarkColors } from '../../../constants/Colors';
+import { LightColors, DarkColors, useThemeColors} from '../../../constants/Colors';
 
 export default function DriverTabsLayout() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);

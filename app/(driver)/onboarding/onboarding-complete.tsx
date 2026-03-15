@@ -10,6 +10,7 @@ import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { TrainingCertificate } from '../../../components/driver/profile/TrainingCertificate';
 import { useAuthStore } from '../../../store/authStore';
 import DriverApiService, { TrainingSession } from '../../../services/api/DriverApiService';
+import { BrandColors } from '../../../constants/Colors';
 
 export default function OnboardingCompleteScreen() {
   const router = useRouter();
@@ -66,7 +67,7 @@ export default function OnboardingCompleteScreen() {
           {/* Success Icon & Title */}
           <View className="items-center mb-6">
             <View className="w-24 h-24 bg-green-100 dark:bg-green-900/30 rounded-full items-center justify-center mb-6">
-              <Ionicons name="checkmark-circle" size={64} color="#10B981" />
+              <Ionicons name="checkmark-circle" size={64} color={BrandColors.success} />
             </View>
 
             <ThemedText variant="title" className="text-2xl font-bold text-center mb-3">
@@ -85,7 +86,7 @@ export default function OnboardingCompleteScreen() {
           {/* Certificate Widget */}
           {loading ? (
             <View className="items-center py-8">
-              <ActivityIndicator size="large" color="#BD8C5E" />
+              <ActivityIndicator size="large" color={BrandColors.secondary} />
               <ThemedText className="mt-3 text-secondary">Loading your certificate...</ThemedText>
             </View>
           ) : trainingSession ? (
@@ -111,7 +112,7 @@ export default function OnboardingCompleteScreen() {
           {/* What's Next Card */}
           <ThemedCard className="p-4 mb-6 mt-4">
             <View className="flex-row items-center mb-3">
-              <Ionicons name="rocket" size={20} color="#BD8C5E" />
+              <Ionicons name="rocket" size={20} color={BrandColors.secondary} />
               <ThemedText className="font-bold ml-2">What's Next?</ThemedText>
             </View>
             <View className="space-y-2">

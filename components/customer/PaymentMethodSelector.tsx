@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '../common/ThemedText';
 import { useAuthStore } from '../../store/authStore';
 import { PaymentMethod } from '../../types/navigation';
+import { BrandColors } from '../../constants/Colors';
 
 interface PaymentMethodSelectorProps {
   methods: PaymentMethod[];
@@ -83,7 +84,7 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
             <Ionicons 
               name={getPaymentMethodIcon(method) as any} 
               size={24} 
-              color="#BD8C5E" 
+              color={BrandColors.secondary} 
             />
           </View>
           
@@ -101,7 +102,7 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
                 </View>
               )}
             </View>
-            <ThemedText variant="small" className="text-textSecondary">
+            <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
               {getPaymentMethodDescription(method)}
             </ThemedText>
           </View>
@@ -130,19 +131,19 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
           }`}
         >
           <View className="w-12 h-12 bg-secondary/20 rounded-full items-center justify-center mr-3">
-            <Ionicons name="add" size={24} color="#BD8C5E" />
+            <Ionicons name="add" size={24} color={BrandColors.secondary} />
           </View>
           
           <View className="flex-1">
             <ThemedText variant="body" className="font-semibold text-secondary">
               Add New Payment Method
             </ThemedText>
-            <ThemedText variant="small" className="text-textSecondary">
+            <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
               Add a card, UPI, or wallet
             </ThemedText>
           </View>
           
-          <Ionicons name="chevron-forward" size={20} color="#BD8C5E" />
+          <Ionicons name="chevron-forward" size={20} color={BrandColors.secondary} />
         </TouchableOpacity>
       )}
     </View>

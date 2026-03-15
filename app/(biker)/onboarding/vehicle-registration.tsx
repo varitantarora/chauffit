@@ -8,6 +8,7 @@ import { ThemedText } from '../../../components/common/ThemedText';
 import { ThemedCard } from '../../../components/common/ThemedCard';
 import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { useAuthStore } from '../../../store/authStore';
+import { BrandColors } from '../../../constants/Colors';
 import BikerApiService, { BikerVehicleRequest } from '../../../services/api/BikerApiService';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -219,7 +220,7 @@ export default function VehicleRegistrationScreen() {
                     <Ionicons 
                       name={type.icon} 
                       size={20} 
-                      color={vehicleData.type === type.key ? '#720C17' : (isDarkMode ? '#d9d1c6' : '#314b4c')} 
+                      color={vehicleData.type === type.key ? BrandColors.burgundy : (isDarkMode ? '#d9d1c6' : '#314b4c')} 
                     />
                     <ThemedText className={`ml-2 font-semibold ${
                       vehicleData.type === type.key ? 'text-burgundy' : ''

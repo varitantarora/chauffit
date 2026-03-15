@@ -9,6 +9,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import BookingApiService, { BookingDetail } from '../../services/api/BookingApiService';
 import UniversalMapView, { MapMarker, MapRoute } from '../../components/shared/MapView';
 import { appConfig } from '../../config/env';
+import { BrandColors } from '../../constants/Colors';
 
 const { width, height } = Dimensions.get('window');
 
@@ -250,7 +251,7 @@ export default function SearchingDriversScreen() {
     return {
       origin: pickupCoordinate,
       destination: dropoffCoordinate,
-      strokeColor: '#BD8C5E',
+      strokeColor: BrandColors.secondary,
       strokeWidth: 4,
     };
   }, [pickupCoordinate, dropoffCoordinate]);
@@ -367,8 +368,8 @@ export default function SearchingDriversScreen() {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                colors={['#BD8C5E']}
-                tintColor="#BD8C5E"
+                colors={[BrandColors.secondary]}
+                tintColor={BrandColors.secondary}
               />
             }
           >
@@ -388,7 +389,7 @@ export default function SearchingDriversScreen() {
                     }],
                   }}
                 >
-                  <Ionicons name="search" size={32} color="#BD8C5E" />
+                  <Ionicons name="search" size={32} color={BrandColors.secondary} />
                 </Animated.View>
               </View>
 
@@ -410,7 +411,7 @@ export default function SearchingDriversScreen() {
                 </Animated.View>
               </View>
 
-              <ThemedText variant="small" className="text-center dark:text-gray-400 px-4">
+              <ThemedText variant="small" className="text-center px-4">
                 We're connecting you with the best chauffeur in your area. This usually takes 10-30 seconds.
               </ThemedText>
 
@@ -418,13 +419,13 @@ export default function SearchingDriversScreen() {
               <View className="mt-8 w-full">
                 <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
                   <View className="flex-row items-center mb-2">
-                    <Ionicons name="location" size={16} color="#10B981" />
+                    <Ionicons name="location" size={16} color={BrandColors.success} />
                     <ThemedText variant="small" className="ml-2">From</ThemedText>
                   </View>
                   <ThemedText className="mb-3 pl-6">{tripDetails.pickup}</ThemedText>
 
                   <View className="flex-row items-center mb-2">
-                    <Ionicons name="navigate" size={16} color="#EF4444" />
+                    <Ionicons name="navigate" size={16} color={BrandColors.danger} />
                     <ThemedText variant="small" className="ml-2">To</ThemedText>
                   </View>
                   <ThemedText className="pl-6">{tripDetails.destination}</ThemedText>
@@ -463,7 +464,7 @@ export default function SearchingDriversScreen() {
             >
               <View className="items-center">
                 <View className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full items-center justify-center mb-4">
-                  <Ionicons name="checkmark-circle" size={32} color="#10B981" />
+                  <Ionicons name="checkmark-circle" size={32} color={BrandColors.success} />
                 </View>
                 <ThemedText variant="h3" className="text-center mb-2">
                   Driver Found!

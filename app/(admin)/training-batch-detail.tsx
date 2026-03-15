@@ -16,7 +16,7 @@ import { ThemedText } from '../../components/common/ThemedText';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { useAdminStore } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
-import { LightColors, DarkColors } from '../../constants/Colors';
+import { LightColors, DarkColors, useThemeColors} from '../../constants/Colors';
 
 type SessionResult = 'pass' | 'fail' | 'absent';
 

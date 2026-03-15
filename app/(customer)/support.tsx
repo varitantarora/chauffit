@@ -7,13 +7,15 @@ import { ThemedText } from '../../components/common/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
+import { BrandColors, useThemeColors } from '../../constants/Colors';
 
 export default function SupportScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const router = useRouter();
-  
-  const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
-  const backgroundColor = isDarkMode ? '#1a1a1a' : '#F5F5F0';
+  const colors = useThemeColors(isDarkMode);
+
+  const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
+  const backgroundColor = colors.altBackground;
 
   const handleFAQ = () => {
     router.push('/(customer)/faq');
@@ -75,7 +77,7 @@ export default function SupportScreen() {
                     Frequently Asked Questions
                   </ThemedText>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#999" />
+                <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
 
               <TouchableOpacity 
@@ -85,13 +87,13 @@ export default function SupportScreen() {
               >
                 <View className="flex-row items-center flex-1">
                   <View className="w-8 h-8 bg-secondary/10 rounded-full items-center justify-center mr-4">
-                    <Ionicons name="book" size={16} color="#BD8C5E" />
+                    <Ionicons name="book" size={16} color={BrandColors.secondary} />
                   </View>
                   <ThemedText className="text-gray-800 dark:text-gray-200">
                     User Guides & Tutorials
                   </ThemedText>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#999" />
+                <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             </ThemedCard>
 
@@ -108,13 +110,13 @@ export default function SupportScreen() {
               >
                 <View className="flex-row items-center flex-1">
                   <View className="w-8 h-8 bg-secondary/10 rounded-full items-center justify-center mr-4">
-                    <Ionicons name="call" size={16} color="#BD8C5E" />
+                    <Ionicons name="call" size={16} color={BrandColors.secondary} />
                   </View>
                   <ThemedText className="text-gray-800 dark:text-gray-200">
                     Call Customer Service
                   </ThemedText>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#999" />
+                <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
 
               <TouchableOpacity 
@@ -124,13 +126,13 @@ export default function SupportScreen() {
               >
                 <View className="flex-row items-center flex-1">
                   <View className="w-8 h-8 bg-secondary/10 rounded-full items-center justify-center mr-4">
-                    <Ionicons name="mail" size={16} color="#BD8C5E" />
+                    <Ionicons name="mail" size={16} color={BrandColors.secondary} />
                   </View>
                   <ThemedText className="text-gray-800 dark:text-gray-200">
                     Email Support
                   </ThemedText>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#999" />
+                <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
 
               <TouchableOpacity 
@@ -140,13 +142,13 @@ export default function SupportScreen() {
               >
                 <View className="flex-row items-center flex-1">
                   <View className="w-8 h-8 bg-secondary/10 rounded-full items-center justify-center mr-4">
-                    <Ionicons name="chatbox" size={16} color="#BD8C5E" />
+                    <Ionicons name="chatbox" size={16} color={BrandColors.secondary} />
                   </View>
                   <ThemedText className="text-gray-800 dark:text-gray-200">
                     Live Chat
                   </ThemedText>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#999" />
+                <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             </ThemedCard>
 
@@ -163,13 +165,13 @@ export default function SupportScreen() {
               >
                 <View className="flex-row items-center flex-1">
                   <View className="w-8 h-8 bg-secondary/10 rounded-full items-center justify-center mr-4">
-                    <Ionicons name="document-text" size={16} color="#BD8C5E" />
+                    <Ionicons name="document-text" size={16} color={BrandColors.secondary} />
                   </View>
                   <ThemedText className="text-gray-800 dark:text-gray-200">
                     Submit a New Request
                   </ThemedText>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#999" />
+                <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
 
               <TouchableOpacity 
@@ -179,13 +181,13 @@ export default function SupportScreen() {
               >
                 <View className="flex-row items-center flex-1">
                   <View className="w-8 h-8 bg-secondary/10 rounded-full items-center justify-center mr-4">
-                    <Ionicons name="checkmark-circle" size={16} color="#BD8C5E" />
+                    <Ionicons name="checkmark-circle" size={16} color={BrandColors.secondary} />
                   </View>
                   <ThemedText className="text-gray-800 dark:text-gray-200">
                     Check Request Status
                   </ThemedText>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#999" />
+                <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             </ThemedCard>
           </View>

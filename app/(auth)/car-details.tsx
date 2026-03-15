@@ -8,6 +8,7 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { useAuthStore } from '../../store/authStore';
 import { useCarStore } from '../../store/carStore';
 import { useRouter } from 'expo-router';
+import { BrandColors } from '../../constants/Colors';
 
 export default function CarDetails() {
   const [carForm, setCarForm] = useState({
@@ -91,7 +92,7 @@ export default function CarDetails() {
 
   const inputClass = isDarkMode 
     ? 'bg-darkSurface text-darkText border-darkBorder' 
-    : 'bg-white text-textPrimary border-border';
+    : 'bg-white text-textPrimary dark:text-darkText border-border';
 
   const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
 
@@ -121,12 +122,12 @@ export default function CarDetails() {
           {/* Welcome Message */}
           <View className="items-center mb-8">
             <View className="w-20 h-20 bg-primary/20 rounded-full items-center justify-center mb-4">
-              <Ionicons name="car-sport" size={32} color="#BD8C5E" />
+              <Ionicons name="car-sport" size={32} color={BrandColors.secondary} />
             </View>
             <ThemedText variant="h3" className="text-center mb-2">
               Add Your Vehicle
             </ThemedText>
-            <ThemedText variant="small" className="text-center text-textSecondary px-4">
+            <ThemedText variant="small" className="text-center text-textSecondary dark:text-darkTextSecondary px-4">
               Help us provide better service by adding your car details
             </ThemedText>
           </View>
@@ -244,12 +245,12 @@ export default function CarDetails() {
             {/* Info Box */}
             <View className="bg-primary/10 rounded-xl p-4 mb-6 border border-primary/20">
               <View className="flex-row items-start">
-                <Ionicons name="information-circle" size={20} color="#BD8C5E" className="mr-3" />
+                <Ionicons name="information-circle" size={20} color={BrandColors.secondary} className="mr-3" />
                 <View className="flex-1 ml-3">
                   <ThemedText variant="small" className="font-semibold mb-1">
                     Why do we need this?
                   </ThemedText>
-                  <ThemedText variant="tiny" className="text-textSecondary leading-4">
+                  <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary leading-4">
                     Your car details help our chauffeurs identify your vehicle and provide personalized service. This information is kept secure and private.
                   </ThemedText>
                 </View>
@@ -268,7 +269,7 @@ export default function CarDetails() {
               onPress={handleSkipStep}
               className="mt-4 py-3"
             >
-              <ThemedText variant="small" className="text-center text-textSecondary">
+              <ThemedText variant="small" className="text-center text-textSecondary dark:text-darkTextSecondary">
                 I'll add this later
               </ThemedText>
             </TouchableOpacity>
@@ -313,7 +314,7 @@ export default function CarDetails() {
                   >
                     <ThemedText className="text-base">{item.label}</ThemedText>
                     {carForm.transmission === item.value && (
-                      <Ionicons name="checkmark-circle" size={22} color="#720C17" />
+                      <Ionicons name="checkmark-circle" size={22} color={BrandColors.burgundy} />
                     )}
                   </TouchableOpacity>
                 )}

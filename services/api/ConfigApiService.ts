@@ -4,7 +4,7 @@ export interface AppConfig {
   key: string;
   name: string;
   value: string;
-  value_type?: 'string' | 'integer' | 'boolean' | 'json';
+  value_type?: 'string' | 'integer' | 'float' | 'boolean' | 'json';
   created_at: string;
   updated_at: string;
 }
@@ -34,7 +34,7 @@ class ConfigApiService {
     }
   }
 
-  async create(data: Pick<AppConfig, 'key' | 'name' | 'value'>): Promise<ApiResponse<AppConfig>> {
+  async create(data: Pick<AppConfig, 'key' | 'name' | 'value' | 'value_type'>): Promise<ApiResponse<AppConfig>> {
     try {
       return await BaseApiService.post<AppConfig>(`${this.basePath}/`, data);
     } catch (error) {

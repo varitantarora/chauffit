@@ -11,6 +11,7 @@ import { useAuthStore } from '../../../store/authStore';
 import DriverApiService, { DriverDocumentRequest, DriverDocumentType } from '../../../services/api/DriverApiService';
 import { AADHAAR_API_VERIFICATION_ENABLED } from '../../../constants/VerificationConfig';
 import * as ImagePicker from 'expo-image-picker';
+import { BrandColors } from '../../../constants/Colors';
 
 interface DocumentStatus {
   id: string;
@@ -319,7 +320,7 @@ export default function DocumentUploadScreen() {
       case 'verified': return 'text-success';
       case 'approved': return 'text-success';
       case 'rejected': return 'text-danger';
-      default: return 'text-gray-500';
+      default: return 'text-textSecondary dark:text-darkTextSecondary';
     }
   };
 
@@ -378,7 +379,7 @@ export default function DocumentUploadScreen() {
 
             {/* Required Documents Header */}
             <View className="flex-row items-center mb-4">
-              <Ionicons name="document" size={20} color="#BD8C5E" />
+              <Ionicons name="document" size={20} color={BrandColors.secondary} />
               <ThemedText className="font-bold ml-2">REQUIRED DOCUMENTS</ThemedText>
             </View>
 
@@ -389,11 +390,11 @@ export default function DocumentUploadScreen() {
                   <ThemedCard className="p-4">
                     <View className="flex-row items-center justify-between mb-3">
                       <View className="flex-row items-center flex-1">
-                        <Ionicons name={doc.icon as any} size={20} color="#BD8C5E" />
+                        <Ionicons name={doc.icon as any} size={20} color={BrandColors.secondary} />
                         <ThemedText className="font-semibold ml-3">{doc.name}</ThemedText>
                       </View>
                       {isLoading ? (
-                        <ActivityIndicator size="small" color="#BD8C5E" />
+                        <ActivityIndicator size="small" color={BrandColors.secondary} />
                       ) : (
                         <Ionicons
                           name={getStatusIcon(doc.status) as any}
@@ -409,14 +410,14 @@ export default function DocumentUploadScreen() {
 
                     {isLoading ? (
                       <View className="items-center py-6">
-                        <ActivityIndicator size="large" color="#BD8C5E" />
+                        <ActivityIndicator size="large" color={BrandColors.secondary} />
                       </View>
                     ) : !doc.uploaded || doc.status === 'rejected' ? (
                       <TouchableOpacity
                         onPress={() => handleUploadDocument(doc.id)}
                         className="flex-row items-center justify-center py-3 border-2 border-dashed border-secondary rounded-lg bg-secondary/5"
                       >
-                        <Ionicons name="camera" size={16} color="#BD8C5E" />
+                        <Ionicons name="camera" size={16} color={BrandColors.secondary} />
                         <ThemedText className="text-secondary font-semibold ml-2">
                           {doc.status === 'rejected' ? 'Retake Photo' : 'Upload Photo'}
                         </ThemedText>
@@ -449,7 +450,7 @@ export default function DocumentUploadScreen() {
                       maxLength={20}
                       autoCapitalize="characters"
                       className="mt-3 px-4 py-3 border border-border dark:border-darkBorder rounded-lg text-text dark:text-darkText bg-background dark:bg-darkBackground"
-                      placeholderTextColor="#BD8C5E"
+                      placeholderTextColor={BrandColors.secondary}
                     />
                   )}
                 </View>
@@ -461,14 +462,14 @@ export default function DocumentUploadScreen() {
               <>
                 {/* OTP Mode */}
                 <View className="flex-row items-center mb-4">
-                  <Ionicons name="id-card" size={20} color="#BD8C5E" />
+                  <Ionicons name="id-card" size={20} color={BrandColors.secondary} />
                   <ThemedText className="font-bold ml-2">AADHAAR VERIFICATION</ThemedText>
                 </View>
 
                 <ThemedCard className="p-4 mb-6">
                   {isLoading ? (
                     <View className="items-center py-6">
-                      <ActivityIndicator size="large" color="#BD8C5E" />
+                      <ActivityIndicator size="large" color={BrandColors.secondary} />
                     </View>
                   ) : aadhaarVerified ? (
                     <View className="items-center py-4 px-3 bg-opacity-10 rounded-lg" style={{backgroundColor: '#10b98120'}}>
@@ -485,7 +486,7 @@ export default function DocumentUploadScreen() {
                         maxLength={12}
                         keyboardType="number-pad"
                         className="px-4 py-3 border border-border dark:border-darkBorder rounded-lg text-text dark:text-darkText bg-background dark:bg-darkBackground"
-                        placeholderTextColor="#BD8C5E"
+                        placeholderTextColor={BrandColors.secondary}
                         editable={!aadhaarOtpSent}
                       />
 
@@ -504,7 +505,7 @@ export default function DocumentUploadScreen() {
                                 onPress={() => handleUploadDocument(doc.id)}
                                 className="flex-row items-center justify-center py-3 border-2 border-dashed border-secondary rounded-lg bg-secondary/5"
                               >
-                                <Ionicons name="camera" size={16} color="#BD8C5E" />
+                                <Ionicons name="camera" size={16} color={BrandColors.secondary} />
                                 <ThemedText className="text-secondary font-semibold ml-2">
                                   {doc.status === 'rejected' ? 'Retake Photo' : 'Upload Photo'}
                                 </ThemedText>
@@ -559,7 +560,7 @@ export default function DocumentUploadScreen() {
                                 keyboardType="number-pad"
                                 textContentType="oneTimeCode"
                                 className="flex-1 px-4 py-3 border border-border dark:border-darkBorder rounded-lg text-text dark:text-darkText bg-background dark:bg-darkBackground"
-                                placeholderTextColor="#BD8C5E"
+                                placeholderTextColor={BrandColors.secondary}
                               />
                               <ThemedText className="ml-3 font-semibold text-secondary">
                                 {formatOtpTimer(aadhaarOtpTimer)}
@@ -588,7 +589,7 @@ export default function DocumentUploadScreen() {
               <>
                 {/* Manual Mode - Photo Upload Only */}
                 <View className="flex-row items-center mb-4">
-                  <Ionicons name="id-card" size={20} color="#BD8C5E" />
+                  <Ionicons name="id-card" size={20} color={BrandColors.secondary} />
                   <ThemedText className="font-bold ml-2">AADHAAR CARD</ThemedText>
                 </View>
 
@@ -600,7 +601,7 @@ export default function DocumentUploadScreen() {
                   maxLength={12}
                   keyboardType="number-pad"
                   className="mb-4 px-4 py-3 border border-border dark:border-darkBorder rounded-lg text-text dark:text-darkText bg-background dark:bg-darkBackground"
-                  placeholderTextColor="#BD8C5E"
+                  placeholderTextColor={BrandColors.secondary}
                 />
 
                 {/* Aadhaar Front & Back as simple upload cards */}
@@ -615,11 +616,11 @@ export default function DocumentUploadScreen() {
                       <ThemedCard key={id} className="p-4">
                         <View className="flex-row items-center justify-between mb-3">
                           <View className="flex-row items-center flex-1">
-                            <Ionicons name="id-card" size={20} color="#BD8C5E" />
+                            <Ionicons name="id-card" size={20} color={BrandColors.secondary} />
                             <ThemedText className="font-semibold ml-3">{name}</ThemedText>
                           </View>
                           {isLoading ? (
-                            <ActivityIndicator size="small" color="#BD8C5E" />
+                            <ActivityIndicator size="small" color={BrandColors.secondary} />
                           ) : (
                             <Ionicons
                               name={getStatusIcon(doc.status) as any}
@@ -637,7 +638,7 @@ export default function DocumentUploadScreen() {
                             onPress={() => handleUploadDocument(doc.id)}
                             className="flex-row items-center justify-center py-3 border-2 border-dashed border-secondary rounded-lg bg-secondary/5"
                           >
-                            <Ionicons name="camera" size={16} color="#BD8C5E" />
+                            <Ionicons name="camera" size={16} color={BrandColors.secondary} />
                             <ThemedText className="text-secondary font-semibold ml-2">
                               {doc.status === 'rejected' ? 'Retake Photo' : 'Upload Photo'}
                             </ThemedText>
@@ -668,14 +669,14 @@ export default function DocumentUploadScreen() {
 
             {/* Live Photo Capture */}
             <View className="flex-row items-center mb-4">
-              <Ionicons name="camera" size={20} color="#BD8C5E" />
+              <Ionicons name="camera" size={20} color={BrandColors.secondary} />
               <ThemedText className="font-bold ml-2">LIVE PHOTO CAPTURE</ThemedText>
             </View>
 
             <ThemedCard className="p-4 mb-6">
               {isLoading ? (
                 <View className="items-center py-6">
-                  <ActivityIndicator size="large" color="#BD8C5E" />
+                  <ActivityIndicator size="large" color={BrandColors.secondary} />
                 </View>
               ) : !liveSelfie.taken || liveSelfie.status === 'rejected' ? (
                 <TouchableOpacity
@@ -683,7 +684,7 @@ export default function DocumentUploadScreen() {
                   className="items-center py-6"
                 >
                   <View className="w-16 h-16 bg-burgundy/10 rounded-full items-center justify-center mb-3">
-                    <Ionicons name="camera" size={32} color="#720C17" />
+                    <Ionicons name="camera" size={32} color={BrandColors.burgundy} />
                   </View>
                   <ThemedText className="font-bold text-burgundy">
                     {liveSelfie.status === 'rejected' ? 'Retake Live Selfie' : 'Take Live Selfie'}

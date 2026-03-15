@@ -8,7 +8,7 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { useAdminStore } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
 import { useConfigStore } from '../../store/configStore';
-import { LightColors, DarkColors } from '../../constants/Colors';
+import { LightColors, DarkColors, BrandColors, useThemeColors} from '../../constants/Colors';
 import { AdminInsurancePlan } from '../../services/api/AdminApiService';
 
 const TIER_OPTIONS: { value: AdminInsurancePlan['tier']; label: string }[] = [
@@ -18,8 +18,8 @@ const TIER_OPTIONS: { value: AdminInsurancePlan['tier']; label: string }[] = [
 ];
 
 const TIER_COLORS: Record<string, string> = {
-    scratch: '#3B82F6',
-    scratch_and_dent: '#10B981',
+    scratch: BrandColors.info,
+    scratch_and_dent: BrandColors.success,
     full: '#8B5CF6',
 };
 
@@ -209,7 +209,7 @@ export default function InsuranceManagement() {
                         >
                             <ThemedText
                                 variant="tiny"
-                                style={{ color: plan.is_active ? '#10B981' : '#EF4444', fontWeight: '600' }}
+                                style={{ color: plan.is_active ? BrandColors.success : BrandColors.danger, fontWeight: '600' }}
                             >
                                 {plan.is_active ? 'Active' : 'Inactive'}
                             </ThemedText>
@@ -270,11 +270,11 @@ export default function InsuranceManagement() {
                         <Ionicons
                             name={plan.is_active ? 'eye-off-outline' : 'eye-outline'}
                             size={16}
-                            color={plan.is_active ? '#F59E0B' : '#10B981'}
+                            color={plan.is_active ? BrandColors.warning : BrandColors.success}
                         />
                         <ThemedText
                             variant="tiny"
-                            style={{ color: plan.is_active ? '#F59E0B' : '#10B981' }}
+                            style={{ color: plan.is_active ? BrandColors.warning : BrandColors.success }}
                             className="ml-1"
                         >
                             {plan.is_active ? 'Deactivate' : 'Activate'}
@@ -282,8 +282,8 @@ export default function InsuranceManagement() {
                     </Pressable>
                     {plan.is_active && (
                         <Pressable onPress={() => handleDelete(plan)} className="flex-row items-center">
-                            <Ionicons name="trash-outline" size={16} color="#EF4444" />
-                            <ThemedText variant="tiny" style={{ color: '#EF4444' }} className="ml-1">
+                            <Ionicons name="trash-outline" size={16} color={BrandColors.danger} />
+                            <ThemedText variant="tiny" style={{ color: BrandColors.danger }} className="ml-1">
                                 Delete
                             </ThemedText>
                         </Pressable>

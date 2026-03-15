@@ -7,6 +7,7 @@ import { ThemedView } from '../../components/common/ThemedView';
 import { ThemedCard } from '../../components/common/ThemedCard';
 import { ThemedText } from '../../components/common/ThemedText';
 import { useAuthStore } from '../../store/authStore';
+import { BrandColors } from '../../constants/Colors';
 
 export default function EmergencySOSScreen() {
   const router = useRouter();
@@ -232,7 +233,7 @@ export default function EmergencySOSScreen() {
             <View className="space-y-4 mb-6">
               <ThemedCard className="p-4">
                 <View className="flex-row items-center mb-2">
-                  <Ionicons name="location" size={20} color="#BD8C5E" />
+                  <Ionicons name="location" size={20} color={BrandColors.secondary} />
                   <ThemedText className="font-bold ml-2">LOCATION SHARED:</ThemedText>
                 </View>
                 <ThemedText variant="caption" className="text-secondary">
@@ -242,7 +243,7 @@ export default function EmergencySOSScreen() {
 
               <ThemedCard className="p-4">
                 <View className="flex-row items-center mb-2">
-                  <Ionicons name="car" size={20} color="#BD8C5E" />
+                  <Ionicons name="car" size={20} color={BrandColors.secondary} />
                   <ThemedText className="font-bold ml-2">VEHICLE INFO SHARED:</ThemedText>
                 </View>
                 <ThemedText variant="caption" className="text-secondary">
@@ -252,7 +253,7 @@ export default function EmergencySOSScreen() {
 
               <ThemedCard className="p-4">
                 <View className="flex-row items-center mb-2">
-                  <Ionicons name="videocam" size={20} color="#BD8C5E" />
+                  <Ionicons name="videocam" size={20} color={BrandColors.secondary} />
                   <ThemedText className="font-bold ml-2">VIDEO EVIDENCE:</ThemedText>
                 </View>
                 <ThemedText variant="caption" className="text-secondary">

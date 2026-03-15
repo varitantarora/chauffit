@@ -8,6 +8,7 @@ import { ThemedCard } from '../../../components/common/ThemedCard';
 import { ThemedText } from '../../../components/common/ThemedText';
 import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { useAuthStore } from '../../../store/authStore';
+import { BrandColors } from '../../../constants/Colors';
 
 interface AdvanceOption {
   id: string;
@@ -127,7 +128,7 @@ export default function RequestAdvanceScreen() {
             {/* Eligibility Status */}
             <View className="mb-6">
               <View className="flex-row items-center mb-4">
-                <Ionicons name="shield-checkmark" size={20} color="#BD8C5E" />
+                <Ionicons name="shield-checkmark" size={20} color={BrandColors.secondary} />
                 <ThemedText className="font-bold ml-2">ADVANCE ELIGIBILITY</ThemedText>
               </View>
 
@@ -170,7 +171,7 @@ export default function RequestAdvanceScreen() {
             {/* Advance Options */}
             <View className="mb-6">
               <View className="flex-row items-center mb-4">
-                <Ionicons name="cash" size={20} color="#BD8C5E" />
+                <Ionicons name="cash" size={20} color={BrandColors.secondary} />
                 <ThemedText className="font-bold ml-2">ADVANCE OPTIONS</ThemedText>
               </View>
 
@@ -191,7 +192,7 @@ export default function RequestAdvanceScreen() {
                           Option {option.id === 'daily' ? '1' : '2'}: {option.title}
                         </ThemedText>
                         {selectedOption === option.id && (
-                          <Ionicons name="checkmark-circle" size={20} color="#720C17" />
+                          <Ionicons name="checkmark-circle" size={20} color={BrandColors.burgundy} />
                         )}
                       </View>
                       
@@ -227,7 +228,7 @@ export default function RequestAdvanceScreen() {
                                 placeholder="Enter amount"
                                 keyboardType="numeric"
                                 className="border border-burgundy rounded-lg px-3 py-2 text-lg font-bold"
-                                style={{ color: isDarkMode ? '#d9d1c6' : '#720C17' }}
+                                style={{ color: isDarkMode ? '#d9d1c6' : BrandColors.burgundy }}
                               />
                             </View>
                             

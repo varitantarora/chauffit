@@ -8,6 +8,7 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
+import { BrandColors, useThemeColors } from '../../constants/Colors';
 
 interface BankingDetails {
   accountHolderName: string;
@@ -24,9 +25,10 @@ export default function BankingDetailsScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const user = useAuthStore((state) => state.user);
   const router = useRouter();
-  
-  const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
-  const backgroundColor = isDarkMode ? '#1a1a1a' : '#F5F5F0';
+  const colors = useThemeColors(isDarkMode);
+
+  const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
+  const backgroundColor = colors.altBackground;
 
   const [bankingDetails, setBankingDetails] = useState<BankingDetails>({
     accountHolderName: user?.name || '',
@@ -99,7 +101,7 @@ export default function BankingDetailsScreen() {
 
   const inputClass = isDarkMode 
     ? 'bg-darkSurface text-darkText border-darkBorder' 
-    : 'bg-white text-textPrimary border-gray-200';
+    : 'bg-white text-textPrimary dark:text-darkText border-border dark:border-darkBorder';
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor }}>
@@ -115,7 +117,7 @@ export default function BankingDetailsScreen() {
           
           {!isEditing && hasExistingData && (
             <TouchableOpacity onPress={handleEdit}>
-              <Ionicons name="create" size={24} color="#BD8C5E" />
+              <Ionicons name="create" size={24} color={BrandColors.secondary} />
             </TouchableOpacity>
           )}
         </View>
@@ -127,7 +129,7 @@ export default function BankingDetailsScreen() {
               <ThemedText variant="h3" className="mb-2">
                 Bank Account Information
               </ThemedText>
-              <ThemedText variant="small" className="text-gray-600">
+              <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                 Add your bank details to receive payments for completed rides. All information is encrypted and secure.
               </ThemedText>
             </View>
@@ -136,13 +138,13 @@ export default function BankingDetailsScreen() {
             <ThemedCard variant="elevated" className="mb-6 p-4">
               <View className="flex-row items-center">
                 <View className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full items-center justify-center mr-4">
-                  <Ionicons name="shield-checkmark" size={24} color="#10B981" />
+                  <Ionicons name="shield-checkmark" size={24} color={BrandColors.success} />
                 </View>
                 <View className="flex-1">
                   <ThemedText className="font-semibold mb-1">
                     Your Data is Secure
                   </ThemedText>
-                  <ThemedText variant="small" className="text-gray-600">
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                     All banking information is encrypted with bank-grade security and never shared with third parties.
                   </ThemedText>
                 </View>
@@ -157,13 +159,13 @@ export default function BankingDetailsScreen() {
               
               {/* Account Holder Name */}
               <View className="mb-4">
-                <ThemedText variant="small" className="mb-2 text-gray-600">
+                <ThemedText variant="small" className="mb-2 text-textSecondary dark:text-darkTextSecondary">
                   Account Holder Name *
                 </ThemedText>
                 <TextInput
                   className={`p-3 rounded-xl border ${inputClass}`}
                   placeholder="Full name as per bank records"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={colors.placeholder}
                   value={bankingDetails.accountHolderName}
                   onChangeText={(text) => setBankingDetails(prev => ({ ...prev, accountHolderName: text }))}
                   editable={isEditing || !hasExistingData}
@@ -173,13 +175,13 @@ export default function BankingDetailsScreen() {
 
               {/* Account Number */}
               <View className="mb-4">
-                <ThemedText variant="small" className="mb-2 text-gray-600">
+                <ThemedText variant="small" className="mb-2 text-textSecondary dark:text-darkTextSecondary">
                   Account Number *
                 </ThemedText>
                 <TextInput
                   className={`p-3 rounded-xl border ${inputClass}`}
                   placeholder="Enter your bank account number"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={colors.placeholder}
                   value={bankingDetails.accountNumber}
                   onChangeText={(text) => setBankingDetails(prev => ({ ...prev, accountNumber: text.replace(/[^0-9]/g, '') }))}
                   editable={isEditing || !hasExistingData}
@@ -192,13 +194,13 @@ export default function BankingDetailsScreen() {
               {/* Confirm Account Number */}
               {(isEditing || !hasExistingData) && (
                 <View className="mb-4">
-                  <ThemedText variant="small" className="mb-2 text-gray-600">
+                  <ThemedText variant="small" className="mb-2 text-textSecondary dark:text-darkTextSecondary">
                     Confirm Account Number *
                   </ThemedText>
                   <TextInput
                     className={`p-3 rounded-xl border ${inputClass}`}
                     placeholder="Re-enter your account number"
-                    placeholderTextColor="#999"
+                    placeholderTextColor={colors.placeholder}
                     value={bankingDetails.confirmAccountNumber}
                     onChangeText={(text) => setBankingDetails(prev => ({ ...prev, confirmAccountNumber: text.replace(/[^0-9]/g, '') }))}
                     keyboardType="numeric"
@@ -209,13 +211,13 @@ export default function BankingDetailsScreen() {
 
               {/* IFSC Code */}
               <View className="mb-4">
-                <ThemedText variant="small" className="mb-2 text-gray-600">
+                <ThemedText variant="small" className="mb-2 text-textSecondary dark:text-darkTextSecondary">
                   IFSC Code *
                 </ThemedText>
                 <TextInput
                   className={`p-3 rounded-xl border ${inputClass}`}
                   placeholder="e.g., SBIN0001234"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={colors.placeholder}
                   value={bankingDetails.ifscCode}
                   onChangeText={(text) => setBankingDetails(prev => ({ ...prev, ifscCode: text.toUpperCase() }))}
                   editable={isEditing || !hasExistingData}
@@ -226,13 +228,13 @@ export default function BankingDetailsScreen() {
 
               {/* Bank Name */}
               <View className="mb-4">
-                <ThemedText variant="small" className="mb-2 text-gray-600">
+                <ThemedText variant="small" className="mb-2 text-textSecondary dark:text-darkTextSecondary">
                   Bank Name *
                 </ThemedText>
                 <TextInput
                   className={`p-3 rounded-xl border ${inputClass}`}
                   placeholder="e.g., State Bank of India"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={colors.placeholder}
                   value={bankingDetails.bankName}
                   onChangeText={(text) => setBankingDetails(prev => ({ ...prev, bankName: text }))}
                   editable={isEditing || !hasExistingData}
@@ -242,7 +244,7 @@ export default function BankingDetailsScreen() {
 
               {/* Account Type */}
               <View className="mb-4">
-                <ThemedText variant="small" className="mb-2 text-gray-600">
+                <ThemedText variant="small" className="mb-2 text-textSecondary dark:text-darkTextSecondary">
                   Account Type *
                 </ThemedText>
                 <View className="flex-row">
@@ -276,13 +278,13 @@ export default function BankingDetailsScreen() {
 
               {/* UPI ID */}
               <View className="mb-4">
-                <ThemedText variant="small" className="mb-2 text-gray-600">
+                <ThemedText variant="small" className="mb-2 text-textSecondary dark:text-darkTextSecondary">
                   UPI ID (Optional)
                 </ThemedText>
                 <TextInput
                   className={`p-3 rounded-xl border ${inputClass}`}
                   placeholder="your-upi@paytm"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={colors.placeholder}
                   value={bankingDetails.upiId}
                   onChangeText={(text) => setBankingDetails(prev => ({ ...prev, upiId: text.toLowerCase() }))}
                   editable={isEditing || !hasExistingData}
@@ -292,13 +294,13 @@ export default function BankingDetailsScreen() {
 
               {/* PAN Number */}
               <View className="mb-4">
-                <ThemedText variant="small" className="mb-2 text-gray-600">
+                <ThemedText variant="small" className="mb-2 text-textSecondary dark:text-darkTextSecondary">
                   PAN Number *
                 </ThemedText>
                 <TextInput
                   className={`p-3 rounded-xl border ${inputClass}`}
                   placeholder="ABCDE1234F"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={colors.placeholder}
                   value={bankingDetails.panNumber}
                   onChangeText={(text) => setBankingDetails(prev => ({ ...prev, panNumber: text.toUpperCase() }))}
                   editable={isEditing || !hasExistingData}
@@ -316,22 +318,22 @@ export default function BankingDetailsScreen() {
               
               <View className="space-y-3">
                 <View className="flex-row items-center">
-                  <Ionicons name="calendar" size={20} color="#BD8C5E" />
-                  <ThemedText variant="small" className="ml-3 text-gray-700">
+                  <Ionicons name="calendar" size={20} color={BrandColors.secondary} />
+                  <ThemedText variant="small" className="ml-3 text-textPrimary dark:text-darkText">
                     Payments are processed every Tuesday and Friday
                   </ThemedText>
                 </View>
                 
                 <View className="flex-row items-center">
-                  <Ionicons name="time" size={20} color="#BD8C5E" />
-                  <ThemedText variant="small" className="ml-3 text-gray-700">
+                  <Ionicons name="time" size={20} color={BrandColors.secondary} />
+                  <ThemedText variant="small" className="ml-3 text-textPrimary dark:text-darkText">
                     Funds typically arrive within 24-48 hours
                   </ThemedText>
                 </View>
                 
                 <View className="flex-row items-center">
-                  <Ionicons name="card" size={20} color="#BD8C5E" />
-                  <ThemedText variant="small" className="ml-3 text-gray-700">
+                  <Ionicons name="card" size={20} color={BrandColors.secondary} />
+                  <ThemedText variant="small" className="ml-3 text-textPrimary dark:text-darkText">
                     Minimum payout amount: ₹100
                   </ThemedText>
                 </View>
@@ -350,9 +352,9 @@ export default function BankingDetailsScreen() {
                 {isEditing && (
                   <TouchableOpacity
                     onPress={handleCancel}
-                    className="flex-1 border border-gray-300 py-3 rounded-xl ml-2"
+                    className="flex-1 border border-border dark:border-darkBorder py-3 rounded-xl ml-2"
                   >
-                    <ThemedText className="text-center text-gray-600">Cancel</ThemedText>
+                    <ThemedText className="text-center text-textSecondary dark:text-darkTextSecondary">Cancel</ThemedText>
                   </TouchableOpacity>
                 )}
               </View>
@@ -368,7 +370,7 @@ export default function BankingDetailsScreen() {
 
             {/* Help Section */}
             <View className="mt-6">
-              <ThemedText variant="small" className="text-gray-500 text-center mb-2">
+              <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary text-center mb-2">
                 Need help setting up your banking details?
               </ThemedText>
               <TouchableOpacity 

@@ -4,6 +4,7 @@ import { View, ActivityIndicator } from 'react-native';
 import { useAuthStore } from '../store/authStore';
 import { ThemedView } from '../components/common/ThemedView';
 import { ThemedText } from '../components/common/ThemedText';
+import { BrandColors } from '../constants/Colors';
 
 export default function Index() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -22,7 +23,7 @@ export default function Index() {
   if (isInitializing) {
     return (
       <ThemedView className="flex-1 items-center justify-center">
-        <ActivityIndicator size="large" color="#BD8C5E" />
+        <ActivityIndicator size="large" color={BrandColors.secondary} />
         <ThemedText className="mt-4 text-secondary">Loading...</ThemedText>
       </ThemedView>
     );

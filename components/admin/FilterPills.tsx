@@ -1,7 +1,7 @@
 import React from 'react';
 import { ScrollView, Pressable, Text } from 'react-native';
 import { useAuthStore } from '../../store/authStore';
-import { LightColors, DarkColors } from '../../constants/Colors';
+import { LightColors, DarkColors, useThemeColors} from '../../constants/Colors';
 
 interface FilterOption {
   label: string;

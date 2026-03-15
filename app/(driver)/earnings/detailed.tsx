@@ -8,6 +8,7 @@ import { ThemedCard } from '../../../components/common/ThemedCard';
 import { ThemedText } from '../../../components/common/ThemedText';
 import { useAuthStore } from '../../../store/authStore';
 import { useEarningsStore } from '../../../store/earningsStore';
+import { BrandColors } from '../../../constants/Colors';
 
 interface TripEarning {
   id: string;
@@ -152,7 +153,7 @@ export default function DetailedEarningsScreen() {
             {/* Earnings Analysis */}
             <View className="py-4">
               <View className="flex-row items-center mb-4">
-                <Ionicons name="analytics" size={20} color="#BD8C5E" />
+                <Ionicons name="analytics" size={20} color={BrandColors.secondary} />
                 <ThemedText variant="title" className="font-bold ml-2">
                   EARNINGS ANALYSIS
                 </ThemedText>
@@ -221,7 +222,7 @@ export default function DetailedEarningsScreen() {
             {/* Surge Earnings Highlight */}
             <View className="py-4">
               <View className="flex-row items-center mb-4">
-                <Ionicons name="trending-up" size={20} color="#BD8C5E" />
+                <Ionicons name="trending-up" size={20} color={BrandColors.secondary} />
                 <ThemedText variant="title" className="font-bold ml-2">
                   Surge Earnings Highlight
                 </ThemedText>

@@ -8,6 +8,7 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
+import { BrandColors } from '../../constants/Colors';
 
 export default function TripCompletionScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
@@ -17,7 +18,7 @@ export default function TripCompletionScreen() {
   const [customTip, setCustomTip] = useState('');
   const [rating, setRating] = useState(0);
   
-  const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
+  const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
 
   const tripSummary = {
     from: 'Home - 123 Main St',
@@ -90,7 +91,7 @@ export default function TripCompletionScreen() {
         <View className="items-center py-8 px-6">
           <ThemedText variant="h2" className="mb-2">Trip Complete</ThemedText>
           <ThemedText variant="h1" className="mb-2">🎉 Thank you!</ThemedText>
-          <ThemedText className="text-center text-gray-600">
+          <ThemedText className="text-center text-textSecondary dark:text-darkTextSecondary">
             You've arrived safely
           </ThemedText>
         </View>
@@ -105,7 +106,7 @@ export default function TripCompletionScreen() {
                 <View className="flex-row">
                   <Ionicons name="location" size={20} color={iconColor} className="mt-1" />
                   <View className="ml-3 flex-1">
-                    <ThemedText variant="small" className="text-gray-600">From</ThemedText>
+                    <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">From</ThemedText>
                     <ThemedText>{tripSummary.from}</ThemedText>
                   </View>
                 </View>
@@ -113,7 +114,7 @@ export default function TripCompletionScreen() {
                 <View className="flex-row">
                   <Ionicons name="navigate" size={20} color={iconColor} className="mt-1" />
                   <View className="ml-3 flex-1">
-                    <ThemedText variant="small" className="text-gray-600">To</ThemedText>
+                    <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">To</ThemedText>
                     <ThemedText>{tripSummary.to}</ThemedText>
                   </View>
                 </View>
@@ -122,7 +123,7 @@ export default function TripCompletionScreen() {
                   <View key={index} className="flex-row">
                     <Ionicons name="flag" size={20} color={iconColor} className="mt-1" />
                     <View className="ml-3 flex-1">
-                      <ThemedText variant="small" className="text-gray-600">Stop</ThemedText>
+                      <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Stop</ThemedText>
                       <ThemedText>{stop}</ThemedText>
                     </View>
                   </View>
@@ -131,27 +132,27 @@ export default function TripCompletionScreen() {
 
               <View className="border-t border-gray-200 dark:border-gray-700 mt-4 pt-4">
                 <View className="flex-row justify-between mb-2">
-                  <ThemedText variant="small" className="text-gray-600">Duration</ThemedText>
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Duration</ThemedText>
                   <ThemedText variant="small">{tripSummary.duration}</ThemedText>
                 </View>
                 <View className="flex-row justify-between mb-2">
-                  <ThemedText variant="small" className="text-gray-600">Distance</ThemedText>
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Distance</ThemedText>
                   <ThemedText variant="small">{tripSummary.distance}</ThemedText>
                 </View>
                 <View className="flex-row justify-between mb-2">
-                  <ThemedText variant="small" className="text-gray-600">Started</ThemedText>
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Started</ThemedText>
                   <ThemedText variant="small">{tripSummary.started}</ThemedText>
                 </View>
                 <View className="flex-row justify-between mb-2">
-                  <ThemedText variant="small" className="text-gray-600">Ended</ThemedText>
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Ended</ThemedText>
                   <ThemedText variant="small">{tripSummary.ended}</ThemedText>
                 </View>
                 <View className="flex-row justify-between mb-2">
-                  <ThemedText variant="small" className="text-gray-600">Driver</ThemedText>
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Driver</ThemedText>
                   <ThemedText variant="small">{tripSummary.driver}</ThemedText>
                 </View>
                 <View className="flex-row justify-between">
-                  <ThemedText variant="small" className="text-gray-600">Vehicle</ThemedText>
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Vehicle</ThemedText>
                   <ThemedText variant="small">{tripSummary.vehicle}</ThemedText>
                 </View>
               </View>
@@ -180,7 +181,7 @@ export default function TripCompletionScreen() {
                       className={`px-4 py-2 rounded-full border ${
                         selectedTip === tip && !customTip
                           ? 'bg-burgundy border-burgundy'
-                          : 'border-gray-300'
+                          : 'border-border dark:border-darkBorder'
                       }`}
                     >
                       <ThemedText 
@@ -194,7 +195,7 @@ export default function TripCompletionScreen() {
                 </View>
                 
                 <TouchableOpacity 
-                  className="border border-gray-300 rounded-xl p-3"
+                  className="border border-border dark:border-darkBorder rounded-xl p-3"
                   onPress={() => {
                     Alert.prompt(
                       'Custom Tip Amount',
@@ -229,7 +230,7 @@ export default function TripCompletionScreen() {
                   <Ionicons name="card" size={20} color={iconColor} />
                   <ThemedText className="ml-2">{paymentDetails.paymentMethod}</ThemedText>
                 </View>
-                <ThemedText variant="small" className="text-gray-600 mt-1">
+                <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary mt-1">
                   Receipt sent to email
                 </ThemedText>
               </View>
@@ -248,7 +249,7 @@ export default function TripCompletionScreen() {
                     <Ionicons
                       name={star <= rating ? 'star' : 'star-outline'}
                       size={32}
-                      color={star <= rating ? '#F59E0B' : '#9CA3AF'}
+                      color={star <= rating ? BrandColors.warning : '#9CA3AF'}
                     />
                   </TouchableOpacity>
                 ))}
@@ -272,7 +273,7 @@ export default function TripCompletionScreen() {
             <View className="flex-row justify-between mb-6">
               <TouchableOpacity 
                 onPress={handleDownloadInvoice}
-                className="flex-1 mr-2 py-3 border border-gray-300 rounded-xl"
+                className="flex-1 mr-2 py-3 border border-border dark:border-darkBorder rounded-xl"
               >
                 <View className="flex-row items-center justify-center">
                   <Ionicons name="download" size={20} color={iconColor} />
@@ -282,7 +283,7 @@ export default function TripCompletionScreen() {
 
               <TouchableOpacity 
                 onPress={handleBookAgain}
-                className="flex-1 ml-2 py-3 border border-gray-300 rounded-xl"
+                className="flex-1 ml-2 py-3 border border-border dark:border-darkBorder rounded-xl"
               >
                 <View className="flex-row items-center justify-center">
                   <Ionicons name="refresh" size={20} color={iconColor} />
@@ -295,7 +296,7 @@ export default function TripCompletionScreen() {
               onPress={() => router.push('/(customer)/(tabs)')}
               className="py-3 mb-6"
             >
-              <ThemedText className="text-center text-gray-600">Back to Home</ThemedText>
+              <ThemedText className="text-center text-textSecondary dark:text-darkTextSecondary">Back to Home</ThemedText>
             </TouchableOpacity>
           </View>
         </ScrollView>

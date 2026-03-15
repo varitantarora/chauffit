@@ -7,6 +7,7 @@ import { ThemedText } from '../../components/common/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
+import { BrandColors, useThemeColors } from '../../constants/Colors';
 
 interface FAQItem {
   id: string;
@@ -17,10 +18,11 @@ interface FAQItem {
 
 export default function FAQScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const colors = useThemeColors(isDarkMode);
   const router = useRouter();
   
-  const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
-  const backgroundColor = isDarkMode ? '#1a1a1a' : '#F5F5F0';
+  const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
+  const backgroundColor = colors.altBackground;
 
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -185,7 +187,7 @@ export default function FAQScreen() {
               <ThemedText variant="h3" className="mb-2">
                 Driver FAQ
               </ThemedText>
-              <ThemedText variant="small" className="text-gray-600">
+              <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                 Find answers to common questions about driving with Chauffit.
               </ThemedText>
             </View>
@@ -207,7 +209,7 @@ export default function FAQScreen() {
                     <Ionicons 
                       name={category.icon as any} 
                       size={16} 
-                      color={selectedCategory === category.id ? '#FFFFFF' : '#BD8C5E'} 
+                      color={selectedCategory === category.id ? '#FFFFFF' : BrandColors.secondary} 
                     />
                     <ThemedText 
                       variant="small" 
@@ -258,12 +260,12 @@ export default function FAQScreen() {
             <ThemedCard variant="elevated" className="mb-6 p-6">
               <View className="items-center">
                 <View className="w-16 h-16 bg-secondary/10 rounded-full items-center justify-center mb-4">
-                  <Ionicons name="help-circle" size={32} color="#BD8C5E" />
+                  <Ionicons name="help-circle" size={32} color={BrandColors.secondary} />
                 </View>
                 <ThemedText variant="h3" className="mb-2 text-center">
                   Still need help?
                 </ThemedText>
-                <ThemedText variant="small" className="text-gray-600 text-center mb-4">
+                <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary text-center mb-4">
                   Can't find what you're looking for? Our driver support team is here to help.
                 </ThemedText>
                 <TouchableOpacity

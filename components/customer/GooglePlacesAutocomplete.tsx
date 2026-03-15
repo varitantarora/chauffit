@@ -8,6 +8,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BrandColors } from '../../constants/Colors';
 
 // Place result type from Google Places API
 interface GooglePlace {
@@ -30,6 +31,9 @@ interface GooglePlacesAutocompleteProps {
   apiKey: string;
   isDarkMode?: boolean;
   icon?: string;
+  onUseCurrentLocation?: () => void;
+  isFetchingCurrentLocation?: boolean;
+  autoFocus?: boolean;
 }
 
 export function GooglePlacesAutocomplete({
@@ -39,12 +43,16 @@ export function GooglePlacesAutocomplete({
   apiKey,
   isDarkMode = false,
   icon = 'location',
+  onUseCurrentLocation,
+  isFetchingCurrentLocation = false,
+  autoFocus = false,
 }: GooglePlacesAutocompleteProps) {
   const [query, setQuery] = useState(value);
   const [predictions, setPredictions] = useState<GooglePlace[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // Update query when value prop changes
@@ -119,6 +127,7 @@ export function GooglePlacesAutocomplete({
     setIsTyping(false);
     setQuery(place.description);
     setShowResults(false);
+    setIsFocused(false);
     setPredictions([]);
     onPlaceSelected(place);
   };
@@ -135,28 +144,42 @@ export function GooglePlacesAutocomplete({
     setQuery(text);
   };
 
-  const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
+  const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
   const inputClass = isDarkMode
     ? 'bg-darkSurface text-darkText border-darkBorder'
-    : 'bg-white text-textPrimary border-gray-200';
-  const resultsBgClass = isDarkMode ? 'bg-darkSurface border-darkBorder' : 'bg-white border-gray-200';
+    : 'bg-white text-textPrimary dark:text-darkText border-border dark:border-darkBorder';
+  const resultsBgClass = isDarkMode ? 'bg-darkSurface border-darkBorder' : 'bg-white border-border dark:border-darkBorder';
+
+  const shouldShowDropdown =
+    (isFocused && !!onUseCurrentLocation) ||
+    (showResults && (isLoading || predictions.length > 0));
 
   return (
     <View>
       {/* Input Field */}
       <View
         className={`flex-row items-center p-3 rounded-xl border ${inputClass} ${
-          showResults ? 'border-b-0 rounded-b-none' : ''
+          shouldShowDropdown ? 'border-b-0 rounded-b-none' : ''
         }`}
       >
         <Ionicons name={icon as any} size={20} color={iconColor} />
         <TextInput
-          className={`flex-1 ml-3 text-base ${isDarkMode ? 'text-darkText' : 'text-textPrimary'}`}
+          className={`flex-1 ml-3 text-base ${isDarkMode ? 'text-darkText' : 'text-textPrimary dark:text-darkText'}`}
           placeholder={placeholder}
           value={query}
           onChangeText={handleTextChange}
           placeholderTextColor={isDarkMode ? '#999' : '#666'}
-          autoFocus={false}
+          autoFocus={autoFocus}
+          onFocus={() => {
+            setIsFocused(true);
+            if (predictions.length > 0) setShowResults(true);
+          }}
+          onBlur={() => {
+            setTimeout(() => {
+              setIsFocused(false);
+              setShowResults(false);
+            }, 150);
+          }}
         />
         {query.length > 0 && (
           <TouchableOpacity onPress={handleClear}>
@@ -166,17 +189,48 @@ export function GooglePlacesAutocomplete({
       </View>
 
       {/* Inline Results Dropdown - Uber style */}
-      {showResults && (isLoading || predictions.length > 0) && (
+      {shouldShowDropdown && (
         <View
           className={`border-x border-b rounded-b-xl ${resultsBgClass} shadow-lg z-10`}
-          style={{ maxHeight: 200 }}
+          style={{ maxHeight: 250 }}
         >
           <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+            {/* Use current location row */}
+            {!!onUseCurrentLocation && (
+              <TouchableOpacity
+                onPress={() => {
+                  onUseCurrentLocation();
+                  setShowResults(false);
+                  setIsFocused(false);
+                }}
+                disabled={isFetchingCurrentLocation}
+                className="px-4 py-3 border-b border-gray-100 dark:border-gray-800"
+              >
+                <View className="flex-row items-center">
+                  {isFetchingCurrentLocation ? (
+                    <ActivityIndicator size="small" color={BrandColors.secondary} />
+                  ) : (
+                    <Ionicons name="navigate" size={18} color={BrandColors.burgundy} />
+                  )}
+                  <View className="ml-3">
+                    <Text className="text-base font-medium text-gray-900 dark:text-white">
+                      Use current location
+                    </Text>
+                    {isFetchingCurrentLocation && (
+                      <Text className="text-sm text-gray-500 dark:text-darkTextSecondary mt-0.5">
+                        Getting your location...
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              </TouchableOpacity>
+            )}
+
             {/* Loading State */}
             {isLoading && (
               <View className="p-4 flex-row items-center justify-center">
-                <ActivityIndicator size="small" color="#BD8C5E" />
-                <Text className="text-gray-500 ml-2">Searching...</Text>
+                <ActivityIndicator size="small" color={BrandColors.secondary} />
+                <Text className="text-textSecondary dark:text-darkTextSecondary ml-2">Searching...</Text>
               </View>
             )}
 
@@ -190,18 +244,18 @@ export function GooglePlacesAutocomplete({
                     className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 active:bg-gray-50 dark:active:bg-gray-800"
                   >
                     <View className="flex-row items-start">
-                      <Ionicons name="location" size={18} color="#BD8C5E" style={{ marginTop: 1 }} />
+                      <Ionicons name="location" size={18} color={BrandColors.secondary} style={{ marginTop: 1 }} />
                       <View className="flex-1 ml-3">
                         <Text className="text-base font-medium text-gray-900 dark:text-white">
                           {item.structured_formatting?.main_text || item.description.split(',')[0]}
                         </Text>
                         {item.structured_formatting?.secondary_text && (
-                          <Text className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                          <Text className="text-sm text-gray-500 dark:text-darkTextSecondary mt-0.5">
                             {item.structured_formatting.secondary_text}
                           </Text>
                         )}
                         {!item.structured_formatting && item.description.includes(',') && (
-                          <Text className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                          <Text className="text-sm text-gray-500 dark:text-darkTextSecondary mt-0.5">
                             {item.description.split(',').slice(1).join(',').trim()}
                           </Text>
                         )}

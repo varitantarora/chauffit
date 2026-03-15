@@ -8,7 +8,7 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { StatusBadge } from '../../components/admin/StatusBadge';
 import { useAdminStore } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
-import { LightColors, DarkColors } from '../../constants/Colors';
+import { LightColors, DarkColors, useThemeColors} from '../../constants/Colors';
 import AdminApiService, { AdminDriver, AdminDocument } from '../../services/api/AdminApiService';
 
 export default function DriverVerification() {
@@ -211,7 +211,7 @@ export default function DriverVerification() {
             <ThemedText variant="h3" className="mb-3">
               {rejectionTarget?.type === 'driver' ? 'Reject Driver' : 'Reject Document'}
             </ThemedText>
-            <ThemedText variant="small" className="mb-3 text-gray-600 dark:text-gray-400">
+            <ThemedText variant="small" className="mb-3 text-gray-600 dark:text-darkTextSecondary">
               Please provide a rejection reason:
             </ThemedText>
             <TextInput

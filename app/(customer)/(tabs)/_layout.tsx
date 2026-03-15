@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { View } from 'react-native';
 import { useAuthStore } from '../../../store/authStore';
-import { LightColors, DarkColors } from '../../../constants/Colors';
+import { LightColors, DarkColors, useThemeColors} from '../../../constants/Colors';
 
 export default function CustomerTabsLayout() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
@@ -26,7 +26,7 @@ export default function CustomerTabsLayout() {
           <View style={{ flex: 1, backgroundColor: colors.background }} />
         ),
         tabBarActiveTintColor: colors.secondary,
-        tabBarInactiveTintColor: isDarkMode ? '#9ca3af' : '#6b7280',
+        tabBarInactiveTintColor: isDarkMode ? '#999999' : '#6b7280',
       }}
     >
       <Tabs.Screen

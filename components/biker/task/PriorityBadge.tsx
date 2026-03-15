@@ -2,6 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '../../common/ThemedText';
+import { BrandColors } from '../../../constants/Colors';
 import { TaskPriority } from '../../../types/navigation';
 
 interface PriorityBadgeProps {
@@ -59,7 +60,7 @@ export function PriorityBadge({
       default:
         return {
           bgColor: 'bg-textSecondary/10',
-          textColor: 'text-textSecondary',
+          textColor: 'text-textSecondary dark:text-darkTextSecondary',
           borderColor: 'border-textSecondary/20',
           icon: 'ellipse',
           label: 'UNKNOWN',
@@ -133,7 +134,7 @@ export function PriorityBadge({
           <Ionicons 
             name={priorityConfig.icon as any} 
             size={sizeConfig.iconSize} 
-            color={priorityConfig.textColor.includes('danger') ? '#EF4444' : priorityConfig.textColor.includes('warning') ? '#F59E0B' : priorityConfig.textColor.includes('info') ? '#3B82F6' : '#6B7280'}
+            color={priorityConfig.textColor.includes('danger') ? BrandColors.danger : priorityConfig.textColor.includes('warning') ? BrandColors.warning : priorityConfig.textColor.includes('info') ? BrandColors.info : '#6B7280'}
             style={{ marginRight: showText ? 4 : 0 }}
           />
         )}

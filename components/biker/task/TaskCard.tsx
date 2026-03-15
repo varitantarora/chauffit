@@ -7,6 +7,7 @@ import { PriorityBadge } from './PriorityBadge';
 import { BikerTask, TaskType } from '../../../types/navigation';
 import { useAuthStore } from '../../../store/authStore';
 import { router } from 'expo-router';
+import { BrandColors } from '../../../constants/Colors';
 
 interface TaskCardProps {
   task: BikerTask;
@@ -96,7 +97,7 @@ export function TaskCard({
                 <Ionicons 
                   name={getTaskIcon(task.type) as any} 
                   size={20} 
-                  color="#BD8C5E" 
+                  color={BrandColors.secondary} 
                 />
               </View>
               <View className="flex-1">
@@ -104,7 +105,7 @@ export function TaskCard({
                   <ThemedText className="font-semibold mr-2">{task.title}</ThemedText>
                   <PriorityBadge priority={task.priority} size="small" />
                 </View>
-                <ThemedText variant="caption" className="text-textSecondary">
+                <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">
                   {task.estimatedDistance.toFixed(1)} km • {task.estimatedDuration} min
                 </ThemedText>
               </View>
@@ -173,7 +174,7 @@ export function TaskCard({
                 </ThemedText>
                 {task.customerPhone && (
                   <TouchableOpacity className="ml-auto" activeOpacity={1}>
-                    <Ionicons name="call" size={16} color="#BD8C5E" />
+                    <Ionicons name="call" size={16} color={BrandColors.secondary} />
                   </TouchableOpacity>
                 )}
               </View>
@@ -186,7 +187,7 @@ export function TaskCard({
                 </ThemedText>
                 {task.driverPhone && (
                   <TouchableOpacity className="ml-auto" activeOpacity={1}>
-                    <Ionicons name="call" size={16} color="#BD8C5E" />
+                    <Ionicons name="call" size={16} color={BrandColors.secondary} />
                   </TouchableOpacity>
                 )}
               </View>
@@ -197,7 +198,7 @@ export function TaskCard({
         {/* Locations */}
         <View className="mb-3">
           <View className="flex-row items-start mb-2">
-            <Ionicons name="location" size={16} color="#BD8C5E" />
+            <Ionicons name="location" size={16} color={BrandColors.secondary} />
             <View className="ml-2 flex-1">
               <ThemedText variant="caption">PICKUP</ThemedText>
               <ThemedText className="text-sm">
@@ -208,7 +209,7 @@ export function TaskCard({
           
           {task.dropoffLocation && (
             <View className="flex-row items-start">
-              <Ionicons name="flag" size={16} color="#BD8C5E" />
+              <Ionicons name="flag" size={16} color={BrandColors.secondary} />
               <View className="ml-2 flex-1">
                 <ThemedText variant="caption">DROP-OFF</ThemedText>
                 <ThemedText className="text-sm">
@@ -222,19 +223,19 @@ export function TaskCard({
         {/* Task details */}
         <View className="flex-row justify-between mb-3">
           <View className="flex-row items-center">
-            <Ionicons name="speedometer" size={14} color="#BD8C5E" />
+            <Ionicons name="speedometer" size={14} color={BrandColors.secondary} />
             <ThemedText variant="caption" className="ml-1">
               {task.estimatedDistance.toFixed(1)} km
             </ThemedText>
           </View>
           <View className="flex-row items-center">
-            <Ionicons name="time" size={14} color="#BD8C5E" />
+            <Ionicons name="time" size={14} color={BrandColors.secondary} />
             <ThemedText variant="caption" className="ml-1">
               {task.estimatedDuration} min
             </ThemedText>
           </View>
           <View className="flex-row items-center">
-            <Ionicons name="time-outline" size={14} color="#BD8C5E" />
+            <Ionicons name="time-outline" size={14} color={BrandColors.secondary} />
             <ThemedText variant="caption" className="ml-1">
               {formatTime(task.createdAt)}
             </ThemedText>
@@ -245,7 +246,7 @@ export function TaskCard({
         {task.specialInstructions && (
           <View className="mb-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
             <View className="flex-row items-start">
-              <Ionicons name="information-circle" size={16} color="#F59E0B" />
+              <Ionicons name="information-circle" size={16} color={BrandColors.warning} />
               <ThemedText variant="caption" className="ml-2 flex-1 text-yellow-700 dark:text-yellow-300">
                 {task.specialInstructions}
               </ThemedText>
@@ -287,7 +288,7 @@ export function TaskCard({
                 className="flex-1 bg-gray-100 dark:bg-gray-800 py-3 rounded-lg"
                 activeOpacity={1}
               >
-                <ThemedText className="text-center font-semibold text-textSecondary">
+                <ThemedText className="text-center font-semibold text-textSecondary dark:text-darkTextSecondary">
                   Decline
                 </ThemedText>
               </TouchableOpacity>
@@ -317,7 +318,7 @@ export function TaskCard({
               <ThemedText className={`text-center font-semibold ${
                 task.status === 'accepted' ? 'text-info' :
                 task.status === 'in_progress' ? 'text-success' :
-                'text-textSecondary'
+                'text-textSecondary dark:text-darkTextSecondary'
               }`}>
                 {task.status === 'accepted' ? 'Task Accepted' :
                  task.status === 'in_progress' ? 'In Progress' :

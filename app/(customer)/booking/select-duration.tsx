@@ -9,6 +9,7 @@ import { useAuthStore } from '../../../store/authStore';
 import { useBookingStore } from '../../../store/bookingStore';
 import { useCarStore } from '../../../store/carStore';
 import { useRouter } from 'expo-router';
+import { BrandColors } from '../../../constants/Colors';
 
 interface DurationOption {
   id: string;
@@ -150,7 +151,7 @@ export default function SelectDuration() {
           </TouchableOpacity>
           <View className="flex-1">
             <ThemedText variant="h2">Select Duration</ThemedText>
-            <ThemedText variant="small" className="text-textSecondary">
+            <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
               Choose how long you need our service
             </ThemedText>
           </View>
@@ -183,7 +184,7 @@ export default function SelectDuration() {
                         </View>
                       )}
                     </View>
-                    <ThemedText variant="small" className="text-textSecondary mb-2">
+                    <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary mb-2">
                       {option.description}
                     </ThemedText>
                     <ThemedText variant="h3" className="text-burgundy font-bold">
@@ -220,7 +221,7 @@ export default function SelectDuration() {
                         onChangeText={setCustomHours}
                         keyboardType="numeric"
                       />
-                      <ThemedText variant="small" className="text-textSecondary">
+                      <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                         hours
                       </ThemedText>
                     </View>
@@ -244,16 +245,16 @@ export default function SelectDuration() {
             }`}>
               <View className="flex-row items-center">
                 <View className="w-12 h-12 bg-secondary/20 rounded-full items-center justify-center mr-3">
-                  <Ionicons name="car-sport" size={24} color="#BD8C5E" />
+                  <Ionicons name="car-sport" size={24} color={BrandColors.secondary} />
                 </View>
                 <View className="flex-1">
-                  <ThemedText variant="small" className="text-textSecondary">
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                     Selected Vehicle
                   </ThemedText>
                   <ThemedText variant="body" className="font-semibold">
                     {defaultCar.make} {defaultCar.model}
                   </ThemedText>
-                  <ThemedText variant="small" className="text-textSecondary">
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                     {defaultCar.color} • {defaultCar.registrationNumber}
                   </ThemedText>
                 </View>
@@ -272,12 +273,12 @@ export default function SelectDuration() {
           {!defaultCar && (
             <View className="p-4 rounded-xl mb-6 bg-danger/10 border border-danger/20">
               <View className="flex-row items-center">
-                <Ionicons name="alert-circle" size={24} color="#EF4444" />
+                <Ionicons name="alert-circle" size={24} color={BrandColors.danger} />
                 <View className="flex-1 ml-3">
                   <ThemedText variant="body" className="font-semibold text-danger">
                     No Car Added
                   </ThemedText>
-                  <ThemedText variant="small" className="text-textSecondary">
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                     Please add your car details to continue
                   </ThemedText>
                 </View>

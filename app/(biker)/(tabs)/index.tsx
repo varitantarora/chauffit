@@ -17,6 +17,7 @@ import { router } from 'expo-router';
 import BikerApiService from '../../../services/api/BikerApiService';
 import BikerTaskApiService, { BikerTaskDetail } from '../../../services/api/BikerTaskApiService';
 import { useI18nStore } from '../../../store/i18nStore';
+import { BrandColors } from '../../../constants/Colors';
 
 export default function BikerHomeScreen() {
   const user = useAuthStore((state) => state.user);
@@ -362,7 +363,7 @@ export default function BikerHomeScreen() {
                 </ThemedText>
               </View>
               <View className="items-end">
-                <ThemedText variant="caption" className="mt-1 text-textSecondary">
+                <ThemedText variant="caption" className="mt-1 text-textSecondary dark:text-darkTextSecondary">
                   {currentShift ? t('onShift') : t('offShift')}
                 </ThemedText>
               </View>
@@ -375,12 +376,12 @@ export default function BikerHomeScreen() {
               onPress={() => handleToggleOnline(!isOnline)}
               activeOpacity={0.85}
               style={{
-                backgroundColor: isOnline ? '#10B981' : '#EF4444',
+                backgroundColor: isOnline ? BrandColors.success : BrandColors.danger,
                 paddingVertical: 20,
                 borderRadius: 20,
                 alignItems: 'center',
                 justifyContent: 'center',
-                shadowColor: isOnline ? '#10B981' : '#EF4444',
+                shadowColor: isOnline ? BrandColors.success : BrandColors.danger,
                 shadowOffset: { width: 0, height: 6 },
                 shadowOpacity: 0.35,
                 shadowRadius: 12,
@@ -473,7 +474,7 @@ export default function BikerHomeScreen() {
                 onPress={() => setShowFilters(!showFilters)}
                 className="bg-secondary/10 p-2 rounded-lg"
               >
-                <Ionicons name="filter" size={16} color="#BD8C5E" />
+                <Ionicons name="filter" size={16} color={BrandColors.secondary} />
               </TouchableOpacity>
             </View>
 
@@ -490,7 +491,7 @@ export default function BikerHomeScreen() {
                   >
                     <ThemedText className={`text-sm font-semibold ${selectedFilter === filter
                       ? 'text-white'
-                      : 'text-textSecondary'
+                      : 'text-textSecondary dark:text-darkTextSecondary'
                       }`}>
                       {filter.charAt(0).toUpperCase() + filter.slice(1)}
                     </ThemedText>
@@ -503,7 +504,7 @@ export default function BikerHomeScreen() {
           {loadingTasks && (
             <View className="px-6 mb-4">
               <ThemedCard className="p-4">
-                <ThemedText className="text-center text-textSecondary">
+                <ThemedText className="text-center text-textSecondary dark:text-darkTextSecondary">
                   Loading driver pickups...
                 </ThemedText>
               </ThemedCard>
@@ -514,7 +515,7 @@ export default function BikerHomeScreen() {
           {priorityTasks.length > 0 && selectedFilter === 'all' && (
             <View className="px-6 mb-6">
               <View className="flex-row items-center mb-3">
-                <Ionicons name="warning" size={20} color="#EF4444" />
+                <Ionicons name="warning" size={20} color={BrandColors.danger} />
                 <ThemedText className="font-bold text-danger ml-2">
                   Priority Tasks - Respond Quickly!
                 </ThemedText>

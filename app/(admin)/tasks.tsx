@@ -7,7 +7,7 @@ import { ThemedText } from '../../components/common/ThemedText';
 import { StatusBadge } from '../../components/admin/StatusBadge';
 import { useAdminStore } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
-import { LightColors, DarkColors } from '../../constants/Colors';
+import { LightColors, DarkColors, useThemeColors} from '../../constants/Colors';
 import { AdminTask } from '../../services/api/AdminApiService';
 
 export default function Tasks() {
@@ -38,7 +38,7 @@ export default function Tasks() {
           <StatusBadge status={item.priority} customLabel={item.priority} />
           <ThemedText variant="tiny" className="capitalize">{item.biker_name}</ThemedText>
         </View>
-        <ThemedText variant="small" className="text-textSecondary">{item.booking_reference}</ThemedText>
+        <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">{item.booking_reference}</ThemedText>
       </View>
     </Pressable>
   );

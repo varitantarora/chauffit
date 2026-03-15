@@ -10,6 +10,7 @@ import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { useAuthStore } from '../../../store/authStore';
 import DriverApiService, { TrainingSession } from '../../../services/api/DriverApiService';
 import UniversalMapView, { MapMarker } from '../../../components/shared/MapView';
+import { BrandColors } from '../../../constants/Colors';
 
 export default function TrainingScheduledScreen() {
   const router = useRouter();
@@ -145,8 +146,8 @@ export default function TrainingScheduledScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              colors={['#BD8C5E']}
-              tintColor="#BD8C5E"
+              colors={[BrandColors.secondary]}
+              tintColor={BrandColors.secondary}
             />
           }
         >
@@ -169,7 +170,7 @@ export default function TrainingScheduledScreen() {
                 {/* Training Details */}
                 <ThemedCard className="p-4 mb-4">
                   <View className="flex-row items-center mb-3">
-                    <Ionicons name="calendar" size={20} color="#BD8C5E" />
+                    <Ionicons name="calendar" size={20} color={BrandColors.secondary} />
                     <ThemedText className="font-bold ml-2">DATE & TIME</ThemedText>
                   </View>
                   <ThemedText className="text-lg font-semibold mb-1">
@@ -188,7 +189,7 @@ export default function TrainingScheduledScreen() {
                 {/* Location */}
                 <ThemedCard className="p-4 mb-4">
                   <View className="flex-row items-center mb-3">
-                    <Ionicons name="location" size={20} color="#BD8C5E" />
+                    <Ionicons name="location" size={20} color={BrandColors.secondary} />
                     <ThemedText className="font-bold ml-2">LOCATION</ThemedText>
                   </View>
                   <ThemedText className="text-lg font-semibold mb-1">
@@ -230,7 +231,7 @@ export default function TrainingScheduledScreen() {
                           position: 'absolute',
                           bottom: 12,
                           right: 12,
-                          backgroundColor: '#BD8C5E',
+                          backgroundColor: BrandColors.secondary,
                           borderRadius: 24,
                           width: 44,
                           height: 44,
@@ -248,7 +249,7 @@ export default function TrainingScheduledScreen() {
                     </View>
                   ) : (
                     <View className="h-48 bg-gray-200 dark:bg-gray-700 items-center justify-center">
-                      <Ionicons name="map" size={48} color="#BD8C5E" />
+                      <Ionicons name="map" size={48} color={BrandColors.secondary} />
                       <ThemedText variant="secondary" className="mt-2">Location not available</ThemedText>
                     </View>
                   )}
@@ -259,7 +260,7 @@ export default function TrainingScheduledScreen() {
             {/* Reminder Card */}
             <ThemedCard className="p-4 mb-4 border-l-4 border-l-burgundy">
               <View className="flex-row items-start">
-                <Ionicons name="document-text" size={20} color="#720C17" />
+                <Ionicons name="document-text" size={20} color={BrandColors.burgundy} />
                 <View className="ml-3 flex-1">
                   <ThemedText className="font-bold mb-1">Bring Original Documents</ThemedText>
                   <ThemedText variant="secondary" className="text-sm">

@@ -9,6 +9,7 @@ import { TrainingCertificate } from '../../components/driver/profile/TrainingCer
 import { useAuthStore } from '../../store/authStore';
 import { useI18nStore } from '../../store/i18nStore';
 import DriverApiService, { TrainingSession } from '../../services/api/DriverApiService';
+import { BrandColors } from '../../constants/Colors';
 
 export default function TrainingCertificateScreen() {
   const router = useRouter();
@@ -93,8 +94,8 @@ export default function TrainingCertificateScreen() {
               borderRadius: 20,
             }}
           >
-            <Ionicons name="shield-checkmark" size={14} color="#10B981" />
-            <ThemedText style={{ fontSize: 12, color: '#10B981', fontWeight: '700', marginLeft: 4 }}>
+            <Ionicons name="shield-checkmark" size={14} color={BrandColors.success} />
+            <ThemedText style={{ fontSize: 12, color: BrandColors.success, fontWeight: '700', marginLeft: 4 }}>
               {t('passed')}
             </ThemedText>
           </View>
@@ -106,8 +107,8 @@ export default function TrainingCertificateScreen() {
         >
           {loading ? (
             <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 60 }}>
-              <ActivityIndicator size="large" color="#BD8C5E" />
-              <ThemedText style={{ marginTop: 16, color: '#BD8C5E' }}>
+              <ActivityIndicator size="large" color={BrandColors.secondary} />
+              <ThemedText style={{ marginTop: 16, color: BrandColors.secondary }}>
                 {t('loadingCertificate')}
               </ThemedText>
             </View>
@@ -144,7 +145,7 @@ export default function TrainingCertificateScreen() {
             </>
           ) : (
             <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 60 }}>
-              <Ionicons name="document-outline" size={56} color="#BD8C5E" />
+              <Ionicons name="document-outline" size={56} color={BrandColors.secondary} />
               <ThemedText style={{ marginTop: 16, fontWeight: '700', fontSize: 16 }}>
                 {t('certificateNotAvailable')}
               </ThemedText>

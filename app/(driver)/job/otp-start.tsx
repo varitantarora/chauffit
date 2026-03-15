@@ -11,6 +11,7 @@ import { useJobStore } from '../../../store/jobStore';
 import { useAuthStore } from '../../../store/authStore';
 import * as Location from 'expo-location';
 import DriverRidesApiService, { BookingDetail } from '../../../services/api/DriverRidesApiService';
+import { BrandColors } from '../../../constants/Colors';
 
 export default function OTPStartRideScreen() {
   const OTP_LENGTH = 4;
@@ -267,7 +268,7 @@ export default function OTPStartRideScreen() {
           <ThemedCard className="p-6 mb-6">
             <View className="items-center">
               <View className="flex-row items-center mb-4">
-                <Ionicons name="lock-closed" size={24} color="#720C17" />
+                <Ionicons name="lock-closed" size={24} color={BrandColors.burgundy} />
                 <ThemedText className="font-bold text-lg ml-2">ENTER OTP TO START RIDE</ThemedText>
               </View>
 
@@ -322,12 +323,12 @@ export default function OTPStartRideScreen() {
                       key={index} 
                       className={`w-14 h-16 border-2 rounded-lg bg-surface dark:bg-darkSurface items-center justify-center`}
                       style={{
-                        borderColor: isFocused ? '#BD8C5E' : (digit ? '#BD8C5E' : (isDarkMode ? '#3A3A3A' : '#720C17')),
+                        borderColor: isFocused ? BrandColors.secondary : (digit ? BrandColors.secondary : (isDarkMode ? '#3A3A3A' : BrandColors.burgundy)),
                       }}
                     >
                       <ThemedText
                         className="text-3xl font-bold"
-                        style={{ color: isDarkMode ? '#d9d1c6' : '#720C17' }}
+                        style={{ color: isDarkMode ? '#d9d1c6' : BrandColors.burgundy }}
                       >
                         {digit}
                       </ThemedText>
@@ -369,13 +370,13 @@ export default function OTPStartRideScreen() {
           {/* AI Camera Monitoring */}
           <ThemedCard className="p-4 mb-6">
             <View className="flex-row items-center mb-4">
-              <Ionicons name="videocam" size={20} color="#720C17" />
+              <Ionicons name="videocam" size={20} color={BrandColors.burgundy} />
               <ThemedText className="font-bold ml-2">AI-MONITORED CAMERA</ThemedText>
             </View>
 
             <View className="bg-surface dark:bg-darkSurface rounded-lg p-4 mb-4">
               <View className="items-center py-8">
-                <Ionicons name="videocam" size={48} color="#BD8C5E" />
+                <Ionicons name="videocam" size={48} color={BrandColors.secondary} />
                 <ThemedText variant="secondary" className="text-center mt-2">
                   Camera Feed Active
                 </ThemedText>

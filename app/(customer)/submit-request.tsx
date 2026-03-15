@@ -8,6 +8,7 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
+import { BrandColors, useThemeColors } from '../../constants/Colors';
 
 type RequestCategory = 'booking' | 'payment' | 'driver' | 'account' | 'technical' | 'other';
 type Priority = 'low' | 'medium' | 'high';
@@ -23,11 +24,12 @@ interface RequestForm {
 
 export default function SubmitRequestScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const colors = useThemeColors(isDarkMode);
   const user = useAuthStore((state) => state.user);
   const router = useRouter();
   
-  const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
-  const backgroundColor = isDarkMode ? '#1a1a1a' : '#F5F5F0';
+  const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
+  const backgroundColor = colors.altBackground;
 
   const [form, setForm] = useState<RequestForm>({
     category: 'booking',
@@ -50,9 +52,9 @@ export default function SubmitRequestScreen() {
   ];
 
   const priorities = [
-    { id: 'low', label: 'Low', color: '#10B981', description: 'General inquiry, non-urgent' },
-    { id: 'medium', label: 'Medium', color: '#F59E0B', description: 'Standard issue, moderate urgency' },
-    { id: 'high', label: 'High', color: '#EF4444', description: 'Urgent issue affecting service' }
+    { id: 'low', label: 'Low', color: BrandColors.success, description: 'General inquiry, non-urgent' },
+    { id: 'medium', label: 'Medium', color: BrandColors.warning, description: 'Standard issue, moderate urgency' },
+    { id: 'high', label: 'High', color: BrandColors.danger, description: 'Urgent issue affecting service' }
   ];
 
   const contactMethods = [
@@ -131,7 +133,7 @@ export default function SubmitRequestScreen() {
               <ThemedText variant="h3" className="mb-2">
                 How Can We Help?
               </ThemedText>
-              <ThemedText variant="small" className="text-gray-600">
+              <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                 Fill out this form with details about your issue. Our support team will get back to you soon.
               </ThemedText>
             </View>
@@ -159,7 +161,7 @@ export default function SubmitRequestScreen() {
                     <Ionicons 
                       name={category.icon as any} 
                       size={20} 
-                      color={form.category === category.id ? '#FFFFFF' : '#BD8C5E'} 
+                      color={form.category === category.id ? '#FFFFFF' : BrandColors.secondary} 
                     />
                   </View>
                   
@@ -167,7 +169,7 @@ export default function SubmitRequestScreen() {
                     <ThemedText className="font-semibold mb-1">
                       {category.label}
                     </ThemedText>
-                    <ThemedText variant="small" className="text-gray-600">
+                    <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                       {category.description}
                     </ThemedText>
                   </View>
@@ -175,7 +177,7 @@ export default function SubmitRequestScreen() {
                   <View className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
                     form.category === category.id 
                       ? 'border-burgundy bg-burgundy' 
-                      : 'border-gray-300'
+                      : 'border-border dark:border-darkBorder'
                   }`}>
                     {form.category === category.id && (
                       <Ionicons name="checkmark" size={16} color="white" />
@@ -216,12 +218,12 @@ export default function SubmitRequestScreen() {
                       </View>
                       <ThemedText 
                         variant="small" 
-                        className={`font-semibold ${form.priority === priority.id ? '' : 'text-gray-600'}`}
+                        className={`font-semibold ${form.priority === priority.id ? '' : 'text-textSecondary dark:text-darkTextSecondary'}`}
                         style={form.priority === priority.id ? { color: priority.color } : {}}
                       >
                         {priority.label}
                       </ThemedText>
-                      <ThemedText variant="tiny" className="text-gray-500 text-center mt-1">
+                      <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary text-center mt-1">
                         {priority.description}
                       </ThemedText>
                     </View>
@@ -238,12 +240,12 @@ export default function SubmitRequestScreen() {
               
               {/* Subject */}
               <View className="mb-4">
-                <ThemedText variant="small" className="mb-2 text-gray-600">
+                <ThemedText variant="small" className="mb-2 text-textSecondary dark:text-darkTextSecondary">
                   Subject
                 </ThemedText>
                 <TextInput
                   className={`p-3 rounded-xl border ${
-                    isDarkMode ? 'bg-darkSurface text-darkText border-darkBorder' : 'bg-white text-textPrimary border-gray-200'
+                    isDarkMode ? 'bg-darkSurface text-darkText border-darkBorder' : 'bg-white text-textPrimary dark:text-darkText border-border dark:border-darkBorder'
                   }`}
                   placeholder="Brief summary of your issue"
                   placeholderTextColor="#999"
@@ -251,19 +253,19 @@ export default function SubmitRequestScreen() {
                   onChangeText={(text) => setForm(prev => ({ ...prev, subject: text }))}
                   maxLength={100}
                 />
-                <ThemedText variant="tiny" className="text-gray-500 mt-1 text-right">
+                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary mt-1 text-right">
                   {form.subject.length}/100
                 </ThemedText>
               </View>
 
               {/* Description */}
               <View className="mb-4">
-                <ThemedText variant="small" className="mb-2 text-gray-600">
+                <ThemedText variant="small" className="mb-2 text-textSecondary dark:text-darkTextSecondary">
                   Detailed Description
                 </ThemedText>
                 <TextInput
                   className={`p-3 rounded-xl border h-32 ${
-                    isDarkMode ? 'bg-darkSurface text-darkText border-darkBorder' : 'bg-white text-textPrimary border-gray-200'
+                    isDarkMode ? 'bg-darkSurface text-darkText border-darkBorder' : 'bg-white text-textPrimary dark:text-darkText border-border dark:border-darkBorder'
                   }`}
                   placeholder="Please provide detailed information about your issue, including steps to reproduce if applicable..."
                   placeholderTextColor="#999"
@@ -273,19 +275,19 @@ export default function SubmitRequestScreen() {
                   textAlignVertical="top"
                   maxLength={500}
                 />
-                <ThemedText variant="tiny" className="text-gray-500 mt-1 text-right">
+                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary mt-1 text-right">
                   {form.description.length}/500
                 </ThemedText>
               </View>
 
               {/* Ride ID (Optional) */}
               <View className="mb-4">
-                <ThemedText variant="small" className="mb-2 text-gray-600">
+                <ThemedText variant="small" className="mb-2 text-textSecondary dark:text-darkTextSecondary">
                   Ride ID (Optional)
                 </ThemedText>
                 <TextInput
                   className={`p-3 rounded-xl border ${
-                    isDarkMode ? 'bg-darkSurface text-darkText border-darkBorder' : 'bg-white text-textPrimary border-gray-200'
+                    isDarkMode ? 'bg-darkSurface text-darkText border-darkBorder' : 'bg-white text-textPrimary dark:text-darkText border-border dark:border-darkBorder'
                   }`}
                   placeholder="e.g., RIDE001234 (if your issue is related to a specific ride)"
                   placeholderTextColor="#999"
@@ -319,7 +321,7 @@ export default function SubmitRequestScreen() {
                     <Ionicons 
                       name={method.icon as any} 
                       size={20} 
-                      color={form.contactMethod === method.id ? '#FFFFFF' : '#BD8C5E'} 
+                      color={form.contactMethod === method.id ? '#FFFFFF' : BrandColors.secondary} 
                     />
                   </View>
                   
@@ -327,7 +329,7 @@ export default function SubmitRequestScreen() {
                     <ThemedText className="font-semibold mb-1">
                       {method.label}
                     </ThemedText>
-                    <ThemedText variant="small" className="text-gray-600">
+                    <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                       {method.description}
                     </ThemedText>
                   </View>
@@ -335,7 +337,7 @@ export default function SubmitRequestScreen() {
                   <View className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
                     form.contactMethod === method.id 
                       ? 'border-burgundy bg-burgundy' 
-                      : 'border-gray-300'
+                      : 'border-border dark:border-darkBorder'
                   }`}>
                     {form.contactMethod === method.id && (
                       <Ionicons name="checkmark" size={16} color="white" />
@@ -346,12 +348,12 @@ export default function SubmitRequestScreen() {
 
               {/* Contact Info Display */}
               <View className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                <ThemedText variant="small" className="text-gray-600 mb-2">
+                <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary mb-2">
                   We'll contact you at:
                 </ThemedText>
                 {(form.contactMethod === 'email' || form.contactMethod === 'both') && (
                   <View className="flex-row items-center mb-1">
-                    <Ionicons name="mail" size={16} color="#BD8C5E" />
+                    <Ionicons name="mail" size={16} color={BrandColors.secondary} />
                     <ThemedText variant="small" className="ml-2">
                       {user?.email || 'your@email.com'}
                     </ThemedText>
@@ -359,7 +361,7 @@ export default function SubmitRequestScreen() {
                 )}
                 {(form.contactMethod === 'phone' || form.contactMethod === 'both') && (
                   <View className="flex-row items-center">
-                    <Ionicons name="call" size={16} color="#BD8C5E" />
+                    <Ionicons name="call" size={16} color={BrandColors.secondary} />
                     <ThemedText variant="small" className="ml-2">
                       {user?.phone || '+91 XXXXXXXXXX'}
                     </ThemedText>
@@ -377,10 +379,10 @@ export default function SubmitRequestScreen() {
             />
 
             <View className="items-center">
-              <ThemedText variant="small" className="text-gray-500 text-center">
+              <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary text-center">
                 * Required fields
               </ThemedText>
-              <ThemedText variant="tiny" className="text-gray-400 text-center mt-2">
+              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary text-center mt-2">
                 We typically respond within 24 hours during business days
               </ThemedText>
             </View>

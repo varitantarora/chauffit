@@ -362,7 +362,7 @@ export function BikerMap({
               <ThemedText className="font-semibold">
                 {dropoffLocation ? 'To Drop-off' : 'To Pickup'}
               </ThemedText>
-              <ThemedText variant="caption" className="text-gray-500">
+              <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">
                 Follow the route for optimal navigation
               </ThemedText>
             </View>

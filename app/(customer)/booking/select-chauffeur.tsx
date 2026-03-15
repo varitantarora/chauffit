@@ -9,6 +9,7 @@ import { useAuthStore } from '../../../store/authStore';
 import { useBookingStore } from '../../../store/bookingStore';
 import { useRouter } from 'expo-router';
 import { Chauffeur } from '../../../types/navigation';
+import { BrandColors } from '../../../constants/Colors';
 
 export default function SelectChauffeur() {
   const [refreshing, setRefreshing] = useState(false);
@@ -69,7 +70,7 @@ export default function SelectChauffeur() {
         key={index}
         name={index < Math.floor(rating) ? 'star' : index < rating ? 'star-half' : 'star-outline'}
         size={14}
-        color="#BD8C5E"
+        color={BrandColors.secondary}
       />
     ));
   };
@@ -89,7 +90,7 @@ export default function SelectChauffeur() {
           </TouchableOpacity>
           <View className="flex-1">
             <ThemedText variant="h2">Select Chauffeur</ThemedText>
-            <ThemedText variant="small" className="text-textSecondary">
+            <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
               Duration: {selectedDuration}
             </ThemedText>
           </View>
@@ -108,8 +109,8 @@ export default function SelectChauffeur() {
         {/* Loading State */}
         {loadingChauffeurs && (
           <View className="flex-1 items-center justify-center">
-            <ActivityIndicator size="large" color="#BD8C5E" />
-            <ThemedText variant="body" className="mt-4 text-textSecondary">
+            <ActivityIndicator size="large" color={BrandColors.secondary} />
+            <ThemedText variant="body" className="mt-4 text-textSecondary dark:text-darkTextSecondary">
               Finding available chauffeurs...
             </ThemedText>
           </View>
@@ -124,8 +125,8 @@ export default function SelectChauffeur() {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={handleRefresh}
-                colors={['#BD8C5E']}
-                tintColor="#BD8C5E"
+                colors={[BrandColors.secondary]}
+                tintColor={BrandColors.secondary}
               />
             }
           >
@@ -137,7 +138,7 @@ export default function SelectChauffeur() {
                 <ThemedText variant="h3" className="text-center mb-2">
                   No Chauffeurs Available
                 </ThemedText>
-                <ThemedText variant="small" className="text-center text-textSecondary px-8">
+                <ThemedText variant="small" className="text-center text-textSecondary dark:text-darkTextSecondary px-8">
                   All chauffeurs are currently busy. Please try again in a few minutes or adjust your duration.
                 </ThemedText>
                 <TouchableOpacity
@@ -189,13 +190,13 @@ export default function SelectChauffeur() {
                           <View className="flex-row mr-3">
                             {renderStars(chauffeur.rating)}
                           </View>
-                          <ThemedText variant="small" className="text-textSecondary">
+                          <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                             {chauffeur.rating} • {chauffeur.experience}y exp
                           </ThemedText>
                         </View>
                         
                         <View className="flex-row items-center">
-                          <Ionicons name="time" size={14} color="#BD8C5E" />
+                          <Ionicons name="time" size={14} color={BrandColors.secondary} />
                           <ThemedText variant="small" className="ml-1 font-semibold text-secondary">
                             Arriving in {chauffeur.eta}
                           </ThemedText>
@@ -242,7 +243,7 @@ export default function SelectChauffeur() {
                       <TouchableOpacity
                         className="flex-1 border-2 border-burgundy rounded-xl py-3 flex-row items-center justify-center"
                       >
-                        <Ionicons name="chatbubble" size={18} color="#720C17" />
+                        <Ionicons name="chatbubble" size={18} color={BrandColors.burgundy} />
                         <ThemedText className="text-burgundy font-semibold ml-2">
                           Message
                         </ThemedText>

@@ -8,6 +8,7 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
+import { BrandColors, useThemeColors } from '../../constants/Colors';
 
 interface PaymentMethod {
   id: string;
@@ -25,9 +26,10 @@ interface PaymentMethod {
 export default function PaymentMethodsScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const router = useRouter();
-  
-  const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
-  const backgroundColor = isDarkMode ? '#1a1a1a' : '#F5F5F0';
+  const colors = useThemeColors(isDarkMode);
+
+  const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
+  const backgroundColor = colors.altBackground;
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [selectedForDeletion, setSelectedForDeletion] = useState<string[]>([]);
 
@@ -179,12 +181,12 @@ export default function PaymentMethodsScreen() {
           
           {!isDeleteMode ? (
             <TouchableOpacity onPress={toggleDeleteMode}>
-              <Ionicons name="trash-outline" size={24} color="#EF4444" />
+              <Ionicons name="trash-outline" size={24} color={BrandColors.danger} />
             </TouchableOpacity>
           ) : (
             <View className="flex-row items-center">
               <TouchableOpacity onPress={toggleDeleteMode} className="mr-4">
-                <ThemedText className="text-gray-600">Cancel</ThemedText>
+                <ThemedText className="text-textSecondary dark:text-darkTextSecondary">Cancel</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity 
                 onPress={deleteSelectedMethods}
@@ -206,7 +208,7 @@ export default function PaymentMethodsScreen() {
               <ThemedText variant="h3" className="mb-2">
                 Manage Payment Methods
               </ThemedText>
-              <ThemedText variant="small" className="text-gray-600">
+              <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                 Add, edit, or remove payment methods for your rides. Your default method will be used automatically.
               </ThemedText>
             </View>
@@ -243,9 +245,9 @@ export default function PaymentMethodsScreen() {
                     <View className="flex-row items-center">
                       <View className="w-12 h-12 bg-secondary/10 rounded-full items-center justify-center mr-4">
                         <Ionicons 
-                          name={getPaymentIcon(method.type) as any} 
-                          size={24} 
-                          color="#BD8C5E" 
+                          name={getPaymentIcon(method.type) as any}
+                          size={24}
+                          color={BrandColors.secondary}
                         />
                       </View>
                       
@@ -262,14 +264,14 @@ export default function PaymentMethodsScreen() {
                             </View>
                           )}
                           {method.type === 'cash' && (
-                            <View className="bg-gray-200 px-2 py-1 rounded-full ml-2">
-                              <ThemedText variant="tiny" className="text-gray-600 font-semibold">
+                            <View className="bg-gray-100 dark:bg-darkSurface px-2 py-1 rounded-full ml-2">
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary font-semibold">
                                 SYSTEM
                               </ThemedText>
                             </View>
                           )}
                         </View>
-                        <ThemedText variant="small" className="text-gray-600 mt-1">
+                        <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary mt-1">
                           {method.subtitle}
                         </ThemedText>
                       </View>
@@ -287,7 +289,7 @@ export default function PaymentMethodsScreen() {
                             <Ionicons 
                               name={selectedForDeletion.includes(method.id) ? "radio-button-on" : "radio-button-off"} 
                               size={24} 
-                              color={selectedForDeletion.includes(method.id) ? "#EF4444" : "#BD8C5E"} 
+                              color={selectedForDeletion.includes(method.id) ? BrandColors.danger : BrandColors.secondary}
                             />
                           </TouchableOpacity>
                         ) : (
@@ -296,7 +298,7 @@ export default function PaymentMethodsScreen() {
                               onPress={() => setDefaultPayment(method.id)}
                               className="p-2"
                             >
-                              <Ionicons name="radio-button-off" size={20} color="#BD8C5E" />
+                              <Ionicons name="radio-button-off" size={20} color={BrandColors.secondary} />
                             </TouchableOpacity>
                           )
                         )}
@@ -315,11 +317,11 @@ export default function PaymentMethodsScreen() {
             <ThemedCard variant="elevated" className="mb-6 p-6">
               <View className="flex-row items-center mb-4">
                 <View className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full items-center justify-center mr-4">
-                  <Ionicons name="shield-checkmark" size={24} color="#10B981" />
+                  <Ionicons name="shield-checkmark" size={24} color={BrandColors.success} />
                 </View>
                 <View className="flex-1">
                   <ThemedText variant="h3">Secure Payments</ThemedText>
-                  <ThemedText variant="small" className="text-gray-600 mt-1">
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary mt-1">
                     Your payment information is encrypted and secure
                   </ThemedText>
                 </View>
@@ -327,20 +329,20 @@ export default function PaymentMethodsScreen() {
 
               <View className="space-y-2">
                 <View className="flex-row items-center mb-2">
-                  <Ionicons name="checkmark-circle" size={16} color="#10B981" />
-                  <ThemedText variant="small" className="ml-2 text-gray-700">
+                  <Ionicons name="checkmark-circle" size={16} color={BrandColors.success} />
+                  <ThemedText variant="small" className="ml-2 text-textPrimary dark:text-darkText">
                     256-bit SSL encryption
                   </ThemedText>
                 </View>
                 <View className="flex-row items-center mb-2">
-                  <Ionicons name="checkmark-circle" size={16} color="#10B981" />
-                  <ThemedText variant="small" className="ml-2 text-gray-700">
+                  <Ionicons name="checkmark-circle" size={16} color={BrandColors.success} />
+                  <ThemedText variant="small" className="ml-2 text-textPrimary dark:text-darkText">
                     PCI DSS compliant
                   </ThemedText>
                 </View>
                 <View className="flex-row items-center">
-                  <Ionicons name="checkmark-circle" size={16} color="#10B981" />
-                  <ThemedText variant="small" className="ml-2 text-gray-700">
+                  <Ionicons name="checkmark-circle" size={16} color={BrandColors.success} />
+                  <ThemedText variant="small" className="ml-2 text-textPrimary dark:text-darkText">
                     No card details stored on device
                   </ThemedText>
                 </View>
@@ -364,7 +366,7 @@ export default function PaymentMethodsScreen() {
                 <View key={index} className="flex-row items-center justify-between py-3">
                   <View className="flex-1">
                     <ThemedText className="font-semibold">{transaction.amount}</ThemedText>
-                    <ThemedText variant="small" className="text-gray-600">
+                    <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                       {transaction.date} • {transaction.method}
                     </ThemedText>
                   </View>

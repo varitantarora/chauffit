@@ -15,6 +15,7 @@ import { useAuthStore } from '../../../store/authStore';
 import { useBikerEarningsStore } from '../../../store/bikerEarningsStore';
 import { BikerTask, TaskType, TaskPriority, TaskStatus } from '../../../types/navigation';
 import BikerTaskApiService, { BikerTaskDetail } from '../../../services/api/BikerTaskApiService';
+import { BrandColors } from '../../../constants/Colors';
 
 // Helper function to map API task to UI task format
 const mapApiTaskToUITask = (apiTask: BikerTaskDetail): BikerTask => {
@@ -130,7 +131,7 @@ export default function TaskDetailsScreen() {
     return (
       <SafeAreaView className="flex-1">
         <ThemedView className="flex-1 items-center justify-center p-6">
-          <ActivityIndicator size="large" color="#BD8C5E" />
+          <ActivityIndicator size="large" color={BrandColors.secondary} />
           <ThemedText className="mt-4">Loading task details...</ThemedText>
         </ThemedView>
       </SafeAreaView>
@@ -382,7 +383,7 @@ export default function TaskDetailsScreen() {
           
           <View className="flex-1 items-center">
             <ThemedText className="font-bold text-lg">Task Details</ThemedText>
-            <ThemedText variant="caption" className="text-textSecondary">
+            <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">
               ID: {task.id.slice(-6)}
             </ThemedText>
           </View>
@@ -426,7 +427,7 @@ export default function TaskDetailsScreen() {
 
               <View className="flex-row items-center mb-3">
                 <View className="bg-primary/10 p-3 rounded-full mr-3">
-                  <Ionicons name={getTaskIcon(task.type) as any} size={24} color="#BD8C5E" />
+                  <Ionicons name={getTaskIcon(task.type) as any} size={24} color={BrandColors.secondary} />
                 </View>
                 <View className="flex-1">
                   <ThemedText className="font-bold text-xl">{task.title}</ThemedText>
@@ -453,7 +454,7 @@ export default function TaskDetailsScreen() {
                 {task.customerName && (
                   <View className="flex-row items-center justify-between mb-3">
                     <View className="flex-row items-center flex-1">
-                      <Ionicons name="person" size={20} color="#BD8C5E" />
+                      <Ionicons name="person" size={20} color={BrandColors.secondary} />
                       <View className="ml-3">
                         <ThemedText className="font-semibold">Customer</ThemedText>
                         <ThemedText variant="caption">{task.customerName}</ThemedText>
@@ -473,7 +474,7 @@ export default function TaskDetailsScreen() {
                 {task.driverName && (
                   <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center flex-1">
-                      <Ionicons name="car" size={20} color="#BD8C5E" />
+                      <Ionicons name="car" size={20} color={BrandColors.secondary} />
                       <View className="ml-3">
                         <ThemedText className="font-semibold">Driver</ThemedText>
                         <ThemedText variant="caption">{task.driverName}</ThemedText>
@@ -507,7 +508,7 @@ export default function TaskDetailsScreen() {
               <View className="p-4">
                 <View className="space-y-2">
                   <View className="flex-row items-start">
-                    <Ionicons name="location" size={16} color="#BD8C5E" />
+                    <Ionicons name="location" size={16} color={BrandColors.secondary} />
                     <View className="ml-2 flex-1">
                       <ThemedText variant="caption">PICKUP LOCATION</ThemedText>
                       <ThemedText className="text-sm">{task.pickupLocation.address}</ThemedText>
@@ -516,7 +517,7 @@ export default function TaskDetailsScreen() {
                   
                   {task.dropoffLocation && (
                     <View className="flex-row items-start">
-                      <Ionicons name="flag" size={16} color="#BD8C5E" />
+                      <Ionicons name="flag" size={16} color={BrandColors.secondary} />
                       <View className="ml-2 flex-1">
                         <ThemedText variant="caption">DROP-OFF LOCATION</ThemedText>
                         <ThemedText className="text-sm">{task.dropoffLocation.address}</ThemedText>
@@ -530,7 +531,7 @@ export default function TaskDetailsScreen() {
                   className="bg-primary/10 py-3 rounded-lg mt-3"
                 >
                   <View className="flex-row items-center justify-center">
-                    <Ionicons name="navigate" size={16} color="#BD8C5E" />
+                    <Ionicons name="navigate" size={16} color={BrandColors.secondary} />
                     <ThemedText className="ml-2 text-primary font-semibold">
                       Open in Maps
                     </ThemedText>
@@ -553,7 +554,7 @@ export default function TaskDetailsScreen() {
                         {item.quantity && `${item.quantity}x `}{item.name}
                       </ThemedText>
                       {item.description && (
-                        <ThemedText variant="caption" className="text-textSecondary">
+                        <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">
                           {item.description}
                         </ThemedText>
                       )}
@@ -691,7 +692,7 @@ function DetailRow({
 }) {
   return (
     <View className="flex-row justify-between items-center">
-      <ThemedText variant="caption" className="text-textSecondary">{label}</ThemedText>
+      <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">{label}</ThemedText>
       <ThemedText className={`font-semibold ${valueColor}`}>{value}</ThemedText>
     </View>
   );

@@ -107,7 +107,7 @@ export function BikeDetails({ bikeDetails, onUpdate, editable = false }: BikeDet
             </View>
             <View>
               <ThemedText className="font-bold text-lg">Bike Details</ThemedText>
-              <ThemedText variant="caption" className="text-gray-500">
+              <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">
                 {editedDetails.isActive ? 'Active' : 'Inactive'}
               </ThemedText>
             </View>
@@ -209,7 +209,7 @@ export function BikeDetails({ bikeDetails, onUpdate, editable = false }: BikeDet
             </View>
             <View>
               <ThemedText className="font-bold text-lg">Documents</ThemedText>
-              <ThemedText variant="caption" className="text-gray-500">
+              <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">
                 {editedDetails.documents.length} documents uploaded
               </ThemedText>
             </View>
@@ -291,7 +291,7 @@ export function BikeDetails({ bikeDetails, onUpdate, editable = false }: BikeDet
 function BikeDetailRow({ label, value }: { label: string; value: string }) {
   return (
     <View className="flex-row justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
-      <ThemedText variant="caption" className="text-gray-500">{label}</ThemedText>
+      <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">{label}</ThemedText>
       <ThemedText className="font-semibold">{value}</ThemedText>
     </View>
   );
@@ -325,7 +325,7 @@ function DocumentItem({
             <ThemedText variant="caption">{document.number}</ThemedText>
           )}
           {document.expiryDate && (
-            <ThemedText variant="caption" className="text-gray-500">
+            <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">
               Expires: {new Date(document.expiryDate).toLocaleDateString('en-IN')}
             </ThemedText>
           )}
@@ -397,7 +397,7 @@ export function BikeDetailsCompact({ bikeDetails }: { bikeDetails: BikeDetailsTy
           <ThemedText className="font-semibold">
             {bikeDetails.make} {bikeDetails.model}
           </ThemedText>
-          <ThemedText variant="caption" className="text-gray-500">
+          <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">
             {bikeDetails.registrationNumber} • {bikeDetails.engineCapacity}
           </ThemedText>
           <View className="flex-row items-center mt-1">
@@ -409,7 +409,7 @@ export function BikeDetailsCompact({ bikeDetails }: { bikeDetails: BikeDetailsTy
             }>
               {bikeDetails.isActive ? 'Active' : 'Inactive'}
             </ThemedText>
-            <ThemedText variant="caption" className="text-gray-500 ml-3">
+            <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary ml-3">
               {verifiedDocs}/{totalDocs} docs verified
             </ThemedText>
           </View>

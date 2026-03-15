@@ -7,6 +7,7 @@ import { ThemedText } from '../../components/common/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
+import { BrandColors, useThemeColors } from '../../constants/Colors';
 
 interface GuideItem {
   id: string;
@@ -22,9 +23,10 @@ interface GuideItem {
 export default function UserGuidesScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const router = useRouter();
-  
-  const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
-  const backgroundColor = isDarkMode ? '#1a1a1a' : '#F5F5F0';
+  const colors = useThemeColors(isDarkMode);
+
+  const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
+  const backgroundColor = colors.altBackground;
   
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [expandedGuide, setExpandedGuide] = useState<string>('');
@@ -212,10 +214,10 @@ export default function UserGuidesScreen() {
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'Beginner': return '#10B981';
-      case 'Intermediate': return '#F59E0B';
-      case 'Advanced': return '#EF4444';
-      default: return '#6B7280';
+      case 'Beginner': return BrandColors.success;
+      case 'Intermediate': return BrandColors.warning;
+      case 'Advanced': return BrandColors.danger;
+      default: return colors.placeholder;
     }
   };
 
@@ -249,7 +251,7 @@ export default function UserGuidesScreen() {
               <ThemedText variant="h3" className="mb-2">
                 Learn How to Use Chauffit
               </ThemedText>
-              <ThemedText variant="small" className="text-gray-600">
+              <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                 Step-by-step guides and video tutorials to help you master all features.
               </ThemedText>
             </View>
@@ -273,12 +275,12 @@ export default function UserGuidesScreen() {
                       <Ionicons 
                         name={category.icon as any} 
                         size={16} 
-                        color={selectedCategory === category.id ? '#FFFFFF' : '#BD8C5E'} 
+                        color={selectedCategory === category.id ? BrandColors.white : BrandColors.secondary}
                         style={{ marginRight: 6 }}
                       />
                       <ThemedText 
                         variant="small" 
-                        className={selectedCategory === category.id ? 'text-white' : 'text-gray-600'}
+                        className={selectedCategory === category.id ? 'text-white' : 'text-textSecondary dark:text-darkTextSecondary'}
                       >
                         {category.label}
                       </ThemedText>
@@ -303,7 +305,7 @@ export default function UserGuidesScreen() {
                   >
                     <View className="flex-row items-start">
                       <View className="w-12 h-12 bg-secondary/10 rounded-full items-center justify-center mr-4">
-                        <Ionicons name={guide.icon as any} size={24} color="#BD8C5E" />
+                        <Ionicons name={guide.icon as any} size={24} color={BrandColors.secondary} />
                       </View>
                       
                       <View className="flex-1">
@@ -318,14 +320,14 @@ export default function UserGuidesScreen() {
                           />
                         </View>
                         
-                        <ThemedText variant="small" className="text-gray-600 mb-3">
+                        <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary mb-3">
                           {guide.description}
                         </ThemedText>
                         
                         <View className="flex-row items-center">
                           <View className="flex-row items-center mr-4">
-                            <Ionicons name="time" size={14} color="#6B7280" />
-                            <ThemedText variant="tiny" className="ml-1 text-gray-500">
+                            <Ionicons name="time" size={14} color={colors.placeholder} />
+                            <ThemedText variant="tiny" className="ml-1 text-textSecondary dark:text-darkTextSecondary">
                               {guide.duration}
                             </ThemedText>
                           </View>
@@ -356,7 +358,7 @@ export default function UserGuidesScreen() {
                           <View key={index} className="flex-row mb-2">
                             <View 
                               className="w-6 h-6 rounded-full items-center justify-center mr-3 mt-0.5"
-                              style={{ backgroundColor: '#BD8C5E' }}
+                              style={{ backgroundColor: BrandColors.secondary }}
                             >
                               <ThemedText variant="tiny" className="text-white font-bold">
                                 {index + 1}
@@ -375,7 +377,7 @@ export default function UserGuidesScreen() {
                             activeOpacity={0.8}
                           >
                             <View className="flex-row items-center justify-center">
-                              <Ionicons name="play" size={16} color="#FFFFFF" />
+                              <Ionicons name="play" size={16} color={BrandColors.white} />
                               <ThemedText className="text-white ml-2 font-semibold">
                                 Watch Video
                               </ThemedText>
@@ -403,12 +405,12 @@ export default function UserGuidesScreen() {
             <ThemedCard variant="elevated" className="p-6">
               <View className="items-center">
                 <View className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full items-center justify-center mb-4">
-                  <Ionicons name="school" size={32} color="#3B82F6" />
+                  <Ionicons name="school" size={32} color={BrandColors.info} />
                 </View>
                 <ThemedText variant="h3" className="mb-2 text-center">
                   Need More Help?
                 </ThemedText>
-                <ThemedText variant="small" className="text-gray-600 text-center mb-4">
+                <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary text-center mb-4">
                   Browse our FAQ section or contact support for personalized assistance.
                 </ThemedText>
 

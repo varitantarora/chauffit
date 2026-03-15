@@ -1,26 +1,35 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { ScrollView, TouchableOpacity, View, Image, Animated, Dimensions, Modal, ActivityIndicator } from 'react-native';
+import { ScrollView, TouchableOpacity, View, Image, Animated, Dimensions, Modal, ActivityIndicator, Linking, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../../components/common/ThemedView';
 import { ThemedCard } from '../../../components/common/ThemedCard';
 import { ThemedText } from '../../../components/common/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../store/authStore';
+import { useConfigStore } from '../../../store/configStore';
 import { useRouter } from 'expo-router';
 import AmenityApiService, { Amenity, AmenityCategory } from '../../../services/api/AmenityApiService';
+import AdvertisementApiService, { Advertisement } from '../../../services/api/AdvertisementApiService';
+import { BrandColors } from '../../../constants/Colors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ServicesScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const fetchConfigs = useConfigStore((state) => state.fetchConfigs);
+  const getConfigValue = useConfigStore((state) => state.getConfigValue);
+  const showPromotions = getConfigValue('show_promotions_in_services_page') === 'true';
   const router = useRouter();
   const scrollX = useRef(new Animated.Value(0)).current;
   const [showAmenitiesModal, setShowAmenitiesModal] = useState(false);
   const [showCorporateModal, setShowCorporateModal] = useState(false);
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [isLoadingAmenities, setIsLoadingAmenities] = useState(false);
+  const [ads, setAds] = useState<Advertisement[]>([]);
+  const [isLoadingAds, setIsLoadingAds] = useState(false);
+  const [activeAdIndex, setActiveAdIndex] = useState(0);
 
-  const iconColor = isDarkMode ? '#BD8C5E' : '#720C17';
+  const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
 
   // Main service types - standardized icon buttons
   const mainServices = [
@@ -94,6 +103,17 @@ export default function ServicesScreen() {
       });
     }
   }, [showAmenitiesModal]);
+
+  useEffect(() => {
+    fetchConfigs();
+    const fetchAds = async () => {
+      setIsLoadingAds(true);
+      const response = await AdvertisementApiService.getAdvertisements('home');
+if (response.success && response.data) setAds(response.data);
+      setIsLoadingAds(false);
+    };
+    fetchAds();
+  }, []);
 
   const groupedAmenities = AmenityApiService.groupByCategory(amenities);
 
@@ -172,7 +192,7 @@ export default function ServicesScreen() {
         <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
           <ThemedCard className="items-center py-4 px-1">
             <View className="bg-secondary/10 p-3 rounded-full mb-2">
-              <Ionicons name={service.icon as any} size={24} color="#BD8C5E" />
+              <Ionicons name={service.icon as any} size={24} color={BrandColors.secondary} />
             </View>
             <ThemedText variant="caption" className="text-center font-semibold" numberOfLines={1}>
               {service.name}
@@ -212,7 +232,7 @@ export default function ServicesScreen() {
         <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
           <ThemedCard className="items-center py-3 px-1">
             <View className="bg-secondary/10 p-2 rounded-full mb-2">
-              <Ionicons name={feature.icon as any} size={20} color="#BD8C5E" />
+              <Ionicons name={feature.icon as any} size={20} color={BrandColors.secondary} />
             </View>
             <ThemedText variant="caption" className="text-center font-medium" numberOfLines={1}>
               {feature.name}
@@ -298,13 +318,13 @@ export default function ServicesScreen() {
           {/* Header */}
           <View
             style={{
-              backgroundColor: '#720C17',
+              backgroundColor: '#541201',
               paddingHorizontal: 24,
               paddingTop: 16,
               paddingBottom: 20,
               borderBottomLeftRadius: 24,
               borderBottomRightRadius: 24,
-              shadowColor: '#720C17',
+              shadowColor: '#541201',
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.25,
               shadowRadius: 8,
@@ -393,7 +413,7 @@ export default function ServicesScreen() {
                       </ThemedText>
                     </View>
                     <View className="h-10 mt-1 justify-start">
-                      <ThemedText variant="caption" className="text-center dark:text-gray-400" numberOfLines={2}>
+                      <ThemedText variant="caption" className="text-center" numberOfLines={2}>
                         {service.description}
                       </ThemedText>
                     </View>
@@ -402,6 +422,78 @@ export default function ServicesScreen() {
               ))}
             </ScrollView>
           </View>
+
+          {/* Promotions Section */}
+          {showPromotions && (isLoadingAds || ads.length > 0) && (
+            <View className="px-3 mb-6">
+              <ThemedText variant="title" className="text-lg mb-4">Promotions</ThemedText>
+              {isLoadingAds ? (
+                <View className="flex-row gap-3">
+                  <View style={{ width: 317, height: 158 }} className="rounded-xl bg-gray-200 dark:bg-gray-700" />
+                  <View style={{ width: 317, height: 158 }} className="rounded-xl bg-gray-200 dark:bg-gray-700" />
+                </View>
+              ) : (
+                <>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingHorizontal: 12 }}
+                    onMomentumScrollEnd={(e) => {
+                      const index = Math.round(e.nativeEvent.contentOffset.x / (317 + 16));
+                      setActiveAdIndex(index);
+                    }}
+                  >
+                    {ads.map((ad) => (
+                      <TouchableOpacity
+                        key={ad.id}
+                        className="mr-4"
+                        activeOpacity={0.85}
+                        onPress={() => ad.link && Linking.openURL(ad.link)}
+                        disabled={!ad.link}
+                      >
+                        <View style={{ width: 317, height: 158 }}>
+                          <View style={{
+                            width: 317, height: 158, borderRadius: 12, overflow: 'hidden',
+                            shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+                            shadowOpacity: 0.1, shadowRadius: 2, elevation: 2,
+                          }}>
+                            <Image
+                              source={{ uri: ad.image }}
+                              style={{ width: '100%', height: '100%' }}
+                              resizeMode="cover"
+                            />
+                          </View>
+                          <View style={{
+                            position: 'absolute', top: 8, right: 8,
+                            backgroundColor: 'rgba(0,0,0,0.5)',
+                            paddingHorizontal: 6, paddingVertical: 2,
+                            borderRadius: 4,
+                          }}>
+                            <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>Ad</Text>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                  {ads.length > 1 && (
+                    <View className="flex-row justify-center mt-3 gap-1">
+                      {ads.map((_, i) => (
+                        <View
+                          key={i}
+                          style={{
+                            width: i === activeAdIndex ? 16 : 6,
+                            height: 6,
+                            borderRadius: 3,
+                            backgroundColor: i === activeAdIndex ? BrandColors.burgundy : (isDarkMode ? '#555' : '#ccc'),
+                          }}
+                        />
+                      ))}
+                    </View>
+                  )}
+                </>
+              )}
+            </View>
+          )}
 
           {/* Bottom Spacing */}
           <View className="h-6" />
@@ -426,15 +518,15 @@ export default function ServicesScreen() {
               <ScrollView showsVerticalScrollIndicator={false}>
                 {isLoadingAmenities && (
                   <View className="py-8 items-center">
-                    <ActivityIndicator size="large" color="#BD8C5E" />
-                    <ThemedText className="mt-3 text-gray-500">Loading amenities...</ThemedText>
+                    <ActivityIndicator size="large" color={BrandColors.secondary} />
+                    <ThemedText className="mt-3 text-textSecondary dark:text-darkTextSecondary">Loading amenities...</ThemedText>
                   </View>
                 )}
 
                 {!isLoadingAmenities && amenities.length === 0 && (
                   <View className="py-8 items-center">
                     <Ionicons name="cafe-outline" size={40} color="#999" />
-                    <ThemedText className="mt-3 text-gray-500">No amenities available</ThemedText>
+                    <ThemedText className="mt-3 text-textSecondary dark:text-darkTextSecondary">No amenities available</ThemedText>
                   </View>
                 )}
 
@@ -450,7 +542,7 @@ export default function ServicesScreen() {
                         {items.map((item) => (
                           <View key={item.id} className="w-1/2 p-1">
                             <ThemedCard className="flex-row items-center py-3 px-3">
-                              <Ionicons name={AmenityApiService.getCategoryIcon(category) as any} size={20} color="#BD8C5E" />
+                              <Ionicons name={AmenityApiService.getCategoryIcon(category) as any} size={20} color={BrandColors.secondary} />
                               <View className="ml-2 flex-1">
                                 <ThemedText variant="small" numberOfLines={1}>{item.name}</ThemedText>
                                 <ThemedText variant="tiny" className="text-secondary">{AmenityApiService.formatPrice(item.price)}</ThemedText>
@@ -502,12 +594,12 @@ export default function ServicesScreen() {
               <ScrollView showsVerticalScrollIndicator={false}>
                 <View className="items-center mb-6">
                   <View className="bg-secondary/10 p-4 rounded-full mb-3">
-                    <Ionicons name="business" size={40} color="#BD8C5E" />
+                    <Ionicons name="business" size={40} color={BrandColors.secondary} />
                   </View>
                   <ThemedText variant="h3" className="text-center mb-2">
                     Elevate Your Business Travel
                   </ThemedText>
-                  <ThemedText variant="small" className="text-center text-textSecondary">
+                  <ThemedText variant="small" className="text-center text-textSecondary dark:text-darkTextSecondary">
                     Professional chauffeur services tailored for corporate needs
                   </ThemedText>
                 </View>
@@ -517,11 +609,11 @@ export default function ServicesScreen() {
                   {corporateBenefits.map((benefit, index) => (
                     <ThemedCard key={index} className="flex-row items-center p-4 mb-3">
                       <View className="bg-secondary/10 p-2 rounded-full">
-                        <Ionicons name={benefit.icon as any} size={24} color="#BD8C5E" />
+                        <Ionicons name={benefit.icon as any} size={24} color={BrandColors.secondary} />
                       </View>
                       <View className="ml-4 flex-1">
                         <ThemedText className="font-semibold">{benefit.title}</ThemedText>
-                        <ThemedText variant="caption" className="text-textSecondary">
+                        <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">
                           {benefit.desc}
                         </ThemedText>
                       </View>
@@ -533,7 +625,7 @@ export default function ServicesScreen() {
                   <ThemedText className="font-semibold text-burgundy mb-2">
                     Get Started Today
                   </ThemedText>
-                  <ThemedText variant="small" className="text-textSecondary">
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                     Contact our corporate team for customized packages and volume discounts.
                   </ThemedText>
                 </ThemedCard>

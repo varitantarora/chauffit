@@ -7,6 +7,7 @@ import { ThemedText } from '../../components/common/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
+import { BrandColors, useThemeColors } from '../../constants/Colors';
 
 interface SupportRequest {
   id: string;
@@ -34,10 +35,11 @@ type StatusFilter = 'all' | 'open' | 'in-progress' | 'resolved' | 'closed';
 
 export default function RequestStatusScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const colors = useThemeColors(isDarkMode);
   const router = useRouter();
   
-  const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
-  const backgroundColor = isDarkMode ? '#1a1a1a' : '#F5F5F0';
+  const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
+  const backgroundColor = colors.altBackground;
   
   const [refreshing, setRefreshing] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<StatusFilter>('all');
@@ -159,8 +161,8 @@ export default function RequestStatusScreen() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'open': return '#3B82F6';
-      case 'in-progress': return '#F59E0B';
-      case 'resolved': return '#10B981';
+      case 'in-progress': return BrandColors.warning;
+      case 'resolved': return BrandColors.success;
       case 'closed': return '#6B7280';
       default: return '#6B7280';
     }
@@ -168,9 +170,9 @@ export default function RequestStatusScreen() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return '#EF4444';
-      case 'medium': return '#F59E0B';
-      case 'low': return '#10B981';
+      case 'high': return BrandColors.danger;
+      case 'medium': return BrandColors.warning;
+      case 'low': return BrandColors.success;
       default: return '#6B7280';
     }
   };
@@ -230,7 +232,7 @@ export default function RequestStatusScreen() {
           </View>
           
           <TouchableOpacity onPress={() => router.push('/(customer)/submit-request')}>
-            <Ionicons name="add-circle" size={24} color="#BD8C5E" />
+            <Ionicons name="add-circle" size={24} color={BrandColors.secondary} />
           </TouchableOpacity>
         </View>
 
@@ -245,7 +247,7 @@ export default function RequestStatusScreen() {
               <ThemedText variant="h3" className="mb-2">
                 Track Your Support Requests
               </ThemedText>
-              <ThemedText variant="small" className="text-gray-600">
+              <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                 View the status of your submitted requests and responses from our support team.
               </ThemedText>
             </View>
@@ -269,7 +271,7 @@ export default function RequestStatusScreen() {
                       <View className="flex-row items-center">
                         <ThemedText 
                           variant="small" 
-                          className={selectedFilter === filter.id ? 'text-white' : 'text-gray-600'}
+                          className={selectedFilter === filter.id ? 'text-white' : 'text-textSecondary dark:text-darkTextSecondary'}
                         >
                           {filter.label}
                         </ThemedText>
@@ -277,7 +279,7 @@ export default function RequestStatusScreen() {
                           <View 
                             className="ml-2 px-2 py-0.5 rounded-full"
                             style={{ 
-                              backgroundColor: selectedFilter === filter.id ? 'rgba(255,255,255,0.2)' : '#BD8C5E' 
+                              backgroundColor: selectedFilter === filter.id ? 'rgba(255,255,255,0.2)' : BrandColors.secondary 
                             }}
                           >
                             <ThemedText 
@@ -362,16 +364,16 @@ export default function RequestStatusScreen() {
                           </View>
                           
                           <View className="flex-row items-center justify-between">
-                            <ThemedText variant="small" className="text-gray-600">
+                            <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                               {formatDate(request.createdAt)} • {formatTime(request.createdAt)}
                             </ThemedText>
-                            <ThemedText variant="tiny" className="text-gray-500">
+                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                               #{request.ticketId}
                             </ThemedText>
                           </View>
                           
                           {request.assignedAgent && (
-                            <ThemedText variant="tiny" className="text-gray-500 mt-1">
+                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary mt-1">
                               Assigned to: {request.assignedAgent}
                             </ThemedText>
                           )}
@@ -410,7 +412,7 @@ export default function RequestStatusScreen() {
                                     <Ionicons 
                                       name={response.isFromSupport ? "person-circle" : "person"} 
                                       size={16} 
-                                      color={response.isFromSupport ? "#3B82F6" : "#6B7280"} 
+                                      color={response.isFromSupport ? BrandColors.info : "#6B7280"} 
                                     />
                                     <ThemedText variant="tiny" className="ml-2 font-semibold">
                                       {response.isFromSupport 
@@ -418,7 +420,7 @@ export default function RequestStatusScreen() {
                                         : 'You'
                                       }
                                     </ThemedText>
-                                    <ThemedText variant="tiny" className="ml-auto text-gray-500">
+                                    <ThemedText variant="tiny" className="ml-auto text-textSecondary dark:text-darkTextSecondary">
                                       {formatDate(response.timestamp)} • {formatTime(response.timestamp)}
                                     </ThemedText>
                                   </View>
@@ -467,7 +469,7 @@ export default function RequestStatusScreen() {
                   <ThemedText variant="h3" className="mb-2">
                     No Requests Found
                   </ThemedText>
-                  <ThemedText variant="small" className="text-gray-600 text-center mb-4">
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary text-center mb-4">
                     {selectedFilter === 'all' 
                       ? "You haven't submitted any support requests yet."
                       : `No ${selectedFilter.replace('-', ' ')} requests found.`

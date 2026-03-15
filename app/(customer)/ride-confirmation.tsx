@@ -9,6 +9,7 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { BrandColors } from '../../constants/Colors';
 
 export default function RideConfirmationScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
@@ -19,7 +20,7 @@ export default function RideConfirmationScreen() {
   const [driverPreference, setDriverPreference] = useState<'luxury' | 'standard'>('standard');
   const [slideValue] = useState(new Animated.Value(0));
   
-  const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
+  const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
   const screenWidth = Dimensions.get('window').width;
 
   const creditsApplied = parseFloat(params.creditsApplied as string || '0');
@@ -92,7 +93,7 @@ export default function RideConfirmationScreen() {
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
         {/* Header */}
-        <View className="flex-row items-center justify-between px-6 py-4 border-b border-gray-200">
+        <View className="flex-row items-center justify-between px-6 py-4 border-b border-border dark:border-darkBorder">
           <View className="flex-row items-center">
             <TouchableOpacity onPress={() => router.back()} className="mr-3">
               <Ionicons name="arrow-back" size={24} color={iconColor} />
@@ -111,7 +112,7 @@ export default function RideConfirmationScreen() {
               <View className="flex-row mb-3">
                 <Ionicons name="location" size={20} color={iconColor} className="mt-1" />
                 <View className="ml-3 flex-1">
-                  <ThemedText variant="small" className="text-gray-600">From</ThemedText>
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">From</ThemedText>
                   <ThemedText>{tripDetails.pickup}</ThemedText>
                 </View>
               </View>
@@ -121,7 +122,7 @@ export default function RideConfirmationScreen() {
                 <View key={index} className="flex-row mb-3">
                   <Ionicons name="flag" size={20} color={iconColor} className="mt-1" />
                   <View className="ml-3 flex-1">
-                    <ThemedText variant="small" className="text-gray-600">Stop {index + 1}</ThemedText>
+                    <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Stop {index + 1}</ThemedText>
                     <ThemedText>{stop}</ThemedText>
                   </View>
                 </View>
@@ -131,26 +132,26 @@ export default function RideConfirmationScreen() {
               <View className="flex-row mb-3">
                 <Ionicons name="navigate" size={20} color={iconColor} className="mt-1" />
                 <View className="ml-3 flex-1">
-                  <ThemedText variant="small" className="text-gray-600">To</ThemedText>
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">To</ThemedText>
                   <ThemedText>{tripDetails.destination}</ThemedText>
                 </View>
               </View>
 
               <View className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
                 <View className="flex-row justify-between mb-2">
-                  <ThemedText variant="small" className="text-gray-600">When</ThemedText>
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">When</ThemedText>
                   <ThemedText variant="small">{tripDetails.when}</ThemedText>
                 </View>
                 <View className="flex-row justify-between mb-2">
-                  <ThemedText variant="small" className="text-gray-600">Type</ThemedText>
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Type</ThemedText>
                   <ThemedText variant="small">{tripDetails.type}</ThemedText>
                 </View>
                 <View className="flex-row justify-between mb-2">
-                  <ThemedText variant="small" className="text-gray-600">Duration</ThemedText>
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Duration</ThemedText>
                   <ThemedText variant="small">{tripDetails.duration}</ThemedText>
                 </View>
                 <View className="flex-row justify-between">
-                  <ThemedText variant="small" className="text-gray-600">Distance</ThemedText>
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Distance</ThemedText>
                   <ThemedText variant="small">{tripDetails.distance}</ThemedText>
                 </View>
               </View>
@@ -161,19 +162,19 @@ export default function RideConfirmationScreen() {
               <ThemedText variant="h3" className="mb-4">Driver & Vehicle</ThemedText>
               
               <View className="flex-row items-center mb-4">
-                <View className="w-16 h-16 bg-gray-200 rounded-full mr-3 items-center justify-center">
+                <View className="w-16 h-16 bg-gray-100 dark:bg-darkSurface rounded-full mr-3 items-center justify-center">
                   <Ionicons name="person" size={32} color={iconColor} />
                 </View>
                 <View className="flex-1">
                   <View className="flex-row items-center">
                     <ThemedText variant="h3">{driverDetails.name}</ThemedText>
                     <View className="flex-row items-center ml-2">
-                      <Ionicons name="star" size={16} color="#F59E0B" />
+                      <Ionicons name="star" size={16} color={BrandColors.warning} />
                       <ThemedText variant="small" className="ml-1">{driverDetails.rating}</ThemedText>
                     </View>
                   </View>
-                  <ThemedText variant="small" className="text-gray-600">{driverDetails.type}</ThemedText>
-                  <ThemedText variant="small" className="text-gray-600">{driverDetails.experience}</ThemedText>
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">{driverDetails.type}</ThemedText>
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">{driverDetails.experience}</ThemedText>
                 </View>
               </View>
 
@@ -182,7 +183,7 @@ export default function RideConfirmationScreen() {
                   <Ionicons name="car" size={20} color={iconColor} />
                   <View className="ml-3">
                     <ThemedText>{driverDetails.vehicle}</ThemedText>
-                    <ThemedText variant="small" className="text-gray-600">{driverDetails.vehicleDetails}</ThemedText>
+                    <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">{driverDetails.vehicleDetails}</ThemedText>
                   </View>
                 </View>
               </View>
@@ -195,7 +196,7 @@ export default function RideConfirmationScreen() {
                     className={`flex-1 p-3 rounded-xl border mr-2 ${
                       driverPreference === 'luxury' 
                         ? 'bg-burgundy border-burgundy' 
-                        : 'border-gray-300'
+                        : 'border-border dark:border-darkBorder'
                     }`}
                   >
                     <ThemedText 
@@ -210,7 +211,7 @@ export default function RideConfirmationScreen() {
                     className={`flex-1 p-3 rounded-xl border ${
                       driverPreference === 'standard' 
                         ? 'bg-burgundy border-burgundy' 
-                        : 'border-gray-300'
+                        : 'border-border dark:border-darkBorder'
                     }`}
                   >
                     <ThemedText 
@@ -230,31 +231,31 @@ export default function RideConfirmationScreen() {
               
               <View className="space-y-2">
                 <View className="flex-row justify-between mb-2">
-                  <ThemedText variant="small" className="text-gray-600">Base fare</ThemedText>
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Base fare</ThemedText>
                   <ThemedText variant="small">₹{fareBreakdown.baseFare}.00</ThemedText>
                 </View>
                 <View className="flex-row justify-between mb-2">
-                  <ThemedText variant="small" className="text-gray-600">Distance charge</ThemedText>
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Distance charge</ThemedText>
                   <ThemedText variant="small">₹{fareBreakdown.distanceCharge}.00</ThemedText>
                 </View>
                 <View className="flex-row justify-between mb-2">
-                  <ThemedText variant="small" className="text-gray-600">Time charge</ThemedText>
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Time charge</ThemedText>
                   <ThemedText variant="small">₹{fareBreakdown.timeCharge}.00</ThemedText>
                 </View>
                 <View className="flex-row justify-between mb-2">
-                  <ThemedText variant="small" className="text-gray-600">Stop fee</ThemedText>
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Stop fee</ThemedText>
                   <ThemedText variant="small">₹{fareBreakdown.stopFee}.00</ThemedText>
                 </View>
                 <View className="flex-row justify-between mb-2">
-                  <ThemedText variant="small" className="text-gray-600">Surge (1.3x)</ThemedText>
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Surge (1.3x)</ThemedText>
                   <ThemedText variant="small">₹{fareBreakdown.surge}.00</ThemedText>
                 </View>
                 <View className="flex-row justify-between mb-2">
-                  <ThemedText variant="small" className="text-gray-600">Amenities</ThemedText>
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Amenities</ThemedText>
                   <ThemedText variant="small">₹{fareBreakdown.amenities}.00</ThemedText>
                 </View>
                 <View className="flex-row justify-between mb-3">
-                  <ThemedText variant="small" className="text-gray-600">Service fee</ThemedText>
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Service fee</ThemedText>
                   <ThemedText variant="small">₹{fareBreakdown.serviceFee}.00</ThemedText>
                 </View>
                 
@@ -264,7 +265,7 @@ export default function RideConfirmationScreen() {
                     <ThemedText>₹{totals.subtotal.toFixed(2)}</ThemedText>
                   </View>
                   <View className="flex-row justify-between mb-3">
-                    <ThemedText variant="small" className="text-gray-600">Taxes (18%)</ThemedText>
+                    <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Taxes (18%)</ThemedText>
                     <ThemedText variant="small">₹{totals.taxes.toFixed(2)}</ThemedText>
                   </View>
                   {loyaltyDiscountPct > 0 && (
@@ -300,7 +301,7 @@ export default function RideConfirmationScreen() {
                 <ThemedText variant="small" className="text-burgundy">Change</ThemedText>
               </TouchableOpacity>
 
-              <ThemedText variant="small" className="text-gray-600 mt-2">
+              <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary mt-2">
                 Estimated arrival time: 15 min
               </ThemedText>
             </ThemedCard>
@@ -309,7 +310,7 @@ export default function RideConfirmationScreen() {
             <SlideToBookButton onSlideComplete={handleSlideComplete} />
             
             <TouchableOpacity onPress={() => router.back()} className="py-3">
-              <ThemedText className="text-center text-gray-600">Cancel</ThemedText>
+              <ThemedText className="text-center text-textSecondary dark:text-darkTextSecondary">Cancel</ThemedText>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -412,7 +413,7 @@ const SlideToBookButton = ({ onSlideComplete }: { onSlideComplete: () => void })
 
   const animatedBackgroundColor = backgroundColor.interpolate({
     inputRange: [0, 1],
-    outputRange: ['#BD8C5E', '#720C17'] // light burgundy to dark burgundy
+    outputRange: [BrandColors.secondary, BrandColors.burgundy]
   });
 
   return (
@@ -466,9 +467,9 @@ const SlideToBookButton = ({ onSlideComplete }: { onSlideComplete: () => void })
             }}
           >
             {isUnlocked ? (
-              <Ionicons name="checkmark" size={24} color="#720C17" />
+              <Ionicons name="checkmark" size={24} color={BrandColors.burgundy} />
             ) : (
-              <Ionicons name="chevron-forward" size={24} color="#720C17" />
+              <Ionicons name="chevron-forward" size={24} color={BrandColors.burgundy} />
             )}
           </Animated.View>
         </PanGestureHandler>
@@ -540,14 +541,14 @@ const BookingConfirmationModal = ({
         {/* Success Icon */}
         <View className="items-center mb-6">
           <View className="w-20 h-20 bg-green-100 rounded-full items-center justify-center mb-4">
-            <Ionicons name="checkmark-circle" size={48} color="#10B981" />
+            <Ionicons name="checkmark-circle" size={48} color={BrandColors.success} />
           </View>
           
           <ThemedText variant="h2" className="text-center mb-2">
             Booking Confirmed!
           </ThemedText>
           
-          <ThemedText variant="small" className="text-center text-gray-600 mb-4">
+          <ThemedText variant="small" className="text-center text-textSecondary dark:text-darkTextSecondary mb-4">
             Your chauffeur will arrive in 15-20 minutes. You'll receive updates via SMS.
           </ThemedText>
         </View>
@@ -555,15 +556,15 @@ const BookingConfirmationModal = ({
         {/* Booking Details */}
         <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mb-6">
           <View className="flex-row justify-between items-center mb-2">
-            <ThemedText variant="small" className="text-gray-600">Driver</ThemedText>
+            <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Driver</ThemedText>
             <ThemedText variant="small">Rajesh Kumar</ThemedText>
           </View>
           <View className="flex-row justify-between items-center mb-2">
-            <ThemedText variant="small" className="text-gray-600">Vehicle</ThemedText>
+            <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Vehicle</ThemedText>
             <ThemedText variant="small">BMW X5 (ABC123)</ThemedText>
           </View>
           <View className="flex-row justify-between items-center">
-            <ThemedText variant="small" className="text-gray-600">ETA</ThemedText>
+            <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">ETA</ThemedText>
             <ThemedText variant="small" className="text-burgundy font-semibold">15-20 mins</ThemedText>
           </View>
         </View>
@@ -576,7 +577,7 @@ const BookingConfirmationModal = ({
         />
         
         <TouchableOpacity onPress={handleClose} className="py-3">
-          <ThemedText className="text-center text-gray-600">Close</ThemedText>
+          <ThemedText className="text-center text-textSecondary dark:text-darkTextSecondary">Close</ThemedText>
         </TouchableOpacity>
       </Animated.View>
     </Animated.View>

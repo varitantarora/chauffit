@@ -3,6 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '../../common/ThemedText';
 import { useI18nStore } from '../../../store/i18nStore';
+import { BrandColors } from '../../../constants/Colors';
 import { TrainingSession } from '../../../services/api/DriverApiService';
 
 interface TrainingCertificateProps {
@@ -49,7 +50,7 @@ export function TrainingCertificate({
   // Gold & burgundy colour palette (works for both light/dark)
   const gold = '#C9952D';
   const goldLight = '#F5D78E';
-  const burgundy = '#720C17';
+  const burgundy = BrandColors.burgundy;
   const bgColor = isDarkMode ? '#1C1208' : '#FFFBF0';
   const borderColor = isDarkMode ? '#6B4C10' : '#D4A853';
   const textPrimary = isDarkMode ? '#F5DFA0' : '#3D2700';

@@ -9,6 +9,7 @@ import { ThemedText } from '../../../components/common/ThemedText';
 import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { useAuthStore } from '../../../store/authStore';
 import DriverApiService from '../../../services/api/DriverApiService';
+import { BrandColors } from '../../../constants/Colors';
 
 export default function TrainingFailedScreen() {
   const router = useRouter();
@@ -109,7 +110,7 @@ export default function TrainingFailedScreen() {
           <View className="px-6 items-center">
             {/* Icon */}
             <View className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full items-center justify-center mb-6">
-              <Ionicons name="close-circle" size={48} color="#EF4444" />
+              <Ionicons name="close-circle" size={48} color={BrandColors.danger} />
             </View>
 
             {/* Title */}
@@ -126,7 +127,7 @@ export default function TrainingFailedScreen() {
               <ThemedCard className="p-4 mb-6 w-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center flex-1">
-                    <Ionicons name="time" size={24} color="#F59E0B" />
+                    <Ionicons name="time" size={24} color={BrandColors.warning} />
                     <View className="ml-3 flex-1">
                       <ThemedText className="font-bold text-amber-700 dark:text-amber-300">
                         Come Back Soon
@@ -145,7 +146,7 @@ export default function TrainingFailedScreen() {
             {/* Info Card */}
             <ThemedCard className="p-4 mb-6 w-full">
               <View className="flex-row items-start">
-                <Ionicons name="information-circle" size={20} color="#BD8C5E" />
+                <Ionicons name="information-circle" size={20} color={BrandColors.secondary} />
                 <View className="ml-3 flex-1">
                   <ThemedText className="font-bold mb-1">Retake Policy</ThemedText>
                   <ThemedText variant="secondary" className="text-sm">
@@ -158,7 +159,7 @@ export default function TrainingFailedScreen() {
             {/* Tips Card */}
             <ThemedCard className="p-4 mb-8 w-full">
               <View className="flex-row items-center mb-3">
-                <Ionicons name="bulb" size={20} color="#BD8C5E" />
+                <Ionicons name="bulb" size={20} color={BrandColors.secondary} />
                 <ThemedText className="font-bold ml-2">Tips for Next Time</ThemedText>
               </View>
               <View className="space-y-2">

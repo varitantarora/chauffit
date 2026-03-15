@@ -18,6 +18,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useLoyaltyStore } from '../../store/loyaltyStore';
 import LoyaltyApiService, { CreditTransaction, ReferralEvent } from '../../services/api/LoyaltyApiService';
 import { useRouter } from 'expo-router';
+import { BrandColors } from '../../constants/Colors';
 
 export default function WalletScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
@@ -36,7 +37,7 @@ export default function WalletScreen() {
     fetchProfile,
   } = useLoyaltyStore();
 
-  const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
+  const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
 
   const [refreshing, setRefreshing] = React.useState(false);
 
@@ -70,11 +71,11 @@ export default function WalletScreen() {
   const getReferralStatusColor = (status: ReferralEvent['status']) => {
     switch (status) {
       case 'pending':
-        return '#F59E0B';
+        return BrandColors.warning;
       case 'completed':
         return '#3B82F6';
       case 'rewarded':
-        return '#10B981';
+        return BrandColors.success;
       default:
         return '#6B7280';
     }
@@ -109,7 +110,7 @@ export default function WalletScreen() {
     <View className="flex-row items-center justify-between py-3 border-b border-gray-100 dark:border-darkBorder">
       <View className="flex-1">
         <ThemedText variant="small" className="font-semibold">{item.referred_email}</ThemedText>
-        <ThemedText variant="tiny" className="text-gray-500">{formatDate(item.created_at)}</ThemedText>
+        <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">{formatDate(item.created_at)}</ThemedText>
       </View>
       <View
         className="px-3 py-1 rounded-full"
@@ -128,7 +129,7 @@ export default function WalletScreen() {
 
   const renderTransactionItem = ({ item }: { item: CreditTransaction }) => {
     const isPositive = item.amount > 0;
-    const amountColor = isPositive ? '#10B981' : '#EF4444';
+    const amountColor = isPositive ? BrandColors.success : BrandColors.danger;
 
     return (
       <View className="flex-row items-center justify-between py-3 border-b border-gray-100 dark:border-darkBorder">
@@ -146,7 +147,7 @@ export default function WalletScreen() {
           <ThemedText variant="small" className="font-semibold">
             {item.description || LoyaltyApiService.getTransactionTypeLabel(item.transaction_type)}
           </ThemedText>
-          <ThemedText variant="tiny" className="text-gray-500">{formatDate(item.created_at)}</ThemedText>
+          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">{formatDate(item.created_at)}</ThemedText>
         </View>
         <ThemedText className="font-bold" style={{ color: amountColor }}>
           {isPositive ? '+' : ''}₹{Math.abs(item.amount).toFixed(2)}
@@ -181,7 +182,7 @@ export default function WalletScreen() {
               <ThemedText variant="h3" className="mb-3">Your Tier</ThemedText>
 
               {isLoadingProfile && !profile ? (
-                <ActivityIndicator size="small" color="#BD8C5E" />
+                <ActivityIndicator size="small" color={BrandColors.secondary} />
               ) : error && !profile ? (
                 <View className="items-center py-4">
                   <ThemedText variant="small" className="text-red-500 mb-3">{error}</ThemedText>
@@ -200,7 +201,7 @@ export default function WalletScreen() {
                       className="px-4 py-2 rounded-full mr-3"
                       style={{ backgroundColor: LoyaltyApiService.getTierColor(profile.tier) }}
                     >
-                      <ThemedText className="font-bold text-gray-800">
+                      <ThemedText className="font-bold text-textPrimary dark:text-darkText">
                         {LoyaltyApiService.getTierLabel(profile.tier)}
                       </ThemedText>
                     </View>
@@ -224,16 +225,16 @@ export default function WalletScreen() {
                   <View className="flex-row">
                     <View className="flex-1 items-center p-3 bg-gray-50 dark:bg-darkSurface rounded-xl mr-2">
                       <ThemedText variant="h2" className="text-burgundy">{profile.total_completed_trips}</ThemedText>
-                      <ThemedText variant="tiny" className="text-gray-500 text-center">Total Trips</ThemedText>
+                      <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary text-center">Total Trips</ThemedText>
                     </View>
                     <View className="flex-1 items-center p-3 bg-gray-50 dark:bg-darkSurface rounded-xl">
                       <ThemedText variant="h2" className="text-burgundy">{profile.monthly_trip_count}</ThemedText>
-                      <ThemedText variant="tiny" className="text-gray-500 text-center">This Month</ThemedText>
+                      <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary text-center">This Month</ThemedText>
                     </View>
                   </View>
                 </>
               ) : (
-                <ThemedText variant="small" className="text-gray-500">No loyalty data available.</ThemedText>
+                <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">No loyalty data available.</ThemedText>
               )}
             </ThemedCard>
 
@@ -252,7 +253,7 @@ export default function WalletScreen() {
                   </TouchableOpacity>
                 </View>
               ) : (
-                <ActivityIndicator size="small" color="#BD8C5E" />
+                <ActivityIndicator size="small" color={BrandColors.secondary} />
               )}
             </ThemedCard>
 
@@ -265,7 +266,7 @@ export default function WalletScreen() {
                   {/* Code Display */}
                   <View className="flex-row items-center justify-between mb-4 p-3 bg-gray-50 dark:bg-darkSurface rounded-xl">
                     <View>
-                      <ThemedText variant="tiny" className="text-gray-500">Your Code</ThemedText>
+                      <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Your Code</ThemedText>
                       <ThemedText variant="h3" className="font-mono tracking-widest">
                         {profile.referral_code}
                       </ThemedText>
@@ -275,7 +276,7 @@ export default function WalletScreen() {
                         onPress={handleCopyCode}
                         className="w-10 h-10 bg-secondary/20 rounded-full items-center justify-center mr-2"
                       >
-                        <Ionicons name="copy-outline" size={18} color="#BD8C5E" />
+                        <Ionicons name="copy-outline" size={18} color={BrandColors.secondary} />
                       </TouchableOpacity>
                       <TouchableOpacity
                         onPress={handleShareCode}
@@ -288,7 +289,7 @@ export default function WalletScreen() {
 
                   {/* Referral List */}
                   {isLoadingReferrals ? (
-                    <ActivityIndicator size="small" color="#BD8C5E" />
+                    <ActivityIndicator size="small" color={BrandColors.secondary} />
                   ) : referrals.length > 0 ? (
                     <>
                       <ThemedText variant="small" className="font-semibold mb-2">
@@ -302,13 +303,13 @@ export default function WalletScreen() {
                       />
                     </>
                   ) : (
-                    <ThemedText variant="small" className="text-gray-500 text-center py-3">
+                    <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary text-center py-3">
                       No referrals yet. Share your code to earn rewards!
                     </ThemedText>
                   )}
                 </>
               ) : (
-                <ActivityIndicator size="small" color="#BD8C5E" />
+                <ActivityIndicator size="small" color={BrandColors.secondary} />
               )}
             </ThemedCard>
 
@@ -317,7 +318,7 @@ export default function WalletScreen() {
               <ThemedText variant="h3" className="mb-3">Transaction History</ThemedText>
 
               {isLoadingTransactions ? (
-                <ActivityIndicator size="small" color="#BD8C5E" />
+                <ActivityIndicator size="small" color={BrandColors.secondary} />
               ) : transactions.length > 0 ? (
                 <ThemedCard className="p-4">
                   <FlatList
@@ -329,8 +330,8 @@ export default function WalletScreen() {
                 </ThemedCard>
               ) : (
                 <ThemedCard className="items-center py-8">
-                  <Ionicons name="receipt-outline" size={32} color="#9CA3AF" />
-                  <ThemedText variant="small" className="text-gray-500 mt-2 text-center">
+                  <Ionicons name="receipt-outline" size={32} color={BrandColors.secondary} />
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary mt-2 text-center">
                     No transactions yet.
                   </ThemedText>
                 </ThemedCard>

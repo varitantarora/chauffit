@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { FlatList, View, Pressable, RefreshControl } from 'react-native';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { FlatList, View, Pressable, RefreshControl, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,7 +8,7 @@ import { StatusBadge } from '../../../components/admin/StatusBadge';
 import { FilterPills } from '../../../components/admin/FilterPills';
 import { useAdminStore } from '../../../store/adminStore';
 import { useAuthStore } from '../../../store/authStore';
-import { LightColors, DarkColors } from '../../../constants/Colors';
+import { LightColors, DarkColors, useThemeColors} from '../../../constants/Colors';
 import { AdminUser } from '../../../services/api/AdminApiService';
 
 const typeFilters = [
@@ -34,6 +34,7 @@ export default function AdminUsers() {
   const { users, usersLoading, fetchUsers } = useAdminStore();
   const [typeFilter, setTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const params: any = {};
@@ -48,6 +49,19 @@ export default function AdminUsers() {
     if (statusFilter) params.status = statusFilter;
     fetchUsers(Object.keys(params).length > 0 ? params : undefined);
   }, [typeFilter, statusFilter]);
+
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery.trim()) return users;
+    const q = searchQuery.toLowerCase().trim();
+    return users.filter((u) => {
+      const name = (u.full_name || `${u.first_name} ${u.last_name}`).toLowerCase();
+      return (
+        name.includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        (u.phone_number || '').toLowerCase().includes(q)
+      );
+    });
+  }, [users, searchQuery]);
 
   const renderUser = ({ item }: { item: AdminUser }) => (
     <Pressable
@@ -72,11 +86,33 @@ export default function AdminUsers() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <View className="px-4 pt-4">
         <ThemedText variant="h2" className="mb-4">Users</ThemedText>
+        <View
+          className="flex-row items-center rounded-xl px-3 mb-3"
+          style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}
+        >
+          <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+          <TextInput
+            className="flex-1 py-2.5 px-2 text-sm"
+            style={{ color: colors.text }}
+            placeholder="Search by name, email or phone..."
+            placeholderTextColor={colors.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+            clearButtonMode="while-editing"
+          />
+          {searchQuery.length > 0 && (
+            <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+              <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
+            </Pressable>
+          )}
+        </View>
         <FilterPills options={typeFilters} selected={typeFilter} onSelect={setTypeFilter} />
         <FilterPills options={statusFilters} selected={statusFilter} onSelect={setStatusFilter} />
       </View>
       <FlatList
-        data={users}
+        data={filteredUsers}
         keyExtractor={(item) => item.id}
         renderItem={renderUser}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}

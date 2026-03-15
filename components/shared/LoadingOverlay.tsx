@@ -98,7 +98,7 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
         </Text>
       )}
       {subMessage && (
-        <Text className="text-sm text-gray-600 mt-2 text-center">
+        <Text className="text-sm text-textSecondary dark:text-darkTextSecondary mt-2 text-center">
           {subMessage}
         </Text>
       )}
@@ -129,7 +129,7 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
         </Text>
       )}
       {subMessage && (
-        <Text className="text-sm text-gray-600 mt-2 text-center">
+        <Text className="text-sm text-textSecondary dark:text-darkTextSecondary mt-2 text-center">
           {subMessage}
         </Text>
       )}
@@ -177,7 +177,7 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
           </Text>
         )}
         {subMessage && (
-          <Text className="text-sm text-gray-600 mt-2 text-center">
+          <Text className="text-sm text-textSecondary dark:text-darkTextSecondary mt-2 text-center">
             {subMessage}
           </Text>
         )}
@@ -187,7 +187,7 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
 
   const renderProgressBar = () => (
     <View className="w-full px-8">
-      <View className="bg-gray-200 h-2 rounded-full overflow-hidden">
+      <View className="bg-gray-100 dark:bg-darkSurface h-2 rounded-full overflow-hidden">
         <Animated.View
           className="h-full rounded-full"
           style={[
@@ -201,7 +201,7 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
           ]}
         />
       </View>
-      <Text className="text-center text-sm text-gray-600 mt-2">
+      <Text className="text-center text-sm text-textSecondary dark:text-darkTextSecondary mt-2">
         {Math.round(progress)}%
       </Text>
     </View>
@@ -378,7 +378,7 @@ export const InlineLoader: React.FC<{
     <View className={`items-center justify-center ${className}`}>
       {renderInlineLoader()}
       {message && (
-        <Text className="text-sm text-gray-600 mt-2 text-center">
+        <Text className="text-sm text-textSecondary dark:text-darkTextSecondary mt-2 text-center">
           {message}
         </Text>
       )}

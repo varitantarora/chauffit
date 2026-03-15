@@ -8,6 +8,7 @@ import { ThemedCard } from '../../../components/common/ThemedCard';
 import { ThemedText } from '../../../components/common/ThemedText';
 import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { useAuthStore } from '../../../store/authStore';
+import { BrandColors } from '../../../constants/Colors';
 
 interface WithdrawalMethod {
   id: string;
@@ -151,7 +152,7 @@ export default function WithdrawEarningsScreen() {
             {/* Withdrawal Options Header */}
             <View className="py-6">
               <View className="flex-row items-center mb-4">
-                <Ionicons name="card" size={20} color="#BD8C5E" />
+                <Ionicons name="card" size={20} color={BrandColors.secondary} />
                 <ThemedText className="font-bold ml-2">WITHDRAWAL OPTIONS</ThemedText>
               </View>
 
@@ -173,14 +174,14 @@ export default function WithdrawEarningsScreen() {
                           <Ionicons 
                             name={method.icon as any} 
                             size={20} 
-                            color={selectedMethod === method.id ? "#720C17" : "#BD8C5E"} 
+                            color={selectedMethod === method.id ? BrandColors.burgundy : BrandColors.secondary} 
                           />
                           <ThemedText className={`font-bold ml-3 ${selectedMethod === method.id ? 'text-burgundy' : ''}`}>
                             {method.name}
                           </ThemedText>
                         </View>
                         {selectedMethod === method.id && (
-                          <Ionicons name="checkmark-circle" size={20} color="#720C17" />
+                          <Ionicons name="checkmark-circle" size={20} color={BrandColors.burgundy} />
                         )}
                       </View>
                       
@@ -203,7 +204,7 @@ export default function WithdrawEarningsScreen() {
                             placeholder="Enter amount"
                             keyboardType="numeric"
                             className="border border-burgundy rounded-lg px-3 py-2 text-lg font-bold"
-                            style={{ color: isDarkMode ? '#d9d1c6' : '#720C17' }}
+                            style={{ color: isDarkMode ? '#d9d1c6' : BrandColors.burgundy }}
                           />
                         </View>
                       )}
@@ -216,7 +217,7 @@ export default function WithdrawEarningsScreen() {
             {/* Instant Withdrawal Option */}
             <View className="py-4">
               <View className="flex-row items-center mb-4">
-                <Ionicons name="flash" size={20} color="#BD8C5E" />
+                <Ionicons name="flash" size={20} color={BrandColors.secondary} />
                 <ThemedText className="font-bold ml-2">INSTANT WITHDRAWAL</ThemedText>
               </View>
 
@@ -240,7 +241,7 @@ export default function WithdrawEarningsScreen() {
             <View className="py-4">
               <View className="flex-row items-center justify-between mb-4">
                 <View className="flex-row items-center">
-                  <Ionicons name="time" size={20} color="#BD8C5E" />
+                  <Ionicons name="time" size={20} color={BrandColors.secondary} />
                   <ThemedText className="font-bold ml-2">WITHDRAWAL HISTORY</ThemedText>
                 </View>
                 <TouchableOpacity>

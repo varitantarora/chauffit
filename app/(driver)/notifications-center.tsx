@@ -7,6 +7,7 @@ import { ThemedView } from '../../components/common/ThemedView';
 import { ThemedCard } from '../../components/common/ThemedCard';
 import { ThemedText } from '../../components/common/ThemedText';
 import { useAuthStore } from '../../store/authStore';
+import { BrandColors } from '../../constants/Colors';
 
 interface Notification {
   id: string;
@@ -41,7 +42,7 @@ export default function NotificationsCenterScreen() {
       message: 'Daily target 87% complete',
       time: '2 hours ago',
       icon: 'cash',
-      color: '#720C17',
+      color: BrandColors.burgundy,
       read: false
     },
     {
@@ -61,7 +62,7 @@ export default function NotificationsCenterScreen() {
       message: 'Earned ₹12,150 this week',
       time: 'Yesterday, 8:30 PM',
       icon: 'trophy',
-      color: '#BD8C5E',
+      color: BrandColors.secondary,
       read: true
     },
     {
@@ -156,7 +157,7 @@ export default function NotificationsCenterScreen() {
           {todayNotifications.length > 0 && (
             <View className="py-4">
               <View className="flex-row items-center mb-4">
-                <Ionicons name="notifications" size={20} color="#BD8C5E" />
+                <Ionicons name="notifications" size={20} color={BrandColors.secondary} />
                 <ThemedText className="font-bold ml-2">TODAY</ThemedText>
               </View>
               {todayNotifications.map(renderNotification)}
@@ -167,7 +168,7 @@ export default function NotificationsCenterScreen() {
           {yesterdayNotifications.length > 0 && (
             <View className="py-4">
               <View className="flex-row items-center mb-4">
-                <Ionicons name="time" size={20} color="#BD8C5E" />
+                <Ionicons name="time" size={20} color={BrandColors.secondary} />
                 <ThemedText className="font-bold ml-2">YESTERDAY</ThemedText>
               </View>
               {yesterdayNotifications.map(renderNotification)}

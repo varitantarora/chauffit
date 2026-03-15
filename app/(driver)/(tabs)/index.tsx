@@ -8,6 +8,7 @@ import { EarningsSummaryCard } from '../../../components/driver/earnings/Earning
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
 import { useAuthStore } from '../../../store/authStore';
+import { BrandColors } from '../../../constants/Colors';
 import { useJobStore } from '../../../store/jobStore';
 import { useEarningsStore } from '../../../store/earningsStore';
 import { useConfigStore } from '../../../store/configStore';
@@ -248,12 +249,12 @@ export default function DriverHomeScreen() {
               onPress={() => setOnlineStatus(!isOnline)}
               activeOpacity={0.85}
               style={{
-                backgroundColor: isOnline ? '#10B981' : '#EF4444',
+                backgroundColor: isOnline ? BrandColors.success : BrandColors.danger,
                 paddingVertical: 20,
                 borderRadius: 20,
                 alignItems: 'center',
                 justifyContent: 'center',
-                shadowColor: isOnline ? '#10B981' : '#EF4444',
+                shadowColor: isOnline ? BrandColors.success : BrandColors.danger,
                 shadowOffset: { width: 0, height: 6 },
                 shadowOpacity: 0.35,
                 shadowRadius: 12,
@@ -274,13 +275,13 @@ export default function DriverHomeScreen() {
             <ThemedCard className="p-4">
               <View className="flex-row items-center justify-between">
                 <View>
-                  <ThemedText variant="caption" className="text-textSecondary">{t('availableBalance')}</ThemedText>
+                  <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">{t('availableBalance')}</ThemedText>
                   <ThemedText variant="title" className="text-2xl font-bold text-success">
                     ₹{(earnings?.totalEarnings ?? 0).toLocaleString('en-IN')}
                   </ThemedText>
                 </View>
                 <View className="items-end">
-                  <ThemedText variant="caption" className="text-textSecondary">{t('lastPayout')}</ThemedText>
+                  <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">{t('lastPayout')}</ThemedText>
                   <ThemedText variant="body" className="font-semibold text-burgundy">{t('processed')}</ThemedText>
                 </View>
               </View>
@@ -335,7 +336,7 @@ export default function DriverHomeScreen() {
                         cx={28}
                         cy={28}
                         r={24}
-                        stroke={todayStats.rating >= 4.5 ? '#10B981' : todayStats.rating >= 3.5 ? '#F59E0B' : '#EF4444'}
+                        stroke={todayStats.rating >= 4.5 ? BrandColors.success : todayStats.rating >= 3.5 ? BrandColors.warning : BrandColors.danger}
                         strokeWidth={4}
                         fill="none"
                         strokeDasharray={`${(todayStats.rating / 5) * 2 * Math.PI * 24} ${2 * Math.PI * 24}`}

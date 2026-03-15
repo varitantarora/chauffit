@@ -9,6 +9,7 @@ import { ThemedCard } from '../../components/common/ThemedCard';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { useAuthStore } from '../../store/authStore';
 import BikerApiService, { BikerProfile } from '../../services/api/BikerApiService';
+import { BrandColors } from '../../constants/Colors';
 
 export default function BikerEditProfileScreen() {
   const router = useRouter();
@@ -103,7 +104,7 @@ export default function BikerEditProfileScreen() {
     return (
       <SafeAreaView className="flex-1">
         <ThemedView className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#BD8C5E" />
+          <ActivityIndicator size="large" color={BrandColors.secondary} />
           <ThemedText className="mt-3">Loading profile...</ThemedText>
         </ThemedView>
       </SafeAreaView>

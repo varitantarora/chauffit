@@ -11,6 +11,7 @@ import { useAuthStore } from '../../store/authStore';
 import BookingApiService, { CustomerRideDetail, BookingStatus, PaymentStatus } from '../../services/api/BookingApiService';
 import RazorpayService from '../../services/RazorpayService';
 import UniversalMapView, { MapMarker, MapRoute } from '../../components/shared/MapView';
+import { BrandColors } from '../../constants/Colors';
 
 // --- Helpers ---
 
@@ -38,22 +39,22 @@ const formatMoney = (value: string | number | null | undefined): string => {
 const getStatusConfig = (status: BookingStatus) => {
   switch (status) {
     case 'trip_completed':
-      return { label: 'Completed', color: '#10B981', bgClass: 'bg-success/10', icon: 'checkmark-circle' as const };
+      return { label: 'Completed', color: BrandColors.success, bgClass: 'bg-success/10', icon: 'checkmark-circle' as const };
     case 'trip_started':
-      return { label: 'Trip In Progress', color: '#3B82F6', bgClass: 'bg-blue-500/10', icon: 'car' as const };
+      return { label: 'Trip In Progress', color: BrandColors.info, bgClass: 'bg-blue-500/10', icon: 'car' as const };
     case 'driver_en_route':
-      return { label: 'Chauffeur En Route', color: '#F59E0B', bgClass: 'bg-warning/10', icon: 'navigate' as const };
+      return { label: 'Chauffeur En Route', color: BrandColors.warning, bgClass: 'bg-warning/10', icon: 'navigate' as const };
     case 'driver_arrived':
-      return { label: 'Chauffeur Arrived', color: '#10B981', bgClass: 'bg-success/10', icon: 'checkmark-circle' as const };
+      return { label: 'Chauffeur Arrived', color: BrandColors.success, bgClass: 'bg-success/10', icon: 'checkmark-circle' as const };
     case 'driver_assigned':
     case 'biker_assigned':
-      return { label: 'Chauffeur Assigned', color: '#10B981', bgClass: 'bg-success/10', icon: 'person' as const };
+      return { label: 'Chauffeur Assigned', color: BrandColors.success, bgClass: 'bg-success/10', icon: 'person' as const };
     case 'requested':
-      return { label: 'Finding Chauffeur', color: '#F59E0B', bgClass: 'bg-warning/10', icon: 'time' as const };
+      return { label: 'Finding Chauffeur', color: BrandColors.warning, bgClass: 'bg-warning/10', icon: 'time' as const };
     case 'cancelled_by_customer':
     case 'cancelled_by_driver':
     case 'cancelled_by_system':
-      return { label: 'Cancelled', color: '#EF4444', bgClass: 'bg-danger/10', icon: 'close-circle' as const };
+      return { label: 'Cancelled', color: BrandColors.danger, bgClass: 'bg-danger/10', icon: 'close-circle' as const };
     default:
       return { label: status, color: '#6B7280', bgClass: 'bg-secondary/10', icon: 'help-circle' as const };
   }
@@ -91,7 +92,7 @@ const formatTimelineEvent = (eventType: string): { label: string; icon: string }
 function DetailRow({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
   return (
     <View className="flex-row justify-between items-center py-1">
-      <ThemedText variant="caption" className="text-textSecondary">{label}</ThemedText>
+      <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">{label}</ThemedText>
       <ThemedText className={`font-semibold ${valueColor || ''}`}>{value}</ThemedText>
     </View>
   );
@@ -172,7 +173,7 @@ export default function RideDetailsScreen() {
     return (
       <SafeAreaView className="flex-1">
         <ThemedView className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#BD8C5E" />
+          <ActivityIndicator size="large" color={BrandColors.secondary} />
           <ThemedText className="mt-4">Loading ride details...</ThemedText>
         </ThemedView>
       </SafeAreaView>
@@ -336,7 +337,7 @@ export default function RideDetailsScreen() {
                 {ride.driver_details?.total_rides != null && ride.driver_details.total_rides > 0 && (
                   <View className="flex-row items-center mb-3">
                     <Ionicons name="car-outline" size={14} color="#6B7280" />
-                    <ThemedText variant="caption" className="text-textSecondary ml-1">
+                    <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary ml-1">
                       {ride.driver_details.total_rides} rides completed
                     </ThemedText>
                   </View>
@@ -345,7 +346,7 @@ export default function RideDetailsScreen() {
                 {ride.car && (
                   <View className="bg-surface dark:bg-darkSurface p-3 rounded-lg">
                     <View className="flex-row items-center mb-1">
-                      <Ionicons name="car" size={16} color="#BD8C5E" />
+                      <Ionicons name="car" size={16} color={BrandColors.secondary} />
                       <ThemedText className="ml-2 font-semibold">
                         {ride.car.make} {ride.car.model}
                       </ThemedText>
@@ -356,11 +357,11 @@ export default function RideDetailsScreen() {
                           className="w-3 h-3 rounded-full mr-2 border border-border"
                           style={{ backgroundColor: ride.car.color?.toLowerCase() || 'transparent' }}
                         />
-                        <ThemedText variant="caption" className="text-textSecondary">
+                        <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">
                           {ride.car.color || 'N/A'}
                         </ThemedText>
                       </View>
-                      <ThemedText variant="caption" className="font-mono text-textSecondary">
+                      <ThemedText variant="caption" className="font-mono text-textSecondary dark:text-darkTextSecondary">
                         {ride.car.plate_number}
                       </ThemedText>
                     </View>
@@ -415,7 +416,7 @@ export default function RideDetailsScreen() {
                         ? {
                             origin: { latitude: pickupLat, longitude: pickupLng },
                             destination: { latitude: dropoffLat, longitude: dropoffLng },
-                            strokeColor: '#BD8C5E',
+                            strokeColor: BrandColors.secondary,
                             strokeWidth: 4,
                           } as MapRoute
                         : undefined
@@ -439,7 +440,7 @@ export default function RideDetailsScreen() {
                 >
                   <ThemedText
                     className="font-bold text-sm"
-                    style={{ color: needsPayment ? '#F59E0B' : '#10B981' }}
+                    style={{ color: needsPayment ? BrandColors.warning : BrandColors.success }}
                   >
                     {needsPayment ? 'Payment Pending' : ride.payment_status === 'completed' ? 'Paid' : ride.payment_status}
                   </ThemedText>
@@ -502,7 +503,7 @@ export default function RideDetailsScreen() {
                 <Ionicons
                   name={ride.insurance ? 'shield-checkmark' : 'shield-outline'}
                   size={20}
-                  color={ride.insurance ? '#3B82F6' : '#9CA3AF'}
+                  color={ride.insurance ? BrandColors.info : '#9CA3AF'}
                 />
                 <ThemedText variant="title" className="font-bold ml-2">
                   Insurance
@@ -531,8 +532,8 @@ export default function RideDetailsScreen() {
                           className="font-semibold capitalize"
                           style={{
                             color:
-                              ride.insurance.status === 'active' ? '#10B981' :
-                              ride.insurance.status === 'cancelled' ? '#EF4444' : '#6B7280',
+                              ride.insurance.status === 'active' ? BrandColors.success :
+                              ride.insurance.status === 'cancelled' ? BrandColors.danger : '#6B7280',
                           }}
                         >
                           {ride.insurance.status}
@@ -554,7 +555,7 @@ export default function RideDetailsScreen() {
                 </View>
               ) : (
                 <View className="flex-row items-center">
-                  <ThemedText variant="caption" className="text-textSecondary">
+                  <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">
                     No insurance was added for this trip.
                   </ThemedText>
                 </View>
@@ -569,7 +570,7 @@ export default function RideDetailsScreen() {
                 <Ionicons
                   name={ride.amenities && ride.amenities.length > 0 ? 'sparkles' : 'sparkles-outline'}
                   size={20}
-                  color={ride.amenities && ride.amenities.length > 0 ? '#BD8C5E' : '#9CA3AF'}
+                  color={ride.amenities && ride.amenities.length > 0 ? BrandColors.secondary : '#9CA3AF'}
                 />
                 <ThemedText variant="title" className="font-bold ml-2">
                   Amenities
@@ -588,7 +589,7 @@ export default function RideDetailsScreen() {
                           <ThemedText className="font-semibold">
                             {item.amenity.name}
                           </ThemedText>
-                          <ThemedText variant="caption" className="text-textSecondary capitalize">
+                          <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary capitalize">
                             {item.amenity.category} · Qty: {item.quantity}
                           </ThemedText>
                         </View>
@@ -610,7 +611,7 @@ export default function RideDetailsScreen() {
                 </View>
               ) : (
                 <View className="flex-row items-center">
-                  <ThemedText variant="caption" className="text-textSecondary">
+                  <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">
                     No amenities were added for this trip.
                   </ThemedText>
                 </View>
@@ -634,7 +635,7 @@ export default function RideDetailsScreen() {
                       {/* Stepper line + dot */}
                       <View className="items-center mr-3" style={{ width: 24 }}>
                         <View className="w-6 h-6 rounded-full items-center justify-center bg-burgundy/10">
-                          <Ionicons name={eventInfo.icon as any} size={14} color="#BD8C5E" />
+                          <Ionicons name={eventInfo.icon as any} size={14} color={BrandColors.secondary} />
                         </View>
                         {!isLast && (
                           <View className="w-0.5 flex-1 bg-border dark:bg-darkBorder my-1" />
@@ -645,7 +646,7 @@ export default function RideDetailsScreen() {
                         <ThemedText className="font-semibold text-sm">
                           {eventInfo.label}
                         </ThemedText>
-                        <ThemedText variant="caption" className="text-textSecondary">
+                        <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">
                           {formatDate(event.created_at)}
                         </ThemedText>
                       </View>

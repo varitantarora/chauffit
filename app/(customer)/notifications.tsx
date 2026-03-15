@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
 import NotificationPreferencesApiService, { NotificationPreferences } from '../../services/api/NotificationPreferencesApiService';
+import { BrandColors, useThemeColors } from '../../constants/Colors';
 
 interface NotificationSetting {
   id: string;
@@ -108,10 +109,11 @@ const NOTIFICATION_SETTINGS: Omit<NotificationSetting, 'enabled'>[] = [
 
 export default function NotificationsScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const colors = useThemeColors(isDarkMode);
   const router = useRouter();
 
-  const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
-  const backgroundColor = isDarkMode ? '#1a1a1a' : '#F5F5F0';
+  const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
+  const backgroundColor = colors.altBackground;
 
   const [notifications, setNotifications] = useState<NotificationSetting[]>(() =>
     NOTIFICATION_SETTINGS.map(s => ({ ...s, enabled: true }))
@@ -206,7 +208,7 @@ export default function NotificationsScreen() {
             <ThemedText variant="h2">Notifications</ThemedText>
           </View>
           <View className="flex-1 items-center justify-center">
-            <ActivityIndicator size="large" color="#BD8C5E" />
+            <ActivityIndicator size="large" color={BrandColors.secondary} />
           </View>
         </ThemedView>
       </SafeAreaView>
@@ -224,12 +226,12 @@ export default function NotificationsScreen() {
             <ThemedText variant="h2">Notifications</ThemedText>
           </View>
           <View className="flex-1 items-center justify-center px-6">
-            <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
+            <Ionicons name="alert-circle-outline" size={48} color={BrandColors.danger} />
             <ThemedText className="mt-4 text-center">{error}</ThemedText>
             <TouchableOpacity
               onPress={fetchPreferences}
               className="mt-4 px-6 py-3 rounded-lg"
-              style={{ backgroundColor: '#BD8C5E' }}
+              style={{ backgroundColor: BrandColors.secondary }}
             >
               <ThemedText style={{ color: '#FFFFFF' }}>Retry</ThemedText>
             </TouchableOpacity>
@@ -257,7 +259,7 @@ export default function NotificationsScreen() {
               <ThemedText variant="h3" className="mb-2">
                 Notification Preferences
               </ThemedText>
-              <ThemedText variant="small" className="text-gray-600">
+              <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                 Choose which notifications you'd like to receive to stay updated on your rides and account.
               </ThemedText>
             </View>
@@ -269,7 +271,7 @@ export default function NotificationsScreen() {
                   <ThemedText variant="h3" className="mb-1">
                     {category.title}
                   </ThemedText>
-                  <ThemedText variant="small" className="text-gray-600">
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                     {category.description}
                   </ThemedText>
                 </View>
@@ -286,14 +288,14 @@ export default function NotificationsScreen() {
                           <Ionicons
                             name={notification.icon as any}
                             size={20}
-                            color="#BD8C5E"
+                            color={BrandColors.secondary}
                           />
                         </View>
                         <View className="flex-1">
                           <ThemedText className="font-semibold mb-1">
                             {notification.title}
                           </ThemedText>
-                          <ThemedText variant="small" className="text-gray-600">
+                          <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                             {notification.description}
                           </ThemedText>
                         </View>
@@ -304,7 +306,7 @@ export default function NotificationsScreen() {
                         onValueChange={() => toggleNotification(notification.id)}
                         trackColor={{
                           false: isDarkMode ? '#374151' : '#D1D5DB',
-                          true: '#BD8C5E'
+                          true: BrandColors.secondary
                         }}
                         thumbColor={notification.enabled ? '#FFFFFF' : '#9CA3AF'}
                         ios_backgroundColor={isDarkMode ? '#374151' : '#D1D5DB'}
@@ -332,7 +334,7 @@ export default function NotificationsScreen() {
               >
                 <View className="flex-row items-center flex-1">
                   <View className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full items-center justify-center mr-4">
-                    <Ionicons name="checkmark-done" size={20} color="#10B981" />
+                    <Ionicons name="checkmark-done" size={20} color={BrandColors.success} />
                   </View>
                   <ThemedText>Enable All Notifications</ThemedText>
                 </View>
@@ -346,7 +348,7 @@ export default function NotificationsScreen() {
               >
                 <View className="flex-row items-center flex-1">
                   <View className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full items-center justify-center mr-4">
-                    <Ionicons name="close-circle" size={20} color="#EF4444" />
+                    <Ionicons name="close-circle" size={20} color={BrandColors.danger} />
                   </View>
                   <ThemedText>Disable All Notifications</ThemedText>
                 </View>

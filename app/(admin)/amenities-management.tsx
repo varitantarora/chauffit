@@ -7,7 +7,7 @@ import { ThemedText } from '../../components/common/ThemedText';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { useAdminStore } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
-import { LightColors, DarkColors } from '../../constants/Colors';
+import { LightColors, DarkColors, BrandColors, useThemeColors} from '../../constants/Colors';
 import { AdminAmenity } from '../../services/api/AdminApiService';
 
 type AmenityCategory = AdminAmenity['category'];
@@ -19,8 +19,8 @@ const CATEGORY_OPTIONS: { value: AmenityCategory; label: string; icon: string }[
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
-    refreshment: '#F59E0B',
-    comfort: '#3B82F6',
+    refreshment: BrandColors.warning,
+    comfort: BrandColors.info,
     premium: '#8B5CF6',
 };
 
@@ -185,7 +185,7 @@ export default function AmenitiesManagement() {
                         >
                             <ThemedText
                                 variant="tiny"
-                                style={{ color: amenity.is_active ? '#10B981' : '#EF4444', fontWeight: '600' }}
+                                style={{ color: amenity.is_active ? BrandColors.success : BrandColors.danger, fontWeight: '600' }}
                             >
                                 {amenity.is_active ? 'Active' : 'Inactive'}
                             </ThemedText>
@@ -219,11 +219,11 @@ export default function AmenitiesManagement() {
                         <Ionicons
                             name={amenity.is_active ? 'eye-off-outline' : 'eye-outline'}
                             size={16}
-                            color={amenity.is_active ? '#F59E0B' : '#10B981'}
+                            color={amenity.is_active ? BrandColors.warning : BrandColors.success}
                         />
                         <ThemedText
                             variant="tiny"
-                            style={{ color: amenity.is_active ? '#F59E0B' : '#10B981' }}
+                            style={{ color: amenity.is_active ? BrandColors.warning : BrandColors.success }}
                             className="ml-1"
                         >
                             {amenity.is_active ? 'Deactivate' : 'Activate'}
@@ -231,8 +231,8 @@ export default function AmenitiesManagement() {
                     </Pressable>
                     {amenity.is_active && (
                         <Pressable onPress={() => handleDelete(amenity)} className="flex-row items-center">
-                            <Ionicons name="trash-outline" size={16} color="#EF4444" />
-                            <ThemedText variant="tiny" style={{ color: '#EF4444' }} className="ml-1">
+                            <Ionicons name="trash-outline" size={16} color={BrandColors.danger} />
+                            <ThemedText variant="tiny" style={{ color: BrandColors.danger }} className="ml-1">
                                 Delete
                             </ThemedText>
                         </Pressable>

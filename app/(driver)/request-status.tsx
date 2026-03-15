@@ -8,6 +8,7 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
+import { BrandColors, useThemeColors } from '../../constants/Colors';
 
 type RequestStatus = 'open' | 'in-progress' | 'resolved' | 'closed';
 type RequestCategory = 'rides' | 'earnings' | 'documents' | 'account' | 'technical' | 'other';
@@ -32,10 +33,11 @@ interface SupportRequest {
 
 export default function RequestStatusScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const colors = useThemeColors(isDarkMode);
   const router = useRouter();
   
-  const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
-  const backgroundColor = isDarkMode ? '#1a1a1a' : '#F5F5F0';
+  const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
+  const backgroundColor = colors.altBackground;
 
   const [searchTicketId, setSearchTicketId] = useState('');
   const [selectedRequest, setSelectedRequest] = useState<SupportRequest | null>(null);
@@ -151,8 +153,8 @@ export default function RequestStatusScreen() {
   const getStatusColor = (status: RequestStatus) => {
     switch (status) {
       case 'open': return '#3B82F6';
-      case 'in-progress': return '#F59E0B';
-      case 'resolved': return '#10B981';
+      case 'in-progress': return BrandColors.warning;
+      case 'resolved': return BrandColors.success;
       case 'closed': return '#6B7280';
       default: return '#6B7280';
     }
@@ -170,9 +172,9 @@ export default function RequestStatusScreen() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return '#EF4444';
-      case 'medium': return '#F59E0B';
-      case 'low': return '#10B981';
+      case 'high': return BrandColors.danger;
+      case 'medium': return BrandColors.warning;
+      case 'low': return BrandColors.success;
       default: return '#6B7280';
     }
   };
@@ -191,7 +193,7 @@ export default function RequestStatusScreen() {
 
   const inputClass = isDarkMode 
     ? 'bg-darkSurface text-darkText border-darkBorder' 
-    : 'bg-white text-textPrimary border-gray-200';
+    : 'bg-white text-textPrimary dark:text-darkText border-border dark:border-darkBorder';
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor }}>
@@ -217,12 +219,12 @@ export default function RequestStatusScreen() {
               <ThemedText variant="h3" className="mb-4">
                 Check Request Status
               </ThemedText>
-              <ThemedText variant="small" className="text-gray-600 mb-4">
+              <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary mb-4">
                 Enter your support ticket ID to view the current status and responses.
               </ThemedText>
               
               <View className="mb-4">
-                <ThemedText variant="small" className="mb-2 text-gray-600">
+                <ThemedText variant="small" className="mb-2 text-textSecondary dark:text-darkTextSecondary">
                   Ticket ID
                 </ThemedText>
                 <View className="flex-row">
@@ -282,14 +284,14 @@ export default function RequestStatusScreen() {
                       <Ionicons 
                         name={getCategoryIcon(selectedRequest.category)} 
                         size={16} 
-                        color="#BD8C5E" 
+                        color={BrandColors.secondary} 
                       />
                     </View>
                     <View className="flex-1">
                       <ThemedText className="font-semibold">
                         {selectedRequest.subject}
                       </ThemedText>
-                      <ThemedText variant="small" className="text-gray-600">
+                      <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                         Ticket ID: {selectedRequest.ticketId}
                       </ThemedText>
                     </View>
@@ -312,10 +314,10 @@ export default function RequestStatusScreen() {
                   </ThemedText>
 
                   <View className="flex-row justify-between">
-                    <ThemedText variant="tiny" className="text-gray-500">
+                    <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                       Created: {selectedRequest.createdAt.toLocaleDateString('en-IN')}
                     </ThemedText>
-                    <ThemedText variant="tiny" className="text-gray-500">
+                    <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                       Updated: {selectedRequest.updatedAt.toLocaleDateString('en-IN')}
                     </ThemedText>
                   </View>
@@ -348,7 +350,7 @@ export default function RequestStatusScreen() {
                             <ThemedText variant="small" className="font-semibold">
                               {response.sender === 'support' ? 'Support Team' : 'You'}
                             </ThemedText>
-                            <ThemedText variant="tiny" className="text-gray-500 ml-auto">
+                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary ml-auto">
                               {response.timestamp.toLocaleDateString('en-IN', {
                                 month: 'short',
                                 day: 'numeric',
@@ -368,11 +370,11 @@ export default function RequestStatusScreen() {
 
                 {selectedRequest.responses.length === 0 && (
                   <View className="text-center py-8">
-                    <Ionicons name="time" size={48} color="#9CA3AF" />
-                    <ThemedText className="text-gray-500 mt-2">
+                    <Ionicons name="time" size={48} color={BrandColors.secondary} />
+                    <ThemedText className="text-textSecondary dark:text-darkTextSecondary mt-2">
                       No responses yet
                     </ThemedText>
-                    <ThemedText variant="small" className="text-gray-400">
+                    <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                       Our support team will respond within 24 hours
                     </ThemedText>
                   </View>
@@ -415,10 +417,10 @@ export default function RequestStatusScreen() {
                   </View>
                   
                   <View className="flex-row items-center justify-between">
-                    <ThemedText variant="small" className="text-gray-600">
+                    <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                       {request.ticketId}
                     </ThemedText>
-                    <ThemedText variant="small" className="text-gray-500">
+                    <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                       {request.createdAt.toLocaleDateString('en-IN')}
                     </ThemedText>
                   </View>
@@ -430,12 +432,12 @@ export default function RequestStatusScreen() {
             <ThemedCard variant="elevated" className="p-6">
               <View className="items-center">
                 <View className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full items-center justify-center mb-4">
-                  <Ionicons name="help-circle" size={32} color="#3B82F6" />
+                  <Ionicons name="help-circle" size={32} color={BrandColors.info} />
                 </View>
                 <ThemedText variant="h3" className="mb-2 text-center">
                   Need to Submit a New Request?
                 </ThemedText>
-                <ThemedText variant="small" className="text-gray-600 text-center mb-4">
+                <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary text-center mb-4">
                   Can't find your ticket or have a new issue? Submit a support request.
                 </ThemedText>
 

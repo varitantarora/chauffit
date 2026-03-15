@@ -59,7 +59,7 @@ export function OnlineToggle({ isOnline, onToggle, disabled = false }: OnlineTog
               relative w-16 h-16 rounded-full border-4 items-center justify-center
               ${isOnline 
                 ? 'bg-success border-success shadow-lg shadow-success/30' 
-                : 'bg-gray-300 border-gray-300'
+                : 'bg-gray-300 border-border dark:border-darkBorder'
               }
               ${disabled ? 'opacity-50' : ''}
               ${isAnimating ? 'scale-95' : ''}

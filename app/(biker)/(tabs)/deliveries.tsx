@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../store/authStore';
 import BikerTaskApiService, { BikerTaskDetail } from '../../../services/api/BikerTaskApiService';
 import { router } from 'expo-router';
+import { BrandColors } from '../../../constants/Colors';
 
 type PickupTab = 'pending' | 'accepted' | 'cancelled' | 'completed';
 
@@ -222,8 +223,8 @@ export default function DriverPickupsScreen() {
           <View className="px-6">
             {loading ? (
               <View className="py-8 items-center">
-                <ActivityIndicator size="large" color="#BD8C5E" />
-                <ThemedText className="mt-4 text-textSecondary">Loading tasks...</ThemedText>
+                <ActivityIndicator size="large" color={BrandColors.secondary} />
+                <ThemedText className="mt-4 text-textSecondary dark:text-darkTextSecondary">Loading tasks...</ThemedText>
               </View>
             ) : tasks.length === 0 ? (
               <ThemedCard className="p-6">
@@ -254,14 +255,14 @@ export default function DriverPickupsScreen() {
 
                       <View className="space-y-2 mb-3">
                         <View className="flex-row items-start">
-                          <Ionicons name="location" size={16} color="#BD8C5E" />
+                          <Ionicons name="location" size={16} color={BrandColors.secondary} />
                           <View className="ml-2 flex-1">
                             <ThemedText variant="caption">PICKUP LOCATION</ThemedText>
                             <ThemedText>{task.pickup_address}</ThemedText>
                           </View>
                         </View>
                         <View className="flex-row items-start">
-                          <Ionicons name="navigate" size={16} color="#BD8C5E" />
+                          <Ionicons name="navigate" size={16} color={BrandColors.secondary} />
                           <View className="ml-2 flex-1">
                             <ThemedText variant="caption">DESTINATION</ThemedText>
                             <ThemedText>{task.dropoff_address}</ThemedText>

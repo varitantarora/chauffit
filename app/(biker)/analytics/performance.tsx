@@ -8,6 +8,7 @@ import { ThemedCard } from '../../../components/common/ThemedCard';
 import { ThemedText } from '../../../components/common/ThemedText';
 import { useAuthStore } from '../../../store/authStore';
 import { useBikerEarningsStore } from '../../../store/bikerEarningsStore';
+import { BrandColors } from '../../../constants/Colors';
 
 interface DailyPerformance {
   day: string;
@@ -263,7 +264,7 @@ export default function PerformanceAnalyticsScreen() {
             {/* Efficiency Metrics */}
             <ThemedCard className="p-4 mb-6">
               <View className="flex-row items-center mb-4">
-                <Ionicons name="analytics" size={20} color="#BD8C5E" />
+                <Ionicons name="analytics" size={20} color={BrandColors.secondary} />
                 <ThemedText className="font-bold text-lg ml-2">
                   🎯 EFFICIENCY METRICS
                 </ThemedText>
@@ -323,7 +324,7 @@ export default function PerformanceAnalyticsScreen() {
             {/* Achievements */}
             <ThemedCard className="p-4 mb-6">
               <View className="flex-row items-center mb-4">
-                <Ionicons name="trophy" size={20} color="#BD8C5E" />
+                <Ionicons name="trophy" size={20} color={BrandColors.secondary} />
                 <ThemedText className="font-bold text-lg ml-2">
                   🏆 ACHIEVEMENTS UNLOCKED
                 </ThemedText>
@@ -388,7 +389,7 @@ export default function PerformanceAnalyticsScreen() {
                 className="flex-1 bg-burgundy/20 border border-burgundy rounded-lg p-4 items-center"
                 activeOpacity={0.7}
               >
-                <Ionicons name="flag" size={24} color="#720C17" />
+                <Ionicons name="flag" size={24} color={BrandColors.burgundy} />
                 <ThemedText className="text-burgundy font-semibold mt-2">
                   Set Goals
                 </ThemedText>

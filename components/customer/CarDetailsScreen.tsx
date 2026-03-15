@@ -10,6 +10,7 @@ import { useCarStore } from '../../store/carStore';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { CustomerVehicleType } from '../../services/api/CustomerCarApiService';
 import MetaApiService, { EnumOption } from '../../services/api/MetaApiService';
+import { BrandColors } from '../../constants/Colors';
 
 interface CarDetailsScreenProps {
   postSaveRoute?: string;
@@ -205,7 +206,7 @@ export default function CarDetailsScreen({ postSaveRoute, allowSkip = false }: C
 
   const inputClass = isDarkMode
     ? 'bg-darkSurface text-darkText border-darkBorder'
-    : 'bg-white text-textPrimary border-border';
+    : 'bg-white text-textPrimary dark:text-darkText border-border';
 
   const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
 
@@ -234,12 +235,12 @@ export default function CarDetailsScreen({ postSaveRoute, allowSkip = false }: C
           {/* Welcome Message */}
           <View className="items-center mb-8">
             <View className="w-20 h-20 bg-primary/20 rounded-full items-center justify-center mb-4">
-              <Ionicons name="car-sport" size={32} color="#BD8C5E" />
+              <Ionicons name="car-sport" size={32} color={BrandColors.secondary} />
             </View>
             <ThemedText variant="h3" className="text-center mb-2">
               {params.carId ? 'Update Your Vehicle' : 'Add Your Vehicle'}
             </ThemedText>
-            <ThemedText variant="small" className="text-center text-textSecondary px-4">
+            <ThemedText variant="small" className="text-center text-textSecondary dark:text-darkTextSecondary px-4">
               Your car details help chauffeurs identify your vehicle quickly.
             </ThemedText>
           </View>

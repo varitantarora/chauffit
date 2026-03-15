@@ -10,6 +10,7 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { useAuthStore } from '../../store/authStore';
 import DriverApiService from '../../services/api/DriverApiService';
 import { appConfig } from '../../config/env';
+import { BrandColors } from '../../constants/Colors';
 
 export default function DriverEditProfile() {
   const router = useRouter();
@@ -199,7 +200,7 @@ export default function DriverEditProfile() {
 
   const inputClass = isDarkMode
     ? 'bg-darkSurface text-darkText border-darkBorder'
-    : 'bg-white text-textPrimary border-border';
+    : 'bg-white text-textPrimary dark:text-darkText border-border';
 
   const displayAvatar = profilePicture || (user?.avatar ? getImageUrl(user.avatar) : null);
 
@@ -207,7 +208,7 @@ export default function DriverEditProfile() {
     return (
       <SafeAreaView className="flex-1">
         <ThemedView className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#BD8C5E" />
+          <ActivityIndicator size="large" color={BrandColors.secondary} />
           <ThemedText className="mt-4">Loading profile...</ThemedText>
         </ThemedView>
       </SafeAreaView>
@@ -255,7 +256,7 @@ export default function DriverEditProfile() {
               <Ionicons
                 name={displayAvatar ? 'camera' : 'person-add'}
                 size={18}
-                color="#BD8C5E"
+                color={BrandColors.secondary}
               />
               <ThemedText variant="small" className="text-secondary font-semibold ml-2">
                 {displayAvatar ? 'Change Photo' : 'Add Photo'}
@@ -282,12 +283,12 @@ export default function DriverEditProfile() {
 
           <View className="bg-primary/10 rounded-xl p-4 mb-6 border border-primary/20">
             <View className="flex-row items-start">
-              <Ionicons name="information-circle" size={20} color="#BD8C5E" />
+              <Ionicons name="information-circle" size={20} color={BrandColors.secondary} />
               <View className="flex-1 ml-3">
                 <ThemedText variant="small" className="font-semibold mb-1">
                   Profile information
                 </ThemedText>
-                <ThemedText variant="tiny" className="text-textSecondary leading-4">
+                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary leading-4">
                   Your profile photo and bio are shown to passengers when they book rides with you.
                 </ThemedText>
               </View>

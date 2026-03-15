@@ -10,6 +10,7 @@ import { useBikerEarningsStore } from '../../../store/bikerEarningsStore';
 import { IncentiveTracker } from '../../../components/biker/earnings/IncentiveTracker';
 import BikerApiService from '../../../services/api/BikerApiService';
 import { useI18nStore } from '../../../store/i18nStore';
+import { BrandColors } from '../../../constants/Colors';
 
 const toAmount = (value: unknown): number => {
   if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
@@ -230,7 +231,7 @@ export default function BikerEarningsScreen() {
       <ThemedView className="flex-1">
         {loading && !refreshing ? (
           <View className="flex-1 items-center justify-center">
-            <ActivityIndicator size="large" color="#BD8C5E" />
+            <ActivityIndicator size="large" color={BrandColors.secondary} />
             <ThemedText className="mt-4">Loading earnings...</ThemedText>
           </View>
         ) : (
@@ -240,20 +241,20 @@ export default function BikerEarningsScreen() {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                tintColor="#BD8C5E"
+                tintColor={BrandColors.secondary}
               />
             }
           >
           {/* Header */}
           <View
             style={{
-              backgroundColor: '#720C17',
+              backgroundColor: BrandColors.burgundy,
               paddingHorizontal: 24,
               paddingTop: 16,
               paddingBottom: 20,
               borderBottomLeftRadius: 24,
               borderBottomRightRadius: 24,
-              shadowColor: '#720C17',
+              shadowColor: BrandColors.burgundy,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.25,
               shadowRadius: 8,
@@ -336,8 +337,8 @@ export default function BikerEarningsScreen() {
             {loadingDaily ? (
               <ThemedCard className="p-4">
                 <View className="items-center py-2">
-                  <ActivityIndicator size="small" color="#BD8C5E" />
-                  <ThemedText variant="caption" className="mt-2 text-textSecondary">
+                  <ActivityIndicator size="small" color={BrandColors.secondary} />
+                  <ThemedText variant="caption" className="mt-2 text-textSecondary dark:text-darkTextSecondary">
                     Loading daily breakdown...
                   </ThemedText>
                 </View>
@@ -379,7 +380,7 @@ export default function BikerEarningsScreen() {
             ) : (
               <ThemedCard className="p-4">
                 <View className="items-center py-2">
-                  <ThemedText className="text-center text-textSecondary">
+                  <ThemedText className="text-center text-textSecondary dark:text-darkTextSecondary">
                     No daily earnings data available
                   </ThemedText>
                 </View>
@@ -395,8 +396,8 @@ export default function BikerEarningsScreen() {
             <ThemedCard>
               {loadingStats ? (
                 <View className="py-4 items-center">
-                  <ActivityIndicator size="small" color="#BD8C5E" />
-                  <ThemedText variant="caption" className="mt-2 text-textSecondary">
+                  <ActivityIndicator size="small" color={BrandColors.secondary} />
+                  <ThemedText variant="caption" className="mt-2 text-textSecondary dark:text-darkTextSecondary">
                     Loading stats...
                   </ThemedText>
                 </View>
@@ -441,7 +442,7 @@ export default function BikerEarningsScreen() {
                 </>
               ) : (
                 <View className="py-4">
-                  <ThemedText className="text-center text-textSecondary">
+                  <ThemedText className="text-center text-textSecondary dark:text-darkTextSecondary">
                     No stats available
                   </ThemedText>
                 </View>
@@ -457,8 +458,8 @@ export default function BikerEarningsScreen() {
             {loadingBonuses ? (
               <ThemedCard className="p-4">
                 <View className="items-center py-2">
-                  <ActivityIndicator size="small" color="#BD8C5E" />
-                  <ThemedText variant="caption" className="mt-2 text-textSecondary">
+                  <ActivityIndicator size="small" color={BrandColors.secondary} />
+                  <ThemedText variant="caption" className="mt-2 text-textSecondary dark:text-darkTextSecondary">
                     Loading bonuses...
                   </ThemedText>
                 </View>
@@ -483,7 +484,7 @@ export default function BikerEarningsScreen() {
             ) : (
               <ThemedCard className="p-4">
                 <View className="items-center py-2">
-                  <ThemedText className="text-center text-textSecondary">
+                  <ThemedText className="text-center text-textSecondary dark:text-darkTextSecondary">
                     No bonuses or incentives available
                   </ThemedText>
                 </View>

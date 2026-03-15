@@ -7,7 +7,7 @@ interface ConfigState {
   configsError: string | null;
 
   fetchConfigs: () => Promise<void>;
-  createConfig: (data: Pick<AppConfig, 'key' | 'name' | 'value'>) => Promise<boolean>;
+  createConfig: (data: Pick<AppConfig, 'key' | 'name' | 'value' | 'value_type'>) => Promise<boolean>;
   updateConfig: (key: string, data: Partial<AppConfig>) => Promise<boolean>;
   deleteConfig: (key: string) => Promise<boolean>;
   getConfigValue: (key: string) => string | null;

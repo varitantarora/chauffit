@@ -30,6 +30,7 @@ import {
   getPlaceDetails,
 } from '../../components/customer/GooglePlacesAutocomplete';
 import { appConfig } from '../../config/env';
+import { BrandColors } from '../../constants/Colors';
 
 interface BookingLocation {
   address: string;
@@ -166,7 +167,7 @@ export default function ScheduleScreen() {
   const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
   const inputClass = isDarkMode
     ? 'bg-darkSurface text-darkText border-darkBorder'
-    : 'bg-white text-textPrimary border-gray-200';
+    : 'bg-white text-textPrimary dark:text-darkText border-border dark:border-darkBorder';
 
   // Load user cars on mount
   useEffect(() => {
@@ -581,7 +582,7 @@ export default function ScheduleScreen() {
                 </View>
               ) : (
                 <TouchableOpacity onPress={() => setBookingType('scheduled')} className="flex-1 py-3 rounded-lg">
-                  <ThemedText className="text-center font-semibold text-textSecondary">Point to Point</ThemedText>
+                  <ThemedText className="text-center font-semibold text-textSecondary dark:text-darkTextSecondary">Point to Point</ThemedText>
                 </TouchableOpacity>
               )}
               {bookingType === 'extended' ? (
@@ -590,7 +591,7 @@ export default function ScheduleScreen() {
                 </View>
               ) : (
                 <TouchableOpacity onPress={() => setBookingType('extended')} className="flex-1 py-3 rounded-lg">
-                  <ThemedText className="text-center font-semibold text-textSecondary">Extended Service</ThemedText>
+                  <ThemedText className="text-center font-semibold text-textSecondary dark:text-darkTextSecondary">Extended Service</ThemedText>
                 </TouchableOpacity>
               )}
             </View>
@@ -613,7 +614,7 @@ export default function ScheduleScreen() {
               disabled={isFetchingCurrentLocation}
             >
               {isFetchingCurrentLocation ? (
-                <ActivityIndicator size="small" color="#BD8C5E" />
+                <ActivityIndicator size="small" color={BrandColors.secondary} />
               ) : (
                 <Ionicons name="location" size={18} color={iconColor} />
               )}
@@ -670,7 +671,7 @@ export default function ScheduleScreen() {
                     </ThemedText>
                   </View>
                 ) : (
-                  <ThemedText className="ml-3 text-gray-500">Select vehicle</ThemedText>
+                  <ThemedText className="ml-3 text-textSecondary dark:text-darkTextSecondary">Select vehicle</ThemedText>
                 )}
               </View>
               <Ionicons name="chevron-down" size={20} color={iconColor} />
@@ -679,7 +680,7 @@ export default function ScheduleScreen() {
             {/* No Cars Warning */}
             {!isCarsLoading && cars.length === 0 && (
               <View className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl flex-row items-center">
-                <Ionicons name="warning" size={18} color="#F59E0B" />
+                <Ionicons name="warning" size={18} color={BrandColors.warning} />
                 <ThemedText variant="secondary" className="ml-2 flex-1 text-yellow-700 dark:text-yellow-400">
                   No vehicles added. Please add a vehicle first.
                 </ThemedText>
@@ -743,7 +744,7 @@ export default function ScheduleScreen() {
                     onPress={() => setSelectedDate(date.value)}
                     className={`mr-3 px-4 py-3 min-w-[100px] items-center rounded-xl ${isDarkMode ? 'bg-darkSurface' : 'bg-surface'}`}
                   >
-                    <ThemedText className="font-semibold text-textSecondary">{date.label}</ThemedText>
+                    <ThemedText className="font-semibold text-textSecondary dark:text-darkTextSecondary">{date.label}</ThemedText>
                   </TouchableOpacity>
                 );
               })}
@@ -894,15 +895,15 @@ export default function ScheduleScreen() {
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 50 }}>
                 {isCarsLoading && (
                   <View className="py-8 items-center">
-                    <ActivityIndicator size="large" color="#BD8C5E" />
-                    <ThemedText className="mt-3 text-gray-500">Loading vehicles...</ThemedText>
+                    <ActivityIndicator size="large" color={BrandColors.secondary} />
+                    <ThemedText className="mt-3 text-textSecondary dark:text-darkTextSecondary">Loading vehicles...</ThemedText>
                   </View>
                 )}
 
                 {!isCarsLoading && cars.length === 0 && (
                   <View className="py-6 items-center">
                     <Ionicons name="car-outline" size={40} color="#999" />
-                    <ThemedText className="mt-3 text-gray-600">No vehicles added yet</ThemedText>
+                    <ThemedText className="mt-3 text-textSecondary dark:text-darkTextSecondary">No vehicles added yet</ThemedText>
                     <PrimaryButton
                       title="Add Vehicle"
                       onPress={() => {
@@ -926,7 +927,7 @@ export default function ScheduleScreen() {
                   >
                     <View className="flex-row items-center">
                       <View className="w-12 h-12 bg-secondary/20 rounded-full items-center justify-center mr-3">
-                        <Ionicons name="car" size={24} color="#BD8C5E" />
+                        <Ionicons name="car" size={24} color={BrandColors.secondary} />
                       </View>
                       <View className="flex-1">
                         <ThemedText className="font-semibold">
@@ -937,7 +938,7 @@ export default function ScheduleScreen() {
                         </ThemedText>
                       </View>
                       {selectedCar?.id === car.id && (
-                        <Ionicons name="checkmark-circle" size={24} color="#BD8C5E" />
+                        <Ionicons name="checkmark-circle" size={24} color={BrandColors.secondary} />
                       )}
                     </View>
                   </TouchableOpacity>
@@ -968,7 +969,7 @@ export default function ScheduleScreen() {
                   {/* Trip Summary */}
                   <View className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                     <View className="flex-row items-center mb-2">
-                      <Ionicons name="location" size={16} color={isDarkMode ? '#BD8C5E' : '#666'} />
+                      <Ionicons name="location" size={16} color={isDarkMode ? BrandColors.secondary : '#666'} />
                       <ThemedText variant="secondary" className="ml-2 flex-1" numberOfLines={1}>
                         {pickupLocation.address}
                       </ThemedText>
@@ -976,10 +977,10 @@ export default function ScheduleScreen() {
                     {(dropLocation?.address) && (
                       <>
                         <View className="flex-row items-center justify-center my-1">
-                          <Ionicons name="arrow-down" size={16} color={isDarkMode ? '#BD8C5E' : '#666'} />
+                          <Ionicons name="arrow-down" size={16} color={isDarkMode ? BrandColors.secondary : '#666'} />
                         </View>
                         <View className="flex-row items-center">
-                          <Ionicons name="navigate" size={16} color={isDarkMode ? '#BD8C5E' : '#666'} />
+                          <Ionicons name="navigate" size={16} color={isDarkMode ? BrandColors.secondary : '#666'} />
                           <ThemedText variant="secondary" className="ml-2 flex-1" numberOfLines={1}>
                             {dropLocation.address}
                           </ThemedText>
@@ -990,7 +991,7 @@ export default function ScheduleScreen() {
 
                   {/* Schedule Info */}
                   <View className="mb-4 p-3 bg-secondary/10 rounded-xl flex-row items-center">
-                    <Ionicons name="calendar" size={18} color="#BD8C5E" />
+                    <Ionicons name="calendar" size={18} color={BrandColors.secondary} />
                     <ThemedText variant="secondary" className="ml-2 text-secondary">
                       {dateOptions.find(d => d.value === selectedDate)?.fullDate} at {getFormattedTime()}
                     </ThemedText>

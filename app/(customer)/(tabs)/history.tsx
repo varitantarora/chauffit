@@ -10,6 +10,7 @@ import { useAuthStore } from '../../../store/authStore';
 import { useRouter } from 'expo-router';
 import BookingApiService, { CustomerRide } from '../../../services/api/BookingApiService';
 import RazorpayService from '../../../services/RazorpayService';
+import { BrandColors } from '../../../constants/Colors';
 
 type TabType = 'all' | 'active' | 'completed' | 'cancelled';
 
@@ -142,7 +143,7 @@ export default function HistoryScreen() {
 
   const router = useRouter();
 
-  const iconColor = isDarkMode ? '#BD8C5E' : '#720C17';
+  const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
 
   // Fetch bookings from API
   const fetchBookings = useCallback(async (tab: TabType) => {
@@ -310,13 +311,13 @@ export default function HistoryScreen() {
         {/* Burgundy Header */}
         <View
           style={{
-            backgroundColor: '#720C17',
+            backgroundColor: '#541201',
             paddingHorizontal: 24,
             paddingTop: 16,
             paddingBottom: 20,
             borderBottomLeftRadius: 24,
             borderBottomRightRadius: 24,
-            shadowColor: '#720C17',
+            shadowColor: '#541201',
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.25,
             shadowRadius: 8,
@@ -353,8 +354,8 @@ export default function HistoryScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={['#BD8C5E']}
-              tintColor="#BD8C5E"
+              colors={[BrandColors.secondary]}
+              tintColor={BrandColors.secondary}
             />
           }
         >
@@ -362,7 +363,7 @@ export default function HistoryScreen() {
             {loading ? (
               <View className="items-center py-16">
                 <Ionicons name="car" size={40} color={iconColor} />
-                <ThemedText className="mt-4 text-textSecondary">Loading bookings...</ThemedText>
+                <ThemedText className="mt-4 text-textSecondary dark:text-darkTextSecondary">Loading bookings...</ThemedText>
               </View>
             ) : bookings.length > 0 ? (
               bookings
@@ -387,7 +388,7 @@ export default function HistoryScreen() {
                 <ThemedText variant="h3" className="text-center mb-2">
                   {getEmptyStateMessage().title}
                 </ThemedText>
-                <ThemedText variant="small" className="text-center text-textSecondary px-8 mb-6">
+                <ThemedText variant="small" className="text-center text-textSecondary dark:text-darkTextSecondary px-8 mb-6">
                   {getEmptyStateMessage().subtitle}
                 </ThemedText>
 
@@ -419,7 +420,7 @@ export default function HistoryScreen() {
               height: 60,
               borderRadius: 30,
               overflow: 'hidden',
-              shadowColor: '#720C17',
+              shadowColor: BrandColors.burgundy,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.35,
               shadowRadius: 10,

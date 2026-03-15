@@ -341,7 +341,7 @@ export function DocumentUpload({
                 onPress={handleUpload}
                 disabled={isUploading}
                 className={`flex-1 flex-row items-center justify-center py-3 rounded-lg border-2 border-dashed
-                  ${isUploading ? 'border-gray-300 bg-gray-50' : 'border-secondary bg-secondary/5'}
+                  ${isUploading ? 'border-border dark:border-darkBorder bg-gray-50' : 'border-secondary bg-secondary/5'}
                 `}
                 activeOpacity={0.7}
               >
@@ -351,7 +351,7 @@ export function DocumentUpload({
                   color={isUploading ? '#6b7280' : '#bd8c5e'} 
                 />
                 <ThemedText 
-                  className={`ml-2 font-semibold ${isUploading ? 'text-gray-500' : 'text-secondary'}`}
+                  className={`ml-2 font-semibold ${isUploading ? 'text-textSecondary dark:text-darkTextSecondary' : 'text-secondary'}`}
                 >
                   {isUploading ? 'Uploading...' : 'Upload'}
                 </ThemedText>

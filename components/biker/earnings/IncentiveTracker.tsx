@@ -190,7 +190,7 @@ function IncentiveItem({ incentive, progress, compact = false, isLast = false }:
               {incentive.title}
             </ThemedText>
             {!compact && (
-              <ThemedText variant="caption" className="text-gray-500 mt-1">
+              <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary mt-1">
                 {incentive.description}
               </ThemedText>
             )}
@@ -215,7 +215,7 @@ function IncentiveItem({ incentive, progress, compact = false, isLast = false }:
       {/* Progress Bar */}
       <View className="mb-2">
         <View className="flex-row justify-between items-center mb-1">
-          <ThemedText variant="caption" className="text-gray-500">
+          <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">
             Progress: {incentive.progress}/{incentive.target}
           </ThemedText>
           <ThemedText variant="caption" className="text-primary font-semibold">

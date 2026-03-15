@@ -15,10 +15,12 @@ import { ThemedCard } from '../../components/common/ThemedCard';
 import { ThemedText } from '../../components/common/ThemedText';
 import BlogApiService, { BlogListItem, PaginatedBlogList } from '../../services/api/BlogApiService';
 import { useAuthStore } from '../../store/authStore';
+import { BrandColors, useThemeColors } from '../../constants/Colors';
 
 export default function BlogListScreen() {
   const router = useRouter();
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const colors = useThemeColors(isDarkMode);
   const [blogs, setBlogs] = useState<BlogListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -93,18 +95,18 @@ export default function BlogListScreen() {
           {item.image ? (
             <Image source={{ uri: item.image }} className="w-24 h-24 rounded-lg" resizeMode="cover" />
           ) : (
-            <View className="w-24 h-24 rounded-lg bg-gray-200 items-center justify-center">
-              <Ionicons name="image-outline" size={32} color="#ccc" />
+            <View className="w-24 h-24 rounded-lg bg-gray-100 dark:bg-darkSurface items-center justify-center">
+              <Ionicons name="image-outline" size={32} color={colors.border} />
             </View>
           )}
           <View className="flex-1">
             <ThemedText className="font-semibold text-sm mb-1" numberOfLines={2}>
               {item.title}
             </ThemedText>
-            <ThemedText variant="caption" className="text-gray-500 mb-2">
+            <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary mb-2">
               {item.author_name}
             </ThemedText>
-            <ThemedText variant="caption" className="text-gray-400">
+            <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">
               {item.published_at ? formatDate(item.published_at) : formatDate(item.created_at)}
             </ThemedText>
           </View>
@@ -117,7 +119,7 @@ export default function BlogListScreen() {
     if (!hasMore || currentPage >= totalPages) return null;
     return (
       <View className="py-4 items-center">
-        <ActivityIndicator size="small" color="#BD8C5E" />
+        <ActivityIndicator size="small" color={BrandColors.secondary} />
       </View>
     );
   };
@@ -126,10 +128,10 @@ export default function BlogListScreen() {
     <SafeAreaView className="flex-1" edges={['top', 'left', 'right']}>
       <ThemedView className="flex-1">
         {/* Header */}
-        <View className="px-4 pt-4 pb-4 border-b border-gray-200">
+        <View className="px-4 pt-4 pb-4 border-b border-border dark:border-darkBorder">
           <View className="flex-row items-center gap-3">
             <TouchableOpacity onPress={() => router.back()}>
-              <Ionicons name="arrow-back" size={24} color={isDarkMode ? '#d9d1c6' : '#314b4c'} />
+              <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
             </TouchableOpacity>
             <ThemedText variant="h2" className="text-xl">All Blogs</ThemedText>
           </View>
@@ -138,7 +140,7 @@ export default function BlogListScreen() {
         {/* Blog List */}
         {loading ? (
           <View className="flex-1 items-center justify-center">
-            <ActivityIndicator size="large" color="#BD8C5E" />
+            <ActivityIndicator size="large" color={BrandColors.secondary} />
           </View>
         ) : blogs.length > 0 ? (
           <FlatList
@@ -154,9 +156,9 @@ export default function BlogListScreen() {
           />
         ) : (
           <View className="flex-1 items-center justify-center px-4">
-            <Ionicons name="document-outline" size={48} color="#ccc" />
+            <Ionicons name="document-outline" size={48} color={colors.border} />
             <ThemedText variant="title" className="mt-4 text-center">No Blogs Yet</ThemedText>
-            <ThemedText variant="body" className="mt-2 text-center text-gray-500">
+            <ThemedText variant="body" className="mt-2 text-center text-textSecondary dark:text-darkTextSecondary">
               Check back later for new articles
             </ThemedText>
           </View>

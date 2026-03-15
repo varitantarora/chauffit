@@ -7,13 +7,15 @@ import { ThemedText } from '../../components/common/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
+import { BrandColors, useThemeColors } from '../../constants/Colors';
 
 export default function SupportScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const colors = useThemeColors(isDarkMode);
   const router = useRouter();
   
-  const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
-  const backgroundColor = isDarkMode ? '#1a1a1a' : '#F5F5F0';
+  const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
+  const backgroundColor = colors.altBackground;
 
   const handleFAQ = () => {
     router.push('/(driver)/faq');
@@ -85,7 +87,7 @@ export default function SupportScreen() {
               >
                 <View className="flex-row items-center flex-1">
                   <View className="w-8 h-8 bg-secondary/10 rounded-full items-center justify-center mr-4">
-                    <Ionicons name="book" size={16} color="#BD8C5E" />
+                    <Ionicons name="book" size={16} color={BrandColors.secondary} />
                   </View>
                   <ThemedText className="text-gray-800 dark:text-gray-200">
                     Driver Guides & Tutorials
@@ -108,7 +110,7 @@ export default function SupportScreen() {
               >
                 <View className="flex-row items-center flex-1">
                   <View className="w-8 h-8 bg-secondary/10 rounded-full items-center justify-center mr-4">
-                    <Ionicons name="call" size={16} color="#BD8C5E" />
+                    <Ionicons name="call" size={16} color={BrandColors.secondary} />
                   </View>
                   <ThemedText className="text-gray-800 dark:text-gray-200">
                     Call Driver Support
@@ -124,7 +126,7 @@ export default function SupportScreen() {
               >
                 <View className="flex-row items-center flex-1">
                   <View className="w-8 h-8 bg-secondary/10 rounded-full items-center justify-center mr-4">
-                    <Ionicons name="mail" size={16} color="#BD8C5E" />
+                    <Ionicons name="mail" size={16} color={BrandColors.secondary} />
                   </View>
                   <ThemedText className="text-gray-800 dark:text-gray-200">
                     Email Driver Support
@@ -140,7 +142,7 @@ export default function SupportScreen() {
               >
                 <View className="flex-row items-center flex-1">
                   <View className="w-8 h-8 bg-secondary/10 rounded-full items-center justify-center mr-4">
-                    <Ionicons name="chatbox" size={16} color="#BD8C5E" />
+                    <Ionicons name="chatbox" size={16} color={BrandColors.secondary} />
                   </View>
                   <ThemedText className="text-gray-800 dark:text-gray-200">
                     Live Chat
@@ -163,7 +165,7 @@ export default function SupportScreen() {
               >
                 <View className="flex-row items-center flex-1">
                   <View className="w-8 h-8 bg-secondary/10 rounded-full items-center justify-center mr-4">
-                    <Ionicons name="document-text" size={16} color="#BD8C5E" />
+                    <Ionicons name="document-text" size={16} color={BrandColors.secondary} />
                   </View>
                   <ThemedText className="text-gray-800 dark:text-gray-200">
                     Submit a New Request
@@ -179,7 +181,7 @@ export default function SupportScreen() {
               >
                 <View className="flex-row items-center flex-1">
                   <View className="w-8 h-8 bg-secondary/10 rounded-full items-center justify-center mr-4">
-                    <Ionicons name="checkmark-circle" size={16} color="#BD8C5E" />
+                    <Ionicons name="checkmark-circle" size={16} color={BrandColors.secondary} />
                   </View>
                   <ThemedText className="text-gray-800 dark:text-gray-200">
                     Check Request Status

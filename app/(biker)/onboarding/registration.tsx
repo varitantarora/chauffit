@@ -88,7 +88,7 @@ export default function BikerRegistrationScreen() {
 
   const inputClass = isDarkMode 
     ? 'bg-darkSurface text-darkText border-darkBorder' 
-    : 'bg-white text-textPrimary border-border';
+    : 'bg-white text-textPrimary dark:text-darkText border-border';
 
   return (
     <SafeAreaView className="flex-1">

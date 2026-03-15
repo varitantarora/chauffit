@@ -8,7 +8,7 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { StatusBadge } from '../../components/admin/StatusBadge';
 import { useAdminStore } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
-import { LightColors, DarkColors } from '../../constants/Colors';
+import { LightColors, DarkColors, BrandColors, useThemeColors} from '../../constants/Colors';
 import AdminApiService, { AdminBiker } from '../../services/api/AdminApiService';
 
 export default function BikerVerification() {
@@ -80,7 +80,7 @@ export default function BikerVerification() {
           <>
             <View className="items-center py-6">
               <View className="w-20 h-20 rounded-full items-center justify-center mb-3" style={{ backgroundColor: '#F59E0B20' }}>
-                <Ionicons name="bicycle" size={40} color="#F59E0B" />
+                <Ionicons name="bicycle" size={40} color={BrandColors.warning} />
               </View>
               <ThemedText variant="h2">{biker.user_details.full_name || `${biker.user_details.first_name} ${biker.user_details.last_name}`}</ThemedText>
               <ThemedText variant="small" className="mt-1">{biker.user_details.email}</ThemedText>
@@ -125,7 +125,7 @@ export default function BikerVerification() {
         <View className="flex-1 bg-black/50 items-center justify-center">
           <View className="w-4/5 bg-white dark:bg-gray-900 rounded-2xl p-4">
             <ThemedText variant="h3" className="mb-3">Reject Biker</ThemedText>
-            <ThemedText variant="small" className="mb-3 text-gray-600 dark:text-gray-400">
+            <ThemedText variant="small" className="mb-3 text-gray-600 dark:text-darkTextSecondary">
               Please provide a rejection reason:
             </ThemedText>
             <TextInput

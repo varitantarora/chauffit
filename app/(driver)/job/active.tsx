@@ -8,6 +8,7 @@ import { ThemedCard } from '../../../components/common/ThemedCard';
 import { ThemedText } from '../../../components/common/ThemedText';
 import { RouteMap } from '../../../components/driver/navigation/RouteMap';
 import { useJobStore } from '../../../store/jobStore';
+import { BrandColors } from '../../../constants/Colors';
 import { useEarningsStore } from '../../../store/earningsStore';
 import { useAuthStore } from '../../../store/authStore';
 import { Location } from '../../../types/navigation';
@@ -693,7 +694,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   navBtnShadow: {
-    shadowColor: '#3B82F6',
+    shadowColor: BrandColors.info,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

@@ -157,7 +157,7 @@ export default function DriverLoginScreen() {
                 className={`p-4 rounded-xl border text-base ${
                   isDarkMode 
                     ? 'bg-darkSurface text-darkText border-darkBorder' 
-                    : 'bg-white text-textPrimary border-border'
+                    : 'bg-white text-textPrimary dark:text-darkText border-border'
                 }`}
                 placeholder="Enter phone or email"
                 placeholderTextColor={isDarkMode ? '#9ca3af' : '#6b7280'}
@@ -176,7 +176,7 @@ export default function DriverLoginScreen() {
                 className={`p-4 rounded-xl border text-base ${
                   isDarkMode 
                     ? 'bg-darkSurface text-darkText border-darkBorder' 
-                    : 'bg-white text-textPrimary border-border'
+                    : 'bg-white text-textPrimary dark:text-darkText border-border'
                 }`}
                 placeholder="Enter password"
                 placeholderTextColor={isDarkMode ? '#9ca3af' : '#6b7280'}

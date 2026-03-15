@@ -10,6 +10,8 @@ import { useAuthStore } from '../../store/authStore';
 import { useBookingStore } from '../../store/bookingStore';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import InsuranceApiService, { InsurancePlan, InsuranceTier } from '../../services/api/InsuranceApiService';
+import { useConfigStore } from '../../store/configStore';
+import { BrandColors, useThemeColors } from '../../constants/Colors';
 
 interface InsuranceOption {
   id: string;
@@ -27,6 +29,8 @@ export default function TripInsuranceScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { selectedInsurancePlan, setSelectedInsurancePlan } = useBookingStore();
+  const getConfigValue = useConfigStore((state) => state.getConfigValue);
+  const insuranceEnabled = getConfigValue('insurance_enabled') === 'true';
 
   const [selectedInsurance, setSelectedInsurance] = useState<string>('');
   const [insurancePlans, setInsurancePlans] = useState<InsurancePlan[]>([]);
@@ -34,8 +38,15 @@ export default function TripInsuranceScreen() {
   const [error, setError] = useState<string | null>(null);
   const [showExclusions, setShowExclusions] = useState(false);
 
-  const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
+  const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
   const returnTo = (params.returnTo as string) || '/(customer)/book-ride-new';
+
+  // Redirect back if insurance feature is disabled
+  useEffect(() => {
+    if (!insuranceEnabled) {
+      router.back();
+    }
+  }, [insuranceEnabled]);
 
   // Fetch insurance plans on mount
   useEffect(() => {
@@ -135,8 +146,8 @@ export default function TripInsuranceScreen() {
 
   const renderLoadingState = () => (
     <View className="flex-1 items-center justify-center py-12">
-      <ActivityIndicator size="large" color="#BD8C5E" />
-      <ThemedText className="mt-4 text-gray-500">
+      <ActivityIndicator size="large" color={BrandColors.secondary} />
+      <ThemedText className="mt-4 text-textSecondary dark:text-darkTextSecondary">
         Loading insurance plans...
       </ThemedText>
     </View>
@@ -145,12 +156,12 @@ export default function TripInsuranceScreen() {
   const renderErrorState = () => (
     <View className="flex-1 items-center justify-center py-12 px-6">
       <View className="w-16 h-16 bg-red-100 rounded-full items-center justify-center mb-4">
-        <Ionicons name="alert-circle" size={32} color="#EF4444" />
+        <Ionicons name="alert-circle" size={32} color={BrandColors.danger} />
       </View>
       <ThemedText variant="h3" className="text-center mb-2">
         Unable to Load Plans
       </ThemedText>
-      <ThemedText variant="small" className="text-center text-gray-600 mb-6">
+      <ThemedText variant="small" className="text-center text-textSecondary dark:text-darkTextSecondary mb-6">
         {error}
       </ThemedText>
       <TouchableOpacity
@@ -167,13 +178,13 @@ export default function TripInsuranceScreen() {
 
   const renderEmptyState = () => (
     <View className="flex-1 items-center justify-center py-12 px-6">
-      <View className="w-16 h-16 bg-gray-100 rounded-full items-center justify-center mb-4">
-        <Ionicons name="shield-outline" size={32} color="#9CA3AF" />
+      <View className="w-16 h-16 bg-gray-100 dark:bg-darkSurface rounded-full items-center justify-center mb-4">
+        <Ionicons name="shield-outline" size={32} color={BrandColors.secondary} />
       </View>
       <ThemedText variant="h3" className="text-center mb-2">
         No Insurance Plans
       </ThemedText>
-      <ThemedText variant="small" className="text-center text-gray-600">
+      <ThemedText variant="small" className="text-center text-textSecondary dark:text-darkTextSecondary">
         Insurance plans are not available at the moment. You can proceed without insurance.
       </ThemedText>
     </View>
@@ -191,7 +202,7 @@ export default function TripInsuranceScreen() {
     return {
       border: 'border-gray-200 dark:border-gray-700',
       bg: '',
-      radio: 'border-gray-300',
+      radio: 'border-border dark:border-darkBorder',
     };
   };
 
@@ -199,7 +210,7 @@ export default function TripInsuranceScreen() {
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
         {/* Header */}
-        <View className="flex-row items-center justify-between px-6 py-4 border-b border-gray-200">
+        <View className="flex-row items-center justify-between px-6 py-4 border-b border-border dark:border-darkBorder">
           <View className="flex-row items-center">
             <TouchableOpacity onPress={() => router.back()} className="mr-3">
               <Ionicons name="arrow-back" size={24} color={iconColor} />
@@ -213,12 +224,12 @@ export default function TripInsuranceScreen() {
             {/* Header Info */}
             <View className="items-center mb-6">
               <View className="w-16 h-16 bg-blue-100 rounded-full items-center justify-center mb-3">
-                <Ionicons name="shield-checkmark" size={32} color="#3B82F6" />
+                <Ionicons name="shield-checkmark" size={32} color={BrandColors.info} />
               </View>
               <ThemedText variant="h3" className="text-center mb-2">
                 Protect Your Journey
               </ThemedText>
-              <ThemedText variant="small" className="text-center text-gray-600">
+              <ThemedText variant="small" className="text-center text-textSecondary dark:text-darkTextSecondary">
                 Choose insurance coverage for your trip and travel worry-free
               </ThemedText>
             </View>
@@ -263,7 +274,7 @@ export default function TripInsuranceScreen() {
                                 </View>
                               )}
                             </View>
-                            <ThemedText variant="small" className="text-gray-600 mt-1">
+                            <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary mt-1">
                               {option.description}
                             </ThemedText>
                           </View>
@@ -281,7 +292,7 @@ export default function TripInsuranceScreen() {
 
                         {/* Coverage Amount */}
                         <View className="flex-row items-center bg-blue-50 dark:bg-blue-900/10 rounded-lg p-2 mb-3">
-                          <Ionicons name="cash-outline" size={16} color="#3B82F6" />
+                          <Ionicons name="cash-outline" size={16} color={BrandColors.info} />
                           <ThemedText variant="small" className="ml-2 text-blue-700 dark:text-blue-400">
                             Coverage up to {InsuranceApiService.formatCoverageAmount(option.coverageAmount)}
                           </ThemedText>
@@ -292,7 +303,7 @@ export default function TripInsuranceScreen() {
                           <View className="flex-row flex-wrap">
                             {option.features.map((feature, index) => (
                               <View key={index} className="w-1/2 flex-row items-start mb-2 pr-2">
-                                <Ionicons name="checkmark-circle" size={16} color="#720C17" className="flex-shrink-0 mt-0.5" />
+                                <Ionicons name="checkmark-circle" size={16} color={BrandColors.burgundy} className="flex-shrink-0 mt-0.5" />
                                 <ThemedText variant="small" className="ml-2 text-gray-700 dark:text-gray-300 flex-1">
                                   {feature}
                                 </ThemedText>
@@ -320,7 +331,7 @@ export default function TripInsuranceScreen() {
                     { step: '5', text: 'Coverage ends when the trip is completed' },
                   ].map(({ step, text }) => (
                     <View key={step} className="flex-row items-start mb-3 last:mb-0">
-                      <View className="w-7 h-7 rounded-full items-center justify-center mr-3 flex-shrink-0" style={{ backgroundColor: '#720C17' }}>
+                      <View className="w-7 h-7 rounded-full items-center justify-center mr-3 flex-shrink-0" style={{ backgroundColor: BrandColors.burgundy }}>
                         <ThemedText variant="tiny" className="text-white font-bold">{step}</ThemedText>
                       </View>
                       <ThemedText variant="small" className="text-gray-700 dark:text-gray-300 flex-1 pt-1">{text}</ThemedText>
@@ -387,7 +398,7 @@ export default function TripInsuranceScreen() {
 
                 {showExclusions && (
                   <ThemedCard className="p-4">
-                    <ThemedText variant="small" className="text-gray-500 dark:text-gray-400 mb-3 font-semibold uppercase tracking-wide">Exclusions</ThemedText>
+                    <ThemedText variant="small" className="text-gray-500 dark:text-darkTextSecondary mb-3 font-semibold uppercase tracking-wide">Exclusions</ThemedText>
                     {[
                       'Normal wear & tear (brake pads, spark plugs, tires)',
                       'Mechanical or electrical failure',
@@ -398,12 +409,12 @@ export default function TripInsuranceScreen() {
                       'Commercial / yellow-board vehicles',
                     ].map((item, i) => (
                       <View key={i} className="flex-row items-start mb-2">
-                        <Ionicons name="close-circle" size={16} color="#EF4444" />
+                        <Ionicons name="close-circle" size={16} color={BrandColors.danger} />
                         <ThemedText variant="small" className="ml-2 text-gray-700 dark:text-gray-300 flex-1">{item}</ThemedText>
                       </View>
                     ))}
 
-                    <ThemedText variant="small" className="text-gray-500 dark:text-gray-400 mt-4 mb-3 font-semibold uppercase tracking-wide">Excluded Incidents</ThemedText>
+                    <ThemedText variant="small" className="text-gray-500 dark:text-darkTextSecondary mt-4 mb-3 font-semibold uppercase tracking-wide">Excluded Incidents</ThemedText>
                     {[
                       'Fraud or unlawful activity',
                       'Intentional overloading',
@@ -413,7 +424,7 @@ export default function TripInsuranceScreen() {
                       'Dealer warranty-covered damages',
                     ].map((item, i) => (
                       <View key={i} className="flex-row items-start mb-2">
-                        <Ionicons name="close-circle" size={16} color="#EF4444" />
+                        <Ionicons name="close-circle" size={16} color={BrandColors.danger} />
                         <ThemedText variant="small" className="ml-2 text-gray-700 dark:text-gray-300 flex-1">{item}</ThemedText>
                       </View>
                     ))}
@@ -438,7 +449,7 @@ export default function TripInsuranceScreen() {
         </ScrollView>
 
         {/* Bottom Actions */}
-        <View className="px-6 py-4 border-t border-gray-200">
+        <View className="px-6 py-4 border-t border-border dark:border-darkBorder">
           {/* Continue Button - only show if plans are available */}
           {!isLoading && !error && insuranceOptions.length > 0 && selectedInsurance && (
             <PrimaryButton
@@ -450,8 +461,8 @@ export default function TripInsuranceScreen() {
 
           {/* No Insurance Selected State */}
           {!isLoading && !error && insuranceOptions.length > 0 && !selectedInsurance && (
-            <View className="mb-3 py-4 bg-gray-200 rounded-xl">
-              <ThemedText className="text-center text-gray-600">
+            <View className="mb-3 py-4 bg-gray-100 dark:bg-darkSurface rounded-xl">
+              <ThemedText className="text-center text-textSecondary dark:text-darkTextSecondary">
                 Select an insurance option to continue
               </ThemedText>
             </View>
@@ -462,7 +473,7 @@ export default function TripInsuranceScreen() {
             onPress={handleSkip}
             className="py-3"
           >
-            <ThemedText className="text-center text-gray-600">
+            <ThemedText className="text-center text-textSecondary dark:text-darkTextSecondary">
               {selectedInsurance ? 'Cancel Insurance' : 'Skip for now'}
             </ThemedText>
           </TouchableOpacity>

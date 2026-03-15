@@ -163,7 +163,7 @@ const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
       <View className="flex-1 bg-white">
-        <View className="flex-row items-center justify-between p-4 border-b border-gray-200">
+        <View className="flex-row items-center justify-between p-4 border-b border-border dark:border-darkBorder">
           <TouchableOpacity onPress={onClose}>
             <Ionicons name="close" size={24} color={LightColors.textPrimary} />
           </TouchableOpacity>
@@ -192,7 +192,7 @@ const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
                 className={`flex-row items-center mr-4 mb-2 px-3 py-2 rounded-lg border ${
                   selectedType === type.type 
                     ? 'border-secondary bg-secondary/10' 
-                    : 'border-gray-300'
+                    : 'border-border dark:border-darkBorder'
                 }`}
                 onPress={() => setSelectedType(type.type)}
               >
@@ -202,7 +202,7 @@ const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
                   color={selectedType === type.type ? LightColors.secondary : LightColors.textSecondary}
                 />
                 <Text 
-                  className={`ml-2 ${selectedType === type.type ? 'text-secondary font-medium' : 'text-gray-600'}`}
+                  className={`ml-2 ${selectedType === type.type ? 'text-secondary font-medium' : 'text-textSecondary dark:text-darkTextSecondary'}`}
                 >
                   {type.name}
                 </Text>
@@ -216,7 +216,7 @@ const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
               <View>
                 <Text className="text-sm font-medium text-black mb-2">Card Number</Text>
                 <TextInput
-                  className="border border-gray-300 rounded-lg px-3 py-3 text-base"
+                  className="border border-border dark:border-darkBorder rounded-lg px-3 py-3 text-base"
                   placeholder="1234 5678 9012 3456"
                   value={cardNumber}
                   onChangeText={(text) => setCardNumber(formatCardNumber(text))}
@@ -229,7 +229,7 @@ const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
                 <View className="flex-1">
                   <Text className="text-sm font-medium text-black mb-2">Expiry Date</Text>
                   <TextInput
-                    className="border border-gray-300 rounded-lg px-3 py-3 text-base"
+                    className="border border-border dark:border-darkBorder rounded-lg px-3 py-3 text-base"
                     placeholder="MM/YY"
                     value={expiryDate}
                     onChangeText={(text) => setExpiryDate(formatExpiryDate(text))}
@@ -241,7 +241,7 @@ const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
                 <View className="flex-1">
                   <Text className="text-sm font-medium text-black mb-2">CVV</Text>
                   <TextInput
-                    className="border border-gray-300 rounded-lg px-3 py-3 text-base"
+                    className="border border-border dark:border-darkBorder rounded-lg px-3 py-3 text-base"
                     placeholder="123"
                     value={cvv}
                     onChangeText={setCvv}
@@ -255,7 +255,7 @@ const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
               <View>
                 <Text className="text-sm font-medium text-black mb-2">Cardholder Name</Text>
                 <TextInput
-                  className="border border-gray-300 rounded-lg px-3 py-3 text-base"
+                  className="border border-border dark:border-darkBorder rounded-lg px-3 py-3 text-base"
                   placeholder="John Doe"
                   value={cardHolderName}
                   onChangeText={setCardHolderName}
@@ -270,7 +270,7 @@ const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
             <View>
               <Text className="text-sm font-medium text-black mb-2">UPI ID</Text>
               <TextInput
-                className="border border-gray-300 rounded-lg px-3 py-3 text-base"
+                className="border border-border dark:border-darkBorder rounded-lg px-3 py-3 text-base"
                 placeholder="yourname@upi"
                 value={upiId}
                 onChangeText={setUpiId}
@@ -287,7 +287,7 @@ const AddPaymentModal: React.FC<AddPaymentModalProps> = ({
                 <Ionicons name="information-circle" size={20} color={LightColors.secondary} />
                 <Text className="ml-2 text-sm font-medium text-black">Cash Payment</Text>
               </View>
-              <Text className="text-sm text-gray-600 mt-2">
+              <Text className="text-sm text-textSecondary dark:text-darkTextSecondary mt-2">
                 Pay with cash directly to the driver at the end of your trip.
               </Text>
             </View>
@@ -379,12 +379,12 @@ const PaymentSelector: React.FC<PaymentSelectorProps> = ({
       className={`flex-row items-center p-4 border rounded-lg mb-3 ${
         selectedPaymentMethod?.id === item.id 
           ? 'border-secondary bg-secondary/5' 
-          : 'border-gray-200 bg-white'
+          : 'border-border dark:border-darkBorder bg-white'
       }`}
       onPress={() => onPaymentMethodSelect(item)}
       disabled={!item.isEnabled}
     >
-      <View className="w-12 h-12 bg-gray-100 rounded-lg items-center justify-center mr-3">
+      <View className="w-12 h-12 bg-gray-100 dark:bg-darkSurface rounded-lg items-center justify-center mr-3">
         <Ionicons 
           name={getPaymentIcon(item) as any} 
           size={24} 
@@ -393,11 +393,11 @@ const PaymentSelector: React.FC<PaymentSelectorProps> = ({
       </View>
       
       <View className="flex-1">
-        <Text className={`text-base font-medium ${item.isEnabled ? 'text-black' : 'text-gray-400'}`}>
+        <Text className={`text-base font-medium ${item.isEnabled ? 'text-black' : 'text-textSecondary dark:text-darkTextSecondary'}`}>
           {item.displayName}
         </Text>
         {item.type === 'card' && item.cardBrand && (
-          <Text className="text-sm text-gray-500 mt-1 capitalize">
+          <Text className="text-sm text-textSecondary dark:text-darkTextSecondary mt-1 capitalize">
             {item.cardBrand} • {item.lastFour}
           </Text>
         )}
@@ -426,7 +426,7 @@ const PaymentSelector: React.FC<PaymentSelectorProps> = ({
         ListEmptyComponent={
           <View className="items-center py-8">
             <Ionicons name="card" size={48} color={LightColors.textSecondary} />
-            <Text className="text-gray-500 text-center mt-4">
+            <Text className="text-textSecondary dark:text-darkTextSecondary text-center mt-4">
               No payment methods added yet
             </Text>
           </View>
@@ -435,7 +435,7 @@ const PaymentSelector: React.FC<PaymentSelectorProps> = ({
 
       {showAddButton && (
         <TouchableOpacity
-          className="flex-row items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg mt-4"
+          className="flex-row items-center justify-center p-4 border-2 border-dashed border-border dark:border-darkBorder rounded-lg mt-4"
           onPress={() => setShowAddModal(true)}
         >
           <Ionicons name="add-circle" size={24} color={LightColors.secondary} />

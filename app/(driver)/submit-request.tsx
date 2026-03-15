@@ -8,6 +8,7 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
+import { BrandColors, useThemeColors } from '../../constants/Colors';
 
 type RequestCategory = 'rides' | 'earnings' | 'documents' | 'account' | 'technical' | 'other';
 type Priority = 'low' | 'medium' | 'high';
@@ -23,11 +24,12 @@ interface RequestForm {
 
 export default function SubmitRequestScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const colors = useThemeColors(isDarkMode);
   const user = useAuthStore((state) => state.user);
   const router = useRouter();
   
-  const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
-  const backgroundColor = isDarkMode ? '#1a1a1a' : '#F5F5F0';
+  const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
+  const backgroundColor = colors.altBackground;
 
   const [form, setForm] = useState<RequestForm>({
     category: 'rides',
@@ -50,9 +52,9 @@ export default function SubmitRequestScreen() {
   ];
 
   const priorities = [
-    { id: 'low', label: 'Low', color: '#10B981', description: 'General inquiry, non-urgent' },
-    { id: 'medium', label: 'Medium', color: '#F59E0B', description: 'Standard issue, moderate urgency' },
-    { id: 'high', label: 'High', color: '#EF4444', description: 'Urgent issue affecting earnings' }
+    { id: 'low', label: 'Low', color: BrandColors.success, description: 'General inquiry, non-urgent' },
+    { id: 'medium', label: 'Medium', color: BrandColors.warning, description: 'Standard issue, moderate urgency' },
+    { id: 'high', label: 'High', color: BrandColors.danger, description: 'Urgent issue affecting earnings' }
   ];
 
   const contactMethods = [
@@ -111,7 +113,7 @@ export default function SubmitRequestScreen() {
 
   const inputClass = isDarkMode 
     ? 'bg-darkSurface text-darkText border-darkBorder' 
-    : 'bg-white text-textPrimary border-gray-200';
+    : 'bg-white text-textPrimary dark:text-darkText border-border dark:border-darkBorder';
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor }}>
@@ -131,7 +133,7 @@ export default function SubmitRequestScreen() {
               <ThemedText variant="h3" className="mb-2">
                 Driver Support Request
               </ThemedText>
-              <ThemedText variant="small" className="text-gray-600">
+              <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                 Need help with driving, earnings, or account issues? Our driver support team is here to assist you.
               </ThemedText>
             </View>
@@ -143,7 +145,7 @@ export default function SubmitRequestScreen() {
               </ThemedText>
               
               <View className="mb-4">
-                <ThemedText variant="small" className="mb-2 text-gray-600">
+                <ThemedText variant="small" className="mb-2 text-textSecondary dark:text-darkTextSecondary">
                   Full Name
                 </ThemedText>
                 <View className={`p-3 rounded-xl border ${inputClass}`}>
@@ -154,7 +156,7 @@ export default function SubmitRequestScreen() {
               </View>
 
               <View className="mb-4">
-                <ThemedText variant="small" className="mb-2 text-gray-600">
+                <ThemedText variant="small" className="mb-2 text-textSecondary dark:text-darkTextSecondary">
                   Email Address
                 </ThemedText>
                 <View className={`p-3 rounded-xl border ${inputClass}`}>
@@ -165,7 +167,7 @@ export default function SubmitRequestScreen() {
               </View>
 
               <View>
-                <ThemedText variant="small" className="mb-2 text-gray-600">
+                <ThemedText variant="small" className="mb-2 text-textSecondary dark:text-darkTextSecondary">
                   Phone Number
                 </ThemedText>
                 <View className={`p-3 rounded-xl border ${inputClass}`}>
@@ -201,7 +203,7 @@ export default function SubmitRequestScreen() {
                         <Ionicons 
                           name={category.icon as any} 
                           size={20} 
-                          color={form.category === category.id ? '#FFFFFF' : '#BD8C5E'} 
+                          color={form.category === category.id ? '#FFFFFF' : BrandColors.secondary} 
                         />
                       </View>
                       <View className="flex-1">
@@ -210,7 +212,7 @@ export default function SubmitRequestScreen() {
                         }`}>
                           {category.label}
                         </ThemedText>
-                        <ThemedText variant="small" className="text-gray-600">
+                        <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                           {category.description}
                         </ThemedText>
                       </View>
@@ -260,7 +262,7 @@ export default function SubmitRequestScreen() {
                       >
                         {priority.label}
                       </ThemedText>
-                      <ThemedText variant="tiny" className="text-gray-600 text-center mt-1">
+                      <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary text-center mt-1">
                         {priority.description}
                       </ThemedText>
                     </View>
@@ -277,7 +279,7 @@ export default function SubmitRequestScreen() {
 
               {/* Subject */}
               <View className="mb-4">
-                <ThemedText variant="small" className="mb-2 text-gray-600">
+                <ThemedText variant="small" className="mb-2 text-textSecondary dark:text-darkTextSecondary">
                   Subject *
                 </ThemedText>
                 <TextInput
@@ -288,14 +290,14 @@ export default function SubmitRequestScreen() {
                   onChangeText={(text) => setForm(prev => ({ ...prev, subject: text }))}
                   maxLength={100}
                 />
-                <ThemedText variant="tiny" className="text-gray-500 mt-1">
+                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary mt-1">
                   {form.subject.length}/100 characters
                 </ThemedText>
               </View>
 
               {/* Ride ID (Optional) */}
               <View className="mb-4">
-                <ThemedText variant="small" className="mb-2 text-gray-600">
+                <ThemedText variant="small" className="mb-2 text-textSecondary dark:text-darkTextSecondary">
                   Related Ride ID (Optional)
                 </ThemedText>
                 <TextInput
@@ -305,14 +307,14 @@ export default function SubmitRequestScreen() {
                   value={form.rideId}
                   onChangeText={(text) => setForm(prev => ({ ...prev, rideId: text }))}
                 />
-                <ThemedText variant="tiny" className="text-gray-500 mt-1">
+                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary mt-1">
                   Find ride ID in your trip history
                 </ThemedText>
               </View>
 
               {/* Description */}
               <View className="mb-4">
-                <ThemedText variant="small" className="mb-2 text-gray-600">
+                <ThemedText variant="small" className="mb-2 text-textSecondary dark:text-darkTextSecondary">
                   Detailed Description *
                 </ThemedText>
                 <TextInput
@@ -325,7 +327,7 @@ export default function SubmitRequestScreen() {
                   textAlignVertical="top"
                   maxLength={500}
                 />
-                <ThemedText variant="tiny" className="text-gray-500 mt-1">
+                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary mt-1">
                   {form.description.length}/500 characters (minimum 20 required)
                 </ThemedText>
               </View>
@@ -356,7 +358,7 @@ export default function SubmitRequestScreen() {
                         <Ionicons 
                           name={method.icon as any} 
                           size={20} 
-                          color={form.contactMethod === method.id ? '#FFFFFF' : '#BD8C5E'} 
+                          color={form.contactMethod === method.id ? '#FFFFFF' : BrandColors.secondary} 
                         />
                       </View>
                       <View className="flex-1">
@@ -365,7 +367,7 @@ export default function SubmitRequestScreen() {
                         }`}>
                           {method.label}
                         </ThemedText>
-                        <ThemedText variant="small" className="text-gray-600">
+                        <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                           {method.description}
                         </ThemedText>
                       </View>
@@ -387,10 +389,10 @@ export default function SubmitRequestScreen() {
 
             {/* Help Text */}
             <View className="mt-4">
-              <ThemedText variant="small" className="text-gray-500 text-center">
+              <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary text-center">
                 Our driver support team typically responds within 24 hours.
               </ThemedText>
-              <ThemedText variant="small" className="text-gray-500 text-center">
+              <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary text-center">
                 For urgent issues, please call our driver helpline.
               </ThemedText>
             </View>

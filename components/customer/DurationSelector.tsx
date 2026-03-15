@@ -51,7 +51,7 @@ export const DurationSelector: React.FC<DurationSelectorProps> = ({
                   </View>
                 )}
               </View>
-              <ThemedText variant="small" className="text-textSecondary mb-2">
+              <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary mb-2">
                 {option.description}
               </ThemedText>
               <ThemedText variant="h3" className="text-burgundy font-bold">

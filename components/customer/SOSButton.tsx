@@ -3,6 +3,7 @@ import { TouchableOpacity, View, Alert, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '../common/ThemedText';
 import { useAuthStore } from '../../store/authStore';
+import { BrandColors } from '../../constants/Colors';
 
 interface SOSButtonProps {
   onEmergencyCall?: () => void;
@@ -87,7 +88,7 @@ export const SOSButton: React.FC<SOSButtonProps> = ({
       className={`${getSizeClasses()} bg-danger rounded-full items-center justify-center shadow-lg ${getPositionClasses()}`}
       style={{
         transform: [{ scale: isPressed ? 0.95 : 1 }],
-        shadowColor: '#EF4444',
+        shadowColor: BrandColors.danger,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,

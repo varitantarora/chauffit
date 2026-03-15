@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ScrollView, TouchableOpacity, View, TextInput, RefreshControl, Animated, Image, ActivityIndicator, Platform } from 'react-native';
+import { ScrollView, TouchableOpacity, View, Text, RefreshControl, Animated, Image, ActivityIndicator, Platform, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../../components/common/ThemedView';
 import { ThemedCard } from '../../../components/common/ThemedCard';
@@ -11,36 +11,41 @@ import { useConfigStore } from '../../../store/configStore';
 import { useRouter } from 'expo-router';
 import BookingApiService, { CustomerRide } from '../../../services/api/BookingApiService';
 import BlogApiService, { BlogListItem } from '../../../services/api/BlogApiService';
+import AdvertisementApiService, { Advertisement } from '../../../services/api/AdvertisementApiService';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlurView } from 'expo-blur';
 import { DarkMapStyle } from '../../../constants/MapStyles';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BrandColors } from '../../../constants/Colors';
 
 export default function CustomerHomeScreen() {
   const user = useAuthStore((state) => state.user);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const router = useRouter();
   const fetchConfigs = useConfigStore((state) => state.fetchConfigs);
+  const getConfigValue = useConfigStore((state) => state.getConfigValue);
+  const showRecentActivity = getConfigValue('show_recent_activity_in_home_page') === 'true';
+  const showPromotions = getConfigValue('show_promotions_in_home_page') === 'true';
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [showAnimation, setShowAnimation] = useState(true);
-  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  const [pickupLocation, setPickupLocation] = useState('');
-  const [destinationLocation, setDestinationLocation] = useState('');
-  const [tripType, setTripType] = useState<'one_way' | 'hourly'>('one_way');
-  const [timeMode, setTimeMode] = useState<'now' | 'schedule'>('now');
+  const [currentLocationAddress, setCurrentLocationAddress] = useState('');
+  const [currentLocationLat, setCurrentLocationLat] = useState(28.6139);
+  const [currentLocationLng, setCurrentLocationLng] = useState(77.2090);
   const [recentActivity, setRecentActivity] = useState<CustomerRide[]>([]);
   const [loadingActivity, setLoadingActivity] = useState(true);
   const [blogs, setBlogs] = useState<BlogListItem[]>([]);
   const [blogsLoading, setBlogsLoading] = useState(true);
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [ads, setAds] = useState<Advertisement[]>([]);
+  const [isLoadingAds, setIsLoadingAds] = useState(false);
+  const [activeAdIndex, setActiveAdIndex] = useState(0);
+  const DEFAULT_REGION = { latitude: 28.4595, longitude: 77.0266, latitudeDelta: 0.05, longitudeDelta: 0.05 };
+  const [mapRegion, setMapRegion] = useState(DEFAULT_REGION);
+  const mapRef = useRef<MapView>(null);
 
   const clipAnimation = useRef(new Animated.Value(0)).current;
-  const searchAnimation = useRef(new Animated.Value(0)).current;
-  const pickupFieldAnimation = useRef(new Animated.Value(0)).current;
-  const destinationFieldAnimation = useRef(new Animated.Value(0)).current;
-  const buttonAnimation = useRef(new Animated.Value(0)).current;
 
   const iconColor = isDarkMode ? '#d9d1c6' : '#314b4c';
 
@@ -92,29 +97,54 @@ export default function CustomerHomeScreen() {
     fetchConfigs();
   }, [fetchRecentActivity, fetchBlogs]);
 
-  const destinationRef = useRef<TextInput>(null);
+  useEffect(() => {
+    const fetchAds = async () => {
+      setIsLoadingAds(true);
+      const response = await AdvertisementApiService.getAdvertisements('home');
+      if (response.success && response.data) setAds(response.data);
+      setIsLoadingAds(false);
+    };
+    fetchAds();
+  }, []);
 
   // Fetch user location for map hero & auto-fill pickup
   useEffect(() => {
     (async () => {
+      // Load cached location for instant map render on repeat visits
+      try {
+        const cached = await AsyncStorage.getItem('@lastKnownLocation');
+        if (cached) {
+          const { latitude, longitude } = JSON.parse(cached);
+          setMapRegion({ latitude, longitude, latitudeDelta: 0.05, longitudeDelta: 0.05 });
+          setCurrentLocationLat(latitude);
+          setCurrentLocationLng(longitude);
+        }
+      } catch {}
+
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
         const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
-        // Auto-fill pickup location via reverse geocoding
-        try {
-          const addresses = await Location.reverseGeocodeAsync({
-            latitude: loc.coords.latitude,
-            longitude: loc.coords.longitude,
-          });
-          if (addresses.length > 0) {
-            const addr = addresses[0];
-            const parts = [addr.name, addr.street, addr.district, addr.city].filter(Boolean);
-            setPickupLocation(parts.join(', '));
-          }
-        } catch (e) {
-          console.warn('Reverse geocode failed:', e);
-        }
+        const { latitude, longitude } = loc.coords;
+
+        // Cache for next launch
+        AsyncStorage.setItem('@lastKnownLocation', JSON.stringify({ latitude, longitude })).catch(() => {});
+
+        // Animate map to real location smoothly
+        mapRef.current?.animateToRegion({ latitude, longitude, latitudeDelta: 0.05, longitudeDelta: 0.05 }, 800);
+        setMapRegion({ latitude, longitude, latitudeDelta: 0.05, longitudeDelta: 0.05 });
+        setCurrentLocationLat(latitude);
+        setCurrentLocationLng(longitude);
+
+        // Reverse geocode runs non-blocking — does not delay map render
+        Location.reverseGeocodeAsync({ latitude, longitude })
+          .then((addresses) => {
+            if (addresses.length > 0) {
+              const addr = addresses[0];
+              const parts = [addr.name, addr.street, addr.district, addr.city].filter(Boolean);
+              setCurrentLocationAddress(parts.join(', '));
+            }
+          })
+          .catch((e) => console.warn('Reverse geocode failed:', e));
       }
     })();
   }, []);
@@ -191,109 +221,19 @@ export default function CustomerHomeScreen() {
     }
   };
 
-  const toggleSearchExpansion = () => {
-    if (isSearchExpanded) {
-      // Closing - stagger in reverse
-      Animated.parallel([
-        Animated.spring(buttonAnimation, {
-          toValue: 0,
-          useNativeDriver: true,
-          stiffness: 400,
-          damping: 40,
-        }),
-        Animated.spring(destinationFieldAnimation, {
-          toValue: 0,
-          useNativeDriver: true,
-          stiffness: 400,
-          damping: 40,
-        }),
-        Animated.spring(pickupFieldAnimation, {
-          toValue: 0,
-          useNativeDriver: true,
-          stiffness: 400,
-          damping: 40,
-        }),
-      ]).start();
-
-      Animated.spring(searchAnimation, {
-        toValue: 0,
-        useNativeDriver: false,
-        stiffness: 400,
-        damping: 40,
-      }).start(() => {
-        setIsSearchExpanded(false);
-      });
-    } else {
-      // Opening - set state first, then animate in next frame
-      setIsSearchExpanded(true);
-
-      // Use requestAnimationFrame to ensure state is updated before animations
-      requestAnimationFrame(() => {
-        // Main container expansion
-        Animated.spring(searchAnimation, {
-          toValue: 1,
-          useNativeDriver: false,
-          tension: 50,
-          friction: 10,
-        }).start();
-
-        // Stagger children animations with Animated.stagger
-        Animated.stagger(70, [
-          Animated.spring(pickupFieldAnimation, {
-            toValue: 1,
-            useNativeDriver: true,
-            tension: 100,
-            friction: 10,
-          }),
-          Animated.spring(destinationFieldAnimation, {
-            toValue: 1,
-            useNativeDriver: true,
-            tension: 100,
-            friction: 10,
-          }),
-          Animated.spring(buttonAnimation, {
-            toValue: 1,
-            useNativeDriver: true,
-            tension: 100,
-            friction: 10,
-          }),
-        ]).start();
-
-        // Auto-focus destination field after animation
-        setTimeout(() => {
-          destinationRef.current?.focus();
-        }, 300);
-      });
-    }
-  };
-
-  const handleExpandedSearch = () => {
-    if (pickupLocation.trim() && destinationLocation.trim()) {
-      if (timeMode === 'schedule') {
-        router.push({
-          pathname: '/(customer)/schedule',
-          params: {
-            pickup: pickupLocation.trim(),
-            destination: destinationLocation.trim(),
-            bookingType: tripType === 'hourly' ? 'hourly_charter' : 'one_way',
-          }
-        });
-      } else {
-        router.push({
-          pathname: '/(customer)/book-ride-new',
-          params: {
-            pickup: pickupLocation.trim(),
-            destination: destinationLocation.trim(),
-            tripType: tripType,
-          }
-        });
-      }
-      toggleSearchExpansion();
-    }
+  const handleWhereToPress = () => {
+    router.push({
+      pathname: '/(customer)/ride-search',
+      params: {
+        initialPickup: currentLocationAddress,
+        initialPickupLat: currentLocationLat.toString(),
+        initialPickupLng: currentLocationLng.toString(),
+      },
+    });
   };
 
   const quickActions = [
-    { title: 'Book Now', icon: 'car', action: () => router.push('/(customer)/book-ride-new') },
+    { title: 'Book Now', icon: 'car', action: handleWhereToPress },
     { title: 'Schedule', icon: 'time', action: () => router.push('/(customer)/schedule') },
     { title: 'Trips', icon: 'list', action: () => router.push('/(customer)/(tabs)/history') },
     { title: 'Favorites', icon: 'heart', action: () => router.push('/(customer)/(tabs)/favorites') }
@@ -309,31 +249,24 @@ export default function CustomerHomeScreen() {
           }
         >
           {/* Map Hero Section */}
-          <View style={{ height: isSearchExpanded ? 540 : 280, overflow: 'hidden', borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}>
-            {/* Map Background */}
-            {userLocation ? (
-              <MapView
-                key={isDarkMode ? 'dark' : 'light'}
-                provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-                initialRegion={{
-                  latitude: userLocation.latitude,
-                  longitude: userLocation.longitude,
-                  latitudeDelta: 25,
-                  longitudeDelta: 25,
-                }}
-                showsUserLocation
-                scrollEnabled={true}
-                zoomEnabled={true}
-                rotateEnabled={true}
-                pitchEnabled={true}
-                showsMyLocationButton={true}
-                showsCompass={true}
-                customMapStyle={isDarkMode ? DarkMapStyle : undefined}
-              />
-            ) : (
-              <View style={{ flex: 1, backgroundColor: isDarkMode ? '#1a1a1a' : '#e8e4df' }} />
-            )}
+          <View style={{ height: 280, overflow: 'hidden', borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}>
+            {/* Map Background — always rendered, animates to real location once GPS resolves */}
+            <MapView
+              key={isDarkMode ? 'dark' : 'light'}
+              ref={mapRef}
+              provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+              initialRegion={mapRegion}
+              showsUserLocation={Platform.OS !== 'android'}
+              scrollEnabled={false}
+              zoomEnabled={false}
+              rotateEnabled={false}
+              pitchEnabled={false}
+              showsMyLocationButton={false}
+              showsCompass={false}
+              liteMode={Platform.OS === 'android'}
+              customMapStyle={isDarkMode ? DarkMapStyle : undefined}
+            />
 
             {/* Header overlay with gradient + glassmorphism */}
             <LinearGradient
@@ -343,7 +276,7 @@ export default function CustomerHomeScreen() {
               <ThemedText
                 variant="h1"
                 style={{
-                  color: '#720C17',
+                  color: BrandColors.burgundy,
                   fontSize: 22,
                   fontWeight: '800',
                   letterSpacing: 1,
@@ -353,332 +286,64 @@ export default function CustomerHomeScreen() {
               </ThemedText>
             </LinearGradient>
 
-            {/* Search bar overlay */}
+            {/* Where to? search bar */}
             <View style={{ position: 'absolute', bottom: 16, left: 16, right: 16 }}>
-              <Animated.View
-                style={{
-                  height: searchAnimation.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [56, 300],
-                  }),
-                  overflow: 'hidden',
-                  borderRadius: 16,
-                }}
+              <BlurView
+                intensity={80}
+                tint={isDarkMode ? 'dark' : 'light'}
+                style={{ borderRadius: 16, overflow: 'hidden' }}
               >
-                <BlurView
-                  intensity={80}
-                  tint={isDarkMode ? 'dark' : 'light'}
+                <View
                   style={{
-                    flex: 1,
+                    backgroundColor: isDarkMode ? 'rgba(26,26,26,0.75)' : 'rgba(255,255,255,0.8)',
                     borderRadius: 16,
-                    overflow: 'hidden',
                   }}
                 >
-                  <View
+                  <TouchableOpacity
                     style={{
-                      flex: 1,
-                      backgroundColor: isDarkMode ? 'rgba(26,26,26,0.75)' : 'rgba(255,255,255,0.8)',
-                      borderRadius: 16,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      paddingHorizontal: 20,
+                      height: 52,
+                      borderRadius: 28,
+                      backgroundColor: isDarkMode ? 'rgba(44,44,44,0.8)' : 'rgba(245,245,245,0.95)',
+                      marginHorizontal: 4,
+                      marginVertical: 2,
                     }}
+                    onPress={handleWhereToPress}
+                    activeOpacity={0.7}
                   >
-                    {/* Collapsed Search Bar */}
-                    <Animated.View
+                    <Ionicons name="search" size={18} color={isDarkMode ? '#d9d1c6' : '#888'} />
+                    <ThemedText
                       style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        opacity: searchAnimation.interpolate({
-                          inputRange: [0, 0.3, 1],
-                          outputRange: [1, 0, 0],
-                        }),
+                        flex: 1,
+                        marginLeft: 12,
+                        color: isDarkMode ? '#999' : '#888',
+                        fontSize: 16,
+                        fontWeight: '500',
                       }}
-                      pointerEvents={isSearchExpanded ? 'none' : 'auto'}
                     >
-                      <TouchableOpacity
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          paddingHorizontal: 20,
-                          height: 52,
-                          borderRadius: 28,
-                          backgroundColor: isDarkMode ? 'rgba(44,44,44,0.8)' : 'rgba(245,245,245,0.95)',
-                          marginHorizontal: 4,
-                          marginVertical: 2,
-                        }}
-                        onPress={toggleSearchExpansion}
-                        activeOpacity={0.7}
-                      >
-                        <Ionicons name="search" size={18} color={isDarkMode ? '#d9d1c6' : '#888'} />
-                        <ThemedText
-                          style={{
-                            flex: 1,
-                            marginLeft: 12,
-                            color: isDarkMode ? '#999' : '#888',
-                            fontSize: 16,
-                            fontWeight: '500',
-                          }}
-                        >
-                          Where to?
-                        </ThemedText>
-                        <TouchableOpacity
-                          onPress={(e) => {
-                            e.stopPropagation();
-                            router.push({ pathname: '/(customer)/book-ride-new', params: { multiStop: 'true' } });
-                          }}
-                          style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 16,
-                            backgroundColor: isDarkMode ? 'rgba(114,12,23,0.3)' : 'rgba(114,12,23,0.1)',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          <Ionicons name="add" size={20} color="#720C17" />
-                        </TouchableOpacity>
-                      </TouchableOpacity>
-                    </Animated.View>
-
-                    {/* Expanded Search Form */}
-                    <Animated.View
+                      Where to?
+                    </ThemedText>
+                    <TouchableOpacity
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        router.push({ pathname: '/(customer)/book-ride-new', params: { multiStop: 'true' } });
+                      }}
                       style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        padding: 16,
-                        opacity: searchAnimation.interpolate({
-                          inputRange: [0, 0.3, 1],
-                          outputRange: [0, 0, 1],
-                        }),
+                        width: 32,
+                        height: 32,
+                        borderRadius: 16,
+                        backgroundColor: isDarkMode ? 'rgba(114,12,23,0.3)' : 'rgba(114,12,23,0.1)',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}
-                      pointerEvents={isSearchExpanded ? 'auto' : 'none'}
                     >
-                      {/* Close button */}
-                      <TouchableOpacity
-                        style={{ position: 'absolute', top: 8, right: 8, padding: 8, zIndex: 10 }}
-                        onPress={toggleSearchExpansion}
-                      >
-                        <Ionicons name="close-circle" size={24} color={isDarkMode ? '#d9d1c6' : '#555'} />
-                      </TouchableOpacity>
-
-                      {/* Pill-shaped dropdown controls */}
-                      <View style={{ flexDirection: 'row', marginBottom: 12, gap: 8, paddingRight: 36 }}>
-                        {/* Trip Type Pill */}
-                        <TouchableOpacity
-                          onPress={() => setTripType(tripType === 'one_way' ? 'hourly' : 'one_way')}
-                          style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            paddingHorizontal: 12,
-                            paddingVertical: 7,
-                            borderRadius: 20,
-                            backgroundColor: isDarkMode ? 'rgba(114,12,23,0.25)' : 'rgba(114,12,23,0.08)',
-                            borderWidth: 1,
-                            borderColor: isDarkMode ? 'rgba(114,12,23,0.4)' : 'rgba(114,12,23,0.2)',
-                          }}
-                        >
-                          <Ionicons
-                            name={tripType === 'one_way' ? 'arrow-forward' : 'time-outline'}
-                            size={14}
-                            color="#720C17"
-                          />
-                          <ThemedText style={{ marginLeft: 6, fontSize: 12, fontWeight: '600', color: '#720C17' }}>
-                            {tripType === 'one_way' ? 'One Way' : 'Hourly'}
-                          </ThemedText>
-                          <Ionicons name="chevron-down" size={12} color="#720C17" style={{ marginLeft: 4 }} />
-                        </TouchableOpacity>
-
-                        {/* Vehicle Selector Pill */}
-                        <TouchableOpacity
-                          style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            paddingHorizontal: 12,
-                            paddingVertical: 7,
-                            borderRadius: 20,
-                            backgroundColor: isDarkMode ? 'rgba(189,140,94,0.15)' : 'rgba(189,140,94,0.08)',
-                            borderWidth: 1,
-                            borderColor: isDarkMode ? 'rgba(189,140,94,0.3)' : 'rgba(189,140,94,0.2)',
-                          }}
-                        >
-                          <Ionicons name="car" size={14} color="#BD8C5E" />
-                          <ThemedText style={{ marginLeft: 6, fontSize: 12, fontWeight: '600', color: '#BD8C5E' }}>
-                            Sedan
-                          </ThemedText>
-                          <Ionicons name="chevron-down" size={12} color="#BD8C5E" style={{ marginLeft: 4 }} />
-                        </TouchableOpacity>
-
-                        {/* Time Pill */}
-                        <TouchableOpacity
-                          onPress={() => {
-                            if (timeMode === 'now') {
-                              setTimeMode('schedule');
-                            } else {
-                              setTimeMode('now');
-                            }
-                          }}
-                          style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            paddingHorizontal: 12,
-                            paddingVertical: 7,
-                            borderRadius: 20,
-                            backgroundColor: isDarkMode ? 'rgba(44,44,44,0.6)' : 'rgba(245,245,245,0.8)',
-                            borderWidth: 1,
-                            borderColor: isDarkMode ? 'rgba(74,74,74,0.5)' : 'rgba(200,200,200,0.6)',
-                          }}
-                        >
-                          <Ionicons name="time" size={14} color={isDarkMode ? '#d9d1c6' : '#555'} />
-                          <ThemedText style={{ marginLeft: 6, fontSize: 12, fontWeight: '600', color: isDarkMode ? '#d9d1c6' : '#555' }}>
-                            {timeMode === 'now' ? 'Now' : 'Schedule'}
-                          </ThemedText>
-                          <Ionicons name="chevron-down" size={12} color={isDarkMode ? '#d9d1c6' : '#555'} style={{ marginLeft: 4 }} />
-                        </TouchableOpacity>
-                      </View>
-
-                      {/* Pickup Location */}
-                      <Animated.View
-                        style={{
-                          opacity: pickupFieldAnimation,
-                          transform: [{
-                            translateY: pickupFieldAnimation.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [50, 0],
-                            }),
-                          }],
-                        }}
-                      >
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            paddingHorizontal: 16,
-                            paddingVertical: 12,
-                            borderRadius: 10,
-                            marginBottom: 12,
-                            backgroundColor: isDarkMode ? 'rgba(44,44,44,0.6)' : 'rgba(245,245,245,0.7)',
-                            borderWidth: 1,
-                            borderColor: isDarkMode ? 'rgba(74,74,74,0.5)' : 'rgba(200,200,200,0.6)',
-                          }}
-                        >
-                          <Ionicons name="location" size={20} color="#10b981" />
-                          <TextInput
-                            style={{
-                              flex: 1,
-                              marginLeft: 12,
-                              color: isDarkMode ? '#e5e5e5' : '#1a1a1a',
-                              fontSize: 15,
-                            }}
-                            placeholder="Pickup location"
-                            placeholderTextColor={isDarkMode ? '#888' : '#999'}
-                            value={pickupLocation}
-                            onChangeText={setPickupLocation}
-                          />
-                        </View>
-                      </Animated.View>
-
-                      {/* Destination Location */}
-                      <Animated.View
-                        style={{
-                          opacity: destinationFieldAnimation,
-                          transform: [{
-                            translateY: destinationFieldAnimation.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [50, 0],
-                            }),
-                          }],
-                        }}
-                      >
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            paddingHorizontal: 16,
-                            paddingVertical: 12,
-                            borderRadius: 10,
-                            marginBottom: 16,
-                            backgroundColor: isDarkMode ? 'rgba(44,44,44,0.6)' : 'rgba(245,245,245,0.7)',
-                            borderWidth: 1,
-                            borderColor: isDarkMode ? 'rgba(74,74,74,0.5)' : 'rgba(200,200,200,0.6)',
-                          }}
-                        >
-                          <Ionicons name="location" size={20} color="#ef4444" />
-                          <TextInput
-                            ref={destinationRef}
-                            style={{
-                              flex: 1,
-                              marginLeft: 12,
-                              color: isDarkMode ? '#e5e5e5' : '#1a1a1a',
-                              fontSize: 15,
-                            }}
-                            placeholder="Where to?"
-                            placeholderTextColor={isDarkMode ? '#888' : '#999'}
-                            value={destinationLocation}
-                            onChangeText={setDestinationLocation}
-                          />
-                        </View>
-                      </Animated.View>
-
-                      {/* Destination Suggestions */}
-                      {isSearchExpanded && !destinationLocation.trim() && recentActivity.length > 0 && (
-                        <View style={{ marginBottom: 8, maxHeight: 100 }}>
-                          <ThemedText style={{ fontSize: 11, fontWeight: '600', color: isDarkMode ? '#999' : '#888', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                            Recent Destinations
-                          </ThemedText>
-                          {recentActivity.slice(0, 2).map((activity) => (
-                            activity.dropoff_address ? (
-                              <TouchableOpacity
-                                key={activity.id}
-                                onPress={() => setDestinationLocation(activity.dropoff_address)}
-                                style={{
-                                  flexDirection: 'row',
-                                  alignItems: 'center',
-                                  paddingVertical: 8,
-                                  paddingHorizontal: 4,
-                                }}
-                              >
-                                <Ionicons name="time-outline" size={16} color={isDarkMode ? '#BD8C5E' : '#720C17'} />
-                                <ThemedText
-                                  numberOfLines={1}
-                                  style={{ marginLeft: 10, fontSize: 13, flex: 1, color: isDarkMode ? '#d9d1c6' : '#333' }}
-                                >
-                                  {activity.dropoff_address}
-                                </ThemedText>
-                              </TouchableOpacity>
-                            ) : null
-                          ))}
-                        </View>
-                      )}
-
-                      {/* Search Button */}
-                      <Animated.View
-                        style={{
-                          opacity: buttonAnimation,
-                          transform: [{
-                            translateY: buttonAnimation.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [50, 0],
-                            }),
-                          }],
-                        }}
-                      >
-                        <TouchableOpacity
-                          className="bg-burgundy py-3 rounded-lg"
-                          onPress={handleExpandedSearch}
-                          disabled={!pickupLocation.trim() || !destinationLocation.trim()}
-                          style={{
-                            opacity: !pickupLocation.trim() || !destinationLocation.trim() ? 0.5 : 1,
-                          }}
-                        >
-                          <ThemedText className="text-white text-center font-semibold">Search</ThemedText>
-                        </TouchableOpacity>
-                      </Animated.View>
-                    </Animated.View>
-                  </View>
-                </BlurView>
-              </Animated.View>
+                      <Ionicons name="add" size={20} color={BrandColors.burgundy} />
+                    </TouchableOpacity>
+                  </TouchableOpacity>
+                </View>
+              </BlurView>
             </View>
           </View>
 
@@ -697,7 +362,7 @@ export default function CustomerHomeScreen() {
                     onPress={action.action}
                   >
                     <View className="bg-secondary/10 p-2 rounded-full mb-2">
-                      <Ionicons name={action.icon as any} size={22} color="#BD8C5E" />
+                      <Ionicons name={action.icon as any} size={22} color={BrandColors.secondary} />
                     </View>
                     <ThemedText
                       variant="small"
@@ -712,8 +377,80 @@ export default function CustomerHomeScreen() {
             </View>
           </View>
 
+          {/* Promotions Section */}
+          {showPromotions && (isLoadingAds || ads.length > 0) && (
+            <View className="px-3 mb-6">
+              <ThemedText variant="title" className="text-lg mb-4">Promotions</ThemedText>
+              {isLoadingAds ? (
+                <View className="flex-row gap-3">
+                  <View style={{ width: 317, height: 158 }} className="rounded-xl bg-gray-200 dark:bg-gray-700" />
+                  <View style={{ width: 317, height: 158 }} className="rounded-xl bg-gray-200 dark:bg-gray-700" />
+                </View>
+              ) : (
+                <>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingHorizontal: 12 }}
+                    onMomentumScrollEnd={(e) => {
+                      const index = Math.round(e.nativeEvent.contentOffset.x / (317 + 16));
+                      setActiveAdIndex(index);
+                    }}
+                  >
+                    {ads.map((ad) => (
+                      <TouchableOpacity
+                        key={ad.id}
+                        className="mr-4"
+                        activeOpacity={0.85}
+                        onPress={() => ad.link && Linking.openURL(ad.link)}
+                        disabled={!ad.link}
+                      >
+                        <View style={{ width: 317, height: 158 }}>
+                          <View style={{
+                            width: 317, height: 158, borderRadius: 12, overflow: 'hidden',
+                            shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+                            shadowOpacity: 0.1, shadowRadius: 2, elevation: 2,
+                          }}>
+                            <Image
+                              source={{ uri: ad.image }}
+                              style={{ width: '100%', height: '100%' }}
+                              resizeMode="cover"
+                            />
+                          </View>
+                          <View style={{
+                            position: 'absolute', top: 8, right: 8,
+                            backgroundColor: 'rgba(0,0,0,0.5)',
+                            paddingHorizontal: 6, paddingVertical: 2,
+                            borderRadius: 4,
+                          }}>
+                            <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>Ad</Text>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                  {ads.length > 1 && (
+                    <View className="flex-row justify-center mt-3 gap-1">
+                      {ads.map((_, i) => (
+                        <View
+                          key={i}
+                          style={{
+                            width: i === activeAdIndex ? 16 : 6,
+                            height: 6,
+                            borderRadius: 3,
+                            backgroundColor: i === activeAdIndex ? BrandColors.burgundy : (isDarkMode ? '#555' : '#ccc'),
+                          }}
+                        />
+                      ))}
+                    </View>
+                  )}
+                </>
+              )}
+            </View>
+          )}
+
           {/* Recent Activity */}
-          <View className="px-3 mb-6">
+          {showRecentActivity && <View className="px-3 mb-6">
             <View className="flex-row justify-between items-center mb-4">
               <ThemedText variant="title" className="text-lg">
                 Recent Activity
@@ -727,8 +464,8 @@ export default function CustomerHomeScreen() {
 
             {loadingActivity ? (
               <View className="items-center py-8">
-                <ActivityIndicator size="small" color="#BD8C5E" />
-                <ThemedText variant="caption" className="mt-2 text-gray-500">Loading activity...</ThemedText>
+                <ActivityIndicator size="small" color={BrandColors.secondary} />
+                <ThemedText variant="caption" className="mt-2 text-textSecondary dark:text-darkTextSecondary">Loading activity...</ThemedText>
               </View>
             ) : recentActivity.length > 0 ? (
               recentActivity.map((activity) => (
@@ -813,7 +550,7 @@ export default function CustomerHomeScreen() {
                 <ThemedText variant="body" className="font-semibold mt-3">
                   No Recent Activity
                 </ThemedText>
-                <ThemedText variant="small" className="text-textSecondary mt-1">
+                <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary mt-1">
                   Book your first ride to see activity here
                 </ThemedText>
                 <TouchableOpacity
@@ -824,7 +561,7 @@ export default function CustomerHomeScreen() {
                 </TouchableOpacity>
               </ThemedCard>
             )}
-          </View>
+          </View>}
 
           {/* Blogs - More Ways to Use Chauffit */}
           <View className="px-3 mb-6">
@@ -839,7 +576,7 @@ export default function CustomerHomeScreen() {
 
             {blogsLoading ? (
               <View className="items-center py-4">
-                <ActivityIndicator size="small" color="#BD8C5E" />
+                <ActivityIndicator size="small" color={BrandColors.secondary} />
               </View>
             ) : blogs.length > 0 ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -858,8 +595,8 @@ export default function CustomerHomeScreen() {
                           resizeMode="cover"
                         />
                       ) : (
-                        <View className="w-full h-24 rounded-lg mb-2 bg-gray-200 items-center justify-center">
-                          <ThemedText className="text-gray-400 text-xs">No Image</ThemedText>
+                        <View className="w-full h-24 rounded-lg mb-2 bg-gray-200 dark:bg-darkSurface items-center justify-center">
+                          <ThemedText className="text-textSecondary dark:text-darkTextSecondary text-xs">No Image</ThemedText>
                         </View>
                       )}
                       <View className="h-5 justify-center">
@@ -868,7 +605,7 @@ export default function CustomerHomeScreen() {
                         </ThemedText>
                       </View>
                       <View className="h-10 mt-1 justify-start">
-                        <ThemedText variant="caption" className="text-center text-gray-600" numberOfLines={2}>
+                        <ThemedText variant="caption" className="text-center text-textSecondary dark:text-darkTextSecondary" numberOfLines={2}>
                           {blog.author_name}
                         </ThemedText>
                       </View>
@@ -878,7 +615,7 @@ export default function CustomerHomeScreen() {
               </ScrollView>
             ) : (
               <ThemedCard className="items-center py-4">
-                <ThemedText variant="small" className="text-textSecondary">No content available</ThemedText>
+                <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">No content available</ThemedText>
               </ThemedCard>
             )}
           </View>
@@ -892,7 +629,7 @@ export default function CustomerHomeScreen() {
           <Animated.View
             className="absolute inset-0 items-center justify-center"
             style={{
-              backgroundColor: isDarkMode ? '#720C17' : '#BD8C5E',
+              backgroundColor: isDarkMode ? BrandColors.burgundy : BrandColors.secondary,
               opacity: clipAnimation.interpolate({
                 inputRange: [0, 1],
                 outputRange: [1, 0],
@@ -908,7 +645,7 @@ export default function CustomerHomeScreen() {
             <View
               className="w-20 h-20 rounded-full items-center justify-center"
               style={{
-                backgroundColor: isDarkMode ? '#BD8C5E' : '#720C17',
+                backgroundColor: isDarkMode ? BrandColors.secondary : BrandColors.burgundy,
               }}
             >
               <Image

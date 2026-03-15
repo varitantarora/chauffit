@@ -8,7 +8,7 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { StatusBadge } from '../../components/admin/StatusBadge';
 import { useAdminStore } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
-import { LightColors, DarkColors } from '../../constants/Colors';
+import { LightColors, DarkColors, BrandColors, useThemeColors} from '../../constants/Colors';
 
 const formatMoney = (value: string | number | null | undefined): string => {
   if (value === null || value === undefined || value === '') return 'N/A';
@@ -103,14 +103,14 @@ export default function RideDetail() {
             {/* Route Card */}
             <SectionCard title="Route" icon="navigate-outline" iconColor="#3B82F6">
               <View className="flex-row items-start mb-3">
-                <View className="w-3 h-3 rounded-full mt-1 mr-3" style={{ backgroundColor: '#10B981' }} />
+                <View className="w-3 h-3 rounded-full mt-1 mr-3" style={{ backgroundColor: BrandColors.success }} />
                 <View className="flex-1">
                   <ThemedText variant="tiny" style={{ color: colors.textSecondary }}>PICKUP</ThemedText>
                   <ThemedText className="font-medium">{ride.pickup_address}</ThemedText>
                 </View>
               </View>
               <View className="flex-row items-start">
-                <View className="w-3 h-3 rounded-full mt-1 mr-3 border-2" style={{ borderColor: '#EF4444' }} />
+                <View className="w-3 h-3 rounded-full mt-1 mr-3 border-2" style={{ borderColor: BrandColors.danger }} />
                 <View className="flex-1">
                   <ThemedText variant="tiny" style={{ color: colors.textSecondary }}>DROP-OFF</ThemedText>
                   <ThemedText className="font-medium">{ride.dropoff_address}</ThemedText>
@@ -130,7 +130,7 @@ export default function RideDetail() {
             </SectionCard>
 
             {/* Distance & Duration Card */}
-            <SectionCard title="Distance & Duration" icon="speedometer-outline" iconColor="#F59E0B">
+            <SectionCard title="Distance & Duration" icon="speedometer-outline" iconColor={BrandColors.warning}>
               <View className="flex-row">
                 <View className="flex-1 items-center py-3">
                   <Ionicons name="map-outline" size={22} color={colors.textSecondary} />
@@ -163,7 +163,7 @@ export default function RideDetail() {
             </SectionCard>
 
             {/* Fare Breakdown Card */}
-            <SectionCard title="Fare Breakdown" icon="receipt-outline" iconColor="#10B981">
+            <SectionCard title="Fare Breakdown" icon="receipt-outline" iconColor={BrandColors.success}>
               <InfoRow label="Estimated Fare" value={formatMoney(ride.estimated_fare)} />
               {ride.actual_fare && <InfoRow label="Actual Fare" value={formatMoney(ride.actual_fare)} />}
               {breakdown && (
@@ -197,14 +197,14 @@ export default function RideDetail() {
             <SectionCard
               title="Insurance"
               icon={ride.insurance ? 'shield-checkmark' : 'shield-outline'}
-              iconColor={ride.insurance ? '#3B82F6' : colors.textSecondary}
+              iconColor={ride.insurance ? BrandColors.info : colors.textSecondary}
             >
               {ride.insurance ? (
                 <>
                   <View className="flex-row items-center justify-between mb-3">
                     <View className="flex-row items-center">
                       <View className="px-2.5 py-1 rounded-full mr-2" style={{ backgroundColor: '#3B82F620' }}>
-                        <ThemedText variant="tiny" style={{ color: '#3B82F6' }} className="font-semibold">Insured</ThemedText>
+                        <ThemedText variant="tiny" style={{ color: BrandColors.info }} className="font-semibold">Insured</ThemedText>
                       </View>
                       <View
                         className="px-2 py-1 rounded-full"
@@ -219,15 +219,15 @@ export default function RideDetail() {
                           className="font-semibold capitalize"
                           style={{
                             color:
-                              ride.insurance.status === 'active' ? '#10B981' :
-                              ride.insurance.status === 'cancelled' ? '#EF4444' : '#6B7280',
+                              ride.insurance.status === 'active' ? BrandColors.success :
+                              ride.insurance.status === 'cancelled' ? BrandColors.danger : '#6B7280',
                           }}
                         >
                           {ride.insurance.status}
                         </ThemedText>
                       </View>
                     </View>
-                    <ThemedText className="font-bold" style={{ color: '#3B82F6' }}>
+                    <ThemedText className="font-bold" style={{ color: BrandColors.info }}>
                       {formatMoney(ride.insurance.premium_amount)}
                     </ThemedText>
                   </View>
@@ -282,9 +282,9 @@ export default function RideDetail() {
                             <Ionicons
                               name={amenity.is_delivered ? 'checkmark-circle' : 'time-outline'}
                               size={12}
-                              color={amenity.is_delivered ? '#10B981' : '#F59E0B'}
+                              color={amenity.is_delivered ? BrandColors.success : BrandColors.warning}
                             />
-                            <ThemedText variant="tiny" className="ml-1" style={{ color: amenity.is_delivered ? '#10B981' : '#F59E0B' }}>
+                            <ThemedText variant="tiny" className="ml-1" style={{ color: amenity.is_delivered ? BrandColors.success : BrandColors.warning }}>
                               {amenity.is_delivered ? 'Delivered' : 'Pending'}
                             </ThemedText>
                           </View>
@@ -329,7 +329,7 @@ export default function RideDetail() {
                 label="Biker"
                 icon="bicycle"
                 iconBg="#F59E0B20"
-                iconColor="#F59E0B"
+                iconColor={BrandColors.warning}
                 user={ride.biker_details}
                 isLast
               />
@@ -407,10 +407,10 @@ function InfoRow({ label, value, isLast, bold, highlight }: {
 }) {
   return (
     <View className={`flex-row justify-between py-2.5 ${isLast ? '' : 'border-b border-border dark:border-darkBorder'}`}>
-      <ThemedText variant="small" style={highlight ? { color: '#F59E0B' } : undefined}>{label}</ThemedText>
+      <ThemedText variant="small" style={highlight ? { color: BrandColors.warning } : undefined}>{label}</ThemedText>
       <ThemedText
         className={`flex-1 text-right ml-4 ${bold ? 'font-bold text-base' : 'font-medium'}`}
-        style={highlight ? { color: '#F59E0B' } : undefined}
+        style={highlight ? { color: BrandColors.warning } : undefined}
         numberOfLines={2}
       >
         {value}

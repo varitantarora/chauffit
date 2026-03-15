@@ -16,6 +16,7 @@ import { useBikerEarningsStore } from '../../../store/bikerEarningsStore';
 import { BikerTask } from '../../../types/navigation';
 import BikerTaskApiService from '../../../services/api/BikerTaskApiService';
 import * as Haptics from 'expo-haptics';
+import { BrandColors } from '../../../constants/Colors';
 
 type EmergencyStep = 'responding' | 'arrived' | 'assessing' | 'rescuing' | 'completed';
 
@@ -216,7 +217,7 @@ export default function EmergencyResponseScreen() {
             <Ionicons
               name="warning"
               size={20}
-              color="#EF4444"
+              color={BrandColors.danger}
             />
           </TouchableOpacity>
         </View>
@@ -354,16 +355,16 @@ export default function EmergencyResponseScreen() {
                     <View className="flex-1">
                       <ThemedText className={`font-semibold ${
                         status === 'active' ? 'text-danger' : 
-                        status === 'completed' ? 'text-success' : 'text-textSecondary'
+                        status === 'completed' ? 'text-success' : 'text-textSecondary dark:text-darkTextSecondary'
                       }`}>
                         {config.title}
                       </ThemedText>
-                      <ThemedText variant="caption" className="text-textSecondary">
+                      <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">
                         {config.description}
                       </ThemedText>
                     </View>
                     
-                    <ThemedText variant="caption" className="text-textSecondary">
+                    <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">
                       {index + 1}
                     </ThemedText>
                   </View>

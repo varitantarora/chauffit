@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '../../components/common/ThemedText';
 import { useAdminStore } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
-import { LightColors, DarkColors } from '../../constants/Colors';
+import { BrandColors, LightColors, DarkColors, useThemeColors } from '../../constants/Colors';
 import { RevenuePayment } from '../../services/api/AdminApiService';
 
 function formatDate(date: Date): string {
@@ -154,8 +154,8 @@ export default function RevenueScreen() {
                     <View
                         className="flex-1 p-4 rounded-2xl"
                         style={{
-                            backgroundColor: '#3B82F6',
-                            shadowColor: '#3B82F6',
+                            backgroundColor: BrandColors.info,
+                            shadowColor: BrandColors.info,
                             shadowOffset: { width: 0, height: 4 },
                             shadowOpacity: 0.25,
                             shadowRadius: 8,
@@ -240,7 +240,7 @@ export default function RevenueScreen() {
                     </View>
                     <View
                         className="flex-1 p-4 rounded-2xl border bg-surface dark:bg-darkSurface border-border dark:border-darkBorder"
-                        style={{ borderLeftWidth: 4, borderLeftColor: '#10B981' }}
+                        style={{ borderLeftWidth: 4, borderLeftColor: BrandColors.success }}
                     >
                         <ThemedText variant="tiny" style={{ color: colors.textSecondary }}>Completed Rides</ThemedText>
                         <ThemedText variant="h3" className="mt-1" style={{ fontWeight: '700' }}>

@@ -9,6 +9,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
 import { UserRole } from '../../types/navigation';
 import AuthApiService from '../../services/api/AuthApiService';
+import { BrandColors } from '../../constants/Colors';
 
 export default function Signup() {
   const [name, setName] = useState('');
@@ -64,7 +65,7 @@ export default function Signup() {
 
   const inputClass = isDarkMode
     ? 'bg-darkSurface text-darkText border-darkBorder'
-    : 'bg-white text-textPrimary border-border';
+    : 'bg-white text-textPrimary dark:text-darkText border-border';
 
   // Role button styles - using proper color theme
   const roleButtonClass = (role: UserRole) => {
@@ -83,7 +84,7 @@ export default function Signup() {
     const isSelected = selectedRole === role;
     // Selected: white text for better contrast on secondary background
     // Unselected: dark/light text based on theme
-    return isSelected ? 'text-white' : (isDarkMode ? 'text-darkText' : 'text-textPrimary');
+    return isSelected ? 'text-white' : (isDarkMode ? 'text-darkText' : 'text-textPrimary dark:text-darkText');
   };
 
   const roleIconColor = (role: UserRole) => {
@@ -156,7 +157,7 @@ export default function Signup() {
               <Ionicons
                 name="flag"
                 size={16}
-                color="#BD8C5E"
+                color={BrandColors.secondary}
                 className="mr-1"
               />
               <ThemedText className="text-secondary font-bold text-base">
@@ -223,7 +224,7 @@ export default function Signup() {
 
           {/* Terms Text */}
           <View className="mt-6 px-4">
-            <ThemedText variant="tiny" className="text-center text-textSecondary leading-5">
+            <ThemedText variant="tiny" className="text-center text-textSecondary dark:text-darkTextSecondary leading-5">
               By continuing, you agree to our Terms of Service and Privacy Policy
             </ThemedText>
           </View>

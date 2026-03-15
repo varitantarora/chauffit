@@ -12,6 +12,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import BikerApiService, { BikerProfile as BikerProfileType } from '../../../services/api/BikerApiService';
 import { useI18nStore } from '../../../store/i18nStore';
 import { appConfig } from '../../../config/env';
+import { BrandColors } from '../../../constants/Colors';
 
 export default function BikerProfile() {
   const user = useAuthStore((state) => state.user);
@@ -257,13 +258,13 @@ export default function BikerProfile() {
         {/* Header */}
         <View
           style={{
-            backgroundColor: '#720C17',
+            backgroundColor: BrandColors.burgundy,
             paddingHorizontal: 24,
             paddingTop: 16,
             paddingBottom: 20,
             borderBottomLeftRadius: 24,
             borderBottomRightRadius: 24,
-            shadowColor: '#720C17',
+            shadowColor: BrandColors.burgundy,
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.25,
             shadowRadius: 8,
@@ -288,13 +289,13 @@ export default function BikerProfile() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor="#BD8C5E"
+              tintColor={BrandColors.secondary}
             />
           }
         >
           {loading ? (
             <View className="flex-1 items-center justify-center p-6">
-              <ActivityIndicator size="large" color="#BD8C5E" />
+              <ActivityIndicator size="large" color={BrandColors.secondary} />
               <ThemedText className="mt-4">Loading profile...</ThemedText>
             </View>
           ) : (
@@ -306,7 +307,7 @@ export default function BikerProfile() {
                     <Image
                       source={{ uri: getImageUrl(user.avatar) || undefined }}
                       className="w-24 h-24 rounded-full mb-4"
-                      style={{ backgroundColor: '#BD8C5E' }}
+                      style={{ backgroundColor: BrandColors.secondary }}
                     />
                   ) : (
                     <View className="w-24 h-24 bg-burgundy rounded-full items-center justify-center mb-4">
@@ -335,7 +336,7 @@ export default function BikerProfile() {
                     </ThemedText>
                   </View>
                   {updatingStatus ? (
-                    <ActivityIndicator size="small" color="#BD8C5E" />
+                    <ActivityIndicator size="small" color={BrandColors.secondary} />
                   ) : (
                     <Switch
                       value={isOnline}
@@ -375,7 +376,7 @@ export default function BikerProfile() {
               {/* Vehicle Information */}
               <ThemedCard className="p-4 mb-6">
                 <View className="flex-row items-center mb-4">
-                  <Ionicons name="bicycle" size={20} color="#BD8C5E" />
+                  <Ionicons name="bicycle" size={20} color={BrandColors.secondary} />
                   <ThemedText className="font-bold text-lg ml-2">
                     🏍️ VEHICLE INFORMATION
                   </ThemedText>
@@ -418,7 +419,7 @@ export default function BikerProfile() {
                   activeOpacity={0.7}
                 >
                   <View className="flex-row items-center justify-center">
-                    <Ionicons name="create" size={16} color="#720C17" />
+                    <Ionicons name="create" size={16} color={BrandColors.burgundy} />
                     <ThemedText className="text-burgundy font-semibold ml-2">
                       Update Vehicle Details
                     </ThemedText>
@@ -429,7 +430,7 @@ export default function BikerProfile() {
               {/* Documents Status */}
               <ThemedCard className="p-4 mb-6">
                 <View className="flex-row items-center mb-4">
-                  <Ionicons name="document-text" size={20} color="#BD8C5E" />
+                  <Ionicons name="document-text" size={20} color={BrandColors.secondary} />
                   <ThemedText className="font-bold text-lg ml-2">
                     📋 DOCUMENTS STATUS
                   </ThemedText>
@@ -511,7 +512,7 @@ export default function BikerProfile() {
               {/* Preferences */}
               <ThemedCard className="p-4 mb-6">
                 <View className="flex-row items-center mb-4">
-                  <Ionicons name="settings" size={20} color="#BD8C5E" />
+                  <Ionicons name="settings" size={20} color={BrandColors.secondary} />
                   <ThemedText className="font-bold text-lg ml-2">
                     ⚙️ WORK PREFERENCES (Coming Soon)
                   </ThemedText>
@@ -538,7 +539,7 @@ export default function BikerProfile() {
                     <Switch
                       value={autoAccept}
                       onValueChange={setAutoAccept}
-                      trackColor={{ false: '#9ca3af', true: '#720C17' }}
+                      trackColor={{ false: '#9ca3af', true: BrandColors.burgundy }}
                       thumbColor={autoAccept ? '#ffffff' : '#f4f3f4'}
                     />
                   </View>
@@ -608,7 +609,7 @@ export default function BikerProfile() {
                     <Switch
                       value={isDarkMode}
                       onValueChange={toggleTheme}
-                      trackColor={{ false: '#9ca3af', true: '#720C17' }}
+                      trackColor={{ false: '#9ca3af', true: BrandColors.burgundy }}
                       thumbColor={isDarkMode ? '#ffffff' : '#f4f3f4'}
                     />
                   </View>

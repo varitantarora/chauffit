@@ -13,6 +13,7 @@ import UniversalMapView, { MapMarker, MapRoute } from '../../components/shared/M
 import { appConfig } from '../../config/env';
 import SlideToCancel from '../../components/customer/SlideToCancel';
 import CancelReasonModal from '../../components/customer/CancelReasonModal';
+import { BrandColors } from '../../constants/Colors';
 
 // Helper to get full image URL
 const getImageUrl = (url: string | null | undefined): string | null => {
@@ -43,7 +44,7 @@ export default function RideTrackingScreen() {
   const [tripDuration, setTripDuration] = useState(0);
   const tripStartRef = useRef<number>(Date.now());
 
-  const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
+  const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
 
   // Trip duration timer - ticks every second
   useEffect(() => {
@@ -191,7 +192,7 @@ export default function RideTrackingScreen() {
     return {
       origin: pickupCoordinate,
       destination: dropoffCoordinate,
-      strokeColor: '#BD8C5E',
+      strokeColor: BrandColors.secondary,
       strokeWidth: 4,
     };
   }, [pickupCoordinate, dropoffCoordinate]);
@@ -347,14 +348,14 @@ export default function RideTrackingScreen() {
                     />
                   ) : (
                     <View style={[styles.bikerAvatar, styles.bikerAvatarPlaceholder]}>
-                      <Ionicons name="bicycle" size={18} color="#3B82F6" />
+                      <Ionicons name="bicycle" size={18} color={BrandColors.info} />
                     </View>
                   )}
                   <View style={{ flex: 1 }}>
                     <View style={styles.nameRatingRow}>
                       <ThemedText style={styles.bikerName}>🏍️ {driverDetails.bikerName}</ThemedText>
                       <View style={styles.ratingBadge}>
-                        <Ionicons name="star" size={14} color="#F59E0B" />
+                        <Ionicons name="star" size={14} color={BrandColors.warning} />
                         <ThemedText style={styles.ratingText}>
                           {typeof driverDetails.bikerRating === 'number' ? driverDetails.bikerRating.toFixed(1) : driverDetails.bikerRating}
                         </ThemedText>
@@ -381,7 +382,7 @@ export default function RideTrackingScreen() {
               <View style={{ flex: 1 }}>
                 <ThemedText style={styles.driverName}>{driverDetails.name}</ThemedText>
                 <View style={styles.nameRatingRow}>
-                  <Ionicons name="star" size={14} color="#F59E0B" />
+                  <Ionicons name="star" size={14} color={BrandColors.warning} />
                   <ThemedText style={styles.driverMeta}>
                     {typeof driverDetails.rating === 'number' ? driverDetails.rating.toFixed(1) : driverDetails.rating} • {driverDetails.experience}
                   </ThemedText>
@@ -392,7 +393,7 @@ export default function RideTrackingScreen() {
                   <Ionicons name="call" size={18} color="#722F37" />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={handleMessageDriver} style={[styles.contactBtn, { backgroundColor: 'rgba(59,130,246,0.1)' }]}>
-                  <Ionicons name="chatbubble" size={18} color="#3B82F6" />
+                  <Ionicons name="chatbubble" size={18} color={BrandColors.info} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -446,10 +447,10 @@ export default function RideTrackingScreen() {
           <View style={styles.safetySection}>
             <TouchableOpacity onPress={handleShareTrip} style={[styles.safetyRow, { backgroundColor: isDarkMode ? '#1E293B' : '#EFF6FF' }]}>
               <View style={styles.safetyLeft}>
-                <Ionicons name="shield-checkmark" size={20} color="#3B82F6" />
+                <Ionicons name="shield-checkmark" size={20} color={BrandColors.info} />
                 <ThemedText style={styles.safetyText}>Share Trip with Contact</ThemedText>
               </View>
-              <Ionicons name="chevron-forward" size={18} color="#3B82F6" />
+              <Ionicons name="chevron-forward" size={18} color={BrandColors.info} />
             </TouchableOpacity>
 
             <TouchableOpacity onPress={handleSOS} style={[styles.safetyRow, { backgroundColor: isDarkMode ? '#2D1B1E' : '#FEF2F2' }]}>
@@ -462,10 +463,10 @@ export default function RideTrackingScreen() {
 
             <TouchableOpacity onPress={() => Linking.openURL('tel:1091')} style={[styles.safetyRow, { backgroundColor: isDarkMode ? '#1E293B' : '#EFF6FF' }]}>
               <View style={styles.safetyLeft}>
-                <Ionicons name="call" size={20} color="#3B82F6" />
+                <Ionicons name="call" size={20} color={BrandColors.info} />
                 <ThemedText style={styles.safetyText}>Emergency Assistance</ThemedText>
               </View>
-              <Ionicons name="chevron-forward" size={18} color="#3B82F6" />
+              <Ionicons name="chevron-forward" size={18} color={BrandColors.info} />
             </TouchableOpacity>
           </View>
 
@@ -616,7 +617,7 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     marginRight: 10,
-    backgroundColor: '#BD8C5E',
+    backgroundColor: BrandColors.secondary,
   },
   bikerAvatarPlaceholder: {
     backgroundColor: '#DBEAFE',
@@ -657,7 +658,7 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: 26,
     marginRight: 12,
-    backgroundColor: '#BD8C5E',
+    backgroundColor: BrandColors.secondary,
   },
   driverName: {
     fontSize: 16,
@@ -735,12 +736,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#3B82F6',
+    backgroundColor: BrandColors.info,
     paddingVertical: 14,
     borderRadius: 14,
     marginBottom: 12,
     gap: 8,
-    shadowColor: '#3B82F6',
+    shadowColor: BrandColors.info,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -834,7 +835,7 @@ const SOSScreen = ({ onClose }: { onClose: () => void }) => {
             <ThemedText className="text-center font-bold" style={{ color: contact.color }}>
               {contact.icon === 'call' && '📞'} {contact.title}
             </ThemedText>
-            <ThemedText variant="small" className="text-center text-gray-600 mt-1">
+            <ThemedText variant="small" className="text-center text-textSecondary dark:text-darkTextSecondary mt-1">
               {contact.subtitle}
             </ThemedText>
           </TouchableOpacity>
@@ -847,7 +848,7 @@ const SOSScreen = ({ onClose }: { onClose: () => void }) => {
           <ThemedText variant="small" className="text-center">
             • Priya Sharma (Wife){'\n'}• Arjun Sharma (Brother)
           </ThemedText>
-          <ThemedText variant="tiny" className="text-center text-gray-600 mt-2">
+          <ThemedText variant="tiny" className="text-center text-textSecondary dark:text-darkTextSecondary mt-2">
             Trip details automatically sent to emergency services and Chauffit.
           </ThemedText>
         </View>
@@ -875,9 +876,9 @@ const ShareTripScreen = ({ onClose }: { onClose: () => void }) => {
   ];
 
   const shareOptions = [
-    { icon: 'chatbubble', title: 'Send SMS', color: '#3B82F6' },
+    { icon: 'chatbubble', title: 'Send SMS', color: BrandColors.info },
     { icon: 'mail', title: 'Send Email', color: '#722F37' },
-    { icon: 'logo-whatsapp', title: 'WhatsApp', color: '#3B82F6' },
+    { icon: 'logo-whatsapp', title: 'WhatsApp', color: BrandColors.info },
     { icon: 'link', title: 'Share via Link', color: '#722F37' },
   ];
 
@@ -899,7 +900,7 @@ const ShareTripScreen = ({ onClose }: { onClose: () => void }) => {
           </TouchableOpacity>
         </View>
 
-        <ThemedText variant="small" className="text-gray-600 mb-6">
+        <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary mb-6">
           Share your ride details with friends and family for safety
         </ThemedText>
 
@@ -908,7 +909,7 @@ const ShareTripScreen = ({ onClose }: { onClose: () => void }) => {
           <TouchableOpacity
             key={contact.id}
             onPress={() => toggleContact(contact.id)}
-            className="flex-row items-center p-3 mb-2 border border-gray-200 rounded-xl"
+            className="flex-row items-center p-3 mb-2 border border-border dark:border-darkBorder rounded-xl"
           >
             <View className={`w-6 h-6 rounded border-2 mr-3 ${selectedContacts.includes(contact.id)
               ? 'bg-burgundy border-burgundy'
@@ -920,7 +921,7 @@ const ShareTripScreen = ({ onClose }: { onClose: () => void }) => {
             </View>
             <View className="flex-1">
               <ThemedText>{contact.name}</ThemedText>
-              <ThemedText variant="small" className="text-gray-600">{contact.phone}</ThemedText>
+              <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">{contact.phone}</ThemedText>
             </View>
           </TouchableOpacity>
         ))}
@@ -930,7 +931,7 @@ const ShareTripScreen = ({ onClose }: { onClose: () => void }) => {
           {shareOptions.map((option, index) => (
             <TouchableOpacity
               key={index}
-              className="flex-row items-center p-3 m-1 border border-gray-200 rounded-xl flex-1"
+              className="flex-row items-center p-3 m-1 border border-border dark:border-darkBorder rounded-xl flex-1"
               style={{ minWidth: '45%' }}
             >
               <Ionicons name={option.icon as any} size={20} color={option.color} />
@@ -941,7 +942,7 @@ const ShareTripScreen = ({ onClose }: { onClose: () => void }) => {
 
         <View className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
           <ThemedText variant="h3" className="mb-2">ℹ️ What's Shared:</ThemedText>
-          <ThemedText variant="small" className="text-gray-600">
+          <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
             • Real-time location{'\n'}
             • Driver details{'\n'}
             • Vehicle information{'\n'}

@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { View } from 'react-native';
 import { useAuthStore } from '../../../store/authStore';
-import { LightColors, DarkColors } from '../../../constants/Colors';
+import { LightColors, DarkColors, useThemeColors} from '../../../constants/Colors';
 
 export default function AdminTabsLayout() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);

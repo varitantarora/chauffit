@@ -8,6 +8,7 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { BrandColors } from '../../constants/Colors';
 
 export default function RatingFeedbackScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
@@ -20,7 +21,7 @@ export default function RatingFeedbackScreen() {
   const [selectedIssues, setSelectedIssues] = useState<string[]>([]);
   const [textFeedback, setTextFeedback] = useState('');
   
-  const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
+  const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
   const driverName = params.driverName as string || 'Marcus';
 
   const performanceOptions = [
@@ -106,7 +107,7 @@ export default function RatingFeedbackScreen() {
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
         {/* Header */}
-        <View className="flex-row items-center justify-between px-6 py-4 border-b border-gray-200">
+        <View className="flex-row items-center justify-between px-6 py-4 border-b border-border dark:border-darkBorder">
           <View className="flex-row items-center">
             <TouchableOpacity onPress={() => router.back()} className="mr-3">
               <Ionicons name="arrow-back" size={24} color={iconColor} />
@@ -134,7 +135,7 @@ export default function RatingFeedbackScreen() {
                     <Ionicons
                       name={star <= overallRating ? 'star' : 'star-outline'}
                       size={40}
-                      color={star <= overallRating ? '#F59E0B' : '#9CA3AF'}
+                      color={star <= overallRating ? BrandColors.warning : '#9CA3AF'}
                     />
                   </TouchableOpacity>
                 ))}
@@ -152,7 +153,7 @@ export default function RatingFeedbackScreen() {
                       className={`px-3 py-2 m-1 rounded-full border ${
                         selectedPerformance.includes(option.id)
                           ? 'bg-green-100 border-green-500'
-                          : 'border-gray-300'
+                          : 'border-border dark:border-darkBorder'
                       }`}
                     >
                       <View className="flex-row items-center">
@@ -187,7 +188,7 @@ export default function RatingFeedbackScreen() {
                       <Ionicons
                         name={star <= vehicleRating ? 'star' : 'star-outline'}
                         size={24}
-                        color={star <= vehicleRating ? '#F59E0B' : '#9CA3AF'}
+                        color={star <= vehicleRating ? BrandColors.warning : '#9CA3AF'}
                       />
                     </TouchableOpacity>
                   ))}
@@ -203,7 +204,7 @@ export default function RatingFeedbackScreen() {
                     className={`px-3 py-2 m-1 rounded-full border ${
                       selectedIssues.includes(issue.id)
                         ? 'bg-red-100 border-red-500'
-                        : 'border-gray-300'
+                        : 'border-border dark:border-darkBorder'
                     }`}
                   >
                     <View className="flex-row items-center">
@@ -226,7 +227,7 @@ export default function RatingFeedbackScreen() {
             <ThemedCard variant="elevated" className="mb-4">
               <ThemedText className="mb-3">Text Feedback (optional)</ThemedText>
               <TextInput
-                className={`border border-gray-300 rounded-xl p-4 h-32 ${
+                className={`border border-border dark:border-darkBorder rounded-xl p-4 h-32 ${
                   isDarkMode ? 'bg-darkSurface text-darkText' : 'bg-white'
                 }`}
                 placeholder="Share your detailed feedback here..."
@@ -239,7 +240,7 @@ export default function RatingFeedbackScreen() {
 
               <TouchableOpacity 
                 onPress={handleUploadPhoto}
-                className="flex-row items-center justify-center mt-4 py-3 border border-dashed border-gray-300 rounded-xl"
+                className="flex-row items-center justify-center mt-4 py-3 border border-dashed border-border dark:border-darkBorder rounded-xl"
               >
                 <Ionicons name="camera" size={24} color={iconColor} />
                 <ThemedText className="ml-2">Upload photo (optional)</ThemedText>
@@ -263,9 +264,9 @@ export default function RatingFeedbackScreen() {
 
               <TouchableOpacity 
                 onPress={handleSkip}
-                className="flex-1 ml-2 py-3 border border-gray-300 rounded-xl"
+                className="flex-1 ml-2 py-3 border border-border dark:border-darkBorder rounded-xl"
               >
-                <ThemedText className="text-center text-gray-600">Skip for now</ThemedText>
+                <ThemedText className="text-center text-textSecondary dark:text-darkTextSecondary">Skip for now</ThemedText>
               </TouchableOpacity>
             </View>
           </View>

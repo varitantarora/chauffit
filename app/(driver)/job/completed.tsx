@@ -12,6 +12,7 @@ import { useJobStore } from '../../../store/jobStore';
 import { useAuthStore } from '../../../store/authStore';
 import { JobHistory } from '../../../types/navigation';
 import DriverRidesApiService from '../../../services/api/DriverRidesApiService';
+import { BrandColors } from '../../../constants/Colors';
 
 export default function CompletedRideScreen() {
   const router = useRouter();
@@ -228,7 +229,7 @@ export default function CompletedRideScreen() {
     return (
       <SafeAreaView className="flex-1">
         <ThemedView className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#BD8C5E" />
+          <ActivityIndicator size="large" color={BrandColors.secondary} />
           <ThemedText className="mt-4">Loading ride details...</ThemedText>
         </ThemedView>
       </SafeAreaView>
@@ -332,7 +333,7 @@ export default function CompletedRideScreen() {
                 <View className="flex-row justify-between items-center">
                   <View className="flex-row items-center">
                     <View className="w-8 h-8 bg-burgundy/10 rounded-full items-center justify-center mr-3">
-                      <Ionicons name="car" size={16} color="#BD8C5E" />
+                      <Ionicons name="car" size={16} color={BrandColors.secondary} />
                     </View>
                     <ThemedText>Total Fare</ThemedText>
                   </View>
@@ -456,7 +457,7 @@ export default function CompletedRideScreen() {
                   className="flex-row items-center bg-secondary/10 px-3 py-2 rounded-lg"
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="call" size={16} color="#BD8C5E" />
+                  <Ionicons name="call" size={16} color={BrandColors.secondary} />
                   <ThemedText className="text-secondary font-semibold ml-2">
                     Call
                   </ThemedText>

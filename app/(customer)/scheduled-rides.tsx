@@ -8,6 +8,7 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
+import { BrandColors } from '../../constants/Colors';
 
 interface ScheduledRide {
   id: string;
@@ -32,7 +33,7 @@ export default function ScheduledRidesScreen() {
   
   const [activeTab, setActiveTab] = useState<'upcoming' | 'history'>('upcoming');
   
-  const iconColor = isDarkMode ? '#BD8C5E' : '#722F37';
+  const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
 
   const upcomingRides: ScheduledRide[] = [
     {
@@ -108,7 +109,7 @@ export default function ScheduledRidesScreen() {
       case 'confirmed': return 'text-green-600';
       case 'driver_assigned': return 'text-blue-600';
       case 'pending_driver': return 'text-yellow-600';
-      default: return 'text-gray-600';
+      default: return 'text-textSecondary dark:text-darkTextSecondary';
     }
   };
 
@@ -154,7 +155,7 @@ export default function ScheduledRidesScreen() {
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
         {/* Header */}
-        <View className="flex-row items-center justify-between px-6 py-4 border-b border-gray-200">
+        <View className="flex-row items-center justify-between px-6 py-4 border-b border-border dark:border-darkBorder">
           <View className="flex-row items-center">
             <TouchableOpacity onPress={() => router.back()} className="mr-3">
               <Ionicons name="arrow-back" size={24} color={iconColor} />
@@ -169,7 +170,7 @@ export default function ScheduledRidesScreen() {
         {/* Tab Navigation */}
         <View className="px-6 py-4">
           <View className={`flex-row rounded-xl p-1 ${
-            isDarkMode ? 'bg-darkSurface' : 'bg-gray-100'
+            isDarkMode ? 'bg-darkSurface' : 'bg-gray-100 dark:bg-darkSurface'
           }`}>
             <TouchableOpacity
               onPress={() => setActiveTab('upcoming')}
@@ -179,7 +180,7 @@ export default function ScheduledRidesScreen() {
             >
               <ThemedText 
                 className={`text-center font-semibold ${
-                  activeTab === 'upcoming' ? 'text-white' : 'text-gray-600'
+                  activeTab === 'upcoming' ? 'text-white' : 'text-textSecondary dark:text-darkTextSecondary'
                 }`}
               >
                 Upcoming
@@ -193,7 +194,7 @@ export default function ScheduledRidesScreen() {
             >
               <ThemedText 
                 className={`text-center font-semibold ${
-                  activeTab === 'history' ? 'text-white' : 'text-gray-600'
+                  activeTab === 'history' ? 'text-white' : 'text-textSecondary dark:text-darkTextSecondary'
                 }`}
               >
                 History
@@ -228,12 +229,12 @@ export default function ScheduledRidesScreen() {
                   </View>
 
                   <View className="flex-row items-center mb-3">
-                    <ThemedText variant="small" className="text-gray-600">
+                    <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                       {ride.vehicle} • {ride.driver}
                       {ride.driverRating > 0 && (
                         <>
                           {' ('}
-                          <Ionicons name="star" size={12} color="#F59E0B" />
+                          <Ionicons name="star" size={12} color={BrandColors.warning} />
                           {ride.driverRating})
                         </>
                       )}
@@ -241,10 +242,10 @@ export default function ScheduledRidesScreen() {
                   </View>
 
                   <View className="flex-row justify-between items-center mb-3">
-                    <ThemedText variant="small" className="text-gray-600">
+                    <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                       Est. ₹{ride.estimatedFare} • {ride.duration} minutes
                     </ThemedText>
-                    <ThemedText variant="small" className="text-gray-600">
+                    <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                       {ride.type === 'round-trip' ? 'Round-trip' : 
                        ride.type === 'hourly' ? 'Hourly' : 'One-way'}
                       {ride.stops > 0 && ` • ${ride.stops} stop${ride.stops > 1 ? 's' : ''}`}
@@ -278,13 +279,13 @@ export default function ScheduledRidesScreen() {
               ))
             ) : (
               <View className="items-center py-16">
-                <View className="w-20 h-20 bg-gray-200 rounded-full items-center justify-center mb-4">
+                <View className="w-20 h-20 bg-gray-100 dark:bg-darkSurface rounded-full items-center justify-center mb-4">
                   <Ionicons name="calendar" size={40} color={iconColor} />
                 </View>
                 <ThemedText variant="h3" className="text-center mb-2">
                   {activeTab === 'upcoming' ? 'No Upcoming Rides' : 'No Ride History'}
                 </ThemedText>
-                <ThemedText variant="small" className="text-center text-gray-600 mb-6">
+                <ThemedText variant="small" className="text-center text-textSecondary dark:text-darkTextSecondary mb-6">
                   {activeTab === 'upcoming' 
                     ? 'Schedule your first ride for later'
                     : 'Your past scheduled rides will appear here'

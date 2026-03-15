@@ -10,6 +10,7 @@ import { useEarningsStore } from '../../../store/earningsStore';
 import { useI18nStore } from '../../../store/i18nStore';
 import DriverApiService, { DriverStats, DailyEarningsResponse, BonusesIncentivesResponse, BonusTipEntry } from '../../../services/api/DriverApiService';
 import { useEffect } from 'react';
+import { BrandColors } from '../../../constants/Colors';
 
 export default function EarningsScreen() {
   const t = useI18nStore((state) => state.t);
@@ -230,7 +231,7 @@ export default function EarningsScreen() {
       <ThemedView className="flex-1">
         {loading && !refreshing && (
           <View className="absolute inset-0 items-center justify-center bg-black/10 z-10">
-            <ActivityIndicator size="large" color="#BD8C5E" />
+            <ActivityIndicator size="large" color={BrandColors.secondary} />
           </View>
         )}
         <ScrollView
@@ -242,13 +243,13 @@ export default function EarningsScreen() {
           {/* Header */}
           <View
             style={{
-              backgroundColor: '#720C17',
+              backgroundColor: BrandColors.burgundy,
               paddingHorizontal: 24,
               paddingTop: 16,
               paddingBottom: 20,
               borderBottomLeftRadius: 24,
               borderBottomRightRadius: 24,
-              shadowColor: '#720C17',
+              shadowColor: BrandColors.burgundy,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.25,
               shadowRadius: 8,
@@ -359,7 +360,7 @@ export default function EarningsScreen() {
             {loadingDaily ? (
               <ThemedCard className="p-4">
                 <View className="items-center py-2">
-                  <ActivityIndicator size="small" color="#BD8C5E" />
+                  <ActivityIndicator size="small" color={BrandColors.secondary} />
                   <ThemedText variant="caption" className="mt-2 text-secondary">
                     {t('loadingDailyBreakdown')}
                   </ThemedText>
@@ -420,7 +421,7 @@ export default function EarningsScreen() {
             {loadingBonuses ? (
               <ThemedCard className="p-4">
                 <View className="items-center py-2">
-                  <ActivityIndicator size="small" color="#BD8C5E" />
+                  <ActivityIndicator size="small" color={BrandColors.secondary} />
                   <ThemedText variant="caption" className="mt-2 text-secondary">
                     {t('loadingBonuses')}
                   </ThemedText>
@@ -472,8 +473,8 @@ export default function EarningsScreen() {
             <ThemedCard className="p-4">
               {loadingStats ? (
                 <View className="py-4 items-center">
-                  <ActivityIndicator size="small" color="#BD8C5E" />
-                  <ThemedText variant="caption" className="mt-2 text-textSecondary">
+                  <ActivityIndicator size="small" color={BrandColors.secondary} />
+                  <ThemedText variant="caption" className="mt-2 text-textSecondary dark:text-darkTextSecondary">
                     {t('loadingStats')}
                   </ThemedText>
                 </View>
@@ -492,8 +493,8 @@ export default function EarningsScreen() {
                           height: 48,
                           borderRadius: 24,
                           borderWidth: 4,
-                          borderColor: (stats?.lifetime?.average_rating ?? 0) >= 4 ? '#10B981'
-                            : (stats?.lifetime?.average_rating ?? 0) >= 3 ? '#F59E0B' : '#EF4444',
+                          borderColor: (stats?.lifetime?.average_rating ?? 0) >= 4 ? BrandColors.success
+                            : (stats?.lifetime?.average_rating ?? 0) >= 3 ? BrandColors.warning : BrandColors.danger,
                           alignItems: 'center',
                           justifyContent: 'center',
                           backgroundColor: 'transparent',
@@ -536,7 +537,7 @@ export default function EarningsScreen() {
                 </>
               ) : (
                 <View className="py-4">
-                  <ThemedText className="text-center text-textSecondary">
+                  <ThemedText className="text-center text-textSecondary dark:text-darkTextSecondary">
                     {t('noStatsAvailable')}
                   </ThemedText>
                 </View>

@@ -9,6 +9,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { UserRole } from '../../types/navigation';
 import AuthApiService from '../../services/api/AuthApiService';
+import { BrandColors } from '../../constants/Colors';
 
 export default function OTPVerification() {
   const OTP_LENGTH = 6;
@@ -292,12 +293,12 @@ export default function OTPVerification() {
           {/* Illustration */}
           <View className="items-center mb-8">
             <View className="w-24 h-24 bg-secondary/20 rounded-full items-center justify-center mb-4">
-              <Ionicons name="chatbubble-ellipses" size={40} color="#BD8C5E" />
+              <Ionicons name="chatbubble-ellipses" size={40} color={BrandColors.secondary} />
             </View>
             <ThemedText variant="h3" className="text-center mb-2">
               Enter Verification Code
             </ThemedText>
-            <ThemedText variant="small" className="text-center text-textSecondary px-4">
+            <ThemedText variant="small" className="text-center text-textSecondary dark:text-darkTextSecondary px-4">
               We've sent a 6-digit code to {formatPhoneNumber(phoneNumber || '')}
             </ThemedText>
             <ThemedText variant="tiny" className="text-center text-secondary mt-2 px-4">
@@ -335,7 +336,7 @@ export default function OTPVerification() {
                   key={index}
                   className="w-12 h-16 items-center justify-center rounded-xl border-2"
                   style={{
-                    borderColor: isFocused ? '#BD8C5E' : (digit ? '#BD8C5E' : (isDarkMode ? '#3A3A3A' : '#E5E5E5')),
+                    borderColor: isFocused ? BrandColors.secondary : (digit ? BrandColors.secondary : (isDarkMode ? '#3A3A3A' : '#E5E5E5')),
                     backgroundColor: digit ? 'rgba(189, 140, 94, 0.1)' : (isDarkMode ? '#1C1C1C' : '#FFFFFF'),
                     borderWidth: isFocused ? 2 : 2,
                   }}
@@ -361,7 +362,7 @@ export default function OTPVerification() {
           {/* Timer and Resend */}
           <View className="items-center mb-8">
             {!canResend ? (
-              <ThemedText variant="small" className="text-textSecondary">
+              <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                 Resend code in {timer}s
               </ThemedText>
             ) : (
@@ -386,7 +387,7 @@ export default function OTPVerification() {
 
           {/* Help Text */}
           <View className="mt-8 px-4">
-            <ThemedText variant="tiny" className="text-center text-textSecondary">
+            <ThemedText variant="tiny" className="text-center text-textSecondary dark:text-darkTextSecondary">
               Didn't receive the code? Check your spam folder or contact support
             </ThemedText>
           </View>

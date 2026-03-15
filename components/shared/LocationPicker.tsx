@@ -218,7 +218,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
       className="flex-row items-center px-4 py-3 border-b border-gray-100"
       onPress={() => handleLocationSelect(item)}
     >
-      <View className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-3">
+      <View className="w-10 h-10 bg-gray-100 dark:bg-darkSurface rounded-full items-center justify-center mr-3">
         <Ionicons 
           name={
             item.type === 'current' ? 'location' :
@@ -234,7 +234,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
         <Text className="text-base font-medium text-black">
           {item.name}
         </Text>
-        <Text className="text-sm text-gray-500 mt-1" numberOfLines={2}>
+        <Text className="text-sm text-textSecondary dark:text-darkTextSecondary mt-1" numberOfLines={2}>
           {item.address}
         </Text>
       </View>
@@ -245,7 +245,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
     <View className={`${className}`} style={style}>
       {/* Search Input */}
       <View className="relative">
-        <View className="flex-row items-center bg-white border border-gray-200 rounded-lg px-4 py-3">
+        <View className="flex-row items-center bg-white border border-border dark:border-darkBorder rounded-lg px-4 py-3">
           <Ionicons name="search" size={20} color={LightColors.textSecondary} />
           <TextInput
             className="flex-1 ml-3 text-base text-black"
@@ -288,7 +288,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
 
       {/* Suggestions List */}
       {showSuggestions && (
-        <View className="mt-2 bg-white rounded-lg border border-gray-200 max-h-80">
+        <View className="mt-2 bg-white rounded-lg border border-border dark:border-darkBorder max-h-80">
           <FlatList
             data={getAllSuggestions()}
             keyExtractor={(item) => item.id}
@@ -297,7 +297,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <View className="px-4 py-8 items-center">
-                <Text className="text-gray-500 text-center">
+                <Text className="text-textSecondary dark:text-darkTextSecondary text-center">
                   {query.trim() ? 'No locations found' : 'Start typing to search'}
                 </Text>
               </View>

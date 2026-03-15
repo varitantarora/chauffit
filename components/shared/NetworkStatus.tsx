@@ -348,7 +348,7 @@ export const OfflineNotice: React.FC<{
       <Text className="text-lg font-medium text-black mt-4 text-center">
         You're Offline
       </Text>
-      <Text className="text-sm text-gray-600 mt-2 text-center">
+      <Text className="text-sm text-textSecondary dark:text-darkTextSecondary mt-2 text-center">
         {message}
       </Text>
       {showRetry && (

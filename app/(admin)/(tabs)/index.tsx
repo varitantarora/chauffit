@@ -7,7 +7,7 @@ import { ThemedText } from '../../../components/common/ThemedText';
 import { StatCard } from '../../../components/admin/StatCard';
 import { useAdminStore } from '../../../store/adminStore';
 import { useAuthStore } from '../../../store/authStore';
-import { LightColors, DarkColors } from '../../../constants/Colors';
+import { LightColors, DarkColors, BrandColors, useThemeColors} from '../../../constants/Colors';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -53,7 +53,7 @@ export default function AdminDashboard() {
           <StatCard title="Total Rides" value={dashboard?.total_rides || 0} icon="car" color={colors.burgundy} />
           <StatCard title="Completed" value={dashboard?.completed_rides || 0} icon="checkmark-circle" color={colors.success} />
           <StatCard title="Revenue" value={`₹${dashboard?.total_revenue || 0}`} icon="cash" color={colors.secondary} />
-          <StatCard title="Active Drivers" value={dashboard?.active_drivers || 0} icon="people" color="#3B82F6" />
+          <StatCard title="Active Drivers" value={dashboard?.active_drivers || 0} icon="people" color={BrandColors.info} />
           <StatCard title="Active Bikers" value={dashboard?.active_bikers || 0} icon="bicycle" color="#8B5CF6" />
           <StatCard title="Customers" value={dashboard?.total_customers || 0} icon="person" color={colors.info} />
         </View>

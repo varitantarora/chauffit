@@ -5,6 +5,7 @@ import { ThemedCard } from '../../common/ThemedCard';
 import { ThemedText } from '../../common/ThemedText';
 import { JobRequest, JobHistory } from '../../../types/navigation';
 import { useAuthStore } from '../../../store/authStore';
+import { BrandColors } from '../../../constants/Colors';
 
 type JobCardJob = JobRequest | JobHistory;
 
@@ -227,7 +228,7 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails, processing = 
                 )}
               </View>
               <TouchableOpacity className="flex-row items-center">
-                <Ionicons name="call" size={14} color="#BD8C5E" />
+                <Ionicons name="call" size={14} color={BrandColors.secondary} />
                 <ThemedText variant="caption" className="text-secondary ml-1">
                   Call
                 </ThemedText>

@@ -8,7 +8,7 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { StatusBadge } from '../../components/admin/StatusBadge';
 import { useAdminStore } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
-import { LightColors, DarkColors } from '../../constants/Colors';
+import { LightColors, DarkColors, useThemeColors} from '../../constants/Colors';
 import { AdminUser } from '../../services/api/AdminApiService';
 
 export default function UserDetail() {

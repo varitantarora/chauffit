@@ -7,7 +7,7 @@ import { ThemedText } from '../../components/common/ThemedText';
 import { StatusBadge } from '../../components/admin/StatusBadge';
 import { useAdminStore } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
-import { LightColors, DarkColors } from '../../constants/Colors';
+import { LightColors, DarkColors, BrandColors, useThemeColors} from '../../constants/Colors';
 import { AdminBiker } from '../../services/api/AdminApiService';
 
 export default function BikersPending() {
@@ -30,7 +30,7 @@ export default function BikersPending() {
       className="flex-row items-center p-4 mb-3 rounded-2xl border bg-surface dark:bg-darkSurface border-border dark:border-darkBorder"
     >
       <View className="w-10 h-10 rounded-full items-center justify-center mr-3" style={{ backgroundColor: '#F59E0B20' }}>
-        <Ionicons name="bicycle" size={20} color="#F59E0B" />
+        <Ionicons name="bicycle" size={20} color={BrandColors.warning} />
       </View>
       <View className="flex-1">
         <ThemedText className="font-semibold">{item.user_details.full_name || `${item.user_details.first_name} ${item.user_details.last_name}`}</ThemedText>

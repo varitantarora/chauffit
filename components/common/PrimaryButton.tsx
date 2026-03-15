@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, Text, ActivityIndicator } from 'react-native';
+import { BrandColors } from '../../constants/Colors';
 
 interface PrimaryButtonProps {
   title: string;
@@ -73,7 +74,7 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
       style={getShadowStyle()}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'outline' ? '#720C17' : 'white'} />
+        <ActivityIndicator color={variant === 'outline' ? BrandColors.burgundy : 'white'} />
       ) : (
         <Text className={`${getTextColor()} font-semibold ${getTextSize()}`}>{title}</Text>
       )}

@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '../../../components/common/ThemedText';
 import { useAuthStore } from '../../../store/authStore';
-import { LightColors, DarkColors } from '../../../constants/Colors';
+import { LightColors, DarkColors, BrandColors, useThemeColors} from '../../../constants/Colors';
 
 export default function AdminProfile() {
   const router = useRouter();
@@ -119,8 +119,8 @@ export default function AdminProfile() {
           className="flex-row items-center justify-center p-4 rounded-2xl border border-red-200 dark:border-red-900 mb-8"
           style={{ backgroundColor: '#EF444415' }}
         >
-          <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-          <ThemedText className="ml-2 font-semibold" style={{ color: '#EF4444' }}>
+          <Ionicons name="log-out-outline" size={20} color={BrandColors.danger} />
+          <ThemedText className="ml-2 font-semibold" style={{ color: BrandColors.danger }}>
             Logout
           </ThemedText>
         </Pressable>

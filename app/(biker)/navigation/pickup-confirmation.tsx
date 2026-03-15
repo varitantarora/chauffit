@@ -8,6 +8,7 @@ import { ThemedCard } from '../../../components/common/ThemedCard';
 import { ThemedText } from '../../../components/common/ThemedText';
 import { useAuthStore } from '../../../store/authStore';
 import { useTaskStore } from '../../../store/taskStore';
+import { BrandColors } from '../../../constants/Colors';
 
 interface SafetyChecklistItem {
   id: string;
@@ -263,7 +264,7 @@ export default function PickupConfirmationScreen() {
             
             <View className="space-y-2">
               <View className="flex-row items-center">
-                <Ionicons name="location" size={16} color="#720C17" />
+                <Ionicons name="location" size={16} color={BrandColors.burgundy} />
                 <ThemedText className="font-semibold ml-2">
                   🎯 {driverDetails.destination.address}
                 </ThemedText>

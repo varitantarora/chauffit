@@ -15,6 +15,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import DriverApiService, { DriverProfile as DriverProfileType } from '../../../services/api/DriverApiService';
 import { useI18nStore } from '../../../store/i18nStore';
 import { appConfig } from '../../../config/env';
+import { BrandColors } from '../../../constants/Colors';
 
 type RidesTabType = 'accepted' | 'in-progress' | 'completed';
 
@@ -237,7 +238,7 @@ export default function DriverProfile() {
     return (
       <SafeAreaView className="flex-1">
         <ThemedView className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#BD8C5E" />
+          <ActivityIndicator size="large" color={BrandColors.secondary} />
           <ThemedText className="mt-4">{t('loadingProfile')}</ThemedText>
         </ThemedView>
       </SafeAreaView>
@@ -250,13 +251,13 @@ export default function DriverProfile() {
         {/* Header */}
         <View
           style={{
-            backgroundColor: '#720C17',
+            backgroundColor: BrandColors.burgundy,
             paddingHorizontal: 24,
             paddingTop: 16,
             paddingBottom: 20,
             borderBottomLeftRadius: 24,
             borderBottomRightRadius: 24,
-            shadowColor: '#720C17',
+            shadowColor: BrandColors.burgundy,
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.25,
             shadowRadius: 8,
@@ -280,8 +281,8 @@ export default function DriverProfile() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={['#BD8C5E']}
-              tintColor="#BD8C5E"
+              colors={[BrandColors.secondary]}
+              tintColor={BrandColors.secondary}
             />
           }
         >
@@ -293,7 +294,7 @@ export default function DriverProfile() {
                   <Image
                     source={{ uri: getImageUrl(user.avatar) || undefined }}
                     className="w-24 h-24 rounded-full mb-4"
-                    style={{ backgroundColor: '#BD8C5E' }}
+                    style={{ backgroundColor: BrandColors.secondary }}
                   />
                 ) : (
                   <View className="w-24 h-24 bg-burgundy rounded-full items-center justify-center mb-4 relative">
@@ -361,12 +362,12 @@ export default function DriverProfile() {
             <View className="px-6 mb-6">
               <ThemedCard className="p-4 bg-secondary/10 border border-secondary/30">
                 <View className="flex-row items-center">
-                  <Ionicons name="information-circle" size={20} color="#BD8C5E" />
+                  <Ionicons name="information-circle" size={20} color={BrandColors.secondary} />
                   <View className="flex-1 ml-3">
                     <ThemedText className="font-semibold text-secondary mb-1">
                       {t('completeYourProfile')}
                     </ThemedText>
-                    <ThemedText variant="small" className="text-textSecondary">
+                    <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                       {t('addLicenseAndIdDetails')}
                     </ThemedText>
                   </View>
@@ -542,7 +543,7 @@ export default function DriverProfile() {
                       className="flex-row justify-between items-center p-4 bg-surface dark:bg-darkSurface rounded-xl mb-3"
                     >
                       <View className="flex-row items-center">
-                        <Ionicons name="ribbon" size={20} color="#BD8C5E" />
+                        <Ionicons name="ribbon" size={20} color={BrandColors.secondary} />
                         <ThemedText className="ml-3">{t('trainingCertificate')}</ThemedText>
                       </View>
                       <View className="flex-row items-center">
@@ -634,8 +635,8 @@ export default function DriverProfile() {
                     <>
                       {loadingAccepted ? (
                         <View className="items-center py-16">
-                          <ActivityIndicator size="large" color="#BD8C5E" />
-                          <ThemedText className="mt-4 text-textSecondary">{t('loadingAcceptedRides')}</ThemedText>
+                          <ActivityIndicator size="large" color={BrandColors.secondary} />
+                          <ThemedText className="mt-4 text-textSecondary dark:text-darkTextSecondary">{t('loadingAcceptedRides')}</ThemedText>
                         </View>
                       ) : acceptedJobs.length > 0 ? (
                         acceptedJobs.map((job) => (
@@ -663,8 +664,8 @@ export default function DriverProfile() {
                     <>
                       {loadingInProgress ? (
                         <View className="items-center py-16">
-                          <ActivityIndicator size="large" color="#BD8C5E" />
-                          <ThemedText className="mt-4 text-textSecondary">{t('loadingActiveRides')}</ThemedText>
+                          <ActivityIndicator size="large" color={BrandColors.secondary} />
+                          <ThemedText className="mt-4 text-textSecondary dark:text-darkTextSecondary">{t('loadingActiveRides')}</ThemedText>
                         </View>
                       ) : inProgressJobs.length > 0 ? (
                         inProgressJobs.map((job) => (
@@ -692,8 +693,8 @@ export default function DriverProfile() {
                     <>
                       {loadingCompleted ? (
                         <View className="items-center py-16">
-                          <ActivityIndicator size="large" color="#BD8C5E" />
-                          <ThemedText className="mt-4 text-textSecondary">{t('loadingCompletedRides')}</ThemedText>
+                          <ActivityIndicator size="large" color={BrandColors.secondary} />
+                          <ThemedText className="mt-4 text-textSecondary dark:text-darkTextSecondary">{t('loadingCompletedRides')}</ThemedText>
                         </View>
                       ) : completedJobs.length > 0 ? (
                         completedJobs.map((job) => (

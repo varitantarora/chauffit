@@ -22,6 +22,10 @@ import AdminApiService, {
   CreateTrainingBatchRequest,
   MarkTrainingResultsRequest,
 } from '../services/api/AdminApiService';
+import AdvertisementApiService, {
+  Advertisement,
+  AdvertisementCategory,
+} from '../services/api/AdvertisementApiService';
 
 interface AdminState {
   // Dashboard
@@ -115,6 +119,12 @@ interface AdminState {
   trainingBatchesError: string | null;
   selectedTrainingBatch: AdminTrainingBatch | null;
 
+  // Advertisements
+  advertisements: Advertisement[];
+  advertisementCategories: AdvertisementCategory[];
+  adsLoading: boolean;
+  adsError: string | null;
+
   // Actions
   fetchDashboard: () => Promise<void>;
   fetchUsers: (params?: { user_type?: string; status?: string }) => Promise<void>;
@@ -155,6 +165,12 @@ interface AdminState {
   createTrainingBatch: (data: CreateTrainingBatchRequest) => Promise<boolean>;
   autoAssignBatch: (id: string) => Promise<boolean>;
   markTrainingResults: (id: string, results: MarkTrainingResultsRequest[]) => Promise<boolean>;
+
+  fetchAdvertisements: () => Promise<void>;
+  fetchAdvertisementCategories: () => Promise<void>;
+  createAdvertisement: (data: Partial<Advertisement>) => Promise<boolean>;
+  updateAdvertisement: (id: string, data: Partial<Advertisement>) => Promise<boolean>;
+  deleteAdvertisement: (id: string) => Promise<boolean>;
 }
 
 export const useAdminStore = create<AdminState>((set, get) => ({
@@ -226,6 +242,11 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   trainingBatchesLoading: false,
   trainingBatchesError: null,
   selectedTrainingBatch: null,
+
+  advertisements: [],
+  advertisementCategories: [],
+  adsLoading: false,
+  adsError: null,
 
   fetchDashboard: async () => {
     set({ dashboardLoading: true, dashboardError: null });
@@ -678,6 +699,50 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     const res = await AdminApiService.markTrainingResults(id, results);
     if (res.success) {
       get().fetchTrainingBatch(id);
+      return true;
+    }
+    return false;
+  },
+
+  fetchAdvertisements: async () => {
+    set({ adsLoading: true, adsError: null });
+    const res = await AdvertisementApiService.getAdvertisements();
+    if (res.success && res.data) {
+      set({ advertisements: res.data, adsLoading: false });
+    } else {
+      set({ adsError: res.error || 'Failed to fetch advertisements', adsLoading: false });
+    }
+  },
+
+  fetchAdvertisementCategories: async () => {
+    const res = await AdvertisementApiService.getAdvertisementCategories();
+    if (res.success && res.data) {
+      set({ advertisementCategories: res.data });
+    }
+  },
+
+  createAdvertisement: async (data) => {
+    const res = await AdvertisementApiService.createAdvertisement(data);
+    if (res.success) {
+      get().fetchAdvertisements();
+      return true;
+    }
+    return false;
+  },
+
+  updateAdvertisement: async (id, data) => {
+    const res = await AdvertisementApiService.updateAdvertisement(id, data);
+    if (res.success) {
+      get().fetchAdvertisements();
+      return true;
+    }
+    return false;
+  },
+
+  deleteAdvertisement: async (id) => {
+    const res = await AdvertisementApiService.deleteAdvertisement(id);
+    if (res.success) {
+      get().fetchAdvertisements();
       return true;
     }
     return false;

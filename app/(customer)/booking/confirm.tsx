@@ -10,6 +10,7 @@ import { useBookingStore } from '../../../store/bookingStore';
 import { useCarStore } from '../../../store/carStore';
 import { useRouter } from 'expo-router';
 import { PaymentMethod } from '../../../types/navigation';
+import { BrandColors } from '../../../constants/Colors';
 
 export default function ConfirmBooking() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>({
@@ -123,7 +124,7 @@ export default function ConfirmBooking() {
         key={index}
         name={index < Math.floor(rating) ? 'star' : index < rating ? 'star-half' : 'star-outline'}
         size={14}
-        color="#BD8C5E"
+        color={BrandColors.secondary}
       />
     ));
   };
@@ -143,7 +144,7 @@ export default function ConfirmBooking() {
           </TouchableOpacity>
           <View className="flex-1">
             <ThemedText variant="h2">Confirm Booking</ThemedText>
-            <ThemedText variant="small" className="text-textSecondary">
+            <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
               Review your booking details
             </ThemedText>
           </View>
@@ -175,13 +176,13 @@ export default function ConfirmBooking() {
                     <View className="flex-row mr-3">
                       {renderStars(selectedChauffeur.rating)}
                     </View>
-                    <ThemedText variant="small" className="text-textSecondary">
+                    <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                       {selectedChauffeur.rating} • {selectedChauffeur.experience}y exp
                     </ThemedText>
                   </View>
                   
                   <View className="flex-row items-center">
-                    <Ionicons name="time" size={14} color="#BD8C5E" />
+                    <Ionicons name="time" size={14} color={BrandColors.secondary} />
                     <ThemedText variant="small" className="ml-1 font-semibold text-secondary">
                       ETA: {selectedChauffeur.eta}
                     </ThemedText>
@@ -215,13 +216,13 @@ export default function ConfirmBooking() {
               
               <View className="flex-row items-center">
                 <View className="w-12 h-12 bg-secondary/20 rounded-full items-center justify-center mr-3">
-                  <Ionicons name="car-sport" size={24} color="#BD8C5E" />
+                  <Ionicons name="car-sport" size={24} color={BrandColors.secondary} />
                 </View>
                 <View className="flex-1">
                   <ThemedText variant="body" className="font-semibold">
                     {defaultCar.make} {defaultCar.model}
                   </ThemedText>
-                  <ThemedText variant="small" className="text-textSecondary">
+                  <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
                     {defaultCar.color} • {defaultCar.registrationNumber}
                   </ThemedText>
                 </View>
@@ -239,7 +240,7 @@ export default function ConfirmBooking() {
             
             <View className="space-y-3">
               <View className="flex-row justify-between">
-                <ThemedText variant="body" className="text-textSecondary">
+                <ThemedText variant="body" className="text-textSecondary dark:text-darkTextSecondary">
                   Duration
                 </ThemedText>
                 <ThemedText variant="body" className="font-semibold">
@@ -248,7 +249,7 @@ export default function ConfirmBooking() {
               </View>
               
               <View className="flex-row justify-between">
-                <ThemedText variant="body" className="text-textSecondary">
+                <ThemedText variant="body" className="text-textSecondary dark:text-darkTextSecondary">
                   Start Time
                 </ThemedText>
                 <ThemedText variant="body" className="font-semibold">
@@ -257,7 +258,7 @@ export default function ConfirmBooking() {
               </View>
               
               <View className="flex-row justify-between">
-                <ThemedText variant="body" className="text-textSecondary">
+                <ThemedText variant="body" className="text-textSecondary dark:text-darkTextSecondary">
                   Pickup Location
                 </ThemedText>
                 <ThemedText variant="body" className="font-semibold text-right flex-1 ml-4">
@@ -286,7 +287,7 @@ export default function ConfirmBooking() {
                 }`}
               >
                 <View className="w-10 h-10 bg-primary/20 rounded-full items-center justify-center mr-3">
-                  <Ionicons name={getPaymentMethodIcon(method) as any} size={20} color="#BD8C5E" />
+                  <Ionicons name={getPaymentMethodIcon(method) as any} size={20} color={BrandColors.secondary} />
                 </View>
                 
                 <View className="flex-1">
@@ -318,7 +319,7 @@ export default function ConfirmBooking() {
             
             <View className="space-y-3">
               <View className="flex-row justify-between">
-                <ThemedText variant="body" className="text-textSecondary">
+                <ThemedText variant="body" className="text-textSecondary dark:text-darkTextSecondary">
                   Service ({selectedDuration})
                 </ThemedText>
                 <ThemedText variant="body">
@@ -327,7 +328,7 @@ export default function ConfirmBooking() {
               </View>
               
               <View className="flex-row justify-between">
-                <ThemedText variant="body" className="text-textSecondary">
+                <ThemedText variant="body" className="text-textSecondary dark:text-darkTextSecondary">
                   Taxes & Fees
                 </ThemedText>
                 <ThemedText variant="body">
@@ -358,7 +359,7 @@ export default function ConfirmBooking() {
           />
           
           <View className="mt-4">
-            <ThemedText variant="tiny" className="text-center text-textSecondary leading-4">
+            <ThemedText variant="tiny" className="text-center text-textSecondary dark:text-darkTextSecondary leading-4">
               By confirming, you agree to our Terms of Service and Privacy Policy. 
               Cancellation charges may apply.
             </ThemedText>

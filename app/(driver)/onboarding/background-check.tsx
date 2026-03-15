@@ -8,6 +8,7 @@ import { ThemedCard } from '../../../components/common/ThemedCard';
 import { ThemedText } from '../../../components/common/ThemedText';
 import { PrimaryButton } from '../../../components/common/PrimaryButton';
 import { useAuthStore } from '../../../store/authStore';
+import { BrandColors } from '../../../constants/Colors';
 
 export default function BackgroundCheckScreen() {
   const router = useRouter();
@@ -52,28 +53,28 @@ export default function BackgroundCheckScreen() {
           title: 'Verification Failed',
           subtitle: 'Some of your documents could not be verified. Please re-upload the required documents.',
           icon: 'alert-circle' as const,
-          color: '#EF4444',
+          color: BrandColors.danger,
         };
       case 'verified_ready_for_training':
         return {
           title: 'Documents Verified!',
           subtitle: 'Your documents have been approved. Training is being scheduled for you.',
           icon: 'checkmark-circle' as const,
-          color: '#10B981',
+          color: BrandColors.success,
         };
       case 'suspended':
         return {
           title: 'Account Suspended',
           subtitle: 'Your account has been suspended. Please contact support for more information.',
           icon: 'ban' as const,
-          color: '#EF4444',
+          color: BrandColors.danger,
         };
       case 'rejected':
         return {
           title: 'Application Rejected',
           subtitle: 'Unfortunately, your application has been rejected. Please contact support for more information.',
           icon: 'close-circle' as const,
-          color: '#EF4444',
+          color: BrandColors.danger,
         };
       default:
         return {
@@ -128,7 +129,7 @@ export default function BackgroundCheckScreen() {
 
             {/* Verification Status Header */}
             <View className="flex-row items-center mb-4">
-              <Ionicons name="shield-checkmark" size={20} color="#BD8C5E" />
+              <Ionicons name="shield-checkmark" size={20} color={BrandColors.secondary} />
               <ThemedText className="font-bold ml-2">VERIFICATION STATUS</ThemedText>
             </View>
 
@@ -187,7 +188,7 @@ export default function BackgroundCheckScreen() {
             {driverOnboardingStatus === 'verified_ready_for_training' && (
               <ThemedCard className="p-4 mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
                 <View className="flex-row items-start">
-                  <Ionicons name="school" size={24} color="#10B981" />
+                  <Ionicons name="school" size={24} color={BrandColors.success} />
                   <View className="ml-3 flex-1">
                     <ThemedText className="font-bold text-green-700 dark:text-green-300 mb-1">
                       🎓 TRAINING PENDING
@@ -204,7 +205,7 @@ export default function BackgroundCheckScreen() {
             {driverOnboardingStatus === 'verified_ready_for_training' && (
               <ThemedCard className="p-4 mb-6">
                 <View className="flex-row items-start">
-                  <Ionicons name="document-text" size={24} color="#BD8C5E" />
+                  <Ionicons name="document-text" size={24} color={BrandColors.secondary} />
                   <View className="ml-3 flex-1">
                     <ThemedText className="font-bold mb-1">📄 Bring Original Documents</ThemedText>
                     <ThemedText variant="secondary" className="text-sm">
@@ -233,7 +234,7 @@ export default function BackgroundCheckScreen() {
             <View className="flex-row space-x-3 mb-6">
               <TouchableOpacity className="flex-1 bg-burgundy/10 py-3 px-4 rounded-lg border border-burgundy/20">
                 <View className="flex-row items-center justify-center">
-                  <Ionicons name="call" size={16} color="#720C17" />
+                  <Ionicons name="call" size={16} color={BrandColors.burgundy} />
                   <ThemedText className="text-burgundy font-semibold ml-2">
                     Contact Support
                   </ThemedText>
@@ -242,7 +243,7 @@ export default function BackgroundCheckScreen() {
 
               <TouchableOpacity className="flex-1 bg-secondary/10 py-3 px-4 rounded-lg border border-secondary/20">
                 <View className="flex-row items-center justify-center">
-                  <Ionicons name="help-circle" size={16} color="#BD8C5E" />
+                  <Ionicons name="help-circle" size={16} color={BrandColors.secondary} />
                   <ThemedText className="text-secondary font-semibold ml-2">
                     FAQ
                   </ThemedText>
@@ -265,9 +266,9 @@ function StatusStep({
 }) {
   const getIcon = () => {
     switch (status) {
-      case 'completed': return { name: 'checkmark-circle' as const, color: '#10B981' };
+      case 'completed': return { name: 'checkmark-circle' as const, color: BrandColors.success };
       case 'in-progress': return { name: 'time' as const, color: '#f59e0b' };
-      case 'failed': return { name: 'close-circle' as const, color: '#EF4444' };
+      case 'failed': return { name: 'close-circle' as const, color: BrandColors.danger };
       default: return { name: 'ellipse-outline' as const, color: '#6b7280' };
     }
   };

@@ -7,7 +7,7 @@ import { ThemedText } from '../../components/common/ThemedText';
 import { StatusBadge } from '../../components/admin/StatusBadge';
 import { useAdminStore } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
-import { LightColors, DarkColors } from '../../constants/Colors';
+import { BrandColors, LightColors, DarkColors, useThemeColors } from '../../constants/Colors';
 import type { AdminBiker } from '../../services/api/AdminApiService';
 
 export default function AllBikers() {
@@ -76,11 +76,11 @@ export default function AllBikers() {
   const statusColor = (status?: string): string => {
     switch (status) {
       case 'active':
-        return '#10B981';
+        return BrandColors.success;
       case 'suspended':
-        return '#F59E0B';
+        return BrandColors.warning;
       case 'inactive':
-        return '#EF4444';
+        return BrandColors.danger;
       default:
         return colors.textSecondary;
     }
@@ -98,7 +98,7 @@ export default function AllBikers() {
         <ThemedText className="font-semibold">
           {item.user_details.full_name || `${item.user_details.first_name} ${item.user_details.last_name}`}
         </ThemedText>
-        <ThemedText variant="tiny" className="text-gray-500">{item.user_details.email}</ThemedText>
+        <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">{item.user_details.email}</ThemedText>
       </View>
       <View className="mr-2" style={{ backgroundColor: statusColor(item.current_status) + '20' }}>
         <ThemedText

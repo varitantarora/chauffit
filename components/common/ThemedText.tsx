@@ -19,7 +19,8 @@ export const ThemedText: React.FC<ThemedTextProps> = ({
     const secondaryColor = 'text-textSecondary dark:text-darkTextSecondary';
     
     // Check if className already has a text color override (including dark: variants)
-    const hasColorOverride = /\b(dark:)?text-\w+/.test(className);
+    // Excludes size classes (xs/sm/base/lg/xl/2xl...) and alignment classes (center/left/right/etc.)
+    const hasColorOverride = /\b(dark:)?text-(?!(?:xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl|center|left|right|justify|start|end|ellipsis|clip|wrap|nowrap)\b)\w/.test(className);
     
     switch (variant) {
       case 'display':

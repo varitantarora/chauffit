@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../store/authStore';
 import { useJobStore } from '../../../store/jobStore';
 import { useI18nStore } from '../../../store/i18nStore';
+import { BrandColors } from '../../../constants/Colors';
 
 type TabType = 'pending' | 'accepted' | 'in-progress' | 'completed';
 
@@ -206,7 +207,7 @@ export default function RideRequestsScreen() {
         onPress={() => setActiveTab(tab)}
         className="flex-1 py-3 rounded-lg"
       >
-        <ThemedText className="text-center font-semibold text-textSecondary">
+        <ThemedText className="text-center font-semibold text-textSecondary dark:text-darkTextSecondary">
           {label} {count > 0 && `(${count})`}
         </ThemedText>
       </TouchableOpacity>
@@ -260,13 +261,13 @@ export default function RideRequestsScreen() {
           {/* Header */}
           <View
             style={{
-              backgroundColor: '#720C17',
+              backgroundColor: BrandColors.burgundy,
               paddingHorizontal: 24,
               paddingTop: 16,
               paddingBottom: 20,
               borderBottomLeftRadius: 24,
               borderBottomRightRadius: 24,
-              shadowColor: '#720C17',
+              shadowColor: BrandColors.burgundy,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.25,
               shadowRadius: 8,
@@ -321,7 +322,7 @@ export default function RideRequestsScreen() {
             {isLoading() ? (
               <View className="items-center py-16">
                 <Ionicons name="car" size={40} color={iconColor} />
-                <ThemedText className="mt-4 text-textSecondary">{t('loadingProfile')}</ThemedText>
+                <ThemedText className="mt-4 text-textSecondary dark:text-darkTextSecondary">{t('loadingProfile')}</ThemedText>
               </View>
             ) : hasError() && getCurrentJobs().length === 0 ? (
               // Error State
@@ -330,7 +331,7 @@ export default function RideRequestsScreen() {
                 <ThemedText variant="title" className="mt-4 mb-2 text-danger">
                   {t('error')}
                 </ThemedText>
-                <ThemedText variant="secondary" className="text-center text-textSecondary px-8 mb-4">
+                <ThemedText variant="secondary" className="text-center text-textSecondary dark:text-darkTextSecondary px-8 mb-4">
                   {lastApiError || t('failedToFetchRides')}
                 </ThemedText>
                 <TouchableOpacity
