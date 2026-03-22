@@ -65,8 +65,8 @@ export default function DriverRegistrationScreen() {
       Alert.alert('Missing Information', 'Please select your license expiry date.');
       return;
     }
-    if (!formData.aadharNumber.trim() || formData.aadharNumber.length !== 12) {
-      Alert.alert('Missing Information', 'Please enter a valid 12-digit Aadhaar number.');
+    if (!formData.aadharNumber.trim() || !/^\d{12}$/.test(formData.aadharNumber)) {
+      Alert.alert('Missing Information', 'Please enter a valid 12-digit Aadhaar number (digits only).');
       return;
     }
     if (!formData.experience) {
