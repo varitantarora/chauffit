@@ -346,7 +346,7 @@ const mapBookingToActiveJob = (
       ? parsedStartTime
       : existingActiveJob?.startTime;
 
-  return {
+  const mapping: any = {
     id: booking.id,
     jobRequestId: booking.id,
     customerId: customerDetails?.id || bookingWithExtras.customer || '',
@@ -393,15 +393,15 @@ const mapBookingToActiveJob = (
   };
 
   // Set the primary net_earnings field from the extracted values
-  if ((mapping as any).net_earnings !== undefined) {
-    mapping.net_earnings = parseFloat(String((mapping as any).net_earnings));
-  } else if ((mapping as any).driver_earnings_breakdown?.net_earnings !== undefined) {
-    mapping.net_earnings = parseFloat(String((mapping as any).driver_earnings_breakdown.net_earnings));
-  } else if ((mapping as any).earnings?.net_earnings !== undefined) {
-    mapping.net_earnings = parseFloat(String((mapping as any).earnings.net_earnings));
+  if (mapping.net_earnings !== undefined) {
+    mapping.net_earnings = parseFloat(String(mapping.net_earnings));
+  } else if (mapping.driver_earnings_breakdown?.net_earnings !== undefined) {
+    mapping.net_earnings = parseFloat(String(mapping.driver_earnings_breakdown.net_earnings));
+  } else if (mapping.earnings?.net_earnings !== undefined) {
+    mapping.net_earnings = parseFloat(String(mapping.earnings.net_earnings));
   }
 
-  return mapping;
+  return mapping as ActiveJob;
 };
 
 // Helper function to map BookingDetail to JobRequest
@@ -421,13 +421,13 @@ const mapBookingToJobRequest = (booking: BookingDetail, status: JobRequest['stat
       latitude: parseFloat(String(booking.pickup_lat)) || 0,
       longitude: parseFloat(String(booking.pickup_long)) || 0,
       address: booking.pickup_address,
-      name: booking.pickup_address.split(',')[0]
+      name: (booking.pickup_address || '').split(',')[0]
     },
     dropoffLocation: {
       latitude: parseFloat(String(booking.dropoff_lat)) || 0,
       longitude: parseFloat(String(booking.dropoff_long)) || 0,
       address: booking.dropoff_address,
-      name: booking.dropoff_address.split(',')[0]
+      name: (booking.dropoff_address || '').split(',')[0]
     },
     scheduledTime: booking.scheduled_at ? new Date(booking.scheduled_at) : new Date(),
     estimatedDuration: booking.estimated_duration_minutes || 30,
@@ -478,13 +478,13 @@ const mapBookingToJobHistory = (booking: BookingDetail): JobHistory => {
       latitude: parseFloat(String(booking.pickup_lat)) || 0,
       longitude: parseFloat(String(booking.pickup_long)) || 0,
       address: booking.pickup_address,
-      name: booking.pickup_address.split(',')[0]
+      name: (booking.pickup_address || '').split(',')[0]
     },
     dropoffLocation: {
       latitude: parseFloat(String(booking.dropoff_lat)) || 0,
       longitude: parseFloat(String(booking.dropoff_long)) || 0,
       address: booking.dropoff_address,
-      name: booking.dropoff_address.split(',')[0]
+      name: (booking.dropoff_address || '').split(',')[0]
     },
     duration: booking.actual_duration_minutes || booking.estimated_duration_minutes || 0,
     distance: parseFloat(String(booking.actual_distance_km || booking.estimated_distance_km)) || 0,
@@ -1071,12 +1071,15 @@ export const useJobStore = create<JobState>((set, get) => ({
   // API Integration: Complete a ride
   completeRideFromAPI: async (rideId: string, data?: any) => {
     try {
-      const completeData = {
+      const completeData: Record<string, any> = {
         dropoff_lat: data?.dropoff_lat || '0',
         dropoff_long: data?.dropoff_long || '0',
         actual_distance_km: data?.actual_distance_km?.toString() || '0',
         actual_duration_minutes: data?.actual_duration_minutes || 0,
       };
+      if (data?.otp) {
+        completeData.otp = data.otp;
+      }
 
       const response = await DriverRidesApiService.completeTrip(rideId, completeData);
       if (response.success) {
@@ -1118,19 +1121,50 @@ export const useJobStore = create<JobState>((set, get) => ({
   }
 }));
 
-// Auto-cleanup expired requests every minute
-setInterval(() => {
-  useJobStore.getState().clearExpiredRequests();
-}, 60000);
+// Polling intervals — tracked so they can be cleaned up on logout
+let cleanupIntervalId: ReturnType<typeof setInterval> | null = null;
+let pendingPollIntervalId: ReturnType<typeof setInterval> | null = null;
 
 const PENDING_POLL_INTERVAL_MS = isProduction() ? 2000 : 120000;
 
-// Poll pending ride requests on interval (silent in background, drivers only)
-setInterval(() => {
-  const activeRole = useAuthStore.getState().activeRole;
-  if (activeRole !== 'driver') return;
-  const state = useJobStore.getState();
-  if (!state.loadingPending) {
-    state.fetchPendingRequests({ silent: true });
+export function startJobStorePolling() {
+  stopJobStorePolling(); // clear any existing intervals first
+
+  // Auto-cleanup expired requests every minute
+  cleanupIntervalId = setInterval(() => {
+    useJobStore.getState().clearExpiredRequests();
+  }, 60000);
+
+  // Poll pending ride requests on interval (silent in background, drivers only)
+  pendingPollIntervalId = setInterval(() => {
+    const activeRole = useAuthStore.getState().activeRole;
+    if (activeRole !== 'driver') return;
+    const state = useJobStore.getState();
+    if (!state.loadingPending) {
+      state.fetchPendingRequests({ silent: true });
+    }
+  }, PENDING_POLL_INTERVAL_MS);
+}
+
+export function stopJobStorePolling() {
+  if (cleanupIntervalId !== null) {
+    clearInterval(cleanupIntervalId);
+    cleanupIntervalId = null;
   }
-}, PENDING_POLL_INTERVAL_MS);
+  if (pendingPollIntervalId !== null) {
+    clearInterval(pendingPollIntervalId);
+    pendingPollIntervalId = null;
+  }
+}
+
+// Start polling on module load (will be stopped on logout)
+startJobStorePolling();
+
+// Stop polling when user logs out
+useAuthStore.subscribe((state, prevState) => {
+  if (prevState.isAuthenticated && !state.isAuthenticated) {
+    stopJobStorePolling();
+  } else if (!prevState.isAuthenticated && state.isAuthenticated) {
+    startJobStorePolling();
+  }
+});

@@ -8,6 +8,7 @@ export default function DriverLayout() {
       <Stack.Screen name="job/active" />
       <Stack.Screen name="job/navigation" />
       <Stack.Screen name="job/otp-start" />
+      <Stack.Screen name="job/otp-complete" />
       <Stack.Screen name="onboarding/registration" />
       <Stack.Screen name="onboarding/documents" />
       <Stack.Screen name="onboarding/background-check" />

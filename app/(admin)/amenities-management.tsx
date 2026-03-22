@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { ScrollView, View, Pressable, RefreshControl, TextInput, Modal, Switch, Alert } from 'react-native';
+import { ScrollView, View, Pressable, RefreshControl, TextInput, Modal, Switch, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import { ThemedText } from '../../components/common/ThemedText';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { useAdminStore } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
+import { useConfigStore } from '../../store/configStore';
 import { LightColors, DarkColors, BrandColors, useThemeColors} from '../../constants/Colors';
 import { AdminAmenity } from '../../services/api/AdminApiService';
 
@@ -56,16 +57,30 @@ export default function AmenitiesManagement() {
         updateAmenity,
         deleteAmenity,
     } = useAdminStore();
+    const fetchConfigs = useConfigStore((state) => state.fetchConfigs);
+    const getConfigValue = useConfigStore((state) => state.getConfigValue);
+    const updateConfig = useConfigStore((state) => state.updateConfig);
+    const configsLoading = useConfigStore((state) => state.configsLoading);
 
     const [modalVisible, setModalVisible] = useState(false);
     const [editingAmenity, setEditingAmenity] = useState<AdminAmenity | null>(null);
     const [form, setForm] = useState<AmenityFormData>(EMPTY_FORM);
     const [saving, setSaving] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<AmenityCategory | 'all'>('all');
+    const [amenitiesFeatureEnabled, setAmenitiesFeatureEnabled] = useState(true);
+    const [togglingFeature, setTogglingFeature] = useState(false);
 
     useEffect(() => {
         fetchAmenities();
+        fetchConfigs();
     }, []);
+
+    useEffect(() => {
+        const val = getConfigValue('amenities_enabled');
+        if (val !== null) {
+            setAmenitiesFeatureEnabled(val !== 'false');
+        }
+    }, [getConfigValue('amenities_enabled')]);
 
     const onRefresh = useCallback(() => {
         fetchAmenities();
@@ -160,6 +175,17 @@ export default function AmenitiesManagement() {
                 },
             ]
         );
+    };
+
+    const handleToggleAmenitiesFeature = async (value: boolean) => {
+        setAmenitiesFeatureEnabled(value);
+        setTogglingFeature(true);
+        const success = await updateConfig('amenities_enabled', { value: String(value) });
+        if (!success) {
+            setAmenitiesFeatureEnabled(!value);
+            Alert.alert('Error', 'Failed to update amenities feature flag.');
+        }
+        setTogglingFeature(false);
     };
 
     const updateField = (field: keyof AmenityFormData, value: string | boolean) => {
@@ -331,6 +357,27 @@ export default function AmenitiesManagement() {
                     />
                 }
             >
+                {/* Amenities Feature Toggle */}
+                <View className="p-4 mb-4 rounded-2xl border bg-surface dark:bg-darkSurface border-border dark:border-darkBorder">
+                    <View className="flex-row items-center justify-between">
+                        <View className="flex-1 mr-4">
+                            <ThemedText className="font-semibold mb-1">Amenities Feature</ThemedText>
+                            <ThemedText variant="tiny" style={{ color: colors.textSecondary }}>
+                                Show/hide amenities option for customers globally
+                            </ThemedText>
+                        </View>
+                        {togglingFeature || configsLoading ? (
+                            <ActivityIndicator size="small" color={colors.burgundy} />
+                        ) : (
+                            <Switch
+                                value={amenitiesFeatureEnabled}
+                                onValueChange={handleToggleAmenitiesFeature}
+                                trackColor={{ true: colors.burgundy }}
+                            />
+                        )}
+                    </View>
+                </View>
+
                 {Object.keys(groupedAmenities).length > 0 ? (
                     CATEGORY_OPTIONS.filter((cat) => groupedAmenities[cat.value]).map((cat) => (
                         <View key={cat.value} className="mb-4">

@@ -188,12 +188,12 @@ ${errorInfo?.componentStack || 'No component stack available'}
 
       // Default error UI
       return (
-        <View className="flex-1 bg-white">
+        <View className="flex-1 bg-white dark:bg-darkBackground">
           {/* Header */}
-          <View className="bg-red-50 px-4 py-6 border-b border-red-100">
+          <View className="bg-red-50 dark:bg-red-950 px-4 py-6 border-b border-red-100 dark:border-red-900">
             <View className="items-center">
               <Ionicons name="warning" size={48} color={LightColors.danger} />
-              <Text className="text-xl font-bold text-black mt-4">
+              <Text className="text-xl font-bold text-black dark:text-white mt-4">
                 Something went wrong
               </Text>
               <Text className="text-sm text-textSecondary dark:text-darkTextSecondary mt-2 text-center">

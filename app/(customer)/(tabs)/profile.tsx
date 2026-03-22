@@ -233,7 +233,7 @@ export default function Profile() {
                       </ThemedText>
                     </View>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color={BrandColors.burgundy} />
+                  <Ionicons name="chevron-forward" size={20} color={isDarkMode ? BrandColors.secondary : BrandColors.burgundy} />
                 </View>
                 {loyaltyProfile && loyaltyProfile.discount_percentage > 0 && (
                   <View className="mt-3 p-2 bg-green-50 rounded-xl flex-row items-center">
@@ -382,10 +382,10 @@ export default function Profile() {
                   </View>
                   <ThemedText>Notifications</ThemedText>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={BrandColors.burgundy} />
+                <Ionicons name="chevron-forward" size={20} color={isDarkMode ? BrandColors.secondary : BrandColors.burgundy} />
               </ThemedCard>
             </TouchableOpacity>
-            
+
             <TouchableOpacity className="mb-3" activeOpacity={1} onPress={() => router.push('/(customer)/payment-methods')}>
               <ThemedCard className="flex-row justify-between items-center py-4">
                 <View className="flex-row items-center flex-1">
@@ -394,10 +394,10 @@ export default function Profile() {
                   </View>
                   <ThemedText>Payment Methods</ThemedText>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={BrandColors.burgundy} />
+                <Ionicons name="chevron-forward" size={20} color={isDarkMode ? BrandColors.secondary : BrandColors.burgundy} />
               </ThemedCard>
             </TouchableOpacity>
-            
+
             <TouchableOpacity className="mb-3" onPress={() => router.push('/(customer)/(tabs)/history')} activeOpacity={1}>
               <ThemedCard className="flex-row justify-between items-center py-4">
                 <View className="flex-row items-center flex-1">
@@ -406,10 +406,10 @@ export default function Profile() {
                   </View>
                   <ThemedText>Ride History</ThemedText>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={BrandColors.burgundy} />
+                <Ionicons name="chevron-forward" size={20} color={isDarkMode ? BrandColors.secondary : BrandColors.burgundy} />
               </ThemedCard>
             </TouchableOpacity>
-            
+
             <TouchableOpacity className="mb-3" onPress={() => router.push('/(customer)/support')} activeOpacity={1}>
               <ThemedCard className="flex-row justify-between items-center py-4">
                 <View className="flex-row items-center flex-1">
@@ -418,7 +418,7 @@ export default function Profile() {
                   </View>
                   <ThemedText>Support</ThemedText>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={BrandColors.burgundy} />
+                <Ionicons name="chevron-forward" size={20} color={isDarkMode ? BrandColors.secondary : BrandColors.burgundy} />
               </ThemedCard>
             </TouchableOpacity>
 
@@ -430,7 +430,7 @@ export default function Profile() {
                   </View>
                   <ThemedText>Terms and Conditions</ThemedText>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={BrandColors.burgundy} />
+                <Ionicons name="chevron-forward" size={20} color={isDarkMode ? BrandColors.secondary : BrandColors.burgundy} />
               </ThemedCard>
             </TouchableOpacity>
           </View>

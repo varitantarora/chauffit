@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { TextInput, TouchableOpacity, Alert, View, Pressable, Keyboard, Platform } from 'react-native';
+import { TextInput, TouchableOpacity, Alert, View, Pressable, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedView } from '../../components/common/ThemedView';
@@ -47,15 +47,8 @@ export default function OTPVerification() {
   }, []);
 
   useEffect(() => {
-    // Focus first input on mount
     setTimeout(() => {
       inputRefs.current[0]?.focus();
-      if (Platform.OS === 'android') {
-        // Ensure keyboard opens on Android
-        setTimeout(() => {
-          inputRefs.current[0]?.focus();
-        }, 200);
-      }
     }, 300);
   }, []);
 
@@ -75,13 +68,10 @@ export default function OTPVerification() {
   };
 
   const focusInput = () => {
-    inputRefs.current[0]?.focus();
-    // Ensure keyboard opens on Android and iOS
-    if (Platform.OS === 'android') {
-      Keyboard.dismiss();
-      setTimeout(() => {
-        inputRefs.current[0]?.focus();
-      }, 100);
+    const input = inputRefs.current[0];
+    if (input) {
+      input.blur();
+      setTimeout(() => input.focus(), 50);
     }
   };
 
@@ -267,8 +257,9 @@ export default function OTPVerification() {
   };
 
   const formatPhoneNumber = (phone: string) => {
-    if (phone && phone.length >= 10) {
-      return `+91 ${phone.slice(0, 2)}XXX XXX${phone.slice(-2)}`;
+    const digits = phone.startsWith('+91') ? phone.slice(3) : phone;
+    if (digits && digits.length >= 10) {
+      return `+91 ${digits.slice(0, 2)}XXX XXX${digits.slice(-2)}`;
     }
     return phone;
   };
@@ -301,9 +292,7 @@ export default function OTPVerification() {
             <ThemedText variant="small" className="text-center text-textSecondary dark:text-darkTextSecondary px-4">
               We've sent a 6-digit code to {formatPhoneNumber(phoneNumber || '')}
             </ThemedText>
-            <ThemedText variant="tiny" className="text-center text-secondary mt-2 px-4">
-              Test OTP: 123456
-            </ThemedText>
+
           </View>
 
           {/* OTP Input Container */}

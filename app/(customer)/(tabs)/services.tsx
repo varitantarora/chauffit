@@ -19,6 +19,7 @@ export default function ServicesScreen() {
   const fetchConfigs = useConfigStore((state) => state.fetchConfigs);
   const getConfigValue = useConfigStore((state) => state.getConfigValue);
   const showPromotions = getConfigValue('show_promotions_in_services_page') === 'true';
+  const amenitiesEnabled = getConfigValue('amenities_enabled') !== 'false';
   const router = useRouter();
   const scrollX = useRef(new Animated.Value(0)).current;
   const [showAmenitiesModal, setShowAmenitiesModal] = useState(false);
@@ -63,10 +64,11 @@ export default function ServicesScreen() {
     },
   ];
 
-  // Feature buttons with navigation (insurance & amenities hidden for pilot)
+  // Feature buttons with navigation
   const featureButtons = [
     { id: 'schedule', name: 'Schedule', icon: 'calendar-outline', route: '/(customer)/schedule' },
     { id: 'corporate', name: 'Corporate', icon: 'business-outline', route: null },
+    ...(amenitiesEnabled ? [{ id: 'amenities', name: 'Amenities', icon: 'cafe-outline', route: null }] : []),
   ];
 
   // Save everyday cards (moved from index.tsx Popular Services)
@@ -401,23 +403,21 @@ if (response.success && response.data) setAds(response.data);
                   activeOpacity={0.8}
                   onPress={() => router.push('/(customer)/book-ride-new')}
                 >
-                  <ThemedCard className="w-48 px-3 pt-3 pb-1 my-2 h-[175px]">
+                  <View
+                    className="w-48 my-2 rounded-2xl overflow-hidden border border-border dark:border-darkBorder bg-surface dark:bg-darkSurface"
+                    style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 }}
+                  >
                     <Image
                       source={{ uri: service.image }}
-                      className="w-full h-24 rounded-lg mb-2"
+                      className="w-full h-32"
                       resizeMode="cover"
                     />
-                    <View className="h-5 justify-center">
+                    <View className="px-3 py-2">
                       <ThemedText className="font-semibold text-center" numberOfLines={1}>
                         {service.name}
                       </ThemedText>
                     </View>
-                    <View className="h-10 mt-1 justify-start">
-                      <ThemedText variant="caption" className="text-center" numberOfLines={2}>
-                        {service.description}
-                      </ThemedText>
-                    </View>
-                  </ThemedCard>
+                  </View>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -501,7 +501,7 @@ if (response.success && response.data) setAds(response.data);
 
         {/* Amenities Modal */}
         <Modal
-          visible={showAmenitiesModal}
+          visible={amenitiesEnabled && showAmenitiesModal}
           animationType="slide"
           transparent={true}
           onRequestClose={() => setShowAmenitiesModal(false)}

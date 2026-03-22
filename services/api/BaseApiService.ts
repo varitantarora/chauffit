@@ -19,10 +19,12 @@ class BaseApiService {
   private baseUrl: string;
   private accessToken: string | null = null;
   private refreshToken: string | null = null;
+  private refreshPromise: Promise<boolean> | null = null;
+  private tokensReady: Promise<void>;
 
   constructor() {
     this.baseUrl = appConfig.apiBaseUrl;
-    this.loadTokens();
+    this.tokensReady = this.loadTokens();
   }
 
   // Token Management
@@ -33,6 +35,10 @@ class BaseApiService {
     } catch (error) {
       console.error('Failed to load tokens:', error);
     }
+  }
+
+  async ensureTokensLoaded() {
+    await this.tokensReady;
   }
 
   async setTokens(accessToken: string, refreshToken: string) {
@@ -338,8 +344,21 @@ class BaseApiService {
     }
   }
 
-  // Refresh Token
+  // Refresh Token (deduplicated: concurrent calls share a single in-flight request)
   private async refreshAccessToken(): Promise<boolean> {
+    if (this.refreshPromise) {
+      return this.refreshPromise;
+    }
+
+    this.refreshPromise = this._doRefreshAccessToken();
+    try {
+      return await this.refreshPromise;
+    } finally {
+      this.refreshPromise = null;
+    }
+  }
+
+  private async _doRefreshAccessToken(): Promise<boolean> {
     if (!this.refreshToken) {
       return false;
     }
@@ -347,18 +366,18 @@ class BaseApiService {
     try {
       const url = getApiUrl('/auth/refresh/');
       const headers = this.getHeaders(false);
-      
+
       // Log request
       const requestId = this.logApiRequest('POST', url, headers, { refresh: '***HIDDEN***' });
-      
+
       const response = await fetch(url, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ refresh: this.refreshToken }), // Use actual token in request
+        body: JSON.stringify({ refresh: this.refreshToken }),
       });
 
       const result = await this.parseResponse<{ refresh: string; access?: string }>(response, requestId, url);
-      
+
       if (result.success && result.data) {
         // Update access token if provided in response
         if (result.data.access) {
@@ -436,6 +455,7 @@ class BaseApiService {
     params?: Record<string, string>,
     includeAuth: boolean = true
   ): Promise<ApiResponse<T>> {
+    if (includeAuth) await this.ensureTokensLoaded();
     const url = getApiUrl(endpoint, params);
     const headers = this.getHeaders(includeAuth);
     
@@ -471,6 +491,7 @@ class BaseApiService {
     includeAuth: boolean = true,
     isFormData: boolean = false
   ): Promise<ApiResponse<T>> {
+    if (includeAuth) await this.ensureTokensLoaded();
     const url = getApiUrl(endpoint);
     
     // For FormData, don't set Content-Type header (browser will set it with boundary)
@@ -515,6 +536,7 @@ class BaseApiService {
     includeAuth: boolean = true,
     isFormData: boolean = false
   ): Promise<ApiResponse<T>> {
+    if (includeAuth) await this.ensureTokensLoaded();
     const url = getApiUrl(endpoint);
     
     const headers = isFormData 
@@ -558,6 +580,7 @@ class BaseApiService {
     includeAuth: boolean = true,
     isFormData: boolean = false
   ): Promise<ApiResponse<T>> {
+    if (includeAuth) await this.ensureTokensLoaded();
     const url = getApiUrl(endpoint);
     
     const headers = isFormData 
@@ -599,6 +622,7 @@ class BaseApiService {
     endpoint: string,
     includeAuth: boolean = true
   ): Promise<ApiResponse<T>> {
+    if (includeAuth) await this.ensureTokensLoaded();
     const url = getApiUrl(endpoint);
     const headers = this.getHeaders(includeAuth);
 

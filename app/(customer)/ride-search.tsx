@@ -25,6 +25,8 @@ import { useCarStore } from '../../store/carStore';
 import { CustomerCar } from '../../types/navigation';
 import { useBookingStore } from '../../store/bookingStore';
 import BookingApiService, { FareEstimateResponse } from '../../services/api/BookingApiService';
+import LocationApiService, { FavoriteLocation } from '../../services/api/LocationApiService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DarkMapStyle } from '../../constants/MapStyles';
 import { BrandColors } from '../../constants/Colors';
 import { appConfig } from '../../config/env';
@@ -36,6 +38,14 @@ interface BookingLocation {
   placeId?: string;
   fullAddress?: string;
 }
+
+interface RecentDestination {
+  address: string;
+  latitude: number;
+  longitude: number;
+}
+
+const RECENT_DESTINATIONS_KEY = '@chauffit/recent_destinations';
 
 interface RideSearchParams {
   initialPickup?: string;
@@ -67,6 +77,10 @@ export default function RideSearchScreen() {
   const [isBooking, setIsBooking] = useState(false);
   const [selectedCar, setSelectedCar] = useState<CustomerCar | null>(null);
   const [showVehicleModal, setShowVehicleModal] = useState(false);
+
+  const [favoriteLocations, setFavoriteLocations] = useState<FavoriteLocation[]>([]);
+  const [isFetchingFavorites, setIsFetchingFavorites] = useState(false);
+  const [recentDestinations, setRecentDestinations] = useState<RecentDestination[]>([]);
 
   const [routeCoords, setRouteCoords] = useState<LatLng[]>([]);
   const [displayCoords, setDisplayCoords] = useState<LatLng[]>([]);
@@ -169,6 +183,24 @@ export default function RideSearchScreen() {
     // If both address and coords are present, no action needed
   }, []);
 
+  // Fetch saved/favorite locations
+  useEffect(() => {
+    if (!user?.id) return;
+    setIsFetchingFavorites(true);
+    LocationApiService.getFavorites()
+      .then((res) => { if (res.success && res.data) setFavoriteLocations(res.data); })
+      .finally(() => setIsFetchingFavorites(false));
+  }, [user?.id]);
+
+  // Load recent destinations from local storage
+  useEffect(() => {
+    AsyncStorage.getItem(RECENT_DESTINATIONS_KEY)
+      .then((raw) => {
+        if (raw) setRecentDestinations(JSON.parse(raw));
+      })
+      .catch(() => {});
+  }, []);
+
   // Fare calculation with 400ms debounce
   useEffect(() => {
     if (!pickupLocation.address || !dropLocation) return;
@@ -265,6 +297,7 @@ export default function RideSearchScreen() {
         setDisplayCoords([]);
 
         setDropLocation(newLocation);
+        saveRecentDestination(newLocation);
         // Reset fare card when new destination is chosen
         fareCardAnim.setValue(200);
         setFareEstimate(null);
@@ -298,6 +331,34 @@ export default function RideSearchScreen() {
     } finally {
       setIsFetchingCurrentLocation(false);
     }
+  };
+
+  const getFavoriteIcon = (title: string): React.ComponentProps<typeof Ionicons>['name'] => {
+    const t = title.toLowerCase();
+    if (t.includes('home')) return 'home';
+    if (t.includes('work') || t.includes('office')) return 'business';
+    if (t.includes('airport')) return 'airplane';
+    return 'star';
+  };
+
+  const saveRecentDestination = (location: { address: string; latitude: number; longitude: number }) => {
+    setRecentDestinations((prev) => {
+      const deduped = prev.filter((r) => r.address !== location.address);
+      const next = [{ address: location.address, latitude: location.latitude, longitude: location.longitude }, ...deduped].slice(0, 5);
+      AsyncStorage.setItem(RECENT_DESTINATIONS_KEY, JSON.stringify(next)).catch(() => {});
+      return next;
+    });
+  };
+
+  const selectQuickDestination = (location: { address: string; latitude: number; longitude: number }) => {
+    if (routeAnimRef.current) clearInterval(routeAnimRef.current);
+    if (routeRestartRef.current) clearTimeout(routeRestartRef.current);
+    setRouteCoords([]);
+    setDisplayCoords([]);
+    fareCardAnim.setValue(200);
+    setFareEstimate(null);
+    setFareError(null);
+    setDropLocation({ address: location.address, latitude: location.latitude, longitude: location.longitude });
   };
 
   const handleConfirmBooking = async () => {
@@ -515,38 +576,13 @@ export default function RideSearchScreen() {
         )}
       </MapView>
 
-      {/* Back button */}
-      <TouchableOpacity
-        onPress={() => router.back()}
-        style={{
-          position: 'absolute',
-          top: insets.top + 12,
-          left: 16,
-          width: 40,
-          height: 40,
-          borderRadius: 20,
-          backgroundColor: isDarkMode ? 'rgba(30,30,30,0.9)' : 'rgba(255,255,255,0.95)',
-          alignItems: 'center',
-          justifyContent: 'center',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.15,
-          shadowRadius: 4,
-          elevation: 4,
-          zIndex: 20,
-        }}
-      >
-        <Ionicons name="arrow-back" size={22} color={isDarkMode ? '#e5e5e5' : '#333'} />
-      </TouchableOpacity>
-
-      {/* Top card — pickup + destination inputs */}
+      {/* Top card — back button + pickup + destination inputs */}
       <View
         style={{
           position: 'absolute',
           top: insets.top + 12,
           left: 16,
           right: 16,
-          marginLeft: 48, // leave room for back button
           backgroundColor: cardBg,
           borderRadius: 14,
           padding: 10,
@@ -558,6 +594,14 @@ export default function RideSearchScreen() {
           zIndex: 10,
         }}
       >
+        {/* Back button */}
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{ marginBottom: 8, alignSelf: 'flex-start', padding: 4 }}
+        >
+          <Ionicons name="arrow-back" size={22} color={isDarkMode ? '#e5e5e5' : '#333'} />
+        </TouchableOpacity>
+
         {/* Pickup field */}
         <View style={{ marginBottom: 4 }}>
           <GooglePlacesAutocomplete
@@ -592,6 +636,56 @@ export default function RideSearchScreen() {
           icon="location"
           autoFocus={true}
         />
+
+        {/* Quick Destinations: Saved + Recent */}
+        {(!isFetchingFavorites && favoriteLocations.length > 0) || recentDestinations.length > 0 ? (
+          <>
+            <View style={{ height: 1, backgroundColor: borderColor, marginHorizontal: 6, marginTop: 8, marginBottom: 8 }} />
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 4 }}>
+              {favoriteLocations.map((loc) => (
+                <TouchableOpacity
+                  key={loc.id}
+                  onPress={() => selectQuickDestination(loc)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: isDarkMode ? '#2a2a2a' : '#f5f5f5',
+                    borderRadius: 20,
+                    paddingHorizontal: 12,
+                    paddingVertical: 7,
+                  }}
+                >
+                  <Ionicons name={getFavoriteIcon(loc.title)} size={14} color={BrandColors.secondary} />
+                  <Text style={{ color: textPrimary, fontSize: 13, marginLeft: 6, fontWeight: '500' }}>
+                    {loc.title}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+              {recentDestinations.slice(0, 3).map((loc, index) => {
+                const label = loc.address.split(',')[0].trim();
+                return (
+                  <TouchableOpacity
+                    key={`recent-${index}`}
+                    onPress={() => selectQuickDestination(loc)}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      backgroundColor: isDarkMode ? '#2a2a2a' : '#f5f5f5',
+                      borderRadius: 20,
+                      paddingHorizontal: 12,
+                      paddingVertical: 7,
+                    }}
+                  >
+                    <Ionicons name="time-outline" size={14} color={textSecondary} />
+                    <Text style={{ color: textPrimary, fontSize: 13, marginLeft: 6, fontWeight: '500' }} numberOfLines={1}>
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </>
+        ) : null}
 
         {/* Fetching place details indicator */}
         {isFetchingPlaceDetails && (

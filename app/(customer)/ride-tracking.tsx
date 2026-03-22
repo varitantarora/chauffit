@@ -88,6 +88,18 @@ export default function RideTrackingScreen() {
         if (!isMounted) return;
         if (response.success && response.data) {
           setRideDetails(response.data);
+
+          // Map booking_status to rideStatus
+          const status = response.data.booking_status;
+          if (status === 'trip_completed') {
+            setRideStatus('completed');
+          } else if (status === 'trip_started') {
+            setRideStatus('in_progress');
+          } else if (status === 'driver_arrived') {
+            setRideStatus('driver_arrived');
+          } else if (status === 'driver_en_route' || status === 'driver_assigned' || status === 'biker_assigned') {
+            setRideStatus('driver_coming');
+          }
         }
       } catch {
         // ignore for now
@@ -433,6 +445,22 @@ export default function RideTrackingScreen() {
             )}
           </View>
 
+          {/* Completion OTP Card - shown when driver arrived or trip is in progress */}
+          {(rideStatus === 'driver_arrived' || rideStatus === 'in_progress') && rideDetails?.completion_otp && (
+            <View style={[styles.otpCard, { backgroundColor: isDarkMode ? '#1A2E1A' : '#ECFDF5' }]}>
+              <View style={styles.otpCardHeader}>
+                <Ionicons name="lock-closed" size={20} color="#10B981" />
+                <ThemedText style={styles.otpCardTitle}>Ride Completion OTP</ThemedText>
+              </View>
+              <ThemedText style={[styles.otpCode, { color: '#10B981' }]}>
+                {rideDetails.completion_otp}
+              </ThemedText>
+              <ThemedText style={styles.otpInstruction}>
+                Share this code with your driver at the destination to complete the ride
+              </ThemedText>
+            </View>
+          )}
+
           {/* Start Navigation Button */}
           <TouchableOpacity
             onPress={handleStartNavigation}
@@ -729,6 +757,38 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     textAlign: 'right',
     marginTop: 4,
+  },
+
+  // Completion OTP Card
+  otpCard: {
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+  },
+  otpCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  otpCardTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#10B981',
+  },
+  otpCode: {
+    fontSize: 36,
+    fontWeight: '800',
+    letterSpacing: 12,
+    marginBottom: 8,
+  },
+  otpInstruction: {
+    fontSize: 12,
+    color: '#6B7280',
+    textAlign: 'center',
   },
 
   // Navigation Button

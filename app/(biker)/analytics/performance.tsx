@@ -195,7 +195,7 @@ export default function PerformanceAnalyticsScreen() {
                   className={`flex-1 py-2 items-center rounded-md ${
                     selectedPeriod === period ? 'bg-burgundy' : ''
                   }`}
-                  activeOpacity={0.7}
+                  activeOpacity={1}
                 >
                   <ThemedText className={`font-semibold capitalize ${
                     selectedPeriod === period ? 'text-white' : ''

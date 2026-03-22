@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ScrollView, TouchableOpacity, View, Alert, Animated, Dimensions } from 'react-native';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,17 +8,20 @@ import { ThemedText } from '../../components/common/ThemedText';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
+import { useConfigStore } from '../../store/configStore';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { BrandColors } from '../../constants/Colors';
 
 export default function RideConfirmationScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const getConfigValue = useConfigStore((state) => state.getConfigValue);
+  const amenitiesEnabled = getConfigValue('amenities_enabled') !== 'false';
   const router = useRouter();
   const params = useLocalSearchParams();
   
   const [selectedPayment, setSelectedPayment] = useState('visa-1234');
   const [driverPreference, setDriverPreference] = useState<'luxury' | 'standard'>('standard');
-  const [slideValue] = useState(new Animated.Value(0));
+  const slideValue = useRef(new Animated.Value(0)).current;
   
   const iconColor = isDarkMode ? BrandColors.secondary : BrandColors.burgundy;
   const screenWidth = Dimensions.get('window').width;
@@ -55,7 +58,7 @@ export default function RideConfirmationScreen() {
     serviceFee: 35,
   };
 
-  const calculateTotal = () => {
+  const totals = (() => {
     const subtotal = Object.values(fareBreakdown).reduce((a, b) => a + b, 0);
     const taxes = subtotal * 0.18;
     return {
@@ -63,7 +66,7 @@ export default function RideConfirmationScreen() {
       taxes,
       total: subtotal + taxes,
     };
-  };
+  })();
 
   const handleConfirmBooking = () => {
     // Navigate to searching drivers screen with trip details
@@ -86,8 +89,6 @@ export default function RideConfirmationScreen() {
       handleConfirmBooking();
     });
   };
-
-  const totals = calculateTotal();
 
   return (
     <SafeAreaView className="flex-1">
@@ -250,10 +251,12 @@ export default function RideConfirmationScreen() {
                   <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Surge (1.3x)</ThemedText>
                   <ThemedText variant="small">₹{fareBreakdown.surge}.00</ThemedText>
                 </View>
+                {amenitiesEnabled && (
                 <View className="flex-row justify-between mb-2">
                   <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Amenities</ThemedText>
                   <ThemedText variant="small">₹{fareBreakdown.amenities}.00</ThemedText>
                 </View>
+                )}
                 <View className="flex-row justify-between mb-3">
                   <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Service fee</ThemedText>
                   <ThemedText variant="small">₹{fareBreakdown.serviceFee}.00</ThemedText>
@@ -321,11 +324,11 @@ export default function RideConfirmationScreen() {
 
 // Slide to Book Button Component
 const SlideToBookButton = ({ onSlideComplete }: { onSlideComplete: () => void }) => {
-  const [slideValue] = useState(new Animated.Value(0));
+  const slideValue = useRef(new Animated.Value(0)).current;
   const [isUnlocked, setIsUnlocked] = useState(false);
-  const [progressValue] = useState(new Animated.Value(50));
-  const [textOpacity] = useState(new Animated.Value(1));
-  const [backgroundColor] = useState(new Animated.Value(0));
+  const progressValue = useRef(new Animated.Value(50)).current;
+  const textOpacity = useRef(new Animated.Value(1)).current;
+  const backgroundColor = useRef(new Animated.Value(0)).current;
   
   const screenWidth = Dimensions.get('window').width - 48;
   const BUTTON_WIDTH = screenWidth;
@@ -490,8 +493,8 @@ const BookingConfirmationModal = ({
   onTrackRide: () => void;
   isDarkMode: boolean;
 }) => {
-  const [scaleValue] = useState(new Animated.Value(0));
-  const [fadeValue] = useState(new Animated.Value(0));
+  const scaleValue = useRef(new Animated.Value(0)).current;
+  const fadeValue = useRef(new Animated.Value(0)).current;
   
   React.useEffect(() => {
     if (isVisible) {

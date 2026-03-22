@@ -175,6 +175,7 @@ export interface CustomerRideDetail extends CustomerRide {
   cancelled_at?: string | null;
   special_requests?: string;
   timeline?: TimelineEvent[];
+  completion_otp?: string | null;
 }
 
 /**

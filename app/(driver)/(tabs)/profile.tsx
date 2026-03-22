@@ -142,7 +142,7 @@ export default function DriverProfile() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setOnlineStatus]);
 
   const handleGoOnline = async () => {
     if (updatingStatus) return;

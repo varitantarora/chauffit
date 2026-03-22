@@ -64,7 +64,12 @@ class LocationApiService {
         `${this.basePath}/favorites/`
       );
       if (response.success && response.data) {
-        const data = Array.isArray(response.data) ? response.data : (response.data as any).results || [];
+        const raw = Array.isArray(response.data) ? response.data : (response.data as any).results || [];
+        const data = raw.map((loc: any) => ({
+          ...loc,
+          latitude: typeof loc.latitude === 'string' ? parseFloat(loc.latitude) : loc.latitude,
+          longitude: typeof loc.longitude === 'string' ? parseFloat(loc.longitude) : loc.longitude,
+        }));
         return { ...response, data };
       }
       return response as ApiResponse<FavoriteLocation[]>;

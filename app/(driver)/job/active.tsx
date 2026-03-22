@@ -148,17 +148,11 @@ export default function ActiveJobScreen() {
   };
 
   const handleCompleteRide = () => {
-    Alert.alert(
-      'Complete Ride?',
-      'Are you sure you want to complete this ride?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Complete Ride',
-          onPress: showRatingDialog
-        }
-      ]
-    );
+    if (!activeJob?.id) return;
+    router.push({
+      pathname: '/(driver)/job/otp-complete',
+      params: { jobId: activeJob.id }
+    });
   };
 
   const showRatingDialog = () => {

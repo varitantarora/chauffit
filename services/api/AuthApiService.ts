@@ -479,7 +479,7 @@ class AuthApiService {
         success: boolean;
         message: string;
         data: OTPLoginSendResponse;
-      }>(`${this.basePath}/otp-login/send/`, {
+      }>(`${this.basePath}/send-otp/`, {
         phone_number: data.phone_number,
       }, false);
 

@@ -8,6 +8,7 @@ import { ThemedCard } from '../../components/common/ThemedCard';
 import { ThemedText } from '../../components/common/ThemedText';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { useAuthStore } from '../../store/authStore';
+import { useConfigStore } from '../../store/configStore';
 import BookingApiService, { CustomerRideDetail, BookingStatus, PaymentStatus } from '../../services/api/BookingApiService';
 import RazorpayService from '../../services/RazorpayService';
 import UniversalMapView, { MapMarker, MapRoute } from '../../components/shared/MapView';
@@ -106,6 +107,9 @@ export default function RideDetailsScreen() {
   const bookingId = params.bookingId as string;
 
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const getConfigValue = useConfigStore((state) => state.getConfigValue);
+  const amenitiesEnabled = getConfigValue('amenities_enabled') !== 'false';
+  const insuranceEnabled = getConfigValue('insurance_enabled') === 'true';
   const user = useAuthStore((state) => state.user);
 
   const [ride, setRide] = useState<CustomerRideDetail | null>(null);
@@ -497,7 +501,7 @@ export default function RideDetailsScreen() {
           </View>
 
           {/* 6. Insurance Card */}
-          <View className="px-4">
+          {insuranceEnabled && <View className="px-4">
             <ThemedCard className="p-4 mb-4">
               <View className="flex-row items-center mb-3">
                 <Ionicons
@@ -561,10 +565,10 @@ export default function RideDetailsScreen() {
                 </View>
               )}
             </ThemedCard>
-          </View>
+          </View>}
 
           {/* 7. Amenities Card */}
-          <View className="px-4">
+          {amenitiesEnabled && <View className="px-4">
             <ThemedCard className="p-4 mb-4">
               <View className="flex-row items-center mb-3">
                 <Ionicons
@@ -617,7 +621,7 @@ export default function RideDetailsScreen() {
                 </View>
               )}
             </ThemedCard>
-          </View>
+          </View>}
 
           {/* Timeline Card */}
           {ride.timeline && ride.timeline.length > 0 && (

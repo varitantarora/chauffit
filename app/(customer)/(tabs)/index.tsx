@@ -19,6 +19,8 @@ import { BlurView } from 'expo-blur';
 import { DarkMapStyle } from '../../../constants/MapStyles';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BrandColors } from '../../../constants/Colors';
+import BurgundyLightLogo from '../../../assets/nav_logo/burgundy_light_mode.svg';
+import PastelGrayDarkLogo from '../../../assets/nav_logo/pastel_gray_dark_mode1.svg';
 
 export default function CustomerHomeScreen() {
   const user = useAuthStore((state) => state.user);
@@ -44,6 +46,8 @@ export default function CustomerHomeScreen() {
   const DEFAULT_REGION = { latitude: 28.4595, longitude: 77.0266, latitudeDelta: 0.05, longitudeDelta: 0.05 };
   const [mapRegion, setMapRegion] = useState(DEFAULT_REGION);
   const mapRef = useRef<MapView>(null);
+  const adsScrollRef = useRef<any>(null);
+  const activeAdIndexRef = useRef(0);
 
   const clipAnimation = useRef(new Animated.Value(0)).current;
 
@@ -94,7 +98,8 @@ export default function CustomerHomeScreen() {
   useEffect(() => {
     fetchRecentActivity();
     fetchBlogs();
-    fetchConfigs();
+    // TODO: Uncomment when backend /meta/configs/ endpoint is available
+    // fetchConfigs();
   }, [fetchRecentActivity, fetchBlogs]);
 
   useEffect(() => {
@@ -106,6 +111,18 @@ export default function CustomerHomeScreen() {
     };
     fetchAds();
   }, []);
+
+  // Auto-scroll ads every 2 seconds
+  useEffect(() => {
+    if (ads.length <= 1) return;
+    const interval = setInterval(() => {
+      const next = (activeAdIndexRef.current + 1) % ads.length;
+      activeAdIndexRef.current = next;
+      setActiveAdIndex(next);
+      adsScrollRef.current?.scrollTo({ x: next * (317 + 16), animated: true });
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [ads.length]);
 
   // Fetch user location for map hero & auto-fill pickup
   useEffect(() => {
@@ -233,7 +250,7 @@ export default function CustomerHomeScreen() {
   };
 
   const quickActions = [
-    { title: 'Book Now', icon: 'car', action: handleWhereToPress },
+    { title: 'Book Now', icon: 'car', action: () => router.push('/(customer)/book-ride-new') },
     { title: 'Schedule', icon: 'time', action: () => router.push('/(customer)/schedule') },
     { title: 'Trips', icon: 'list', action: () => router.push('/(customer)/(tabs)/history') },
     { title: 'Favorites', icon: 'heart', action: () => router.push('/(customer)/(tabs)/favorites') }
@@ -271,19 +288,15 @@ export default function CustomerHomeScreen() {
             {/* Header overlay with gradient + glassmorphism */}
             <LinearGradient
               colors={isDarkMode ? ['rgba(26,26,26,0.85)', 'rgba(26,26,26,0)'] : ['rgba(255,255,255,0.9)', 'rgba(255,255,255,0)']}
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, paddingTop: 12, paddingBottom: 30, paddingHorizontal: 24 }}
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, paddingTop: 4, paddingBottom: 30, paddingHorizontal: 24 }}
             >
-              <ThemedText
-                variant="h1"
-                style={{
-                  color: BrandColors.burgundy,
-                  fontSize: 22,
-                  fontWeight: '800',
-                  letterSpacing: 1,
-                }}
-              >
-                Chauffit
-              </ThemedText>
+              <View style={{ alignSelf: 'flex-start', marginLeft: -70 }}>
+                {isDarkMode ? (
+                  <PastelGrayDarkLogo height={64} width={260} />
+                ) : (
+                  <BurgundyLightLogo height={64} width={260} />
+                )}
+              </View>
             </LinearGradient>
 
             {/* Where to? search bar */}
@@ -334,12 +347,12 @@ export default function CustomerHomeScreen() {
                         width: 32,
                         height: 32,
                         borderRadius: 16,
-                        backgroundColor: isDarkMode ? 'rgba(114,12,23,0.3)' : 'rgba(114,12,23,0.1)',
+                        backgroundColor: isDarkMode ? 'rgba(189,140,94,0.2)' : 'rgba(114,12,23,0.1)',
                         alignItems: 'center',
                         justifyContent: 'center',
                       }}
                     >
-                      <Ionicons name="add" size={20} color={BrandColors.burgundy} />
+                      <Ionicons name="add" size={20} color={isDarkMode ? BrandColors.secondary : BrandColors.burgundy} />
                     </TouchableOpacity>
                   </TouchableOpacity>
                 </View>
@@ -380,7 +393,6 @@ export default function CustomerHomeScreen() {
           {/* Promotions Section */}
           {showPromotions && (isLoadingAds || ads.length > 0) && (
             <View className="px-3 mb-6">
-              <ThemedText variant="title" className="text-lg mb-4">Promotions</ThemedText>
               {isLoadingAds ? (
                 <View className="flex-row gap-3">
                   <View style={{ width: 317, height: 158 }} className="rounded-xl bg-gray-200 dark:bg-gray-700" />
@@ -389,11 +401,13 @@ export default function CustomerHomeScreen() {
               ) : (
                 <>
                   <ScrollView
+                    ref={adsScrollRef}
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={{ paddingHorizontal: 12 }}
                     onMomentumScrollEnd={(e) => {
                       const index = Math.round(e.nativeEvent.contentOffset.x / (317 + 16));
+                      activeAdIndexRef.current = index;
                       setActiveAdIndex(index);
                     }}
                   >
@@ -587,29 +601,27 @@ export default function CustomerHomeScreen() {
                     activeOpacity={0.8}
                     onPress={() => router.push({ pathname: '/(customer)/blog-detail', params: { slug: blog.slug } })}
                   >
-                    <ThemedCard className="w-48 px-3 pt-3 pb-1 my-2 h-[175px]">
+                    <View
+                      className="w-48 my-2 rounded-2xl overflow-hidden border border-border dark:border-darkBorder bg-surface dark:bg-darkSurface"
+                      style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 }}
+                    >
                       {blog.image ? (
                         <Image
                           source={{ uri: blog.image }}
-                          className="w-full h-24 rounded-lg mb-2"
+                          className="w-full h-32"
                           resizeMode="cover"
                         />
                       ) : (
-                        <View className="w-full h-24 rounded-lg mb-2 bg-gray-200 dark:bg-darkSurface items-center justify-center">
+                        <View className="w-full h-32 bg-gray-200 dark:bg-darkSurface items-center justify-center">
                           <ThemedText className="text-textSecondary dark:text-darkTextSecondary text-xs">No Image</ThemedText>
                         </View>
                       )}
-                      <View className="h-5 justify-center">
-                        <ThemedText className="font-semibold text-center" numberOfLines={1}>
+                      <View className="px-3 py-2">
+                        <ThemedText className="font-semibold text-center" numberOfLines={2}>
                           {blog.title}
                         </ThemedText>
                       </View>
-                      <View className="h-10 mt-1 justify-start">
-                        <ThemedText variant="caption" className="text-center text-textSecondary dark:text-darkTextSecondary" numberOfLines={2}>
-                          {blog.author_name}
-                        </ThemedText>
-                      </View>
-                    </ThemedCard>
+                    </View>
                   </TouchableOpacity>
                 ))}
               </ScrollView>

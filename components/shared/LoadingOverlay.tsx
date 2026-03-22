@@ -34,9 +34,9 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
   className = '',
   style,
 }) => {
-  const [animatedProgress] = React.useState(new Animated.Value(0));
-  const [pulseAnim] = React.useState(new Animated.Value(1));
-  const [dotsAnim] = React.useState(new Animated.Value(0));
+  const animatedProgress = React.useRef(new Animated.Value(0)).current;
+  const pulseAnim = React.useRef(new Animated.Value(1)).current;
+  const dotsAnim = React.useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
     if (showProgress) {
@@ -270,8 +270,8 @@ export const InlineLoader: React.FC<{
   message,
   className = '' 
 }) => {
-  const [dotsAnim] = React.useState(new Animated.Value(0));
-  const [pulseAnim] = React.useState(new Animated.Value(1));
+  const dotsAnim = React.useRef(new Animated.Value(0)).current;
+  const pulseAnim = React.useRef(new Animated.Value(1)).current;
 
   React.useEffect(() => {
     if (type === 'pulse') {

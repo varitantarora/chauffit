@@ -71,6 +71,7 @@ export default function BookRideScreen() {
   const getConfigValue = useConfigStore((state) => state.getConfigValue);
   const fetchConfigs = useConfigStore((state) => state.fetchConfigs);
   const insuranceEnabled = getConfigValue('insurance_enabled') === 'true';
+  const amenitiesEnabled = getConfigValue('amenities_enabled') !== 'false';
 
   const [pickupLocation, setPickupLocation] = useState<BookingLocation>({
     address: '',
@@ -199,13 +200,14 @@ export default function BookRideScreen() {
 
   // Fetch amenities on mount
   useEffect(() => {
+    if (!amenitiesEnabled) return;
     (async () => {
       setIsLoadingAmenities(true);
       const res = await AmenityApiService.listAmenities();
       if (res.success && res.data) setAvailableAmenities(res.data);
       setIsLoadingAmenities(false);
     })();
-  }, []);
+  }, [amenitiesEnabled]);
 
   // Inline fare calculation (does not open modal)
   const calculateFareInline = useCallback(async () => {
@@ -933,23 +935,14 @@ export default function BookRideScreen() {
   return (
     <SafeAreaView className="flex-1">
       <ThemedView className="flex-1">
-        {/* Header */}
-        <View className="flex-row items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-darkBorder">
-          <View className="flex-row items-center">
-            <TouchableOpacity onPress={() => router.back()} className="mr-3">
-              <Ionicons name="arrow-back" size={24} color={iconColor} />
-            </TouchableOpacity>
-            <ThemedText variant="h2">Book a Chauffeur</ThemedText>
-          </View>
-          <TouchableOpacity>
-            <Ionicons name="notifications-outline" size={24} color={iconColor} />
-          </TouchableOpacity>
-        </View>
-
         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 100 }}>
-          <View className="px-6 py-4">
+          <View>
             {/* Main Booking Card */}
-            <ThemedCard variant="elevated" className="mb-4 p-4">
+            <ThemedCard variant="elevated" className="mb-0 p-4 rounded-none">
+              {/* Back Button */}
+              <TouchableOpacity onPress={() => router.back()} className="mb-3 self-start">
+                <Ionicons name="arrow-back" size={24} color={iconColor} />
+              </TouchableOpacity>
               {/* Trip Type */}
               <View className="mb-4">
                 <ThemedText variant="small" className="mb-2 text-gray-600 dark:text-darkTextSecondary">
@@ -958,19 +951,17 @@ export default function BookRideScreen() {
                 <View className="flex-row justify-between gap-2">
                   {([
                     { id: 'one_way' as TripType, label: 'One-way' },
-                    { id: 'round_trip' as TripType, label: 'Round-trip' },
                     { id: 'hourly' as TripType, label: 'Hourly' },
-                    { id: 'multi_stop' as TripType, label: 'Multi-stop' },
                   ]).map((type) => {
                     const isSelected = tripType === type.id;
                     return (
                       <TouchableOpacity
                         key={type.id}
                         onPress={() => setTripType(type.id)}
-                        activeOpacity={0.7}
+                        activeOpacity={1}
                         className={
-                          isSelected 
-                            ? 'flex-1 p-2 rounded-lg border bg-burgundy border-burgundy' 
+                          isSelected
+                            ? 'flex-1 p-2 rounded-lg border bg-burgundy border-burgundy'
                             : `flex-1 p-2 rounded-lg border ${isDarkMode ? 'bg-darkSurface border-darkBorder' : 'bg-white border-border dark:border-darkBorder'}`
                         }
                       >
@@ -1174,6 +1165,7 @@ export default function BookRideScreen() {
                         : inputClass
                       }`}
                     onPress={() => setScheduleOption('now')}
+                    activeOpacity={1}
                   >
                     <ThemedText
                       className={`text-center ${scheduleOption === 'now' ? 'text-white' : ''
@@ -1188,6 +1180,7 @@ export default function BookRideScreen() {
                         : inputClass
                       }`}
                     onPress={() => setShowScheduleModal(true)}
+                    activeOpacity={1}
                   >
                     <ThemedText
                       className={`text-center ${scheduleOption === 'schedule' ? 'text-white' : ''
@@ -1274,6 +1267,7 @@ export default function BookRideScreen() {
               )}
 
               {/* Amenities Banner */}
+              {amenitiesEnabled && (
               <TouchableOpacity
                 onPress={() => setShowAmenityModal(true)}
                 className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-700"
@@ -1308,6 +1302,7 @@ export default function BookRideScreen() {
                   />
                 </View>
               </TouchableOpacity>
+              )}
 
               {/* Inline Fare Estimate */}
               {isCalculatingFare && !fareEstimate && (
@@ -1362,16 +1357,16 @@ export default function BookRideScreen() {
                   {fareEstimate.fare_breakdown && (
                     <TouchableOpacity
                       onPress={() => setShowBreakdown(!showBreakdown)}
-                      className="flex-row items-center justify-center py-3 mb-2"
+                      className="flex-row items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-3 mt-1"
                       activeOpacity={0.6}
                     >
-                      <ThemedText variant="small" className="text-secondary mr-1">
-                        {showBreakdown ? 'Hide breakdown' : 'View breakdown'}
+                      <ThemedText variant="small" className="font-medium">
+                        Fare Breakdown
                       </ThemedText>
                       <Ionicons
                         name={showBreakdown ? 'chevron-up' : 'chevron-down'}
-                        size={16}
-                        color={BrandColors.secondary}
+                        size={18}
+                        color={iconColor}
                       />
                     </TouchableOpacity>
                   )}
@@ -1428,7 +1423,7 @@ export default function BookRideScreen() {
                           </ThemedText>
                         </View>
                       )}
-                      {amenitiesTotal > 0 && (
+                      {amenitiesEnabled && amenitiesTotal > 0 && (
                         <View className="flex-row justify-between mb-1 px-2">
                           <ThemedText variant="tiny" className="text-amber-600">Amenities ({selectedAmenitiesCount})</ThemedText>
                           <ThemedText variant="tiny" className="text-amber-600">
@@ -1466,6 +1461,7 @@ export default function BookRideScreen() {
               />
             </ThemedCard>
 
+            <View className="px-4 pt-4">
             {/* Quick Actions - Saved Locations */}
             <View className="mb-4">
               <View className="flex-row justify-between items-center mb-3">
@@ -1522,6 +1518,7 @@ export default function BookRideScreen() {
                 />
               </ThemedCard>
             )}
+            </View>
           </View>
         </ScrollView>
 
@@ -1751,7 +1748,7 @@ export default function BookRideScreen() {
                               </ThemedText>
                             </View>
                           )}
-                          {amenitiesTotal > 0 && (
+                          {amenitiesEnabled && amenitiesTotal > 0 && (
                             <View className="flex-row justify-between mb-1 px-2">
                               <ThemedText variant="tiny" className="text-amber-600">Amenities ({selectedAmenitiesCount})</ThemedText>
                               <ThemedText variant="tiny" className="text-amber-600">
@@ -1812,6 +1809,7 @@ export default function BookRideScreen() {
                     )}
 
                     {/* Amenities Selection in Fare Modal */}
+                    {amenitiesEnabled && (
                     <TouchableOpacity
                       onPress={() => {
                         setShowFareModal(false);
@@ -1844,6 +1842,7 @@ export default function BookRideScreen() {
                         />
                       </View>
                     </TouchableOpacity>
+                    )}
 
                     {/* Confirm Button */}
                     <PrimaryButton
@@ -1898,7 +1897,7 @@ export default function BookRideScreen() {
                           ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                           : 'border-gray-200 dark:border-gray-700'
                         }`}
-                      activeOpacity={0.8}
+                      activeOpacity={1}
                     >
                       <View className="flex-row items-start justify-between mb-2">
                         <View className="flex-1">
@@ -1955,7 +1954,7 @@ export default function BookRideScreen() {
 
         {/* Amenity Selection Modal */}
         <Modal
-          visible={showAmenityModal}
+          visible={amenitiesEnabled && showAmenityModal}
           transparent
           animationType="slide"
           onRequestClose={() => setShowAmenityModal(false)}
@@ -2004,7 +2003,7 @@ export default function BookRideScreen() {
                                 ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
                                 : 'border-gray-200 dark:border-gray-700'
                               }`}
-                            activeOpacity={0.8}
+                            activeOpacity={1}
                           >
                             <View className="flex-row items-center justify-between">
                               <View className="flex-row items-center flex-1">

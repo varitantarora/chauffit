@@ -173,6 +173,7 @@ export interface CompleteTripRequest {
   actual_distance_km?: number;
   actual_duration_minutes?: number;
   odometer_end_km?: number;
+  otp?: string;
 }
 
 /**

@@ -1,16 +1,18 @@
 import React from 'react';
-import { ScrollView, TouchableOpacity, View, Linking, Alert } from 'react-native';
+import { ScrollView, TouchableOpacity, View, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../components/common/ThemedView';
 import { ThemedCard } from '../../components/common/ThemedCard';
 import { ThemedText } from '../../components/common/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
+import { useConfigStore } from '../../store/configStore';
 import { useRouter } from 'expo-router';
 import { BrandColors, useThemeColors } from '../../constants/Colors';
 
 export default function SupportScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const getConfigValue = useConfigStore((state) => state.getConfigValue);
   const router = useRouter();
   const colors = useThemeColors(isDarkMode);
 
@@ -25,16 +27,14 @@ export default function SupportScreen() {
     router.push('/(customer)/user-guides');
   };
 
-  const handleCallSupport = () => {
-    Linking.openURL('tel:+911800123456');
-  };
-
   const handleEmailSupport = () => {
     Linking.openURL('mailto:support@chauffit.com');
   };
 
-  const handleLiveChat = () => {
-    Alert.alert('Live Chat', 'Live chat support will be available soon!');
+  const handleChatSupport = () => {
+    const number = getConfigValue('whatsapp_support_number') || '+919958433134';
+    const cleaned = number.replace(/\D/g, '');
+    Linking.openURL(`https://wa.me/${cleaned}`);
   };
 
   const handleSubmitRequest = () => {
@@ -103,23 +103,7 @@ export default function SupportScreen() {
                 Contact Us
               </ThemedText>
               
-              <TouchableOpacity 
-                onPress={handleCallSupport}
-                className="flex-row items-center justify-between py-4 border-b border-gray-100 dark:border-gray-700"
-                activeOpacity={0.7}
-              >
-                <View className="flex-row items-center flex-1">
-                  <View className="w-8 h-8 bg-secondary/10 rounded-full items-center justify-center mr-4">
-                    <Ionicons name="call" size={16} color={BrandColors.secondary} />
-                  </View>
-                  <ThemedText className="text-gray-800 dark:text-gray-200">
-                    Call Customer Service
-                  </ThemedText>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-              </TouchableOpacity>
-
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={handleEmailSupport}
                 className="flex-row items-center justify-between py-4 border-b border-gray-100 dark:border-gray-700"
                 activeOpacity={0.7}
@@ -135,17 +119,17 @@ export default function SupportScreen() {
                 <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
 
-              <TouchableOpacity 
-                onPress={handleLiveChat}
+              <TouchableOpacity
+                onPress={handleChatSupport}
                 className="flex-row items-center justify-between py-4"
                 activeOpacity={0.7}
               >
                 <View className="flex-row items-center flex-1">
                   <View className="w-8 h-8 bg-secondary/10 rounded-full items-center justify-center mr-4">
-                    <Ionicons name="chatbox" size={16} color={BrandColors.secondary} />
+                    <Ionicons name="logo-whatsapp" size={16} color={BrandColors.secondary} />
                   </View>
                   <ThemedText className="text-gray-800 dark:text-gray-200">
-                    Live Chat
+                    Chat Support
                   </ThemedText>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
