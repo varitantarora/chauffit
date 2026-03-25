@@ -6,14 +6,15 @@ import { ThemedView } from '../../components/common/ThemedView';
 import { ThemedText } from '../../components/common/ThemedText';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { useAuthStore } from '../../store/authStore';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { UserRole } from '../../types/navigation';
 import AuthApiService from '../../services/api/AuthApiService';
 import { BrandColors } from '../../constants/Colors';
 
 export default function Signup() {
+  const { phoneNumber: prefillPhone } = useLocalSearchParams<{ phoneNumber?: string }>();
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState(prefillPhone || '');
   const [selectedRole, setSelectedRole] = useState<UserRole>('customer');
   const [loading, setLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);

@@ -82,7 +82,14 @@ export default function PhoneLogin() {
           }
         });
       } else {
-        Alert.alert(t.error, response.error || 'Failed to send OTP. Please try again.');
+        if (response.error?.includes('No account found')) {
+          router.push({
+            pathname: '/(auth)/signup',
+            params: { phoneNumber: phoneNumber },
+          });
+        } else {
+          Alert.alert(t.error, response.error || 'Failed to send OTP. Please try again.');
+        }
       }
     } catch (error) {
       Alert.alert(t.error, 'An unexpected error occurred. Please try again.');
