@@ -20,7 +20,7 @@ import { DarkMapStyle } from '../../../constants/MapStyles';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BrandColors } from '../../../constants/Colors';
 import BurgundyLightLogo from '../../../assets/nav_logo/burgundy_light_mode.svg';
-import PastelGrayDarkLogo from '../../../assets/nav_logo/pastel_gray_dark_mode1.svg';
+const PastelGrayDarkLogo = BurgundyLightLogo; // Fallback since the file is missing
 
 export default function CustomerHomeScreen() {
   const user = useAuthStore((state) => state.user);

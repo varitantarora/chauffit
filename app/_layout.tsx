@@ -5,7 +5,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import React, { useEffect, useRef } from 'react';
 import { useI18nStore } from '../store/i18nStore';
 import * as Notifications from 'expo-notifications';
-import { registerForPushNotificationsAsync } from '../services/NotificationService';
+import { registerForPushNotificationsAsync, sendPushTokenToBackend } from '../services/NotificationService';
+import { useAuthStore } from '../store/authStore';
 import { LogBox } from 'react-native';
 
 // Suppress Expo Go push notification warning on Android
@@ -24,12 +25,22 @@ export default function RootLayout() {
   const notificationListener = useRef<Notifications.Subscription>();
   const responseListener = useRef<Notifications.Subscription>();
 
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const pushTokenRef = useRef<string | null>(null);
+
   useEffect(() => {
     initLanguage();
 
     // Register for push notifications
     registerForPushNotificationsAsync().then((token: string | undefined) => {
       console.log('Registered for push notifications, token:', token);
+      if (token) {
+        pushTokenRef.current = token;
+        // If already authenticated, send token immediately
+        if (isAuthenticated) {
+          sendPushTokenToBackend(token);
+        }
+      }
     });
 
     // This listener is fired whenever a notification is received while the app is foregrounded
@@ -51,6 +62,14 @@ export default function RootLayout() {
       }
     };
   }, []);
+
+  // Effect to send token when authentication state changes
+  useEffect(() => {
+    if (isAuthenticated && pushTokenRef.current) {
+      console.log('[RootLayout] User authenticated, sending push token to backend...');
+      sendPushTokenToBackend(pushTokenRef.current);
+    }
+  }, [isAuthenticated]);
   
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

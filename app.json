@@ -21,6 +21,7 @@
       "bundleIdentifier": "com.chauffit.app"
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/chauffit-logo.png",
         "backgroundColor": "#D9D1C6"

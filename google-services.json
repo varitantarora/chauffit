@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "162261860263",
+    "project_id": "chauffit-test-sanyam",
+    "storage_bucket": "chauffit-test-sanyam.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:162261860263:android:cc7c0922d21bf9418fc082",
+        "android_client_info": {
+          "package_name": "com.chauffit.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCWjvDj2Z-74TIxTX3F8LR9haJsDlRn8j4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

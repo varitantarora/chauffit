@@ -230,7 +230,7 @@ export const API_ENDPOINTS = {
   GET_NEARBY_DRIVERS: '/location/nearby-drivers',
   
   // Notifications
-  REGISTER_DEVICE: '/notifications/register',
+  REGISTER_DEVICE: '/notifications/devices/',
   UPDATE_SETTINGS: '/notifications/settings',
 } as const;
 
