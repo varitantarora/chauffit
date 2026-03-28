@@ -65,6 +65,7 @@ export interface LogoutRequest {
 export interface SendOTPRequest {
   phone_number: string;
   otp_type?: 'phone_verification' | 'password_reset' | 'login';
+  send_via_whatsapp?: boolean;
 }
 
 export interface SendOTPResponse {
@@ -88,6 +89,7 @@ export interface VerifyOTPResponse {
 // OTP Login specific interfaces
 export interface OTPLoginSendRequest {
   phone_number: string;
+  send_via_whatsapp?: boolean;
 }
 
 export interface OTPLoginSendResponse {
@@ -296,6 +298,7 @@ class AuthApiService {
       }>(`${this.basePath}/send-otp/`, {
         phone_number: data.phone_number,
         otp_type: data.otp_type || 'phone_verification',
+        ...(data.send_via_whatsapp !== undefined && { send_via_whatsapp: data.send_via_whatsapp }),
       }, false);
 
       if (response.success && response.data) {
@@ -481,6 +484,7 @@ class AuthApiService {
         data: OTPLoginSendResponse;
       }>(`${this.basePath}/otp-login/send/`, {
         phone_number: data.phone_number,
+        ...(data.send_via_whatsapp !== undefined && { send_via_whatsapp: data.send_via_whatsapp }),
       }, false);
 
       if (response.success && response.data) {

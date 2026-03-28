@@ -18,6 +18,7 @@ export default function Signup() {
   const [selectedRole, setSelectedRole] = useState<UserRole>('customer');
   const [loading, setLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
+  const [whatsappConsent, setWhatsappConsent] = useState(true);
 
   const register = useAuthStore((state) => state.register);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
@@ -41,6 +42,7 @@ export default function Signup() {
       const response = await AuthApiService.sendOTP({
         phone_number: `+91${phone}`,
         otp_type: 'phone_verification',
+        send_via_whatsapp: whatsappConsent,
       });
 
       if (response.success) {
@@ -204,6 +206,28 @@ export default function Signup() {
               </View>
             </View>
           </View>
+
+          {/* WhatsApp OTP Consent */}
+          <TouchableOpacity
+            onPress={() => setWhatsappConsent(!whatsappConsent)}
+            className="flex-row items-center mb-4"
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={whatsappConsent ? 'checkbox' : 'square-outline'}
+              size={22}
+              color={BrandColors.burgundy}
+            />
+            <Ionicons
+              name="logo-whatsapp"
+              size={18}
+              color="#25D366"
+              style={{ marginLeft: 8 }}
+            />
+            <ThemedText className="ml-2 text-sm">
+              Send OTP via WhatsApp
+            </ThemedText>
+          </TouchableOpacity>
 
           {/* Send OTP Button */}
           <PrimaryButton
