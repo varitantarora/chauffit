@@ -245,6 +245,7 @@ export interface FareEstimateResponse {
     distance_fare: string;
     time_fare?: string;
     platform_fee?: string;
+    gst_amount?: string;
     biker_transport_fee?: string;
     surge_amount?: string;
     insurance_premium?: string;
@@ -252,6 +253,8 @@ export interface FareEstimateResponse {
     total?: string;
     per_km_rate?: string;
     distance_km?: string;
+    per_min_rate?: string;
+    duration_minutes?: string;
   };
   breakdown?: Record<string, any>;
   route?: { distance_km: number; duration_minutes: number; total_distance_km?: number; total_duration_minutes?: number };
@@ -485,20 +488,24 @@ class BookingApiService {
 
         if (!d.fare_breakdown && d.breakdown) {
           const b = d.breakdown;
-          const surgeAmount = (b.surge_multiplier > 1 && b.subtotal != null && b.total != null)
-            ? b.total - b.subtotal
+          const surgeAmount = (b.ride_subtotal_with_surge != null && b.ride_subtotal != null)
+            ? b.ride_subtotal_with_surge - b.ride_subtotal
             : (b.surge_amount != null ? b.surge_amount : undefined);
 
           d.fare_breakdown = {
             base_fare: String(b.base_fare ?? 0),
-            distance_fare: String(b.distance_fare ?? 0),
+            distance_fare: String(b.tiered_km_fare ?? b.distance_fare ?? 0),
             per_km_rate: b.per_km_rate != null ? String(b.per_km_rate) : undefined,
             distance_km: b.distance_km != null ? String(b.distance_km) : undefined,
-            time_fare: b.time_fare != null ? String(b.time_fare) : undefined,
+            time_fare: b.per_min_fare != null ? String(b.per_min_fare) : (b.time_fare != null ? String(b.time_fare) : undefined),
+            per_min_rate: b.per_min_rate != null ? String(b.per_min_rate) : undefined,
+            duration_minutes: b.duration_minutes != null ? String(b.duration_minutes) : undefined,
+            platform_fee: b.platform_fee != null ? String(b.platform_fee) : undefined,
+            gst_amount: b.gst_amount != null ? String(b.gst_amount) : undefined,
             surge_amount: surgeAmount != null ? String(surgeAmount) : undefined,
             insurance_premium: d.insurance?.premium_amount != null ? String(d.insurance.premium_amount) : (b.insurance_premium != null ? String(b.insurance_premium) : undefined),
-            subtotal: b.subtotal != null ? String(b.subtotal) : undefined,
-            total: b.total != null ? String(b.total) : (b.total_fare != null ? String(b.total_fare) : undefined),
+            subtotal: b.ride_subtotal != null ? String(b.ride_subtotal) : (b.subtotal != null ? String(b.subtotal) : undefined),
+            total: String(b.total ?? b.total_fare ?? 0),
           };
         }
       }

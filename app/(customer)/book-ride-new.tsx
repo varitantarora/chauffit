@@ -1381,8 +1381,8 @@ export default function BookRideScreen() {
                       </View>
                       <View className="flex-row justify-between mb-1 px-2">
                         <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                          {fareEstimate.fare_breakdown.distance_km && fareEstimate.fare_breakdown.per_km_rate
-                            ? `Distance (${parseFloat(fareEstimate.fare_breakdown.distance_km).toFixed(2)} km × ₹${fareEstimate.fare_breakdown.per_km_rate}/km)`
+                          {fareEstimate.fare_breakdown.distance_km
+                            ? `Distance (${parseFloat(fareEstimate.fare_breakdown.distance_km).toFixed(1)} km)`
                             : 'Distance fare'}
                         </ThemedText>
                         <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
@@ -1391,17 +1391,21 @@ export default function BookRideScreen() {
                       </View>
                       {fareEstimate.fare_breakdown.time_fare !== undefined && parseFloat(fareEstimate.fare_breakdown.time_fare) > 0 && (
                         <View className="flex-row justify-between mb-1 px-2">
-                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Time fare</ThemedText>
+                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                            {fareEstimate.fare_breakdown.duration_minutes && fareEstimate.fare_breakdown.per_min_rate
+                              ? `Time (${parseFloat(fareEstimate.fare_breakdown.duration_minutes).toFixed(0)} min × ₹${fareEstimate.fare_breakdown.per_min_rate}/min)`
+                              : 'Time fare'}
+                          </ThemedText>
                           <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                             {formatFare(parseFloat(fareEstimate.fare_breakdown.time_fare))}
                           </ThemedText>
                         </View>
                       )}
-                      {fareEstimate.fare_breakdown.subtotal !== undefined && (
+                      {fareEstimate.fare_breakdown.platform_fee !== undefined && parseFloat(fareEstimate.fare_breakdown.platform_fee) > 0 && (
                         <View className="flex-row justify-between mb-1 px-2">
-                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Subtotal</ThemedText>
+                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Platform fee</ThemedText>
                           <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                            {formatFare(parseFloat(fareEstimate.fare_breakdown.subtotal))}
+                            {formatFare(parseFloat(fareEstimate.fare_breakdown.platform_fee))}
                           </ThemedText>
                         </View>
                       )}
@@ -1412,6 +1416,14 @@ export default function BookRideScreen() {
                           </ThemedText>
                           <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                             {formatFare(parseFloat(fareEstimate.fare_breakdown.surge_amount))}
+                          </ThemedText>
+                        </View>
+                      )}
+                      {fareEstimate.fare_breakdown.gst_amount !== undefined && parseFloat(fareEstimate.fare_breakdown.gst_amount) > 0 && (
+                        <View className="flex-row justify-between mb-1 px-2">
+                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">GST</ThemedText>
+                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                            {formatFare(parseFloat(fareEstimate.fare_breakdown.gst_amount))}
                           </ThemedText>
                         </View>
                       )}
@@ -1706,8 +1718,8 @@ export default function BookRideScreen() {
                           </View>
                           <View className="flex-row justify-between mb-1 px-2">
                             <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                              {fareEstimate.fare_breakdown.distance_km && fareEstimate.fare_breakdown.per_km_rate
-                                ? `Distance (${parseFloat(fareEstimate.fare_breakdown.distance_km).toFixed(2)} km × ₹${fareEstimate.fare_breakdown.per_km_rate}/km)`
+                              {fareEstimate.fare_breakdown.distance_km
+                                ? `Distance (${parseFloat(fareEstimate.fare_breakdown.distance_km).toFixed(1)} km)`
                                 : 'Distance fare'}
                             </ThemedText>
                             <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
@@ -1716,17 +1728,21 @@ export default function BookRideScreen() {
                           </View>
                           {fareEstimate.fare_breakdown.time_fare !== undefined && parseFloat(fareEstimate.fare_breakdown.time_fare) > 0 && (
                             <View className="flex-row justify-between mb-1 px-2">
-                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Time fare</ThemedText>
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                {fareEstimate.fare_breakdown.duration_minutes && fareEstimate.fare_breakdown.per_min_rate
+                                  ? `Time (${parseFloat(fareEstimate.fare_breakdown.duration_minutes).toFixed(0)} min × ₹${fareEstimate.fare_breakdown.per_min_rate}/min)`
+                                  : 'Time fare'}
+                              </ThemedText>
                               <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                                 {formatFare(parseFloat(fareEstimate.fare_breakdown.time_fare))}
                               </ThemedText>
                             </View>
                           )}
-                          {fareEstimate.fare_breakdown.subtotal !== undefined && (
+                          {fareEstimate.fare_breakdown.platform_fee !== undefined && parseFloat(fareEstimate.fare_breakdown.platform_fee) > 0 && (
                             <View className="flex-row justify-between mb-1 px-2">
-                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Subtotal</ThemedText>
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Platform fee</ThemedText>
                               <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                                {formatFare(parseFloat(fareEstimate.fare_breakdown.subtotal))}
+                                {formatFare(parseFloat(fareEstimate.fare_breakdown.platform_fee))}
                               </ThemedText>
                             </View>
                           )}
@@ -1737,6 +1753,14 @@ export default function BookRideScreen() {
                               </ThemedText>
                               <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
                                 {formatFare(parseFloat(fareEstimate.fare_breakdown.surge_amount))}
+                              </ThemedText>
+                            </View>
+                          )}
+                          {fareEstimate.fare_breakdown.gst_amount !== undefined && parseFloat(fareEstimate.fare_breakdown.gst_amount) > 0 && (
+                            <View className="flex-row justify-between mb-1 px-2">
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">GST</ThemedText>
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                {formatFare(parseFloat(fareEstimate.fare_breakdown.gst_amount))}
                               </ThemedText>
                             </View>
                           )}
