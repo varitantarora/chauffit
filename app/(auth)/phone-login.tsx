@@ -18,6 +18,7 @@ const translations = {
     email: 'Email',
     phonePlaceholder: 'Enter phone number',
     sendOTP: 'Send OTP',
+    whatsappConsent: 'Send OTP via WhatsApp',
     orContinue: 'Or continue with',
     google: 'Google',
     apple: 'Apple',
@@ -36,6 +37,7 @@ const translations = {
     email: 'ईमेल',
     phonePlaceholder: 'फ़ोन नंबर दर्ज करें',
     sendOTP: 'OTP भेजें',
+    whatsappConsent: 'WhatsApp पर OTP भेजें',
     orContinue: 'या जारी रखें',
     google: 'गूगल',
     apple: 'एप्पल',
@@ -53,6 +55,7 @@ export default function PhoneLogin() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [language, setLanguage] = useState<'EN' | 'HI'>('EN');
+  const [whatsappConsent, setWhatsappConsent] = useState(true);
 
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const router = useRouter();
@@ -70,6 +73,7 @@ export default function PhoneLogin() {
       // Use OTP login send endpoint for login
       const response = await AuthApiService.otpLoginSend({
         phone_number: `+91${phoneNumber}`,
+        send_via_whatsapp: whatsappConsent,
       });
 
       if (response.success) {
@@ -191,7 +195,29 @@ export default function PhoneLogin() {
           />
           <Ionicons name="phone-portrait" size={20} color={iconColor} />
         </View>
-        
+
+        {/* WhatsApp OTP Consent */}
+        <TouchableOpacity
+          onPress={() => setWhatsappConsent(!whatsappConsent)}
+          className="flex-row items-center mb-4"
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name={whatsappConsent ? 'checkbox' : 'square-outline'}
+            size={22}
+            color={BrandColors.burgundy}
+          />
+          <Ionicons
+            name="logo-whatsapp"
+            size={18}
+            color="#25D366"
+            style={{ marginLeft: 8 }}
+          />
+          <ThemedText className="ml-2 text-sm">
+            {t.whatsappConsent}
+          </ThemedText>
+        </TouchableOpacity>
+
         <PrimaryButton
           title={t.sendOTP}
           onPress={handlePhoneLogin}

@@ -53,6 +53,9 @@ interface RideSearchParams {
   initialPickupLng?: string;
 }
 
+const formatVehicleType = (type: string) =>
+  type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
 export default function RideSearchScreen() {
   const router = useRouter();
   const params = useLocalSearchParams() as RideSearchParams;
@@ -82,6 +85,7 @@ export default function RideSearchScreen() {
   const [isFetchingFavorites, setIsFetchingFavorites] = useState(false);
   const [recentDestinations, setRecentDestinations] = useState<RecentDestination[]>([]);
 
+  const [showBreakdown, setShowBreakdown] = useState(false);
   const [routeCoords, setRouteCoords] = useState<LatLng[]>([]);
   const [displayCoords, setDisplayCoords] = useState<LatLng[]>([]);
   const routeAnimRef = useRef<NodeJS.Timeout | null>(null);
@@ -469,32 +473,57 @@ export default function RideSearchScreen() {
     const rows: Array<{ label: string; value: string }> = [];
     if (fmt(bd.base_fare)) rows.push({ label: 'Base fare', value: fmt(bd.base_fare)! });
     if (fmt(bd.distance_fare)) rows.push({ label: bd.distance_km ? `Distance (${Number(bd.distance_km).toFixed(1)} km)` : 'Distance fare', value: fmt(bd.distance_fare)! });
-    if (fmt(bd.time_fare)) rows.push({ label: 'Time fare', value: fmt(bd.time_fare)! });
+    if (fmt(bd.time_fare)) {
+      const timeLabel = bd.duration_minutes && bd.per_min_rate
+        ? `Time (${Number(bd.duration_minutes).toFixed(0)} min × ₹${bd.per_min_rate}/min)`
+        : 'Time fare';
+      rows.push({ label: timeLabel, value: fmt(bd.time_fare)! });
+    }
     if (fmt(bd.platform_fee)) rows.push({ label: 'Platform fee', value: fmt(bd.platform_fee)! });
     if (fmt(bd.biker_transport_fee)) rows.push({ label: 'Biker transport', value: fmt(bd.biker_transport_fee)! });
-    if (fmt(bd.surge_amount)) rows.push({ label: 'Surge', value: fmt(bd.surge_amount)! });
+    if (fareEstimate?.surge_multiplier && fareEstimate.surge_multiplier > 1 && fmt(bd.surge_amount)) {
+      rows.push({ label: `Surge x${fareEstimate.surge_multiplier.toFixed(2)}`, value: fmt(bd.surge_amount)! });
+    }
+    if (fmt(bd.gst_amount)) rows.push({ label: 'GST', value: fmt(bd.gst_amount)! });
     if (fmt(bd.insurance_premium)) rows.push({ label: 'Insurance', value: fmt(bd.insurance_premium)! });
 
     if (rows.length === 0) return null;
 
+    const totalValue = bd.total ? `₹${Math.round(Number(bd.total))}` : `₹${Math.round(Number(fareEstimate!.estimated_fare))}`;
+
     return (
       <View style={{ marginBottom: 16 }}>
-        <Text style={{ color: textSecondary, fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
-          Fare Breakdown
-        </Text>
-        {rows.map((row, i) => (
-          <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-            <Text style={{ color: textSecondary, fontSize: 14 }}>{row.label}</Text>
-            <Text style={{ color: textPrimary, fontSize: 14 }}>{row.value}</Text>
-          </View>
-        ))}
-        <View style={{ height: 1, backgroundColor: borderColor, marginVertical: 8 }} />
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <Text style={{ color: textPrimary, fontSize: 15, fontWeight: '700' }}>Total</Text>
-          <Text style={{ color: textPrimary, fontSize: 15, fontWeight: '700' }}>
-            ₹{Math.round(Number(fareEstimate!.estimated_fare))}
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => setShowBreakdown((v) => !v)}
+          style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6 }}
+        >
+          <Text style={{ color: textSecondary, fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            Fare Breakdown
           </Text>
-        </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text style={{ color: textPrimary, fontSize: 15, fontWeight: '700' }}>{totalValue}</Text>
+            <Ionicons name={showBreakdown ? 'chevron-up' : 'chevron-down'} size={16} color={textSecondary} />
+          </View>
+        </TouchableOpacity>
+
+        {showBreakdown && (
+          <>
+            <View style={{ marginTop: 10 }}>
+              {rows.map((row, i) => (
+                <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <Text style={{ color: textSecondary, fontSize: 14 }}>{row.label}</Text>
+                  <Text style={{ color: textPrimary, fontSize: 14 }}>{row.value}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={{ height: 1, backgroundColor: borderColor, marginVertical: 8 }} />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <Text style={{ color: textPrimary, fontSize: 15, fontWeight: '700' }}>Total</Text>
+              <Text style={{ color: textPrimary, fontSize: 15, fontWeight: '700' }}>{totalValue}</Text>
+            </View>
+          </>
+        )}
       </View>
     );
   };
@@ -770,6 +799,14 @@ export default function RideSearchScreen() {
                     <Text style={{ color: textSecondary, fontSize: 13 }}>
                       {car.color} · {car.registrationNumber}
                     </Text>
+                    {(car.vehicleType || car.transmission) && (
+                      <Text style={{ color: textSecondary, fontSize: 12 }}>
+                        {[
+                          car.vehicleType ? formatVehicleType(car.vehicleType) : null,
+                          car.transmission ? car.transmission.charAt(0).toUpperCase() + car.transmission.slice(1) : null,
+                        ].filter(Boolean).join(' · ')}
+                      </Text>
+                    )}
                   </View>
                   {selectedCar?.id === car.id && (
                     <Ionicons name="checkmark-circle" size={22} color={BrandColors.secondary} />
@@ -927,6 +964,14 @@ export default function RideSearchScreen() {
                         <Text style={{ color: textSecondary, fontSize: 12 }}>
                           {selectedCar.color} · {selectedCar.registrationNumber}
                         </Text>
+                        {(selectedCar.vehicleType || selectedCar.transmission) && (
+                          <Text style={{ color: textSecondary, fontSize: 11 }}>
+                            {[
+                              selectedCar.vehicleType ? formatVehicleType(selectedCar.vehicleType) : null,
+                              selectedCar.transmission ? selectedCar.transmission.charAt(0).toUpperCase() + selectedCar.transmission.slice(1) : null,
+                            ].filter(Boolean).join(' · ')}
+                          </Text>
+                        )}
                       </View>
                     ) : (
                       <Text style={{ color: textSecondary, fontSize: 14, marginLeft: 10 }}>
