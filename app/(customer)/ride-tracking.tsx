@@ -308,6 +308,7 @@ export default function RideTrackingScreen() {
         initialRegion={initialMapRegion}
         markers={mapMarkers}
         route={mapRoute}
+        animateRoute={true}
         googleMapsApiKey={appConfig.googleMapsApiKey}
         showUserLocation={true}
         style={StyleSheet.absoluteFillObject}

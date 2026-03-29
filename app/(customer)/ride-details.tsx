@@ -13,6 +13,7 @@ import BookingApiService, { CustomerRideDetail, BookingStatus, PaymentStatus } f
 import RazorpayService from '../../services/RazorpayService';
 import UniversalMapView, { MapMarker, MapRoute } from '../../components/shared/MapView';
 import { BrandColors } from '../../constants/Colors';
+import { TaxesAndFeesRow } from '../../components/customer/TaxesAndFeesRow';
 
 // --- Helpers ---
 
@@ -425,6 +426,7 @@ export default function RideDetailsScreen() {
                           } as MapRoute
                         : undefined
                     }
+                    animateRoute={true}
                   />
                 </ThemedCard>
               </View>
@@ -458,7 +460,11 @@ export default function RideDetailsScreen() {
                 {actualFare === null && (
                   <DetailRow label="Estimated Fare" value={formatMoney(estimatedFare)} />
                 )}
-                <DetailRow label="GST (18%)" value={formatMoney(gstAmount)} />
+                <TaxesAndFeesRow
+                  gstAmount={gstAmount}
+                  formatAmount={(v) => formatMoney(v)}
+                  variant="nativewind-small"
+                />
                 <View className="border-t border-border dark:border-darkBorder my-2" />
                 <View className="flex-row justify-between items-center">
                   <ThemedText className="font-bold text-lg">Total Amount</ThemedText>

@@ -34,6 +34,7 @@ interface GooglePlacesAutocompleteProps {
   onUseCurrentLocation?: () => void;
   isFetchingCurrentLocation?: boolean;
   autoFocus?: boolean;
+  onChooseOnMap?: () => void;
 }
 
 export function GooglePlacesAutocomplete({
@@ -46,6 +47,7 @@ export function GooglePlacesAutocomplete({
   onUseCurrentLocation,
   isFetchingCurrentLocation = false,
   autoFocus = false,
+  onChooseOnMap,
 }: GooglePlacesAutocompleteProps) {
   const [query, setQuery] = useState(value);
   const [predictions, setPredictions] = useState<GooglePlace[]>([]);
@@ -184,6 +186,11 @@ export function GooglePlacesAutocomplete({
         {query.length > 0 && (
           <TouchableOpacity onPress={handleClear}>
             <Ionicons name="close-circle" size={16} color="#999" />
+          </TouchableOpacity>
+        )}
+        {onChooseOnMap && (
+          <TouchableOpacity onPress={onChooseOnMap} style={{ marginLeft: 6 }}>
+            <Ionicons name="map-outline" size={18} color={iconColor} />
           </TouchableOpacity>
         )}
       </View>

@@ -29,6 +29,8 @@ import LocationApiService, { FavoriteLocation } from '../../services/api/Locatio
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DarkMapStyle } from '../../constants/MapStyles';
 import { BrandColors } from '../../constants/Colors';
+import { MapLocationPicker, MapPickerLocation } from '../../components/customer/MapLocationPicker';
+import { TaxesAndFeesRow } from '../../components/customer/TaxesAndFeesRow';
 import { appConfig } from '../../config/env';
 
 interface BookingLocation {
@@ -80,6 +82,8 @@ export default function RideSearchScreen() {
   const [isBooking, setIsBooking] = useState(false);
   const [selectedCar, setSelectedCar] = useState<CustomerCar | null>(null);
   const [showVehicleModal, setShowVehicleModal] = useState(false);
+  const [showMapPicker, setShowMapPicker] = useState(false);
+  const [mapPickerField, setMapPickerField] = useState<'pickup' | 'dropoff'>('pickup');
 
   const [favoriteLocations, setFavoriteLocations] = useState<FavoriteLocation[]>([]);
   const [isFetchingFavorites, setIsFetchingFavorites] = useState(false);
@@ -314,6 +318,40 @@ export default function RideSearchScreen() {
     }
   };
 
+  const handleOpenMapPicker = (fieldType: 'pickup' | 'dropoff') => {
+    setMapPickerField(fieldType);
+    setShowMapPicker(true);
+  };
+
+  const handleMapLocationSelected = (location: MapPickerLocation) => {
+    if (mapPickerField === 'pickup') {
+      setPickupLocation({
+        address: location.address,
+        latitude: location.latitude,
+        longitude: location.longitude,
+      });
+    } else {
+      // Reset route when new drop is chosen
+      if (routeAnimRef.current) clearInterval(routeAnimRef.current);
+      if (routeRestartRef.current) clearTimeout(routeRestartRef.current);
+      setRouteCoords([]);
+      setDisplayCoords([]);
+      setDropLocation({
+        address: location.address,
+        latitude: location.latitude,
+        longitude: location.longitude,
+      });
+      saveRecentDestination({
+        address: location.address,
+        latitude: location.latitude,
+        longitude: location.longitude,
+      });
+      fareCardAnim.setValue(200);
+      setFareEstimate(null);
+      setFareError(null);
+    }
+  };
+
   const handleUseCurrentLocation = async () => {
     setIsFetchingCurrentLocation(true);
     try {
@@ -479,15 +517,17 @@ export default function RideSearchScreen() {
         : 'Time fare';
       rows.push({ label: timeLabel, value: fmt(bd.time_fare)! });
     }
-    if (fmt(bd.platform_fee)) rows.push({ label: 'Platform fee', value: fmt(bd.platform_fee)! });
     if (fmt(bd.biker_transport_fee)) rows.push({ label: 'Biker transport', value: fmt(bd.biker_transport_fee)! });
     if (fareEstimate?.surge_multiplier && fareEstimate.surge_multiplier > 1 && fmt(bd.surge_amount)) {
       rows.push({ label: `Surge x${fareEstimate.surge_multiplier.toFixed(2)}`, value: fmt(bd.surge_amount)! });
     }
-    if (fmt(bd.gst_amount)) rows.push({ label: 'GST', value: fmt(bd.gst_amount)! });
     if (fmt(bd.insurance_premium)) rows.push({ label: 'Insurance', value: fmt(bd.insurance_premium)! });
 
-    if (rows.length === 0) return null;
+    const taxPlatformFee = Number(bd.platform_fee ?? 0);
+    const taxGst = Number(bd.gst_amount ?? 0);
+    const taxSmallDistance = Number(bd.small_distance_fee ?? 0);
+
+    if (rows.length === 0 && taxPlatformFee <= 0 && taxGst <= 0 && taxSmallDistance <= 0) return null;
 
     const totalValue = bd.total ? `₹${Math.round(Number(bd.total))}` : `₹${Math.round(Number(fareEstimate!.estimated_fare))}`;
 
@@ -516,6 +556,17 @@ export default function RideSearchScreen() {
                   <Text style={{ color: textPrimary, fontSize: 14 }}>{row.value}</Text>
                 </View>
               ))}
+              {(taxPlatformFee > 0 || taxGst > 0 || taxSmallDistance > 0) && (
+                <TaxesAndFeesRow
+                  platformFee={taxPlatformFee}
+                  gstAmount={taxGst}
+                  smallDistanceFee={taxSmallDistance}
+                  formatAmount={(v) => `₹${Math.round(v)}`}
+                  variant="inline-style"
+                  textColor={textPrimary}
+                  textSecondaryColor={textSecondary}
+                />
+              )}
             </View>
             <View style={{ height: 1, backgroundColor: borderColor, marginVertical: 8 }} />
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -642,6 +693,7 @@ export default function RideSearchScreen() {
             icon="radio-button-on"
             onUseCurrentLocation={handleUseCurrentLocation}
             isFetchingCurrentLocation={isFetchingCurrentLocation}
+            onChooseOnMap={() => handleOpenMapPicker('pickup')}
           />
         </View>
 
@@ -664,6 +716,7 @@ export default function RideSearchScreen() {
           isDarkMode={isDarkMode}
           icon="location"
           autoFocus={true}
+          onChooseOnMap={() => handleOpenMapPicker('dropoff')}
         />
 
         {/* Quick Destinations: Saved + Recent */}
@@ -1016,6 +1069,22 @@ export default function RideSearchScreen() {
           </View>
         </Animated.View>
       )}
+
+      {/* Map Location Picker */}
+      <MapLocationPicker
+        visible={showMapPicker}
+        onLocationSelected={handleMapLocationSelected}
+        onClose={() => setShowMapPicker(false)}
+        initialCoordinate={
+          mapPickerField === 'pickup'
+            ? { latitude: pickupLocation.latitude, longitude: pickupLocation.longitude }
+            : dropLocation
+              ? { latitude: dropLocation.latitude, longitude: dropLocation.longitude }
+              : undefined
+        }
+        locationType={mapPickerField}
+        isDarkMode={isDarkMode}
+      />
     </View>
   );
 }

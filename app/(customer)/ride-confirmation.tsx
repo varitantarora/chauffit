@@ -11,6 +11,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useConfigStore } from '../../store/configStore';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { BrandColors } from '../../constants/Colors';
+import { TaxesAndFeesRow } from '../../components/customer/TaxesAndFeesRow';
 
 export default function RideConfirmationScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
@@ -267,10 +268,11 @@ export default function RideConfirmationScreen() {
                     <ThemedText>Subtotal</ThemedText>
                     <ThemedText>₹{totals.subtotal.toFixed(2)}</ThemedText>
                   </View>
-                  <View className="flex-row justify-between mb-3">
-                    <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">Taxes (18%)</ThemedText>
-                    <ThemedText variant="small">₹{totals.taxes.toFixed(2)}</ThemedText>
-                  </View>
+                  <TaxesAndFeesRow
+                    gstAmount={totals.taxes}
+                    formatAmount={(v) => `₹${v.toFixed(2)}`}
+                    variant="nativewind-small"
+                  />
                   {loyaltyDiscountPct > 0 && (
                     <View className="flex-row justify-between mb-2">
                       <ThemedText variant="small" className="text-green-600">

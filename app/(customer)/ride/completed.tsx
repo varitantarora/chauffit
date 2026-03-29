@@ -9,6 +9,7 @@ import { useAuthStore } from '../../../store/authStore';
 import { useBookingStore } from '../../../store/bookingStore';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { BrandColors } from '../../../constants/Colors';
+import { TaxesAndFeesRow } from '../../../components/customer/TaxesAndFeesRow';
 
 export default function RideCompleted() {
   const [rating, setRating] = useState(0);
@@ -307,14 +308,11 @@ export default function RideCompleted() {
                 </ThemedText>
               </View>
               
-              <View className="flex-row justify-between">
-                <ThemedText variant="body" className="text-textSecondary dark:text-darkTextSecondary">
-                  Taxes & Fees (18%)
-                </ThemedText>
-                <ThemedText variant="body">
-                  ₹{Math.floor((booking?.totalAmount || 0) * 0.18).toLocaleString()}
-                </ThemedText>
-              </View>
+              <TaxesAndFeesRow
+                gstAmount={Math.floor((booking?.totalAmount || 0) * 0.18)}
+                formatAmount={(v) => `₹${v.toLocaleString()}`}
+                variant="nativewind-body"
+              />
               
               {tipAmount > 0 && (
                 <View className="flex-row justify-between">

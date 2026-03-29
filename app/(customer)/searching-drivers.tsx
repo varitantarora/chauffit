@@ -285,6 +285,7 @@ export default function SearchingDriversScreen() {
               initialRegion={initialRegion}
               markers={mapMarkers}
               route={mapRoute}
+              animateRoute={true}
               googleMapsApiKey={appConfig.googleMapsApiKey}
               showUserLocation={false}
               style={{ flex: 1 }}

@@ -43,6 +43,7 @@ interface UniversalMapViewProps {
   initialRegion?: Region;
   markers?: MapMarker[];
   route?: MapRoute;
+  animateRoute?: boolean;
   showUserLocation?: boolean;
   followUserLocation?: boolean;
   onMarkerPress?: (marker: MapMarker) => void;
@@ -70,6 +71,7 @@ const UniversalMapView = forwardRef<MapViewRef, UniversalMapViewProps>(({
   },
   markers = [],
   route,
+  animateRoute = false,
   showUserLocation = true,
   followUserLocation = false,
   onMarkerPress,
@@ -83,6 +85,42 @@ const UniversalMapView = forwardRef<MapViewRef, UniversalMapViewProps>(({
   const mapRef = useRef<MapView>(null);
   const [currentLocation, setCurrentLocation] = useState<LatLng | null>(null);
   const [region, setRegion] = useState<Region>(initialRegion);
+
+  // Animated route state
+  const [routeCoords, setRouteCoords] = useState<LatLng[]>([]);
+  const [displayCoords, setDisplayCoords] = useState<LatLng[]>([]);
+  const routeAnimRef = useRef<NodeJS.Timeout | null>(null);
+  const routeRestartRef = useRef<NodeJS.Timeout | null>(null);
+
+  const startRouteAnimation = (coords: LatLng[]) => {
+    if (routeAnimRef.current) clearInterval(routeAnimRef.current);
+    if (routeRestartRef.current) clearTimeout(routeRestartRef.current);
+
+    let index = 0;
+    const step = Math.max(1, Math.floor(coords.length / 40));
+    setDisplayCoords([]);
+
+    routeAnimRef.current = setInterval(() => {
+      index += step;
+      if (index >= coords.length) {
+        setDisplayCoords(coords);
+        clearInterval(routeAnimRef.current!);
+        routeAnimRef.current = null;
+        routeRestartRef.current = setTimeout(() => {
+          startRouteAnimation(coords);
+        }, 2000);
+      } else {
+        setDisplayCoords(coords.slice(0, index));
+      }
+    }, 16);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (routeAnimRef.current) clearInterval(routeAnimRef.current);
+      if (routeRestartRef.current) clearTimeout(routeRestartRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (initialRegion) {
@@ -251,37 +289,63 @@ const UniversalMapView = forwardRef<MapViewRef, UniversalMapViewProps>(({
 
         {/* Render route if provided */}
         {route && googleMapsApiKey && (
-          <MapViewDirections
-            origin={route.origin}
-            destination={route.destination}
-            waypoints={route.waypoints}
-            apikey={googleMapsApiKey}
-            strokeWidth={route.strokeWidth || 4}
-            strokeColor={route.strokeColor || LightColors.secondary}
-            optimizeWaypoints={true}
-            onStart={(params) => {
-              console.log('Route calculation started:', params);
-            }}
-            onReady={(result) => {
-              console.log('Route ready:', result);
-              onRouteReady?.(result);
+          <>
+            <MapViewDirections
+              origin={route.origin}
+              destination={route.destination}
+              waypoints={route.waypoints}
+              apikey={googleMapsApiKey}
+              strokeWidth={animateRoute ? 0 : (route.strokeWidth || 4)}
+              strokeColor={animateRoute ? 'transparent' : (route.strokeColor || LightColors.secondary)}
+              optimizeWaypoints={true}
+              onStart={(params) => {
+                console.log('Route calculation started:', params);
+              }}
+              onReady={(result) => {
+                console.log('Route ready:', result);
+                onRouteReady?.(result);
 
-              // Auto-fit to show entire route
-              if (mapRef.current) {
-                const coordinates = [route.origin, route.destination];
-                if (route.waypoints) {
-                  coordinates.splice(1, 0, ...route.waypoints);
+                if (animateRoute) {
+                  const coords = result.coordinates;
+                  setRouteCoords(coords);
+                  startRouteAnimation(coords);
                 }
-                mapRef.current.fitToCoordinates(coordinates, {
-                  edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
-                  animated: true,
-                });
-              }
-            }}
-            onError={(errorMessage) => {
-              console.error('Route calculation error:', errorMessage);
-            }}
-          />
+
+                // Auto-fit to show entire route
+                if (mapRef.current) {
+                  const coordinates = [route.origin, route.destination];
+                  if (route.waypoints) {
+                    coordinates.splice(1, 0, ...route.waypoints);
+                  }
+                  mapRef.current.fitToCoordinates(coordinates, {
+                    edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
+                    animated: true,
+                  });
+                }
+              }}
+              onError={(errorMessage) => {
+                console.error('Route calculation error:', errorMessage);
+              }}
+            />
+            {animateRoute && routeCoords.length > 1 && (
+              <Polyline
+                coordinates={routeCoords}
+                strokeColor={isDarkMode ? '#555555' : '#aaaaaa'}
+                strokeWidth={4}
+                lineCap="round"
+                lineJoin="round"
+              />
+            )}
+            {animateRoute && displayCoords.length > 1 && (
+              <Polyline
+                coordinates={displayCoords}
+                strokeColor={isDarkMode ? '#e0cfc0' : '#1a1a1a'}
+                strokeWidth={4}
+                lineCap="round"
+                lineJoin="round"
+              />
+            )}
+          </>
         )}
 
         {children}

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ScrollView, TouchableOpacity, View, Text, RefreshControl, Animated, Image, ActivityIndicator, Platform, Linking } from 'react-native';
+import Reanimated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../../components/common/ThemedView';
 import { ThemedCard } from '../../../components/common/ThemedCard';
@@ -19,8 +21,13 @@ import { BlurView } from 'expo-blur';
 import { DarkMapStyle } from '../../../constants/MapStyles';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BrandColors } from '../../../constants/Colors';
+import { MapLocationPicker, MapPickerLocation } from '../../../components/customer/MapLocationPicker';
 import BurgundyLightLogo from '../../../assets/nav_logo/burgundy_light_mode.svg';
 const PastelGrayDarkLogo = BurgundyLightLogo; // Fallback since the file is missing
+
+const AD_CARD_WIDTH = 317;
+const AD_CARD_GAP = 16;  // mr-4 via NativeWind
+const AD_SNAP_INTERVAL = AD_CARD_WIDTH + AD_CARD_GAP; // 333
 
 export default function CustomerHomeScreen() {
   const user = useAuthStore((state) => state.user);
@@ -36,6 +43,11 @@ export default function CustomerHomeScreen() {
   const [currentLocationAddress, setCurrentLocationAddress] = useState('');
   const [currentLocationLat, setCurrentLocationLat] = useState(28.6139);
   const [currentLocationLng, setCurrentLocationLng] = useState(77.2090);
+  const [destinationAddress, setDestinationAddress] = useState('');
+  const [destinationLat, setDestinationLat] = useState<number | null>(null);
+  const [destinationLng, setDestinationLng] = useState<number | null>(null);
+  const [showMapPicker, setShowMapPicker] = useState(false);
+  const [mapPickerField, setMapPickerField] = useState<'pickup' | 'dropoff'>('pickup');
   const [recentActivity, setRecentActivity] = useState<CustomerRide[]>([]);
   const [loadingActivity, setLoadingActivity] = useState(true);
   const [blogs, setBlogs] = useState<BlogListItem[]>([]);
@@ -46,8 +58,11 @@ export default function CustomerHomeScreen() {
   const DEFAULT_REGION = { latitude: 28.4595, longitude: 77.0266, latitudeDelta: 0.05, longitudeDelta: 0.05 };
   const [mapRegion, setMapRegion] = useState(DEFAULT_REGION);
   const mapRef = useRef<MapView>(null);
-  const adsScrollRef = useRef<any>(null);
   const activeAdIndexRef = useRef(0);
+  const isUserScrollingRef = useRef(false);
+  const adsTranslateX = useSharedValue(0);
+  const gestureStartX = useSharedValue(0);
+  const adsCountShared = useSharedValue(0);
 
   const clipAnimation = useRef(new Animated.Value(0)).current;
 
@@ -112,17 +127,21 @@ export default function CustomerHomeScreen() {
     fetchAds();
   }, []);
 
-  // Auto-scroll ads every 2 seconds
+  // Keep ads count in sync for gesture worklet
+  useEffect(() => { adsCountShared.value = ads.length; }, [ads.length, adsCountShared]);
+
+  // Auto-scroll ads every 3 seconds using reanimated (bypasses ScrollView entirely)
   useEffect(() => {
     if (ads.length <= 1) return;
     const interval = setInterval(() => {
+      if (isUserScrollingRef.current) return;
       const next = (activeAdIndexRef.current + 1) % ads.length;
       activeAdIndexRef.current = next;
       setActiveAdIndex(next);
-      adsScrollRef.current?.scrollTo({ x: next * (317 + 16), animated: true });
-    }, 2000);
+      adsTranslateX.value = withTiming(-next * AD_SNAP_INTERVAL, { duration: 400 });
+    }, 3000);
     return () => clearInterval(interval);
-  }, [ads.length]);
+  }, [ads.length, adsTranslateX]);
 
   // Fetch user location for map hero & auto-fill pickup
   useEffect(() => {
@@ -249,11 +268,71 @@ export default function CustomerHomeScreen() {
     });
   };
 
+  const handleOpenMapPicker = (fieldType: 'pickup' | 'dropoff') => {
+    setMapPickerField(fieldType);
+    setShowMapPicker(true);
+  };
+
+  const handleMapLocationSelected = (location: MapPickerLocation) => {
+    if (mapPickerField === 'pickup') {
+      setCurrentLocationAddress(location.address);
+      setCurrentLocationLat(location.latitude);
+      setCurrentLocationLng(location.longitude);
+      mapRef.current?.animateToRegion({
+        latitude: location.latitude,
+        longitude: location.longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      }, 800);
+    } else {
+      setDestinationAddress(location.address);
+      setDestinationLat(location.latitude);
+      setDestinationLng(location.longitude);
+    }
+  };
+
+  // Carousel gesture helpers (called from worklets via runOnJS)
+  const updateAdIndex = useCallback((index: number) => {
+    activeAdIndexRef.current = index;
+    setActiveAdIndex(index);
+  }, []);
+
+  const setScrolling = useCallback((val: boolean) => {
+    isUserScrollingRef.current = val;
+  }, []);
+
+  // Animated style for carousel row
+  const adsRowStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: adsTranslateX.value }],
+  }));
+
+  // Pan gesture for manual ad swiping
+  const adsPanGesture = Gesture.Pan()
+    .activeOffsetX([-10, 10])
+    .failOffsetY([-5, 5])
+    .onStart(() => {
+      gestureStartX.value = adsTranslateX.value;
+      runOnJS(setScrolling)(true);
+    })
+    .onUpdate((e) => {
+      adsTranslateX.value = gestureStartX.value + e.translationX;
+    })
+    .onEnd((e) => {
+      let nearestIndex = Math.round(-adsTranslateX.value / AD_SNAP_INTERVAL);
+      if (e.velocityX < -500) nearestIndex = Math.ceil(-adsTranslateX.value / AD_SNAP_INTERVAL);
+      if (e.velocityX > 500) nearestIndex = Math.floor(-adsTranslateX.value / AD_SNAP_INTERVAL);
+      const maxIndex = Math.max(0, adsCountShared.value - 1);
+      const clampedIndex = Math.max(0, Math.min(nearestIndex, maxIndex));
+      adsTranslateX.value = withTiming(-clampedIndex * AD_SNAP_INTERVAL, { duration: 250 });
+      runOnJS(updateAdIndex)(clampedIndex);
+      runOnJS(setScrolling)(false);
+    });
+
   const quickActions = [
     { title: 'Book Now', icon: 'car', action: () => router.push('/(customer)/book-ride-new') },
     { title: 'Schedule', icon: 'time', action: () => router.push({ pathname: '/(customer)/book-ride-new', params: { schedule: 'true' } }) },
     { title: 'Trips', icon: 'list', action: () => router.push('/(customer)/(tabs)/history') },
-    { title: 'Favorites', icon: 'heart', action: () => router.push('/(customer)/(tabs)/favorites') }
+    { title: 'Favorites', icon: 'heart', action: () => router.push('/(customer)/favorites') }
   ];
 
   return (
@@ -299,7 +378,7 @@ export default function CustomerHomeScreen() {
               </View>
             </LinearGradient>
 
-            {/* Where to? search bar */}
+            {/* From / To search card */}
             <View style={{ position: 'absolute', bottom: 16, left: 16, right: 16 }}>
               <BlurView
                 intensity={80}
@@ -310,51 +389,72 @@ export default function CustomerHomeScreen() {
                   style={{
                     backgroundColor: isDarkMode ? 'rgba(26,26,26,0.75)' : 'rgba(255,255,255,0.8)',
                     borderRadius: 16,
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
                   }}
                 >
-                  <TouchableOpacity
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      paddingHorizontal: 20,
-                      height: 52,
-                      borderRadius: 28,
-                      backgroundColor: isDarkMode ? 'rgba(44,44,44,0.8)' : 'rgba(245,245,245,0.95)',
-                      marginHorizontal: 4,
-                      marginVertical: 2,
-                    }}
-                    onPress={handleWhereToPress}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="search" size={18} color={isDarkMode ? '#d9d1c6' : '#888'} />
-                    <ThemedText
-                      style={{
-                        flex: 1,
-                        marginLeft: 12,
-                        color: isDarkMode ? '#999' : '#888',
-                        fontSize: 16,
-                        fontWeight: '500',
-                      }}
-                    >
-                      Where to?
-                    </ThemedText>
+                  {/* From row */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                    <Ionicons name="radio-button-on" size={14} color={BrandColors.burgundy} />
                     <TouchableOpacity
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        router.push({ pathname: '/(customer)/book-ride-new', params: { multiStop: 'true' } });
-                      }}
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 16,
-                        backgroundColor: isDarkMode ? 'rgba(189,140,94,0.2)' : 'rgba(114,12,23,0.1)',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
+                      style={{ flex: 1, marginLeft: 10 }}
+                      onPress={handleWhereToPress}
+                      activeOpacity={0.7}
                     >
-                      <Ionicons name="add" size={20} color={isDarkMode ? BrandColors.secondary : BrandColors.burgundy} />
+                      <Text
+                        numberOfLines={1}
+                        style={{
+                          fontSize: 14,
+                          color: currentLocationAddress
+                            ? (isDarkMode ? '#d9d1c6' : '#333')
+                            : (isDarkMode ? '#999' : '#888'),
+                          fontWeight: currentLocationAddress ? '500' : '400',
+                        }}
+                      >
+                        {currentLocationAddress || 'Pickup location'}
+                      </Text>
                     </TouchableOpacity>
-                  </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => handleOpenMapPicker('pickup')}
+                      style={{ padding: 4 }}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons name="map-outline" size={18} color={isDarkMode ? BrandColors.secondary : BrandColors.burgundy} />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Divider */}
+                  <View style={{ height: 1, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)', marginLeft: 24, marginBottom: 6 }} />
+
+                  {/* To row */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="location" size={14} color={BrandColors.secondary} />
+                    <TouchableOpacity
+                      style={{ flex: 1, marginLeft: 10 }}
+                      onPress={handleWhereToPress}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        numberOfLines={1}
+                        style={{
+                          fontSize: 14,
+                          color: destinationAddress
+                            ? (isDarkMode ? '#d9d1c6' : '#333')
+                            : (isDarkMode ? '#999' : '#888'),
+                          fontWeight: destinationAddress ? '500' : '400',
+                        }}
+                      >
+                        {destinationAddress || 'Where to?'}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => handleOpenMapPicker('dropoff')}
+                      style={{ padding: 4 }}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons name="map-outline" size={18} color={isDarkMode ? BrandColors.secondary : BrandColors.burgundy} />
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </BlurView>
             </View>
@@ -400,49 +500,43 @@ export default function CustomerHomeScreen() {
                 </View>
               ) : (
                 <>
-                  <ScrollView
-                    ref={adsScrollRef}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ paddingHorizontal: 12 }}
-                    onMomentumScrollEnd={(e) => {
-                      const index = Math.round(e.nativeEvent.contentOffset.x / (317 + 16));
-                      activeAdIndexRef.current = index;
-                      setActiveAdIndex(index);
-                    }}
-                  >
-                    {ads.map((ad) => (
-                      <TouchableOpacity
-                        key={ad.id}
-                        className="mr-4"
-                        activeOpacity={0.85}
-                        onPress={() => ad.link && Linking.openURL(ad.link)}
-                        disabled={!ad.link}
-                      >
-                        <View style={{ width: 317, height: 158 }}>
-                          <View style={{
-                            width: 317, height: 158, borderRadius: 12, overflow: 'hidden',
-                            shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-                            shadowOpacity: 0.1, shadowRadius: 2, elevation: 2,
-                          }}>
-                            <Image
-                              source={{ uri: ad.image }}
-                              style={{ width: '100%', height: '100%' }}
-                              resizeMode="cover"
-                            />
-                          </View>
-                          <View style={{
-                            position: 'absolute', top: 8, right: 8,
-                            backgroundColor: 'rgba(0,0,0,0.5)',
-                            paddingHorizontal: 6, paddingVertical: 2,
-                            borderRadius: 4,
-                          }}>
-                            <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>Ad</Text>
-                          </View>
-                        </View>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
+                  <View style={{ overflow: 'hidden' }}>
+                    <GestureDetector gesture={adsPanGesture}>
+                      <Reanimated.View style={[{ flexDirection: 'row', paddingHorizontal: 12 }, adsRowStyle]}>
+                        {ads.map((ad) => (
+                          <TouchableOpacity
+                            key={ad.id}
+                            style={{ width: AD_CARD_WIDTH, marginRight: AD_CARD_GAP }}
+                            activeOpacity={0.85}
+                            onPress={() => ad.link && Linking.openURL(ad.link)}
+                            disabled={!ad.link}
+                          >
+                            <View style={{ width: AD_CARD_WIDTH, height: 158 }}>
+                              <View style={{
+                                width: AD_CARD_WIDTH, height: 158, borderRadius: 12, overflow: 'hidden',
+                                shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+                                shadowOpacity: 0.1, shadowRadius: 2, elevation: 2,
+                              }}>
+                                <Image
+                                  source={{ uri: ad.image }}
+                                  style={{ width: '100%', height: '100%' }}
+                                  resizeMode="cover"
+                                />
+                              </View>
+                              <View style={{
+                                position: 'absolute', top: 8, right: 8,
+                                backgroundColor: 'rgba(0,0,0,0.5)',
+                                paddingHorizontal: 6, paddingVertical: 2,
+                                borderRadius: 4,
+                              }}>
+                                <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>Ad</Text>
+                              </View>
+                            </View>
+                          </TouchableOpacity>
+                        ))}
+                      </Reanimated.View>
+                    </GestureDetector>
+                  </View>
                   {ads.length > 1 && (
                     <View className="flex-row justify-center mt-3 gap-1">
                       {ads.map((_, i) => (
@@ -672,6 +766,22 @@ export default function CustomerHomeScreen() {
           </Animated.View>
         )}
       </ThemedView>
+
+      {/* Map Location Picker */}
+      <MapLocationPicker
+        visible={showMapPicker}
+        onLocationSelected={handleMapLocationSelected}
+        onClose={() => setShowMapPicker(false)}
+        initialCoordinate={
+          mapPickerField === 'pickup'
+            ? { latitude: currentLocationLat, longitude: currentLocationLng }
+            : destinationLat && destinationLng
+              ? { latitude: destinationLat, longitude: destinationLng }
+              : undefined
+        }
+        locationType={mapPickerField}
+        isDarkMode={isDarkMode}
+      />
     </SafeAreaView>
   );
 }

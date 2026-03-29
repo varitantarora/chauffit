@@ -40,8 +40,10 @@ import {
   getPlaceDetails,
 } from '../../components/customer/GooglePlacesAutocomplete';
 import UniversalMapView, { MapMarker, MapRoute } from '../../components/shared/MapView';
+import { MapLocationPicker, MapPickerLocation } from '../../components/customer/MapLocationPicker';
 import { appConfig } from '../../config/env';
 import { BrandColors } from '../../constants/Colors';
+import { TaxesAndFeesRow } from '../../components/customer/TaxesAndFeesRow';
 
 interface BookingLocation {
   address: string;
@@ -95,6 +97,8 @@ export default function BookRideScreen() {
   const [showFareModal, setShowFareModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showSavedLocations, setShowSavedLocations] = useState(false);
+  const [showMapPicker, setShowMapPicker] = useState(false);
+  const [mapPickerField, setMapPickerField] = useState<'pickup' | 'dropoff'>('pickup');
   const [isCalculatingFare, setIsCalculatingFare] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
 
@@ -586,6 +590,27 @@ export default function BookRideScreen() {
     }
   };
 
+  const handleOpenMapPicker = (fieldType: 'pickup' | 'dropoff') => {
+    setMapPickerField(fieldType);
+    setShowMapPicker(true);
+  };
+
+  const handleMapLocationSelected = (location: MapPickerLocation) => {
+    if (mapPickerField === 'pickup') {
+      setPickupLocation({
+        address: location.address,
+        latitude: location.latitude,
+        longitude: location.longitude,
+      });
+    } else {
+      setDropLocation({
+        address: location.address,
+        latitude: location.latitude,
+        longitude: location.longitude,
+      });
+    }
+  };
+
   const handleBookNow = () => {
     if (!pickupLocation?.address) {
       Alert.alert('Missing Information', 'Please select a pickup location');
@@ -1020,6 +1045,7 @@ export default function BookRideScreen() {
                   onPlaceSelected={(place) => handlePlaceSelected(place, 'pickup')}
                   onUseCurrentLocation={handleUseCurrentLocation}
                   isFetchingCurrentLocation={isFetchingCurrentLocation}
+                  onChooseOnMap={() => handleOpenMapPicker('pickup')}
                 />
               </View>
 
@@ -1149,6 +1175,7 @@ export default function BookRideScreen() {
                   isDarkMode={isDarkMode}
                   icon="navigate"
                   onPlaceSelected={(place) => handlePlaceSelected(place, 'dropoff')}
+                  onChooseOnMap={() => handleOpenMapPicker('dropoff')}
                 />
               </View>
 
@@ -1418,18 +1445,14 @@ export default function BookRideScreen() {
                               {formatFare(parseFloat(fareEstimate.fare_breakdown.surge_amount ?? '0'))}
                             </ThemedText>
                           </View>
-                          <View className="flex-row justify-between mb-1 px-2">
-                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Platform Fee</ThemedText>
-                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                              {formatFare(parseFloat(fareEstimate.fare_breakdown.platform_fee ?? '0'))}
-                            </ThemedText>
-                          </View>
-                          <View className="flex-row justify-between mb-1 px-2">
-                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">GST</ThemedText>
-                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                              {formatFare(parseFloat(fareEstimate.fare_breakdown.gst_amount ?? '0'))}
-                            </ThemedText>
-                          </View>
+                          <TaxesAndFeesRow
+                            platformFee={parseFloat(fareEstimate.fare_breakdown.platform_fee ?? '0')}
+                            gstAmount={parseFloat(fareEstimate.fare_breakdown.gst_amount ?? '0')}
+                            smallDistanceFee={parseFloat(fareEstimate.fare_breakdown.small_distance_fee ?? '0')}
+                            formatAmount={(v) => formatFare(v)}
+                            variant="nativewind-tiny"
+                            className="px-2"
+                          />
                         </>
                       ) : (
                         <>
@@ -1461,14 +1484,6 @@ export default function BookRideScreen() {
                               </ThemedText>
                             </View>
                           )}
-                          {fareEstimate.fare_breakdown.platform_fee !== undefined && parseFloat(fareEstimate.fare_breakdown.platform_fee) > 0 && (
-                            <View className="flex-row justify-between mb-1 px-2">
-                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Platform fee</ThemedText>
-                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                                {formatFare(parseFloat(fareEstimate.fare_breakdown.platform_fee))}
-                              </ThemedText>
-                            </View>
-                          )}
                           {fareEstimate.surge_multiplier !== undefined && fareEstimate.surge_multiplier > 1 && fareEstimate.fare_breakdown.surge_amount !== undefined && (
                             <View className="flex-row justify-between mb-1 px-2">
                               <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
@@ -1479,14 +1494,14 @@ export default function BookRideScreen() {
                               </ThemedText>
                             </View>
                           )}
-                          {fareEstimate.fare_breakdown.gst_amount !== undefined && parseFloat(fareEstimate.fare_breakdown.gst_amount) > 0 && (
-                            <View className="flex-row justify-between mb-1 px-2">
-                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">GST</ThemedText>
-                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                                {formatFare(parseFloat(fareEstimate.fare_breakdown.gst_amount))}
-                              </ThemedText>
-                            </View>
-                          )}
+                          <TaxesAndFeesRow
+                            platformFee={parseFloat(fareEstimate.fare_breakdown.platform_fee ?? '0')}
+                            gstAmount={parseFloat(fareEstimate.fare_breakdown.gst_amount ?? '0')}
+                            smallDistanceFee={parseFloat(fareEstimate.fare_breakdown.small_distance_fee ?? '0')}
+                            formatAmount={(v) => formatFare(v)}
+                            variant="nativewind-tiny"
+                            className="px-2"
+                          />
                         </>
                       )}
                       {fareEstimate.fare_breakdown.insurance_premium !== undefined && parseFloat(fareEstimate.fare_breakdown.insurance_premium) > 0 && (
@@ -1695,6 +1710,7 @@ export default function BookRideScreen() {
                       }}
                       markers={mapMarkers}
                       route={mapRoute}
+                      animateRoute={true}
                       googleMapsApiKey={appConfig.googleMapsApiKey}
                       showUserLocation={false}
                     />
@@ -1792,18 +1808,14 @@ export default function BookRideScreen() {
                                   {formatFare(parseFloat(fareEstimate.fare_breakdown.surge_amount ?? '0'))}
                                 </ThemedText>
                               </View>
-                              <View className="flex-row justify-between mb-1 px-2">
-                                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Platform Fee</ThemedText>
-                                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                                  {formatFare(parseFloat(fareEstimate.fare_breakdown.platform_fee ?? '0'))}
-                                </ThemedText>
-                              </View>
-                              <View className="flex-row justify-between mb-1 px-2">
-                                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">GST</ThemedText>
-                                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                                  {formatFare(parseFloat(fareEstimate.fare_breakdown.gst_amount ?? '0'))}
-                                </ThemedText>
-                              </View>
+                              <TaxesAndFeesRow
+                                platformFee={parseFloat(fareEstimate.fare_breakdown.platform_fee ?? '0')}
+                                gstAmount={parseFloat(fareEstimate.fare_breakdown.gst_amount ?? '0')}
+                                smallDistanceFee={parseFloat(fareEstimate.fare_breakdown.small_distance_fee ?? '0')}
+                                formatAmount={(v) => formatFare(v)}
+                                variant="nativewind-tiny"
+                                className="px-2"
+                              />
                             </>
                           ) : (
                             <>
@@ -1835,14 +1847,6 @@ export default function BookRideScreen() {
                                   </ThemedText>
                                 </View>
                               )}
-                              {fareEstimate.fare_breakdown.platform_fee !== undefined && parseFloat(fareEstimate.fare_breakdown.platform_fee) > 0 && (
-                                <View className="flex-row justify-between mb-1 px-2">
-                                  <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Platform fee</ThemedText>
-                                  <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                                    {formatFare(parseFloat(fareEstimate.fare_breakdown.platform_fee))}
-                                  </ThemedText>
-                                </View>
-                              )}
                               {fareEstimate.surge_multiplier !== undefined && fareEstimate.surge_multiplier > 1 && fareEstimate.fare_breakdown.surge_amount !== undefined && (
                                 <View className="flex-row justify-between mb-1 px-2">
                                   <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
@@ -1853,14 +1857,14 @@ export default function BookRideScreen() {
                                   </ThemedText>
                                 </View>
                               )}
-                              {fareEstimate.fare_breakdown.gst_amount !== undefined && parseFloat(fareEstimate.fare_breakdown.gst_amount) > 0 && (
-                                <View className="flex-row justify-between mb-1 px-2">
-                                  <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">GST</ThemedText>
-                                  <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                                    {formatFare(parseFloat(fareEstimate.fare_breakdown.gst_amount))}
-                                  </ThemedText>
-                                </View>
-                              )}
+                              <TaxesAndFeesRow
+                                platformFee={parseFloat(fareEstimate.fare_breakdown.platform_fee ?? '0')}
+                                gstAmount={parseFloat(fareEstimate.fare_breakdown.gst_amount ?? '0')}
+                                smallDistanceFee={parseFloat(fareEstimate.fare_breakdown.small_distance_fee ?? '0')}
+                                formatAmount={(v) => formatFare(v)}
+                                variant="nativewind-tiny"
+                                className="px-2"
+                              />
                             </>
                           )}
                           {fareEstimate.fare_breakdown.insurance_premium !== undefined && parseFloat(fareEstimate.fare_breakdown.insurance_premium) > 0 && (
@@ -2602,6 +2606,22 @@ export default function BookRideScreen() {
           </View>
         </Modal>
       </ThemedView>
+
+      {/* Map Location Picker */}
+      <MapLocationPicker
+        visible={showMapPicker}
+        onLocationSelected={handleMapLocationSelected}
+        onClose={() => setShowMapPicker(false)}
+        initialCoordinate={
+          mapPickerField === 'pickup'
+            ? { latitude: pickupLocation.latitude, longitude: pickupLocation.longitude }
+            : dropLocation
+              ? { latitude: dropLocation.latitude, longitude: dropLocation.longitude }
+              : undefined
+        }
+        locationType={mapPickerField}
+        isDarkMode={isDarkMode}
+      />
     </SafeAreaView>
   );
 }

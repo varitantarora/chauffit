@@ -251,6 +251,7 @@ export function RouteMap({
             initialRegion={initialRegion}
             markers={mapMarkers}
             route={mapRoute}
+            animateRoute={true}
             showUserLocation={showCurrentLocation}
             googleMapsApiKey={appConfig.googleMapsApiKey}
             onRouteReady={(result) => {

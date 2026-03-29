@@ -247,6 +247,7 @@ export interface FareEstimateResponse {
     hourly_fare?: string;
     platform_fee?: string;
     gst_amount?: string;
+    small_distance_fee?: string;
     biker_transport_fee?: string;
     surge_amount?: string;
     insurance_premium?: string;
@@ -510,6 +511,7 @@ class BookingApiService {
             hourly_fare: hourlyFare != null ? String(hourlyFare) : undefined,
             platform_fee: b.platform_fee != null ? String(b.platform_fee) : undefined,
             gst_amount: b.gst_amount != null ? String(b.gst_amount) : undefined,
+            small_distance_fee: b.small_distance_fee != null ? String(b.small_distance_fee) : undefined,
             surge_amount: surgeAmount != null ? String(surgeAmount) : undefined,
             insurance_premium: d.insurance?.premium_amount != null ? String(d.insurance.premium_amount) : (b.insurance_premium != null ? String(b.insurance_premium) : undefined),
             subtotal: b.ride_subtotal != null ? String(b.ride_subtotal) : (b.subtotal != null ? String(b.subtotal) : undefined),

@@ -11,6 +11,7 @@ import { useCarStore } from '../../../store/carStore';
 import { useRouter } from 'expo-router';
 import { PaymentMethod } from '../../../types/navigation';
 import { BrandColors } from '../../../constants/Colors';
+import { TaxesAndFeesRow } from '../../../components/customer/TaxesAndFeesRow';
 
 export default function ConfirmBooking() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>({
@@ -327,14 +328,11 @@ export default function ConfirmBooking() {
                 </ThemedText>
               </View>
               
-              <View className="flex-row justify-between">
-                <ThemedText variant="body" className="text-textSecondary dark:text-darkTextSecondary">
-                  Taxes & Fees
-                </ThemedText>
-                <ThemedText variant="body">
-                  ₹{Math.floor((currentBooking?.totalAmount || 0) * 0.18).toLocaleString()}
-                </ThemedText>
-              </View>
+              <TaxesAndFeesRow
+                gstAmount={Math.floor((currentBooking?.totalAmount || 0) * 0.18)}
+                formatAmount={(v) => `₹${v.toLocaleString()}`}
+                variant="nativewind-body"
+              />
               
               <View className="border-t border-border pt-3">
                 <View className="flex-row justify-between">
