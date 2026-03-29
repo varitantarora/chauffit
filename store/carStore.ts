@@ -7,7 +7,7 @@ const apiCarToAppCar = (apiCar: CustomerCarApi): CustomerCar => ({
   id: apiCar.id,
   make: apiCar.make,
   model: apiCar.model,
-  year: apiCar.year,
+  ...(apiCar.year != null ? { year: apiCar.year } : {}),
   color: apiCar.color,
   registrationNumber: apiCar.plate,
   isDefault: false, // Default handling can be added later if needed
@@ -19,7 +19,7 @@ const apiCarToAppCar = (apiCar: CustomerCarApi): CustomerCar => ({
 const appCarToApiRequest = (car: Omit<CustomerCar, 'id'>) => ({
   make: car.make,
   model: car.model,
-  year: car.year,
+  ...(car.year != null ? { year: car.year } : {}),
   plate: car.registrationNumber,
   color: car.color,
   vehicle_type: car.vehicleType || 'luxury_sedan',

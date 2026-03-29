@@ -13,7 +13,7 @@ export interface CustomerCar {
   id: string;
   make: string;
   model: string;
-  year: number;
+  year?: number;
   color: string;
   registrationNumber: string;
   isDefault: boolean;

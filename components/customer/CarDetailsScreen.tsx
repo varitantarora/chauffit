@@ -5,12 +5,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedView } from '../common/ThemedView';
 import { ThemedText } from '../common/ThemedText';
 import { PrimaryButton } from '../common/PrimaryButton';
+import { SearchableDropdown } from '../common/SearchableDropdown';
 import { useAuthStore } from '../../store/authStore';
 import { useCarStore } from '../../store/carStore';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { CustomerVehicleType } from '../../services/api/CustomerCarApiService';
 import MetaApiService, { EnumOption } from '../../services/api/MetaApiService';
 import { BrandColors } from '../../constants/Colors';
+import { CAR_BRANDS, getModelsForBrand } from '../../constants/carBrandsData';
 
 interface CarDetailsScreenProps {
   postSaveRoute?: string;
@@ -93,12 +95,14 @@ export default function CarDetailsScreen({ postSaveRoute, allowSkip = false }: C
   const [carForm, setCarForm] = useState({
     make: '',
     model: '',
-    year: '',
     color: '',
     registrationNumber: '',
     vehicleType: 'luxury_sedan' as CustomerVehicleType,
     transmission: 'automatic' as 'manual' | 'automatic',
   });
+
+  // Models available based on selected make
+  const availableModels = useMemo(() => getModelsForBrand(carForm.make), [carForm.make]);
 
   useEffect(() => {
     if (!params.carId) return;
@@ -106,7 +110,6 @@ export default function CarDetailsScreen({ postSaveRoute, allowSkip = false }: C
       setCarForm({
         make: existingCar.make,
         model: existingCar.model,
-        year: existingCar.year.toString(),
         color: existingCar.color,
         registrationNumber: existingCar.registrationNumber,
         vehicleType: (existingCar.vehicleType || 'luxury_sedan') as CustomerVehicleType,
@@ -135,18 +138,16 @@ export default function CarDetailsScreen({ postSaveRoute, allowSkip = false }: C
     setCarForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleMakeChange = (value: string) => {
+    // When make changes, reset model
+    setCarForm((prev) => ({ ...prev, make: value, model: '' }));
+  };
+
   const handleSaveCar = async () => {
-    const { make, model, year, color, registrationNumber, vehicleType, transmission } = carForm;
+    const { make, model, color, registrationNumber, vehicleType, transmission } = carForm;
 
-    if (!make || !model || !year || !color || !registrationNumber || !vehicleType) {
+    if (!make || !model || !color || !registrationNumber || !vehicleType) {
       Alert.alert('Error', 'Please fill in all car details');
-      return;
-    }
-
-    const yearValue = parseInt(year, 10);
-    const currentYear = new Date().getFullYear();
-    if (Number.isNaN(yearValue) || yearValue < 1990 || yearValue > currentYear + 1) {
-      Alert.alert('Error', 'Please enter a valid year');
       return;
     }
 
@@ -157,7 +158,6 @@ export default function CarDetailsScreen({ postSaveRoute, allowSkip = false }: C
         await updateCar(params.carId, {
           make,
           model,
-          year: yearValue,
           color,
           registrationNumber: registrationNumber.toUpperCase(),
           transmission,
@@ -166,7 +166,6 @@ export default function CarDetailsScreen({ postSaveRoute, allowSkip = false }: C
         await addCar({
           make,
           model,
-          year: yearValue,
           color,
           registrationNumber: registrationNumber.toUpperCase(),
           vehicleType,
@@ -247,71 +246,41 @@ export default function CarDetailsScreen({ postSaveRoute, allowSkip = false }: C
 
           {/* Car Form */}
           <View className="mb-8">
+            {/* Car Make - Searchable Dropdown */}
+            <SearchableDropdown
+              label="Car Make *"
+              placeholder="Select car brand"
+              options={CAR_BRANDS}
+              selectedValue={carForm.make}
+              onSelect={handleMakeChange}
+              iconName="car"
+            />
+
+            {/* Model - Searchable Dropdown */}
+            <SearchableDropdown
+              label="Model *"
+              placeholder={carForm.make ? 'Select model' : 'Select car make first'}
+              options={availableModels}
+              selectedValue={carForm.model}
+              onSelect={(value) => handleInputChange('model', value)}
+              iconName="speedometer"
+              disabled={!carForm.make}
+            />
+
+            {/* Color - Full Width */}
             <View className="mb-4">
               <ThemedText variant="small" className="mb-2 font-semibold">
-                Car Make *
+                Color *
               </ThemedText>
               <View className={`flex-row items-center p-4 rounded-xl border ${inputClass}`}>
-                <Ionicons name="car" size={20} color={iconColor} />
+                <Ionicons name="color-palette" size={20} color={iconColor} />
                 <TextInput
                   className="flex-1 ml-3 text-base"
-                  placeholder="Toyota"
+                  placeholder="Black"
                   placeholderTextColor={iconColor}
-                  value={carForm.make}
-                  onChangeText={(value) => handleInputChange('make', value)}
+                  value={carForm.color}
+                  onChangeText={(value) => handleInputChange('color', value)}
                 />
-              </View>
-            </View>
-
-            <View className="mb-4">
-              <ThemedText variant="small" className="mb-2 font-semibold">
-                Model *
-              </ThemedText>
-              <View className={`flex-row items-center p-4 rounded-xl border ${inputClass}`}>
-                <Ionicons name="speedometer" size={20} color={iconColor} />
-                <TextInput
-                  className="flex-1 ml-3 text-base"
-                  placeholder="Camry"
-                  placeholderTextColor={iconColor}
-                  value={carForm.model}
-                  onChangeText={(value) => handleInputChange('model', value)}
-                />
-              </View>
-            </View>
-
-            <View className="flex-row mb-4">
-              <View className="flex-1 mr-2">
-                <ThemedText variant="small" className="mb-2 font-semibold">
-                  Year *
-                </ThemedText>
-                <View className={`flex-row items-center p-4 rounded-xl border ${inputClass}`}>
-                  <Ionicons name="calendar" size={20} color={iconColor} />
-                  <TextInput
-                    className="flex-1 ml-3 text-base"
-                    placeholder="2022"
-                    placeholderTextColor={iconColor}
-                    value={carForm.year}
-                    onChangeText={(value) => handleInputChange('year', value)}
-                    keyboardType="numeric"
-                    maxLength={4}
-                  />
-                </View>
-              </View>
-
-              <View className="flex-1 ml-2">
-                <ThemedText variant="small" className="mb-2 font-semibold">
-                  Color *
-                </ThemedText>
-                <View className={`flex-row items-center p-4 rounded-xl border ${inputClass}`}>
-                  <Ionicons name="color-palette" size={20} color={iconColor} />
-                  <TextInput
-                    className="flex-1 ml-3 text-base"
-                    placeholder="Black"
-                    placeholderTextColor={iconColor}
-                    value={carForm.color}
-                    onChangeText={(value) => handleInputChange('color', value)}
-                  />
-                </View>
               </View>
             </View>
 

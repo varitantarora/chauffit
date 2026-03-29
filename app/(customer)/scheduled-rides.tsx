@@ -148,7 +148,7 @@ export default function ScheduledRidesScreen() {
   };
 
   const handleScheduleNew = () => {
-    router.push('/(customer)/schedule');
+    router.push({ pathname: '/(customer)/book-ride-new', params: { schedule: 'true' } });
   };
 
   return (

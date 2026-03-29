@@ -251,7 +251,7 @@ export default function CustomerHomeScreen() {
 
   const quickActions = [
     { title: 'Book Now', icon: 'car', action: () => router.push('/(customer)/book-ride-new') },
-    { title: 'Schedule', icon: 'time', action: () => router.push('/(customer)/schedule') },
+    { title: 'Schedule', icon: 'time', action: () => router.push({ pathname: '/(customer)/book-ride-new', params: { schedule: 'true' } }) },
     { title: 'Trips', icon: 'list', action: () => router.push('/(customer)/(tabs)/history') },
     { title: 'Favorites', icon: 'heart', action: () => router.push('/(customer)/(tabs)/favorites') }
   ];

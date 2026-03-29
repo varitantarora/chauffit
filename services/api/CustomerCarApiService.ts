@@ -6,7 +6,7 @@ export interface CustomerCarApi {
   id: string;
   make: string;
   model: string;
-  year: number;
+  year?: number;
   plate: string;
   color: string;
   vehicle_type: CustomerVehicleType;
@@ -20,7 +20,7 @@ export interface CustomerCarApi {
 export interface CustomerCarRequest {
   make: string;
   model: string;
-  year: number;
+  year?: number;
   plate: string;
   color: string;
   vehicle_type: CustomerVehicleType;

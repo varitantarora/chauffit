@@ -58,6 +58,9 @@ interface BookRideParams {
   vehicleId?: string;
   insurancePlanId?: string;
   insurancePremium?: string;
+  schedule?: string;
+  multiStop?: string;
+  tripType?: string;
 }
 
 export default function BookRideScreen() {
@@ -180,6 +183,20 @@ export default function BookRideScreen() {
     }
   }, [params.insurancePlanId, params.insurancePremium]);
 
+  // Handle tripType param - pre-select trip type tab
+  useEffect(() => {
+    if (params.tripType && ['one_way', 'hourly', 'round_trip'].includes(params.tripType)) {
+      setTripType(params.tripType as TripType);
+    }
+  }, [params.tripType]);
+
+  // Handle schedule param - auto-open schedule modal
+  useEffect(() => {
+    if (params.schedule === 'true') {
+      setShowScheduleModal(true);
+    }
+  }, [params.schedule]);
+
   // Handle insurance info from fare estimate response
   useEffect(() => {
     if (fareEstimate?.insurance) {
@@ -208,6 +225,13 @@ export default function BookRideScreen() {
       setIsLoadingAmenities(false);
     })();
   }, [amenitiesEnabled]);
+
+  // Auto-populate pickup with current location on mount
+  useEffect(() => {
+    if (!pickupLocation.address) {
+      handleUseCurrentLocation();
+    }
+  }, []);
 
   // Inline fare calculation (does not open modal)
   const calculateFareInline = useCallback(async () => {
@@ -952,6 +976,7 @@ export default function BookRideScreen() {
                   {([
                     { id: 'one_way' as TripType, label: 'One-way' },
                     { id: 'hourly' as TripType, label: 'Hourly' },
+                    { id: 'round_trip' as TripType, label: 'Round Trip' },
                   ]).map((type) => {
                     const isSelected = tripType === type.id;
                     return (

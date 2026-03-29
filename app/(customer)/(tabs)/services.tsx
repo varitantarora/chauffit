@@ -52,21 +52,21 @@ export default function ServicesScreen() {
       id: 'hourly',
       name: 'Hourly Hire',
       icon: 'time-outline',
-      route: '/(customer)/schedule',
-      params: { bookingType: 'hourly_charter' },
+      route: '/(customer)/book-ride-new',
+      params: { tripType: 'hourly' },
     },
     {
       id: 'round-trip',
       name: 'Round Trip',
       icon: 'repeat-outline',
-      route: '/(customer)/schedule',
-      params: { bookingType: 'hourly_charter' },
+      route: '/(customer)/book-ride-new',
+      params: { tripType: 'round_trip' },
     },
   ];
 
   // Feature buttons with navigation
   const featureButtons = [
-    { id: 'schedule', name: 'Schedule', icon: 'calendar-outline', route: '/(customer)/schedule' },
+    { id: 'schedule', name: 'Schedule', icon: 'calendar-outline', route: '/(customer)/book-ride-new', params: { schedule: 'true' } },
     { id: 'corporate', name: 'Corporate', icon: 'business-outline', route: null },
     ...(amenitiesEnabled ? [{ id: 'amenities', name: 'Amenities', icon: 'cafe-outline', route: null }] : []),
   ];
@@ -135,7 +135,7 @@ if (response.success && response.data) setAds(response.data);
 
   const handleFeaturePress = (feature: typeof featureButtons[0]) => {
     if (feature.route) {
-      router.push(feature.route as any);
+      router.push({ pathname: feature.route as any, params: (feature as any).params || {} });
     } else if (feature.id === 'amenities') {
       setShowAmenitiesModal(true);
     } else if (feature.id === 'corporate') {

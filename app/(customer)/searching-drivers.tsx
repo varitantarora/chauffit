@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { View, Animated, Dimensions, Image, RefreshControl, ActivityIndicator, ScrollView, Alert, TouchableOpacity } from 'react-native';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../components/common/ThemedView';
 import { ThemedText } from '../../components/common/ThemedText';
@@ -289,75 +290,6 @@ export default function SearchingDriversScreen() {
               style={{ flex: 1 }}
             />
 
-            {/* Driver Search Animation - Overlay on Map */}
-            <View className="absolute inset-0 items-center justify-center" pointerEvents="none">
-              <Animated.View
-                className="absolute w-40 h-40 rounded-full border-2 border-burgundy"
-                style={{
-                  opacity: searchRipple1.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.7, 0],
-                  }),
-                  transform: [{
-                    scale: searchRipple1.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.5, 2],
-                    }),
-                  }],
-                }}
-              />
-              <Animated.View
-                className="absolute w-40 h-40 rounded-full border-2 border-secondary"
-                style={{
-                  opacity: searchRipple2.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.5, 0],
-                  }),
-                  transform: [{
-                    scale: searchRipple2.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.5, 2.5],
-                    }),
-                  }],
-                }}
-              />
-              <Animated.View
-                className="absolute w-40 h-40 rounded-full border-2 border-burgundy opacity-30"
-                style={{
-                  opacity: searchRipple3.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.3, 0],
-                  }),
-                  transform: [{
-                    scale: searchRipple3.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.5, 3],
-                    }),
-                  }],
-                }}
-              />
-
-              <Animated.View
-                className="w-16 h-16 bg-white dark:bg-gray-800 rounded-full items-center justify-center shadow-lg border-2 border-burgundy"
-                style={{
-                  transform: [{
-                    scale: pulseAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [1, 1.2],
-                    }),
-                  }],
-                }}
-              >
-                <Image
-                  source={require('../../assets/chauffit-logo.png')}
-                  style={{
-                    width: 32,
-                    height: 32,
-                  }}
-                  resizeMode="contain"
-                />
-              </Animated.View>
-            </View>
           </View>
 
           {/* Bottom - Search Status */}
@@ -377,19 +309,23 @@ export default function SearchingDriversScreen() {
               className="items-center justify-center"
               style={{ opacity: textOpacity }}
             >
-              {/* Status Icon */}
+              {/* Status Icon - Chauffit Logo */}
               <View className="w-20 h-20 bg-secondary/10 rounded-full items-center justify-center mb-6">
                 <Animated.View
                   style={{
                     transform: [{
-                      rotate: pulseAnim.interpolate({
+                      scale: pulseAnim.interpolate({
                         inputRange: [0, 1],
-                        outputRange: ['0deg', '360deg'],
+                        outputRange: [1, 1.15],
                       }),
                     }],
                   }}
                 >
-                  <Ionicons name="search" size={32} color={BrandColors.secondary} />
+                  <Image
+                    source={require('../../assets/chauffit-logo.png')}
+                    style={{ width: 40, height: 40 }}
+                    resizeMode="contain"
+                  />
                 </Animated.View>
               </View>
 

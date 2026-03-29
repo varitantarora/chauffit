@@ -1,53 +1,49 @@
 import React, { useState } from 'react';
-import { TextInput, TouchableOpacity, Alert, View, ScrollView, Modal, FlatList } from 'react-native';
+import { TextInput, TouchableOpacity, Alert, View, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedView } from '../../components/common/ThemedView';
 import { ThemedText } from '../../components/common/ThemedText';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
+import { SearchableDropdown } from '../../components/common/SearchableDropdown';
 import { useAuthStore } from '../../store/authStore';
 import { useCarStore } from '../../store/carStore';
 import { useRouter } from 'expo-router';
 import { BrandColors } from '../../constants/Colors';
+import { CAR_BRANDS, getModelsForBrand } from '../../constants/carBrandsData';
+import { useMemo } from 'react';
 
 export default function CarDetails() {
   const [carForm, setCarForm] = useState({
     make: '',
     model: '',
-    year: '',
     color: '',
     registrationNumber: '',
     transmission: 'automatic' as 'manual' | 'automatic',
   });
   const [loading, setLoading] = useState(false);
-  const [skipStep, setSkipStep] = useState(false);
-  const [showTransmissionDropdown, setShowTransmissionDropdown] = useState(false);
 
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const addCar = useCarStore((state) => state.addCar);
   const router = useRouter();
 
-  const transmissionOptions: { label: string; value: 'manual' | 'automatic' }[] = [
-    { label: 'Automatic', value: 'automatic' },
-    { label: 'Manual', value: 'manual' },
-  ];
-
-  const currentYear = new Date().getFullYear();
+  // Models available based on selected make
+  const availableModels = useMemo(() => getModelsForBrand(carForm.make), [carForm.make]);
 
   const handleInputChange = (field: string, value: string) => {
     setCarForm(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleMakeChange = (value: string) => {
+    // When make changes, reset model
+    setCarForm(prev => ({ ...prev, make: value, model: '' }));
+  };
+
   const handleSaveCar = async () => {
-    const { make, model, year, color, registrationNumber, transmission } = carForm;
+    const { make, model, color, registrationNumber, transmission } = carForm;
 
-    if (!make || !model || !year || !color || !registrationNumber) {
+    if (!make || !model || !color || !registrationNumber) {
       Alert.alert('Error', 'Please fill in all car details');
-      return;
-    }
-
-    if (parseInt(year) < 1990 || parseInt(year) > currentYear + 1) {
-      Alert.alert('Error', 'Please enter a valid year');
       return;
     }
 
@@ -57,7 +53,6 @@ export default function CarDetails() {
       await addCar({
         make,
         model,
-        year: parseInt(year),
         color,
         registrationNumber: registrationNumber.toUpperCase(),
         isDefault: true,
@@ -134,74 +129,41 @@ export default function CarDetails() {
 
           {/* Car Form */}
           <View className="mb-8">
-            {/* Car Make */}
+            {/* Car Make - Searchable Dropdown */}
+            <SearchableDropdown
+              label="Car Make *"
+              placeholder="Select car brand"
+              options={CAR_BRANDS}
+              selectedValue={carForm.make}
+              onSelect={handleMakeChange}
+              iconName="car"
+            />
+
+            {/* Car Model - Searchable Dropdown */}
+            <SearchableDropdown
+              label="Model *"
+              placeholder={carForm.make ? 'Select model' : 'Select car make first'}
+              options={availableModels}
+              selectedValue={carForm.model}
+              onSelect={(value) => handleInputChange('model', value)}
+              iconName="speedometer"
+              disabled={!carForm.make}
+            />
+
+            {/* Color - Full Width */}
             <View className="mb-4">
               <ThemedText variant="small" className="mb-2 font-semibold">
-                Car Make *
+                Color *
               </ThemedText>
               <View className={`flex-row items-center p-4 rounded-xl border ${inputClass}`}>
-                <Ionicons name="car" size={20} color={iconColor} />
+                <Ionicons name="color-palette" size={20} color={iconColor} />
                 <TextInput
                   className="flex-1 ml-3 text-base"
-                  placeholder="Toyota"
+                  placeholder="Black"
                   placeholderTextColor={iconColor}
-                  value={carForm.make}
-                  onChangeText={(value) => handleInputChange('make', value)}
+                  value={carForm.color}
+                  onChangeText={(value) => handleInputChange('color', value)}
                 />
-              </View>
-            </View>
-
-            {/* Car Model */}
-            <View className="mb-4">
-              <ThemedText variant="small" className="mb-2 font-semibold">
-                Model *
-              </ThemedText>
-              <View className={`flex-row items-center p-4 rounded-xl border ${inputClass}`}>
-                <Ionicons name="speedometer" size={20} color={iconColor} />
-                <TextInput
-                  className="flex-1 ml-3 text-base"
-                  placeholder="Fortuner"
-                  placeholderTextColor={iconColor}
-                  value={carForm.model}
-                  onChangeText={(value) => handleInputChange('model', value)}
-                />
-              </View>
-            </View>
-
-            {/* Year and Color Row */}
-            <View className="flex-row mb-4">
-              <View className="flex-1 mr-2">
-                <ThemedText variant="small" className="mb-2 font-semibold">
-                  Year *
-                </ThemedText>
-                <View className={`flex-row items-center p-4 rounded-xl border ${inputClass}`}>
-                  <Ionicons name="calendar" size={20} color={iconColor} />
-                  <TextInput
-                    className="flex-1 ml-3 text-base"
-                    placeholder="2020"
-                    placeholderTextColor={iconColor}
-                    value={carForm.year}
-                    onChangeText={(value) => handleInputChange('year', value)}
-                    keyboardType="numeric"
-                    maxLength={4}
-                  />
-                </View>
-              </View>
-
-              <View className="flex-1 ml-2">
-                <ThemedText variant="small" className="mb-2 font-semibold">
-                  Color *
-                </ThemedText>
-                <View className={`flex-row items-center p-4 rounded-xl border ${inputClass}`}>
-                  <Ionicons name="color-palette" size={20} color={iconColor} />
-                  <TextInput
-                    className="flex-1 ml-3 text-base"
-                    placeholder="Black"
-                    placeholderTextColor={iconColor}
-                    value={carForm.color}
-                    onChangeText={(value) => handleInputChange('color', value)}
-                  />
-                </View>
               </View>
             </View>
 
@@ -223,23 +185,37 @@ export default function CarDetails() {
               </View>
             </View>
 
-            {/* Transmission Dropdown */}
+            {/* Transmission */}
             <View className="mb-6">
               <ThemedText variant="small" className="mb-2 font-semibold">
                 Transmission
               </ThemedText>
-              <TouchableOpacity
-                onPress={() => setShowTransmissionDropdown(true)}
-                className={`flex-row items-center justify-between p-4 rounded-xl border ${inputClass}`}
-              >
-                <View className="flex-row items-center flex-1">
-                  <Ionicons name="settings" size={20} color={iconColor} />
-                  <ThemedText className="ml-3 text-base">
-                    {transmissionOptions.find((o) => o.value === carForm.transmission)?.label || 'Select Transmission'}
-                  </ThemedText>
-                </View>
-                <Ionicons name="chevron-down" size={20} color={iconColor} />
-              </TouchableOpacity>
+              <View className="flex-row">
+                {(['automatic', 'manual'] as const).map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    onPress={() => handleInputChange('transmission', option)}
+                    className={`flex-1 py-3 rounded-xl border items-center ${
+                      option === 'automatic' ? 'mr-2' : 'ml-2'
+                    } ${
+                      carForm.transmission === option
+                        ? 'bg-burgundy border-burgundy'
+                        : 'border-border dark:border-darkBorder'
+                    }`}
+                  >
+                    <Ionicons
+                      name={option === 'automatic' ? 'settings' : 'cog'}
+                      size={20}
+                      color={carForm.transmission === option ? '#FFFFFF' : iconColor}
+                    />
+                    <ThemedText
+                      className={`mt-1 ${carForm.transmission === option ? 'text-white' : ''}`}
+                    >
+                      {option === 'automatic' ? 'Automatic' : 'Manual'}
+                    </ThemedText>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
 
             {/* Info Box */}
@@ -276,53 +252,6 @@ export default function CarDetails() {
           </View>
         </ScrollView>
       </ThemedView>
-
-      {/* Transmission Dropdown Modal */}
-      <Modal
-        visible={showTransmissionDropdown}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowTransmissionDropdown(false)}
-      >
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={() => setShowTransmissionDropdown(false)}
-          className="flex-1 justify-end bg-black/50"
-        >
-          <TouchableOpacity activeOpacity={1} onPress={() => {}}>
-            <View className={`rounded-t-3xl pb-8 ${isDarkMode ? 'bg-darkSurface' : 'bg-white'}`}>
-              <View className="items-center pt-3 pb-4">
-                <View className="w-10 h-1 bg-gray-300 rounded-full" />
-              </View>
-              <ThemedText variant="h3" className="px-6 mb-4">
-                Select Transmission
-              </ThemedText>
-              <FlatList
-                data={transmissionOptions}
-                keyExtractor={(item) => item.value}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    onPress={() => {
-                      handleInputChange('transmission', item.value);
-                      setShowTransmissionDropdown(false);
-                    }}
-                    className={`flex-row items-center justify-between px-6 py-4 ${
-                      carForm.transmission === item.value
-                        ? isDarkMode ? 'bg-burgundy/20' : 'bg-burgundy/10'
-                        : ''
-                    }`}
-                  >
-                    <ThemedText className="text-base">{item.label}</ThemedText>
-                    {carForm.transmission === item.value && (
-                      <Ionicons name="checkmark-circle" size={22} color={BrandColors.burgundy} />
-                    )}
-                  </TouchableOpacity>
-                )}
-              />
-            </View>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
     </SafeAreaView>
   );
 }
