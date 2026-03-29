@@ -26,6 +26,7 @@ export default function CustomerLayout() {
       <Stack.Screen name="user-guides" />
       <Stack.Screen name="submit-request" />
       <Stack.Screen name="request-status" />
+      <Stack.Screen name="favorites" />
       <Stack.Screen name="blog-list" />
       <Stack.Screen name="blog-detail" />
     </Stack>

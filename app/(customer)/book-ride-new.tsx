@@ -1398,59 +1398,96 @@ export default function BookRideScreen() {
 
                   {showBreakdown && fareEstimate.fare_breakdown && (
                     <View className="border-t border-gray-200 dark:border-gray-700 pt-3 mb-2">
-                      <View className="flex-row justify-between mb-1 px-2">
-                        <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Base fare</ThemedText>
-                        <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                          {formatFare(parseFloat(fareEstimate.fare_breakdown.base_fare))}
-                        </ThemedText>
-                      </View>
-                      <View className="flex-row justify-between mb-1 px-2">
-                        <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                          {fareEstimate.fare_breakdown.distance_km
-                            ? `Distance (${parseFloat(fareEstimate.fare_breakdown.distance_km).toFixed(1)} km)`
-                            : 'Distance fare'}
-                        </ThemedText>
-                        <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                          {formatFare(parseFloat(fareEstimate.fare_breakdown.distance_fare))}
-                        </ThemedText>
-                      </View>
-                      {fareEstimate.fare_breakdown.time_fare !== undefined && parseFloat(fareEstimate.fare_breakdown.time_fare) > 0 && (
-                        <View className="flex-row justify-between mb-1 px-2">
-                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                            {fareEstimate.fare_breakdown.duration_minutes && fareEstimate.fare_breakdown.per_min_rate
-                              ? `Time (${parseFloat(fareEstimate.fare_breakdown.duration_minutes).toFixed(0)} min × ₹${fareEstimate.fare_breakdown.per_min_rate}/min)`
-                              : 'Time fare'}
-                          </ThemedText>
-                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                            {formatFare(parseFloat(fareEstimate.fare_breakdown.time_fare))}
-                          </ThemedText>
-                        </View>
-                      )}
-                      {fareEstimate.fare_breakdown.platform_fee !== undefined && parseFloat(fareEstimate.fare_breakdown.platform_fee) > 0 && (
-                        <View className="flex-row justify-between mb-1 px-2">
-                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Platform fee</ThemedText>
-                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                            {formatFare(parseFloat(fareEstimate.fare_breakdown.platform_fee))}
-                          </ThemedText>
-                        </View>
-                      )}
-                      {fareEstimate.surge_multiplier !== undefined && fareEstimate.surge_multiplier > 1 && fareEstimate.fare_breakdown.surge_amount !== undefined && (
-                        <View className="flex-row justify-between mb-1 px-2">
-                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                            Surge x{fareEstimate.surge_multiplier.toFixed(2)}
-                          </ThemedText>
-                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                            {formatFare(parseFloat(fareEstimate.fare_breakdown.surge_amount))}
-                          </ThemedText>
-                        </View>
-                      )}
-                      {fareEstimate.fare_breakdown.gst_amount !== undefined && parseFloat(fareEstimate.fare_breakdown.gst_amount) > 0 && (
-                        <View className="flex-row justify-between mb-1 px-2">
-                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">GST</ThemedText>
-                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                            {formatFare(parseFloat(fareEstimate.fare_breakdown.gst_amount))}
-                          </ThemedText>
-                        </View>
+                      {tripType === 'hourly' ? (
+                        <>
+                          <View className="flex-row justify-between mb-1 px-2">
+                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                              Fare ({fareEstimate.pricing_factors?.hours_booked ?? hourlyHours} hrs)
+                            </ThemedText>
+                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                              {formatFare(parseFloat(fareEstimate.fare_breakdown.hourly_fare ?? fareEstimate.fare_breakdown.subtotal ?? fareEstimate.fare_breakdown.base_fare))}
+                            </ThemedText>
+                          </View>
+                          <View className="flex-row justify-between mb-1 px-2">
+                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                              {fareEstimate.surge_multiplier != null && fareEstimate.surge_multiplier > 1
+                                ? `Surge x${fareEstimate.surge_multiplier.toFixed(2)}`
+                                : 'Surge'}
+                            </ThemedText>
+                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                              {formatFare(parseFloat(fareEstimate.fare_breakdown.surge_amount ?? '0'))}
+                            </ThemedText>
+                          </View>
+                          <View className="flex-row justify-between mb-1 px-2">
+                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Platform Fee</ThemedText>
+                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                              {formatFare(parseFloat(fareEstimate.fare_breakdown.platform_fee ?? '0'))}
+                            </ThemedText>
+                          </View>
+                          <View className="flex-row justify-between mb-1 px-2">
+                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">GST</ThemedText>
+                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                              {formatFare(parseFloat(fareEstimate.fare_breakdown.gst_amount ?? '0'))}
+                            </ThemedText>
+                          </View>
+                        </>
+                      ) : (
+                        <>
+                          <View className="flex-row justify-between mb-1 px-2">
+                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Base fare</ThemedText>
+                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                              {formatFare(parseFloat(fareEstimate.fare_breakdown.base_fare))}
+                            </ThemedText>
+                          </View>
+                          <View className="flex-row justify-between mb-1 px-2">
+                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                              {fareEstimate.fare_breakdown.distance_km
+                                ? `Distance (${parseFloat(fareEstimate.fare_breakdown.distance_km).toFixed(1)} km)`
+                                : 'Distance fare'}
+                            </ThemedText>
+                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                              {formatFare(parseFloat(fareEstimate.fare_breakdown.distance_fare))}
+                            </ThemedText>
+                          </View>
+                          {fareEstimate.fare_breakdown.time_fare !== undefined && parseFloat(fareEstimate.fare_breakdown.time_fare) > 0 && (
+                            <View className="flex-row justify-between mb-1 px-2">
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                {fareEstimate.fare_breakdown.duration_minutes && fareEstimate.fare_breakdown.per_min_rate
+                                  ? `Time (${parseFloat(fareEstimate.fare_breakdown.duration_minutes).toFixed(0)} min × ₹${fareEstimate.fare_breakdown.per_min_rate}/min)`
+                                  : 'Time fare'}
+                              </ThemedText>
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                {formatFare(parseFloat(fareEstimate.fare_breakdown.time_fare))}
+                              </ThemedText>
+                            </View>
+                          )}
+                          {fareEstimate.fare_breakdown.platform_fee !== undefined && parseFloat(fareEstimate.fare_breakdown.platform_fee) > 0 && (
+                            <View className="flex-row justify-between mb-1 px-2">
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Platform fee</ThemedText>
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                {formatFare(parseFloat(fareEstimate.fare_breakdown.platform_fee))}
+                              </ThemedText>
+                            </View>
+                          )}
+                          {fareEstimate.surge_multiplier !== undefined && fareEstimate.surge_multiplier > 1 && fareEstimate.fare_breakdown.surge_amount !== undefined && (
+                            <View className="flex-row justify-between mb-1 px-2">
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                Surge x{fareEstimate.surge_multiplier.toFixed(2)}
+                              </ThemedText>
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                {formatFare(parseFloat(fareEstimate.fare_breakdown.surge_amount))}
+                              </ThemedText>
+                            </View>
+                          )}
+                          {fareEstimate.fare_breakdown.gst_amount !== undefined && parseFloat(fareEstimate.fare_breakdown.gst_amount) > 0 && (
+                            <View className="flex-row justify-between mb-1 px-2">
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">GST</ThemedText>
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                {formatFare(parseFloat(fareEstimate.fare_breakdown.gst_amount))}
+                              </ThemedText>
+                            </View>
+                          )}
+                        </>
                       )}
                       {fareEstimate.fare_breakdown.insurance_premium !== undefined && parseFloat(fareEstimate.fare_breakdown.insurance_premium) > 0 && (
                         <View className="flex-row justify-between mb-1 px-2">
@@ -1735,59 +1772,96 @@ export default function BookRideScreen() {
                       </View>
                       {fareEstimate.fare_breakdown && (
                         <>
-                          <View className="flex-row justify-between mb-1 px-2">
-                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Base fare</ThemedText>
-                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                              {formatFare(parseFloat(fareEstimate.fare_breakdown.base_fare))}
-                            </ThemedText>
-                          </View>
-                          <View className="flex-row justify-between mb-1 px-2">
-                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                              {fareEstimate.fare_breakdown.distance_km
-                                ? `Distance (${parseFloat(fareEstimate.fare_breakdown.distance_km).toFixed(1)} km)`
-                                : 'Distance fare'}
-                            </ThemedText>
-                            <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                              {formatFare(parseFloat(fareEstimate.fare_breakdown.distance_fare))}
-                            </ThemedText>
-                          </View>
-                          {fareEstimate.fare_breakdown.time_fare !== undefined && parseFloat(fareEstimate.fare_breakdown.time_fare) > 0 && (
-                            <View className="flex-row justify-between mb-1 px-2">
-                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                                {fareEstimate.fare_breakdown.duration_minutes && fareEstimate.fare_breakdown.per_min_rate
-                                  ? `Time (${parseFloat(fareEstimate.fare_breakdown.duration_minutes).toFixed(0)} min × ₹${fareEstimate.fare_breakdown.per_min_rate}/min)`
-                                  : 'Time fare'}
-                              </ThemedText>
-                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                                {formatFare(parseFloat(fareEstimate.fare_breakdown.time_fare))}
-                              </ThemedText>
-                            </View>
-                          )}
-                          {fareEstimate.fare_breakdown.platform_fee !== undefined && parseFloat(fareEstimate.fare_breakdown.platform_fee) > 0 && (
-                            <View className="flex-row justify-between mb-1 px-2">
-                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Platform fee</ThemedText>
-                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                                {formatFare(parseFloat(fareEstimate.fare_breakdown.platform_fee))}
-                              </ThemedText>
-                            </View>
-                          )}
-                          {fareEstimate.surge_multiplier !== undefined && fareEstimate.surge_multiplier > 1 && fareEstimate.fare_breakdown.surge_amount !== undefined && (
-                            <View className="flex-row justify-between mb-1 px-2">
-                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                                Surge x{fareEstimate.surge_multiplier.toFixed(2)}
-                              </ThemedText>
-                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                                {formatFare(parseFloat(fareEstimate.fare_breakdown.surge_amount))}
-                              </ThemedText>
-                            </View>
-                          )}
-                          {fareEstimate.fare_breakdown.gst_amount !== undefined && parseFloat(fareEstimate.fare_breakdown.gst_amount) > 0 && (
-                            <View className="flex-row justify-between mb-1 px-2">
-                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">GST</ThemedText>
-                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
-                                {formatFare(parseFloat(fareEstimate.fare_breakdown.gst_amount))}
-                              </ThemedText>
-                            </View>
+                          {tripType === 'hourly' ? (
+                            <>
+                              <View className="flex-row justify-between mb-1 px-2">
+                                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                  Fare ({fareEstimate.pricing_factors?.hours_booked ?? hourlyHours} hrs)
+                                </ThemedText>
+                                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                  {formatFare(parseFloat(fareEstimate.fare_breakdown.hourly_fare ?? fareEstimate.fare_breakdown.subtotal ?? fareEstimate.fare_breakdown.base_fare))}
+                                </ThemedText>
+                              </View>
+                              <View className="flex-row justify-between mb-1 px-2">
+                                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                  {fareEstimate.surge_multiplier != null && fareEstimate.surge_multiplier > 1
+                                    ? `Surge x${fareEstimate.surge_multiplier.toFixed(2)}`
+                                    : 'Surge'}
+                                </ThemedText>
+                                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                  {formatFare(parseFloat(fareEstimate.fare_breakdown.surge_amount ?? '0'))}
+                                </ThemedText>
+                              </View>
+                              <View className="flex-row justify-between mb-1 px-2">
+                                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Platform Fee</ThemedText>
+                                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                  {formatFare(parseFloat(fareEstimate.fare_breakdown.platform_fee ?? '0'))}
+                                </ThemedText>
+                              </View>
+                              <View className="flex-row justify-between mb-1 px-2">
+                                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">GST</ThemedText>
+                                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                  {formatFare(parseFloat(fareEstimate.fare_breakdown.gst_amount ?? '0'))}
+                                </ThemedText>
+                              </View>
+                            </>
+                          ) : (
+                            <>
+                              <View className="flex-row justify-between mb-1 px-2">
+                                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Base fare</ThemedText>
+                                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                  {formatFare(parseFloat(fareEstimate.fare_breakdown.base_fare))}
+                                </ThemedText>
+                              </View>
+                              <View className="flex-row justify-between mb-1 px-2">
+                                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                  {fareEstimate.fare_breakdown.distance_km
+                                    ? `Distance (${parseFloat(fareEstimate.fare_breakdown.distance_km).toFixed(1)} km)`
+                                    : 'Distance fare'}
+                                </ThemedText>
+                                <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                  {formatFare(parseFloat(fareEstimate.fare_breakdown.distance_fare))}
+                                </ThemedText>
+                              </View>
+                              {fareEstimate.fare_breakdown.time_fare !== undefined && parseFloat(fareEstimate.fare_breakdown.time_fare) > 0 && (
+                                <View className="flex-row justify-between mb-1 px-2">
+                                  <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                    {fareEstimate.fare_breakdown.duration_minutes && fareEstimate.fare_breakdown.per_min_rate
+                                      ? `Time (${parseFloat(fareEstimate.fare_breakdown.duration_minutes).toFixed(0)} min × ₹${fareEstimate.fare_breakdown.per_min_rate}/min)`
+                                      : 'Time fare'}
+                                  </ThemedText>
+                                  <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                    {formatFare(parseFloat(fareEstimate.fare_breakdown.time_fare))}
+                                  </ThemedText>
+                                </View>
+                              )}
+                              {fareEstimate.fare_breakdown.platform_fee !== undefined && parseFloat(fareEstimate.fare_breakdown.platform_fee) > 0 && (
+                                <View className="flex-row justify-between mb-1 px-2">
+                                  <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Platform fee</ThemedText>
+                                  <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                    {formatFare(parseFloat(fareEstimate.fare_breakdown.platform_fee))}
+                                  </ThemedText>
+                                </View>
+                              )}
+                              {fareEstimate.surge_multiplier !== undefined && fareEstimate.surge_multiplier > 1 && fareEstimate.fare_breakdown.surge_amount !== undefined && (
+                                <View className="flex-row justify-between mb-1 px-2">
+                                  <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                    Surge x{fareEstimate.surge_multiplier.toFixed(2)}
+                                  </ThemedText>
+                                  <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                    {formatFare(parseFloat(fareEstimate.fare_breakdown.surge_amount))}
+                                  </ThemedText>
+                                </View>
+                              )}
+                              {fareEstimate.fare_breakdown.gst_amount !== undefined && parseFloat(fareEstimate.fare_breakdown.gst_amount) > 0 && (
+                                <View className="flex-row justify-between mb-1 px-2">
+                                  <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">GST</ThemedText>
+                                  <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                    {formatFare(parseFloat(fareEstimate.fare_breakdown.gst_amount))}
+                                  </ThemedText>
+                                </View>
+                              )}
+                            </>
                           )}
                           {fareEstimate.fare_breakdown.insurance_premium !== undefined && parseFloat(fareEstimate.fare_breakdown.insurance_premium) > 0 && (
                             <View className="flex-row justify-between mb-1 px-2">

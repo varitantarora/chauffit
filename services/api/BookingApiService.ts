@@ -244,6 +244,7 @@ export interface FareEstimateResponse {
     base_fare: string;
     distance_fare: string;
     time_fare?: string;
+    hourly_fare?: string;
     platform_fee?: string;
     gst_amount?: string;
     biker_transport_fee?: string;
@@ -488,9 +489,15 @@ class BookingApiService {
 
         if (!d.fare_breakdown && d.breakdown) {
           const b = d.breakdown;
+          console.log('[FareEstimate] Raw breakdown:', JSON.stringify(b));
+          console.log('[FareEstimate] Trip type:', d.trip_type, 'pricing_factors:', JSON.stringify(d.pricing_factors));
+
           const surgeAmount = (b.ride_subtotal_with_surge != null && b.ride_subtotal != null)
             ? b.ride_subtotal_with_surge - b.ride_subtotal
             : (b.surge_amount != null ? b.surge_amount : undefined);
+
+          // For hourly trips, capture the combined fare (before surge/fees)
+          const hourlyFare = b.hourly_fare ?? b.ride_fare ?? b.ride_subtotal ?? null;
 
           d.fare_breakdown = {
             base_fare: String(b.base_fare ?? 0),
@@ -500,6 +507,7 @@ class BookingApiService {
             time_fare: b.per_min_fare != null ? String(b.per_min_fare) : (b.time_fare != null ? String(b.time_fare) : undefined),
             per_min_rate: b.per_min_rate != null ? String(b.per_min_rate) : undefined,
             duration_minutes: b.duration_minutes != null ? String(b.duration_minutes) : undefined,
+            hourly_fare: hourlyFare != null ? String(hourlyFare) : undefined,
             platform_fee: b.platform_fee != null ? String(b.platform_fee) : undefined,
             gst_amount: b.gst_amount != null ? String(b.gst_amount) : undefined,
             surge_amount: surgeAmount != null ? String(surgeAmount) : undefined,
