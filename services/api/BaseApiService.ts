@@ -5,6 +5,7 @@ export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   error?: string;
+  errorCode?: string;
   message?: string;
   errors?: Record<string, string[]>;
 }
@@ -305,6 +306,7 @@ class BaseApiService {
           return {
             success: false,
             error: data.error?.message || data.errormessage || data.detail || 'Request failed',
+            errorCode: data.error?.code || undefined,
             errors: data.error?.details || data.errors || data,
             message: data.message,
           };

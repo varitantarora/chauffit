@@ -102,7 +102,7 @@ export function TaskCard({
               </View>
               <View className="flex-1">
                 <View className="flex-row items-center mb-1">
-                  <ThemedText className="font-semibold mr-2">{task.title}</ThemedText>
+                  <ThemedText className="font-semibold mr-2 flex-1" numberOfLines={1}>{task.title}</ThemedText>
                   <PriorityBadge priority={task.priority} size="small" />
                 </View>
                 <ThemedText variant="caption" className="text-textSecondary dark:text-darkTextSecondary">
@@ -110,7 +110,7 @@ export function TaskCard({
                 </ThemedText>
               </View>
             </View>
-            <ThemedText className="font-bold text-primary text-lg">
+            <ThemedText className="font-bold text-burgundy text-lg ml-3">
               ₹{totalFare}
             </ThemedText>
           </View>
@@ -135,7 +135,7 @@ export function TaskCard({
             )}
           </View>
           <View className="items-end">
-            <ThemedText className="font-bold text-primary text-xl">
+            <ThemedText className="font-bold text-burgundy text-xl">
               ₹{totalFare}
             </ThemedText>
             {task.emergencyBonus && (

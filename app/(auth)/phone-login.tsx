@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TextInput, TouchableOpacity, Alert, View, SafeAreaView, Text, Image, Platform } from 'react-native';
+import { TextInput, TouchableOpacity, Alert, View, SafeAreaView, Text, Image, Platform, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedView } from '../../components/common/ThemedView';
 import { ThemedText } from '../../components/common/ThemedText';
@@ -86,7 +86,9 @@ export default function PhoneLogin() {
           }
         });
       } else {
-        if (response.error?.includes('No account found')) {
+        if (response.errorCode === 'ACCOUNT_DELETED') {
+          Alert.alert('Account Deleted', response.error || 'Your account was previously deleted. Please contact customer support.');
+        } else if (response.error?.includes('No account found')) {
           router.push({
             pathname: '/(auth)/signup',
             params: { phoneNumber: phoneNumber },
@@ -275,7 +277,8 @@ export default function PhoneLogin() {
         {/* Help Text */}
         <View className="mt-8 px-4">
           <ThemedText variant="tiny" className="text-center text-textSecondary dark:text-darkTextSecondary leading-5">
-            {t.termsText}
+            By continuing, you agree to our Terms of Service and{' '}
+            <Text className="text-burgundy" onPress={() => Linking.openURL('https://chauffit.in/chauffit-privacy')}>Privacy Policy</Text>
           </ThemedText>
         </View>
       </ThemedView>

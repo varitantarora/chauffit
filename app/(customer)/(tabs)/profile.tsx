@@ -442,6 +442,14 @@ export default function Profile() {
               onPress={handleLogout}
               variant="outline"
             />
+
+            <TouchableOpacity
+              onPress={() => router.push('/(auth)/delete-account')}
+              className="mt-4 py-3 items-center"
+              activeOpacity={0.7}
+            >
+              <ThemedText className="text-red-500 font-semibold text-sm">Delete Account</ThemedText>
+            </TouchableOpacity>
           </View>
           
           {/* Bottom Spacing */}

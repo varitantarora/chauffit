@@ -276,14 +276,23 @@ export default function EarningsScreen() {
                 <TouchableOpacity
                   key={period}
                   onPress={() => setSelectedPeriod(period)}
-                  className={`flex-1 py-3 rounded-lg ${selectedPeriod === period
-                      ? 'bg-burgundy'
-                      : 'border border-border dark:border-darkBorder'
-                    }`}
+                  style={[
+                    {
+                      flex: 1,
+                      paddingVertical: 12,
+                      borderRadius: 8,
+                    },
+                    selectedPeriod === period
+                      ? { backgroundColor: BrandColors.burgundy }
+                      : { borderWidth: 1, borderColor: '#e5e5e5' },
+                  ]}
                 >
                   <ThemedText
-                    className={`text-center font-semibold ${selectedPeriod === period ? 'text-white' : 'text-textPrimary dark:text-darkTextPrimary'
-                      }`}
+                    style={{
+                      textAlign: 'center',
+                      fontWeight: '600',
+                      color: selectedPeriod === period ? '#ffffff' : undefined,
+                    }}
                   >
                     {t(period as 'daily' | 'weekly' | 'monthly')}
                   </ThemedText>

@@ -473,10 +473,10 @@ export default function RideSearchScreen() {
             pickup: pickupLocation.address,
             destination: dropLocation.address,
             fare: String(fareEstimate.estimated_fare),
-            pickupLat: pickupLocation.latitude.toString(),
-            pickupLng: pickupLocation.longitude.toString(),
-            dropLat: dropLocation.latitude.toString(),
-            dropLng: dropLocation.longitude.toString(),
+            pickupLat: pickupLocation.latitude.toFixed(6),
+            pickupLng: pickupLocation.longitude.toFixed(6),
+            dropLat: dropLocation.latitude.toFixed(6),
+            dropLng: dropLocation.longitude.toFixed(6),
           },
         });
       } else {
@@ -522,6 +522,7 @@ export default function RideSearchScreen() {
       rows.push({ label: `Surge x${fareEstimate.surge_multiplier.toFixed(2)}`, value: fmt(bd.surge_amount)! });
     }
     if (fmt(bd.insurance_premium)) rows.push({ label: 'Insurance', value: fmt(bd.insurance_premium)! });
+    if (fmt(bd.relocation_fee)) rows.push({ label: 'Driver relocation fee', value: fmt(bd.relocation_fee)! });
 
     const taxPlatformFee = Number(bd.platform_fee ?? 0);
     const taxGst = Number(bd.gst_amount ?? 0);

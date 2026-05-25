@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Text, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -222,7 +222,8 @@ export default function DriverLoginScreen() {
             {/* Footer */}
             <View className="mt-8 items-center">
               <ThemedText variant="caption" className="text-secondary text-center">
-                By continuing, you agree to our Terms & Privacy Policy
+                By continuing, you agree to our Terms &{' '}
+                <Text className="text-burgundy" onPress={() => Linking.openURL('https://chauffit.in/chauffit-privacy')}>Privacy Policy</Text>
               </ThemedText>
             </View>
           </View>

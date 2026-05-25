@@ -49,3 +49,4 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+android/app/chauffit-release.keystore

@@ -749,10 +749,10 @@ export default function BookRideScreen() {
         pickup: pickupLocation.address,
         destination: dropLocation!.address,
         fare: String(fareEstimate?.estimated_fare ?? 0),
-        pickupLat: pickupLocation.latitude.toString(),
-        pickupLng: pickupLocation.longitude.toString(),
-        dropLat: dropLocation!.latitude.toString(),
-        dropLng: dropLocation!.longitude.toString(),
+        pickupLat: pickupLocation.latitude.toFixed(6),
+        pickupLng: pickupLocation.longitude.toFixed(6),
+        dropLat: dropLocation!.latitude.toFixed(6),
+        dropLng: dropLocation!.longitude.toFixed(6),
         creditsApplied: creditsApplied.toString(),
         loyaltyDiscountPct: String(loyaltyProfile?.discount_percentage ?? 0),
       },
@@ -1453,6 +1453,14 @@ export default function BookRideScreen() {
                             variant="nativewind-tiny"
                             className="px-2"
                           />
+                          {fareEstimate.fare_breakdown.relocation_fee !== undefined && parseFloat(fareEstimate.fare_breakdown.relocation_fee) > 0 && (
+                            <View className="flex-row justify-between mb-1 px-2">
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Driver relocation fee</ThemedText>
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                {formatFare(parseFloat(fareEstimate.fare_breakdown.relocation_fee))}
+                              </ThemedText>
+                            </View>
+                          )}
                         </>
                       ) : (
                         <>
@@ -1509,6 +1517,14 @@ export default function BookRideScreen() {
                           <ThemedText variant="tiny" className="text-green-600">Insurance Premium</ThemedText>
                           <ThemedText variant="tiny" className="text-green-600">
                             {formatFare(parseFloat(fareEstimate.fare_breakdown.insurance_premium))}
+                          </ThemedText>
+                        </View>
+                      )}
+                      {fareEstimate.fare_breakdown.relocation_fee !== undefined && parseFloat(fareEstimate.fare_breakdown.relocation_fee) > 0 && (
+                        <View className="flex-row justify-between mb-1 px-2">
+                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Driver relocation fee</ThemedText>
+                          <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                            {formatFare(parseFloat(fareEstimate.fare_breakdown.relocation_fee))}
                           </ThemedText>
                         </View>
                       )}
@@ -1816,6 +1832,14 @@ export default function BookRideScreen() {
                                 variant="nativewind-tiny"
                                 className="px-2"
                               />
+                              {fareEstimate.fare_breakdown.relocation_fee !== undefined && parseFloat(fareEstimate.fare_breakdown.relocation_fee) > 0 && (
+                                <View className="flex-row justify-between mb-1 px-2">
+                                  <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Driver relocation fee</ThemedText>
+                                  <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                    {formatFare(parseFloat(fareEstimate.fare_breakdown.relocation_fee))}
+                                  </ThemedText>
+                                </View>
+                              )}
                             </>
                           ) : (
                             <>
@@ -1872,6 +1896,14 @@ export default function BookRideScreen() {
                               <ThemedText variant="tiny" className="text-green-600">Insurance Premium</ThemedText>
                               <ThemedText variant="tiny" className="text-green-600">
                                 {formatFare(parseFloat(fareEstimate.fare_breakdown.insurance_premium))}
+                              </ThemedText>
+                            </View>
+                          )}
+                          {fareEstimate.fare_breakdown.relocation_fee !== undefined && parseFloat(fareEstimate.fare_breakdown.relocation_fee) > 0 && (
+                            <View className="flex-row justify-between mb-1 px-2">
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">Driver relocation fee</ThemedText>
+                              <ThemedText variant="tiny" className="text-textSecondary dark:text-darkTextSecondary">
+                                {formatFare(parseFloat(fareEstimate.fare_breakdown.relocation_fee))}
                               </ThemedText>
                             </View>
                           )}

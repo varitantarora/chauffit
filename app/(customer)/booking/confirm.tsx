@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TouchableOpacity, View, ScrollView, Alert, Image } from 'react-native';
+import { TouchableOpacity, View, ScrollView, Alert, Image, Text, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedView } from '../../../components/common/ThemedView';
@@ -358,7 +358,8 @@ export default function ConfirmBooking() {
           
           <View className="mt-4">
             <ThemedText variant="tiny" className="text-center text-textSecondary dark:text-darkTextSecondary leading-4">
-              By confirming, you agree to our Terms of Service and Privacy Policy. 
+              By confirming, you agree to our Terms of Service and{' '}
+              <Text className="text-burgundy" onPress={() => Linking.openURL('https://chauffit.in/chauffit-privacy')}>Privacy Policy</Text>.{' '}
               Cancellation charges may apply.
             </ThemedText>
           </View>

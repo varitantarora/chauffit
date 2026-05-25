@@ -212,6 +212,7 @@ export interface FareEstimateRequest {
   to_long: number;
   to_address?: string;
   type: TripType;
+  service_tier?: 'STANDARD' | 'EXECUTIVE';
   when?: 'now' | 'schedule';
   scheduled_at?: string | null;
   hours?: number | null;
@@ -251,6 +252,7 @@ export interface FareEstimateResponse {
     biker_transport_fee?: string;
     surge_amount?: string;
     insurance_premium?: string;
+    relocation_fee?: string;
     subtotal?: string;
     total?: string;
     per_km_rate?: string;
@@ -260,12 +262,22 @@ export interface FareEstimateResponse {
   };
   breakdown?: Record<string, any>;
   route?: { distance_km: number; duration_minutes: number; total_distance_km?: number; total_duration_minutes?: number };
-  trip?: { type: string; vehicle_segment: string; when: string; scheduled_at?: string | null };
-  pricing_factors?: { surge_active: boolean; surge_multiplier: number; is_night_surcharge: boolean; hours_booked?: number; multi_stop_discount_pct?: number };
+  trip?: { type: string; vehicle_segment: string; service_tier?: string; when: string; scheduled_at?: string | null };
+  pricing_factors?: {
+    surge_active: boolean;
+    surge_multiplier: number;
+    is_night_surcharge: boolean;
+    hours_booked?: number;
+    num_stops?: number;
+    stop_fee_per_stop?: number;
+    overtime_per_min?: number;
+    multi_stop_discount_pct?: number;
+  };
   estimate?: { total_fare: number; currency: string; fare_range?: { min: number; max: number } };
   amenities?: any[];
   trip_type?: string;
   vehicle_segment?: string;
+  service_tier?: string;
   is_night?: boolean;
   multi_stop_discount_pct?: number;
   total_distance_km?: number;
@@ -514,6 +526,7 @@ class BookingApiService {
             small_distance_fee: b.small_distance_fee != null ? String(b.small_distance_fee) : undefined,
             surge_amount: surgeAmount != null ? String(surgeAmount) : undefined,
             insurance_premium: d.insurance?.premium_amount != null ? String(d.insurance.premium_amount) : (b.insurance_premium != null ? String(b.insurance_premium) : undefined),
+            relocation_fee: b.relocation_fee != null && b.relocation_fee > 0 ? String(b.relocation_fee) : undefined,
             subtotal: b.ride_subtotal != null ? String(b.ride_subtotal) : (b.subtotal != null ? String(b.subtotal) : undefined),
             total: String(b.total ?? b.total_fare ?? 0),
           };

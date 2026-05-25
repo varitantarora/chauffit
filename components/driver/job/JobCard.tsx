@@ -171,7 +171,7 @@ export function JobCard({ job, onAccept, onDecline, onViewDetails, processing = 
               <ThemedText variant="title" className="text-lg font-bold ml-2 capitalize">
                 {serviceType === 'airport' ? 'Airport Transfer' :
                   serviceType === 'outstation' ? 'Outstation Trip' :
-                    serviceType === 'hourly' ? 'Hourly Service' : 'Point to Point'}
+                    serviceType === 'hourly' ? 'Hourly' : 'One Sided'}
               </ThemedText>
               {isCompletedJob && (
                 <View className="bg-success/20 px-2 py-0.5 rounded ml-2">

@@ -124,8 +124,8 @@ export default function OTPCompleteRideScreen() {
       const location = await getCurrentLocation();
 
       const success = await completeRideFromAPI(activeJob.id, {
-        dropoff_lat: location?.latitude?.toString() || '0',
-        dropoff_long: location?.longitude?.toString() || '0',
+        dropoff_lat: location?.latitude?.toFixed(6) || '0',
+        dropoff_long: location?.longitude?.toFixed(6) || '0',
         actual_distance_km: 0,
         actual_duration_minutes: 0,
         otp: otpString,

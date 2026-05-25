@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, TextInput, TouchableOpacity, Alert, ScrollView, KeyboardAvoidingView, Platform, Text, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -226,7 +226,7 @@ export default function BikerRegistrationScreen() {
                   </View>
                   <ThemedText variant="small" className="flex-1">
                     I agree to the <ThemedText className="text-burgundy">Terms of Service</ThemedText> and{' '}
-                    <ThemedText className="text-burgundy">Privacy Policy</ThemedText>
+                    <Text className="text-burgundy" onPress={() => Linking.openURL('https://chauffit.in/chauffit-privacy')}>Privacy Policy</Text>
                   </ThemedText>
                 </TouchableOpacity>
 

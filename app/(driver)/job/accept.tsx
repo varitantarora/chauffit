@@ -221,14 +221,14 @@ export default function JobAcceptScreen() {
         return {
           icon: 'time',
           color: '#f59e0b',
-          title: 'Hourly Service',
+          title: 'Hourly',
           description: 'Dedicated chauffeur service by the hour'
         };
       default:
         return {
           icon: 'location',
           color: '#10b981',
-          title: 'Point to Point',
+          title: 'One Sided',
           description: 'Direct pickup to destination service'
         };
     }
@@ -519,19 +519,15 @@ export default function JobAcceptScreen() {
                       {formatMoneyWithSign(platformFee, '-')}
                     </ThemedText>
                   </View>
-                  <View className="flex-row justify-between mb-2">
-                    <ThemedText>Tips:</ThemedText>
-                    <ThemedText>
-                      {formatMoneyWithSign(tipAmount, '+')}
-                    </ThemedText>
-                  </View>
-                  <View className="flex-row justify-between mb-2">
-                    <ThemedText>Bonus:</ThemedText>
-                    <ThemedText>
-                      {formatMoneyWithSign(bonusAmount, '+')}
-                    </ThemedText>
-                  </View>
-                  {otherFees.map((fee: any, index: number) => {
+                  {tipAmount !== null && tipAmount > 0 && (
+                    <View className="flex-row justify-between mb-2">
+                      <ThemedText>Tips:</ThemedText>
+                      <ThemedText>
+                        {formatMoneyWithSign(tipAmount, '+')}
+                      </ThemedText>
+                    </View>
+                  )}
+                  {otherFees.filter((fee: any) => fee?.label?.toLowerCase() !== 'toll').map((fee: any, index: number) => {
                     const feeAmount = toNumber(fee?.amount);
                     const sign: '+' | '-' = fee?.direction === 'plus' ? '+' : '-';
                     return (

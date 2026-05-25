@@ -6,6 +6,7 @@ interface BookingState {
   // Current booking flow data
   currentBooking: Partial<BookingDetails> | null;
   selectedDuration: string;
+  selectedServiceTier: 'STANDARD' | 'EXECUTIVE';
   selectedChauffeur: Chauffeur | null;
   selectedPaymentMethod: PaymentMethod | null;
   selectedInsurancePlan: InsurancePlan | null;
@@ -29,6 +30,7 @@ interface BookingState {
   setCurrentBooking: (booking: Partial<BookingDetails>) => void;
   updateBookingDetails: (updates: Partial<BookingDetails>) => void;
   setSelectedDuration: (duration: string) => void;
+  setSelectedServiceTier: (tier: 'STANDARD' | 'EXECUTIVE') => void;
   setSelectedChauffeur: (chauffeur: Chauffeur | null) => void;
   setSelectedPaymentMethod: (method: PaymentMethod | null) => void;
   setSelectedInsurancePlan: (plan: InsurancePlan | null) => void;
@@ -297,6 +299,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   // Initial state with demo data
   currentBooking: null,
   selectedDuration: '',
+  selectedServiceTier: 'STANDARD',
   selectedChauffeur: null,
   selectedPaymentMethod: null,
   selectedInsurancePlan: null,
@@ -316,7 +319,9 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   })),
   
   setSelectedDuration: (duration) => set({ selectedDuration: duration }),
-  
+
+  setSelectedServiceTier: (tier) => set({ selectedServiceTier: tier }),
+
   setSelectedChauffeur: (chauffeur) => set({ selectedChauffeur: chauffeur }),
   
   setSelectedPaymentMethod: (method) => set({ selectedPaymentMethod: method }),
@@ -439,6 +444,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   resetBookingFlow: () => set({
     currentBooking: null,
     selectedDuration: '',
+    selectedServiceTier: 'STANDARD',
     selectedChauffeur: null,
     selectedPaymentMethod: null,
     selectedInsurancePlan: null,

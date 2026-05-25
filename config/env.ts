@@ -77,7 +77,7 @@ const defaultConfig: AppConfig = {
   // App Configuration
   appEnvironment: (process.env.EXPO_PUBLIC_APP_ENV as 'development' | 'staging' | 'production') || 'development',
   appVersion: process.env.EXPO_PUBLIC_APP_VERSION || '1.0.0',
-  apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL || 'http://16.112.161.95/api/v1',
+  apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL || 'http://54.234.146.195/api/v1',
   
   // Indian Market Specific
   upiEnabled: process.env.EXPO_PUBLIC_UPI_ENABLED === 'true',
@@ -109,7 +109,7 @@ const defaultConfig: AppConfig = {
 // Environment-specific configurations
 const environmentConfigs = {
   development: {
-    apiBaseUrl: 'http://16.112.161.95/api/v1',
+    apiBaseUrl: 'http://54.234.146.195/api/v1',
     features: {
       ...defaultConfig.features,
       // Enable all features in development

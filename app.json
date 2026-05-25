@@ -3,38 +3,50 @@
     "scheme": "chauffit",
     "name": "Chauffit",
     "slug": "chauffit-main",
-    "version": "1.0.0",
+    "version": "1.0.4",
     "orientation": "portrait",
-    "icon": "./assets/chauffit-logo.png",
+    "icon": "./assets/app-icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": false,
     "splash": {
-      "image": "./assets/chauffit-logo.png",
+      "image": "./assets/app-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#D9D1C6"
+      "backgroundColor": "#720C17"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.chauffit.app"
+      "bundleIdentifier": "com.chauffit.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Chauffit needs your location to find nearby drivers and show your position on the map.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Chauffit needs background location access to track your ride and provide real-time updates.",
+        "NSCameraUsageDescription": "Chauffit needs camera access to capture document photos for verification.",
+        "NSPhotoLibraryUsageDescription": "Chauffit needs photo library access to upload document images for verification."
+      }
     },
     "android": {
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/chauffit-logo.png",
-        "backgroundColor": "#D9D1C6"
+        "foregroundImage": "./assets/app-icon.png",
+        "backgroundColor": "#720C17"
       },
       "package": "com.chauffit.app",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "CAMERA"
+      ],
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyA0dNRCH-TIfCIg59fl6fEmhfLTNRAFCS8"
+          "apiKey": "REPLACE_WITH_ENV_VAR"
         }
       }
     },
     "web": {
-      "favicon": "./assets/chauffit-logo.png",
+      "favicon": "./assets/app-icon.png",
       "bundler": "metro"
     },
     "plugins": [
@@ -42,8 +54,21 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/chauffit-logo.png",
-          "color": "#D9D1C6"
+          "icon": "./assets/app-icon.png",
+          "color": "#720C17"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Chauffit needs background location access to track your ride and provide real-time updates."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Chauffit needs photo library access to upload document images for verification.",
+          "cameraPermission": "Chauffit needs camera access to capture document photos for verification."
         }
       ]
     ]

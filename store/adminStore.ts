@@ -18,6 +18,7 @@ import AdminApiService, {
   AdminInsurancePlan,
   AdminAmenity,
   RevenueData,
+  AnalyticsData,
   AdminTrainingBatch,
   CreateTrainingBatchRequest,
   MarkTrainingResultsRequest,
@@ -113,6 +114,11 @@ interface AdminState {
   revenueLoading: boolean;
   revenueError: string | null;
 
+  // Analytics
+  analytics: AnalyticsData | null;
+  analyticsLoading: boolean;
+  analyticsError: string | null;
+
   // Training Batches
   trainingBatches: AdminTrainingBatch[];
   trainingBatchesLoading: boolean;
@@ -160,6 +166,7 @@ interface AdminState {
   updateAmenity: (id: string, data: Partial<AdminAmenity>) => Promise<boolean>;
   deleteAmenity: (id: string) => Promise<boolean>;
   fetchRevenue: (date?: string) => Promise<void>;
+  fetchAnalytics: (period?: string) => Promise<void>;
   fetchTrainingBatches: () => Promise<void>;
   fetchTrainingBatch: (id: string) => Promise<AdminTrainingBatch | null>;
   createTrainingBatch: (data: CreateTrainingBatchRequest) => Promise<boolean>;
@@ -237,6 +244,10 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   revenue: null,
   revenueLoading: false,
   revenueError: null,
+
+  analytics: null,
+  analyticsLoading: false,
+  analyticsError: null,
 
   trainingBatches: [],
   trainingBatchesLoading: false,
@@ -654,6 +665,16 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       set({ revenue: res.data, revenueLoading: false });
     } else {
       set({ revenueError: res.error || 'Failed to fetch revenue', revenueLoading: false });
+    }
+  },
+
+  fetchAnalytics: async (period) => {
+    set({ analyticsLoading: true, analyticsError: null });
+    const res = await AdminApiService.getAnalytics(period);
+    if (res.success && res.data) {
+      set({ analytics: res.data, analyticsLoading: false });
+    } else {
+      set({ analyticsError: res.error || 'Failed to fetch analytics', analyticsLoading: false });
     }
   },
 

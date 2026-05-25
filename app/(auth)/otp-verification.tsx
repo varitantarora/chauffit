@@ -195,7 +195,11 @@ export default function OTPVerification() {
           }
         }
       } else {
-        Alert.alert('Error', response.error || 'Invalid OTP. Please try again.');
+        if ((response as any).errorCode === 'ACCOUNT_DELETED') {
+          Alert.alert('Account Deleted', response.error || 'Your account was previously deleted. Please contact customer support.');
+        } else {
+          Alert.alert('Error', response.error || 'Invalid OTP. Please try again.');
+        }
         setOtp(['', '', '', '', '', '']);
         inputRefs.current[0]?.focus();
       }

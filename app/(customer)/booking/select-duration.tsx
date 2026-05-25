@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TouchableOpacity, View, ScrollView, Alert, TextInput } from 'react-native';
+import { TouchableOpacity, View, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedView } from '../../../components/common/ThemedView';
@@ -10,74 +10,50 @@ import { useBookingStore } from '../../../store/bookingStore';
 import { useCarStore } from '../../../store/carStore';
 import { useRouter } from 'expo-router';
 import { BrandColors } from '../../../constants/Colors';
+import { HOURLY_PACKAGES, OVERTIME_RATES, type ServiceTier } from '../../../utils/fareCalculator';
 
 interface DurationOption {
   id: string;
-  duration: string;
+  hours: number;
   label: string;
   price: number;
   description: string;
   popular?: boolean;
 }
 
+function getPackagesForTier(tier: ServiceTier): DurationOption[] {
+  const packages = HOURLY_PACKAGES[tier];
+  const descriptions = [
+    'Perfect for airport transfers or short trips',
+    'Ideal for business meetings or shopping',
+    'Great for half-day events',
+    'Full day service for tours and events',
+  ];
+  return packages.map((pkg, idx) => ({
+    id: `${pkg.hours}hr`,
+    hours: pkg.hours,
+    label: `${pkg.hours} Hours`,
+    price: pkg.price,
+    description: descriptions[idx] || '',
+    popular: pkg.hours === 4,
+  }));
+}
+
 export default function SelectDuration() {
   const [selectedDuration, setSelectedDuration] = useState<string>('');
-  const [customHours, setCustomHours] = useState<string>('');
-  const [showCustomInput, setShowCustomInput] = useState(false);
-  
+
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const setBookingDuration = useBookingStore((state) => state.setSelectedDuration);
   const updateBookingDetails = useBookingStore((state) => state.updateBookingDetails);
+  const selectedServiceTier = useBookingStore((state) => state.selectedServiceTier) || 'STANDARD';
   const defaultCar = useCarStore((state) => state.defaultCar);
   const router = useRouter();
 
-  const durationOptions: DurationOption[] = [
-    {
-      id: '2hr',
-      duration: '2hr',
-      label: '2 Hours',
-      price: 2500,
-      description: 'Perfect for airport transfers or short trips',
-    },
-    {
-      id: '4hr',
-      duration: '4hr',
-      label: '4 Hours',
-      price: 4800,
-      description: 'Ideal for business meetings or shopping',
-      popular: true,
-    },
-    {
-      id: '8hr',
-      duration: '8hr',
-      label: '8 Hours',
-      price: 8500,
-      description: 'Full day service for tours and events',
-    },
-    {
-      id: 'custom',
-      duration: 'custom',
-      label: 'Custom Duration',
-      price: 1200, // per hour
-      description: 'Choose your own duration',
-    },
-  ];
+  const durationOptions = getPackagesForTier(selectedServiceTier as ServiceTier);
+  const overtimeRate = OVERTIME_RATES[selectedServiceTier as ServiceTier];
 
   const handleDurationSelect = (option: DurationOption) => {
-    if (option.id === 'custom') {
-      setShowCustomInput(true);
-      setSelectedDuration(option.id);
-    } else {
-      setSelectedDuration(option.id);
-      setShowCustomInput(false);
-      setCustomHours('');
-    }
-  };
-
-  const calculateCustomPrice = (hours: string) => {
-    const numHours = parseInt(hours);
-    if (isNaN(numHours) || numHours < 1) return 0;
-    return numHours * 1200; // ₹1200 per hour
+    setSelectedDuration(option.id);
   };
 
   const handleContinue = () => {
@@ -104,20 +80,9 @@ export default function SelectDuration() {
       return;
     }
 
-    let duration = selectedDuration;
-    let totalAmount = 0;
-
-    if (selectedDuration === 'custom') {
-      if (!customHours || parseInt(customHours) < 1) {
-        Alert.alert('Error', 'Please enter valid custom hours');
-        return;
-      }
-      duration = `${customHours}hr`;
-      totalAmount = calculateCustomPrice(customHours);
-    } else {
-      const option = durationOptions.find(opt => opt.id === selectedDuration);
-      totalAmount = option?.price || 0;
-    }
+    const option = durationOptions.find(opt => opt.id === selectedDuration);
+    const totalAmount = option?.price || 0;
+    const duration = selectedDuration;
 
     setBookingDuration(duration);
     updateBookingDetails({
@@ -188,7 +153,7 @@ export default function SelectDuration() {
                       {option.description}
                     </ThemedText>
                     <ThemedText variant="h3" className="text-burgundy font-bold">
-                      {option.id === 'custom' ? '₹1,200/hr' : `₹${option.price.toLocaleString()}`}
+                      ₹{option.price.toLocaleString()}
                     </ThemedText>
                   </View>
                   
@@ -203,39 +168,18 @@ export default function SelectDuration() {
                   </View>
                 </View>
 
-                {/* Custom Hours Input */}
-                {option.id === 'custom' && selectedDuration === 'custom' && showCustomInput && (
-                  <View className="mt-4 pt-4 border-t border-border">
-                    <ThemedText variant="small" className="mb-2 font-semibold">
-                      Enter number of hours
-                    </ThemedText>
-                    <View className={`flex-row items-center p-3 rounded-xl border ${
-                      isDarkMode ? 'bg-darkSurface border-darkBorder' : 'bg-surface border-border'
-                    }`}>
-                      <Ionicons name="time" size={20} color={iconColor} />
-                      <TextInput
-                        className="flex-1 ml-3 text-base"
-                        placeholder="e.g., 6"
-                        placeholderTextColor={iconColor}
-                        value={customHours}
-                        onChangeText={setCustomHours}
-                        keyboardType="numeric"
-                      />
-                      <ThemedText variant="small" className="text-textSecondary dark:text-darkTextSecondary">
-                        hours
-                      </ThemedText>
-                    </View>
-                    {customHours && parseInt(customHours) > 0 && (
-                      <View className="mt-2">
-                        <ThemedText variant="small" className="text-burgundy font-semibold">
-                          Total: ₹{calculateCustomPrice(customHours).toLocaleString()}
-                        </ThemedText>
-                      </View>
-                    )}
-                  </View>
-                )}
               </TouchableOpacity>
             ))}
+          </View>
+
+          {/* Overtime Info */}
+          <View className={`p-3 rounded-xl mb-6 ${isDarkMode ? 'bg-darkSurface' : 'bg-amber-50'}`}>
+            <View className="flex-row items-center">
+              <Ionicons name="information-circle" size={20} color={BrandColors.secondary} />
+              <ThemedText variant="small" className="ml-2 flex-1">
+                Beyond booked duration: ₹{overtimeRate}/min overtime
+              </ThemedText>
+            </View>
           </View>
 
           {/* Selected Car Info */}

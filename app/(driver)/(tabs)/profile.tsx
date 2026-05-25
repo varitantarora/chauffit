@@ -236,7 +236,7 @@ export default function DriverProfile() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1">
+      <SafeAreaView className="flex-1" edges={['top']}>
         <ThemedView className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color={BrandColors.secondary} />
           <ThemedText className="mt-4">{t('loadingProfile')}</ThemedText>
@@ -246,7 +246,7 @@ export default function DriverProfile() {
   }
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView className="flex-1" edges={['top']}>
       <ThemedView className="flex-1">
         {/* Header */}
         <View
@@ -823,6 +823,14 @@ export default function DriverProfile() {
               title={t('logout')}
               onPress={handleLogout}
             />
+
+            <TouchableOpacity
+              onPress={() => router.push('/(auth)/delete-account')}
+              className="mt-4 py-3 items-center"
+              activeOpacity={0.7}
+            >
+              <ThemedText className="text-red-500 font-semibold text-sm">Delete Account</ThemedText>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </ThemedView>

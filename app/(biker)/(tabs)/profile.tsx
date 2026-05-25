@@ -704,7 +704,7 @@ export default function BikerProfile() {
               {/* Logout Button */}
               <TouchableOpacity
                 onPress={handleLogout}
-                className="w-full py-4 bg-danger rounded-lg items-center mb-6"
+                className="w-full py-4 bg-danger rounded-lg items-center mb-3"
                 activeOpacity={0.7}
               >
                 <View className="flex-row items-center">
@@ -713,6 +713,14 @@ export default function BikerProfile() {
                     {t('logout')}
                   </ThemedText>
                 </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => router.push('/(auth)/delete-account')}
+                className="py-3 items-center mb-6"
+                activeOpacity={0.7}
+              >
+                <ThemedText className="text-red-500 font-semibold text-sm">Delete Account</ThemedText>
               </TouchableOpacity>
             </View>
           )}

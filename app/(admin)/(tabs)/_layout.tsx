@@ -57,6 +57,15 @@ export default function AdminTabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="analytics"
+        options={{
+          title: 'Analytics',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="analytics" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',

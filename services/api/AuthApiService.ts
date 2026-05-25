@@ -1,4 +1,5 @@
 import BaseApiService, { ApiResponse } from './BaseApiService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Types based on API YAML schema and backend views
 export interface User {
@@ -125,6 +126,15 @@ export interface OTPRegistrationResponse {
     refresh: string;
   };
   is_first_login?: boolean;
+}
+
+export interface DeleteAccountSendOTPResponse {
+  expires_in: number;
+}
+
+export interface DeleteAccountRequest {
+  otp: string;
+  refresh?: string;
 }
 
 export interface ChangePasswordRequest {
@@ -584,6 +594,68 @@ class AuthApiService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to register with OTP',
+      };
+    }
+  }
+
+  // Delete Account - Send OTP
+  async sendDeleteAccountOTP(): Promise<ApiResponse<DeleteAccountSendOTPResponse>> {
+    try {
+      const response = await BaseApiService.post<{
+        success: boolean;
+        message: string;
+        data: DeleteAccountSendOTPResponse;
+      }>(`${this.basePath}/delete-account/send-otp/`, {}, true);
+
+      if (response.success && response.data) {
+        const serverResponse = response.data as any;
+        return {
+          success: true,
+          data: serverResponse.data ?? serverResponse,
+          message: serverResponse.message,
+        };
+      }
+
+      return {
+        success: false,
+        error: response.error || 'Failed to send OTP',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to send OTP',
+      };
+    }
+  }
+
+  // Delete Account - Confirm with OTP
+  async deleteAccount(data: DeleteAccountRequest): Promise<ApiResponse<void>> {
+    try {
+      const refreshToken = await AsyncStorage.getItem('refresh_token');
+      const response = await BaseApiService.post<{
+        success: boolean;
+        message: string;
+      }>(`${this.basePath}/delete-account/`, {
+        otp: data.otp,
+        refresh: data.refresh || refreshToken || undefined,
+      }, true);
+
+      if (response.success) {
+        return {
+          success: true,
+          message: (response.data as any)?.message || 'Account deleted successfully',
+        };
+      }
+
+      return {
+        success: false,
+        error: response.error || 'Failed to delete account',
+        errorCode: response.errorCode,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to delete account',
       };
     }
   }

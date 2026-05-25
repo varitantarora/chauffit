@@ -200,14 +200,14 @@ export default function CompletedRideScreen() {
         return {
           icon: 'time',
           color: '#f59e0b',
-          title: 'Hourly Service',
+          title: 'Hourly',
           description: 'Dedicated chauffeur service by the hour'
         };
       default:
         return {
           icon: 'location',
           color: '#10b981',
-          title: 'Point to Point',
+          title: 'One Sided',
           description: 'Direct pickup to destination service'
         };
     }
@@ -354,30 +354,20 @@ export default function CompletedRideScreen() {
                   </ThemedText>
                 </View>
 
-                <View className="flex-row justify-between items-center">
-                  <View className="flex-row items-center">
-                    <View className="w-8 h-8 bg-warning/10 rounded-full items-center justify-center mr-3">
-                      <Ionicons name="heart" size={16} color="#f59e0b" />
+                {tipAmount !== null && tipAmount > 0 && (
+                  <View className="flex-row justify-between items-center">
+                    <View className="flex-row items-center">
+                      <View className="w-8 h-8 bg-warning/10 rounded-full items-center justify-center mr-3">
+                        <Ionicons name="heart" size={16} color="#f59e0b" />
+                      </View>
+                      <ThemedText>Tips</ThemedText>
                     </View>
-                    <ThemedText>Tips</ThemedText>
+                    <ThemedText className="font-semibold text-warning">
+                      {formatMoneyWithSign(tipAmount, '+')}
+                    </ThemedText>
                   </View>
-                  <ThemedText className="font-semibold text-warning">
-                    {formatMoneyWithSign(tipAmount, '+')}
-                  </ThemedText>
-                </View>
-
-                <View className="flex-row justify-between items-center">
-                  <View className="flex-row items-center">
-                    <View className="w-8 h-8 bg-secondary/10 rounded-full items-center justify-center mr-3">
-                      <Ionicons name="gift" size={16} color="#3b82f6" />
-                    </View>
-                    <ThemedText>Bonus</ThemedText>
-                  </View>
-                  <ThemedText className="font-semibold" style={{ color: '#3b82f6' }}>
-                    {formatMoneyWithSign(bonusAmount, '+')}
-                  </ThemedText>
-                </View>
-                {otherFees.map((fee: any, index: number) => {
+                )}
+                {otherFees.filter((fee: any) => fee?.label?.toLowerCase() !== 'toll').map((fee: any, index: number) => {
                   const feeAmount = toNumber(fee?.amount);
                   const sign: '+' | '-' = fee?.direction === 'plus' ? '+' : '-';
                   return (

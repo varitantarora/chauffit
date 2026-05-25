@@ -446,50 +446,28 @@ export default function TaskDetailsScreen() {
           </View>
 
           {/* Contact Information */}
-          {(task.customerName || task.driverName) && (
+          {task.driverName && (
             <View className="px-4 mb-4">
               <ThemedCard className="p-4">
                 <ThemedText className="font-bold mb-3">Contact Details</ThemedText>
-                
-                {task.customerName && (
-                  <View className="flex-row items-center justify-between mb-3">
-                    <View className="flex-row items-center flex-1">
-                      <Ionicons name="person" size={20} color={BrandColors.secondary} />
-                      <View className="ml-3">
-                        <ThemedText className="font-semibold">Customer</ThemedText>
-                        <ThemedText variant="caption">{task.customerName}</ThemedText>
-                      </View>
-                    </View>
-                    {task.customerPhone && (
-                      <TouchableOpacity
-                        onPress={() => makePhoneCall(task.customerPhone!)}
-                        className="bg-primary p-2 rounded-full"
-                      >
-                        <Ionicons name="call" size={16} color="white" />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                )}
 
-                {task.driverName && (
-                  <View className="flex-row items-center justify-between">
-                    <View className="flex-row items-center flex-1">
-                      <Ionicons name="car" size={20} color={BrandColors.secondary} />
-                      <View className="ml-3">
-                        <ThemedText className="font-semibold">Driver</ThemedText>
-                        <ThemedText variant="caption">{task.driverName}</ThemedText>
-                      </View>
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center flex-1">
+                    <Ionicons name="car" size={20} color={BrandColors.secondary} />
+                    <View className="ml-3">
+                      <ThemedText className="font-semibold">Driver</ThemedText>
+                      <ThemedText variant="caption">{task.driverName}</ThemedText>
                     </View>
-                    {task.driverPhone && (
-                      <TouchableOpacity
-                        onPress={() => makePhoneCall(task.driverPhone!)}
-                        className="bg-primary p-2 rounded-full"
-                      >
-                        <Ionicons name="call" size={16} color="white" />
-                      </TouchableOpacity>
-                    )}
                   </View>
-                )}
+                  {task.driverPhone && (
+                    <TouchableOpacity
+                      onPress={() => makePhoneCall(task.driverPhone!)}
+                      className="bg-primary p-2 rounded-full"
+                    >
+                      <Ionicons name="call" size={16} color="white" />
+                    </TouchableOpacity>
+                  )}
+                </View>
               </ThemedCard>
             </View>
           )}

@@ -85,8 +85,8 @@ export function RouteMap({
           // Update location on backend
           try {
             await DriverApiService.updateLocation({
-              latitude: location.coords.latitude.toString(),
-              longitude: location.coords.longitude.toString(),
+              latitude: location.coords.latitude.toFixed(6),
+              longitude: location.coords.longitude.toFixed(6),
             });
           } catch (error) {
             console.error('Error updating location on backend:', error);

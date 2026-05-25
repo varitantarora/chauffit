@@ -201,8 +201,8 @@ export default function ActiveJobScreen() {
       const tips = toNum((rideDetails as any)?.tip_amount) || 0;
 
       const success = await completeRideFromAPI(activeJob.id, {
-        dropoff_lat: currentLocation?.latitude?.toString() || '0',
-        dropoff_long: currentLocation?.longitude?.toString() || '0',
+        dropoff_lat: currentLocation?.latitude?.toFixed(6) || '0',
+        dropoff_long: currentLocation?.longitude?.toFixed(6) || '0',
         actual_distance_km: actualDistance,
         actual_duration_minutes: actualDuration,
       });
@@ -530,23 +530,17 @@ export default function ActiveJobScreen() {
                   {formatMoneyWithSign(platformFee, '-')}
                 </ThemedText>
               </View>
-              <View className="flex-row justify-between items-center mb-1">
-                <ThemedText variant="caption" className="text-secondary">
-                  Tips
-                </ThemedText>
-                <ThemedText variant="caption">
-                  {formatMoneyWithSign(tipAmount, '+')}
-                </ThemedText>
-              </View>
-              <View className="flex-row justify-between items-center mb-1">
-                <ThemedText variant="caption" className="text-secondary">
-                  Bonus
-                </ThemedText>
-                <ThemedText variant="caption">
-                  {formatMoneyWithSign(bonusAmount, '+')}
-                </ThemedText>
-              </View>
-              {otherFees.map((fee: any, index: number) => {
+              {tipAmount !== null && tipAmount > 0 && (
+                <View className="flex-row justify-between items-center mb-1">
+                  <ThemedText variant="caption" className="text-secondary">
+                    Tips
+                  </ThemedText>
+                  <ThemedText variant="caption">
+                    {formatMoneyWithSign(tipAmount, '+')}
+                  </ThemedText>
+                </View>
+              )}
+              {otherFees.filter((fee: any) => fee?.label?.toLowerCase() !== 'toll').map((fee: any, index: number) => {
                 const feeAmount = toNumber(fee?.amount);
                 const sign: '+' | '-' = fee?.direction === 'plus' ? '+' : '-';
                 return (

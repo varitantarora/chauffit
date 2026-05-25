@@ -311,6 +311,32 @@ export interface RevenueData {
 }
 
 // ============================================================================
+// ANALYTICS TYPES
+// ============================================================================
+
+export interface MonthlyBreakdown {
+  month: string;
+  driver_retention: number;
+  biker_retention: number;
+  driver_hours: number;
+  biker_hours: number;
+  driver_sessions: number;
+  biker_sessions: number;
+}
+
+export interface AnalyticsData {
+  driver_retention: number;
+  biker_retention: number;
+  driver_avg_sessions: number;
+  biker_avg_sessions: number;
+  driver_total_hours: number;
+  biker_total_hours: number;
+  driver_avg_hours_per_month: number;
+  biker_avg_hours_per_month: number;
+  breakdown: MonthlyBreakdown[];
+}
+
+// ============================================================================
 // TRAINING BATCH TYPES
 // ============================================================================
 
@@ -375,6 +401,20 @@ class AdminApiService {
       return await BaseApiService.get<DashboardStats>(`${this.basePath}/dashboard/`);
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch dashboard' };
+    }
+  }
+
+  // Analytics
+  async getAnalytics(period?: string): Promise<ApiResponse<AnalyticsData>> {
+    try {
+      const queryParams: Record<string, string> = {};
+      if (period) queryParams.period = period;
+      return await BaseApiService.get<AnalyticsData>(
+        `${this.basePath}/analytics/`,
+        Object.keys(queryParams).length > 0 ? queryParams : undefined
+      );
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch analytics' };
     }
   }
 

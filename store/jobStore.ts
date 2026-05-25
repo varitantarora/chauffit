@@ -704,8 +704,8 @@ export const useJobStore = create<JobState>((set, get) => ({
       };
       
       if (state.currentLocation) {
-        payload.latitude = state.currentLocation.latitude.toString();
-        payload.longitude = state.currentLocation.longitude.toString();
+        payload.latitude = state.currentLocation.latitude.toFixed(6);
+        payload.longitude = state.currentLocation.longitude.toFixed(6);
       }
       
       // We need to import DriverApiService at the top of the file, but to avoid circular dependencies

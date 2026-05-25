@@ -10,6 +10,12 @@ import { useAuthStore } from '../../store/authStore';
 import { LightColors, DarkColors } from '../../constants/Colors';
 import type { AdminPerKmRate, AdminPerMinRate, AdminHourlyHireRate, AdminSurgeConfig } from '../../services/api/AdminApiService';
 
+const TIER_LABELS: Record<string, string> = {
+  STANDARD: 'Standard Chauffeur',
+  EXECUTIVE: 'Executive Chauffeur',
+};
+
+// Deprecated: kept for backward compat
 const SEGMENT_LABELS: Record<string, string> = {
   HATCHBACK: 'Hatchback',
   MICRO_SUV: 'Micro SUV',
@@ -17,10 +23,12 @@ const SEGMENT_LABELS: Record<string, string> = {
   SEDAN: 'Sedan',
   FULL_SUV: 'Full SUV',
   LUXURY: 'Luxury',
+  STANDARD: 'Standard Chauffeur',
+  EXECUTIVE: 'Executive Chauffeur',
 };
 
 function formatSegment(segment: string): string {
-  return SEGMENT_LABELS[segment] || segment.replace(/_/g, ' ');
+  return TIER_LABELS[segment] || SEGMENT_LABELS[segment] || segment.replace(/_/g, ' ');
 }
 
 export default function PricingSettings() {
